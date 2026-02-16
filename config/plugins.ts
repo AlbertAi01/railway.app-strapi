@@ -1,22 +1,16 @@
 export default ({ env }) => ({
-    'users-permissions': {
-        config: {
-            jwtSecret: env('JWT_SECRET'),
+  upload: {
+    config: {
+      provider: 'aws-s3',
+      providerOptions: {
+        accessKeyId: env('CF_ACCESS_KEY_ID'),
+        secretAccessKey: env('CF_ACCESS_SECRET'),
+        region: 'auto',
+        params: {
+          Bucket: env('CF_BUCKET'),
         },
+        endpoint: env('CF_ENDPOINT'),
+      },
     },
-    upload: {
-        config: {
-            provider: 'cloudinary',
-            providerOptions: {
-                cloud_name: env('CLOUDINARY_NAME'),
-                api_key: env('CLOUDINARY_KEY'),
-                api_secret: env('CLOUDINARY_SECRET'),
-            },
-            actionOptions: {
-                upload: {},
-                uploadStream: {},
-                delete: {},
-            },
-        },
-    },
+  },
 });
