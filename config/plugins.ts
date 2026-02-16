@@ -5,11 +5,14 @@ export default ({ env }) => ({
       providerOptions: {
         accessKeyId: env('CF_ACCESS_KEY_ID'),
         secretAccessKey: env('CF_ACCESS_SECRET'),
-        region: 'auto',
+        // R2 requires 'us-east-1' to trick the AWS SDK, even if your bucket is elsewhere
+        region: 'us-east-1', 
+        endpoint: env('CF_ENDPOINT'),
         params: {
           Bucket: env('CF_BUCKET'),
         },
-        endpoint: env('CF_ENDPOINT'),
+        // CRITICAL: This forces the tool to understand Cloudflare's URL structure
+        forcePathStyle: true, 
       },
     },
   },
