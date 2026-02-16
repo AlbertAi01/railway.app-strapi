@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "blueprints",
+  "info": {
+    "singularName": "blueprint",
+    "pluralName": "blueprints",
+    "displayName": "Blueprint",
+    "description": "Factory Layouts for Arknights Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "string",
+      "required": true
+    },
+    "Description": {
+      "type": "blocks"
+    },
+    "ImportString": {
+      "type": "text",
+      "required": true
+    },
+    "Upvotes": {
+      "type": "integer",
+      "default": 0
+    },
+    "Screenshot": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}
