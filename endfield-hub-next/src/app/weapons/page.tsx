@@ -2,27 +2,220 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Search, Sword } from 'lucide-react';
+import { Search, Sword, ChevronDown, ChevronUp, Zap, Shield, Crosshair, TrendingUp } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
-import { WEAPONS } from '@/lib/data';
+import { WEAPON_DATA, getAtkAtLevel, ATK_CURVES } from '@/data/weapons';
+import type { WeaponData } from '@/data/weapons';
 import { RARITY_COLORS } from '@/types/game';
 import type { WeaponType } from '@/types/game';
 import { WEAPON_ICONS } from '@/lib/assets';
 
 const WEAPON_TYPES: WeaponType[] = ['Greatsword', 'Polearm', 'Handcannon', 'Sword', 'Arts Unit'];
+const RARITY_FILTERS = [6, 5, 4, 3] as const;
+
+function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const pct = Math.min((value / max) * 100, 100);
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[var(--color-text-tertiary)] text-xs w-20 shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-[var(--color-surface-2)]">
+        <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+      <span className="text-white text-xs font-mono w-10 text-right">{value}</span>
+    </div>
+  );
+}
+
+function AtkCurveChart({ baseAtk, maxAtk, rarity }: { baseAtk: number; maxAtk: number; rarity: number }) {
+  const levels = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+  const values = levels.map(lv => getAtkAtLevel(baseAtk, maxAtk, lv));
+  const maxVal = maxAtk;
+  const minVal = baseAtk;
+
+  return (
+    <div className="mt-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[var(--color-text-tertiary)] text-xs uppercase tracking-wider">ATK Growth Curve</span>
+        <span className="text-[var(--color-text-tertiary)] text-[10px]">Lv.1 → Lv.90</span>
+      </div>
+      <div className="flex items-end gap-[2px] h-12">
+        {values.map((val, i) => {
+          const height = maxVal > minVal ? ((val - minVal) / (maxVal - minVal)) * 100 : 100;
+          return (
+            <div key={levels[i]} className="flex-1 flex flex-col items-center gap-1" title={`Lv.${levels[i]}: ${val} ATK`}>
+              <div className="w-full bg-[var(--color-accent)]/20 relative" style={{ height: '48px' }}>
+                <div
+                  className="absolute bottom-0 w-full bg-[var(--color-accent)]"
+                  style={{ height: `${Math.max(height, 5)}%`, opacity: 0.4 + (i / levels.length) * 0.6 }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-1">
+        <span className="text-[10px] text-[var(--color-text-tertiary)]">1</span>
+        <span className="text-[10px] text-[var(--color-text-tertiary)]">90</span>
+      </div>
+    </div>
+  );
+}
+
+function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isExpanded: boolean; onToggle: () => void }) {
+  const rarityColor = RARITY_COLORS[weapon.Rarity] || '#999';
+  const icon = WEAPON_ICONS[weapon.Name];
+
+  const formatStatValue = (value: number, isPct: boolean) => {
+    if (isPct) {
+      return value < 1 ? `${(value * 100).toFixed(1)}%` : `${value.toFixed(1)}%`;
+    }
+    return `+${value}`;
+  };
+
+  return (
+    <div
+      className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all ${
+        isExpanded ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
+      }`}
+    >
+      <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={onToggle}>
+        <div
+          className="w-14 h-14 clip-corner-tl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${rarityColor}15`, border: `1px solid ${rarityColor}30` }}
+        >
+          {icon ? (
+            <Image src={icon} alt={weapon.Name} width={56} height={56} className="w-14 h-14 object-contain" loading="lazy" />
+          ) : (
+            <Sword size={24} style={{ color: rarityColor }} />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-white font-semibold text-sm truncate">{weapon.Name}</h3>
+            <span className="text-[11px] shrink-0" style={{ color: rarityColor }}>
+              {'★'.repeat(weapon.Rarity)}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[var(--color-text-tertiary)] text-xs">{weapon.WeaponType}</span>
+            <span className="text-[var(--color-accent)] text-xs font-mono">ATK {weapon.MaxAtk}</span>
+            {weapon.PassiveAttribute && (
+              <span className="text-[var(--color-text-secondary)] text-xs">
+                {weapon.PassiveAttribute.label} +{weapon.PassiveAttribute.value}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="shrink-0 text-[var(--color-text-tertiary)]">
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3 space-y-4">
+          {/* Stats Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* ATK Stats */}
+            <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+              <div className="flex items-center gap-2 mb-2">
+                <Crosshair size={14} className="text-[var(--color-accent)]" />
+                <span className="text-white text-xs font-semibold uppercase tracking-wider">Attack</span>
+              </div>
+              <div className="flex justify-between items-baseline mb-1">
+                <span className="text-[var(--color-text-tertiary)] text-xs">Base (Lv.1)</span>
+                <span className="text-white font-mono text-sm">{weapon.BaseAtk}</span>
+              </div>
+              <div className="flex justify-between items-baseline mb-1">
+                <span className="text-[var(--color-text-tertiary)] text-xs">Max (Lv.90)</span>
+                <span className="text-[var(--color-accent)] font-mono text-sm font-bold">{weapon.MaxAtk}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[var(--color-text-tertiary)] text-xs">Growth</span>
+                <span className="text-green-400 font-mono text-xs">+{weapon.MaxAtk - weapon.BaseAtk}</span>
+              </div>
+              <AtkCurveChart baseAtk={weapon.BaseAtk} maxAtk={weapon.MaxAtk} rarity={weapon.Rarity} />
+            </div>
+
+            {/* Attributes */}
+            <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp size={14} className="text-[var(--color-accent)]" />
+                <span className="text-white text-xs font-semibold uppercase tracking-wider">Attributes</span>
+              </div>
+
+              {weapon.PassiveAttribute && (
+                <div className="mb-3">
+                  <div className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Passive</div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[var(--color-text-secondary)] text-sm">{weapon.PassiveAttribute.label}</span>
+                    <span className="text-[var(--color-accent)] font-mono text-sm">
+                      {formatStatValue(weapon.PassiveAttribute.value, weapon.PassiveAttribute.isPercentage)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {weapon.SpecialAttribute && (
+                <div>
+                  <div className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Special</div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[var(--color-text-secondary)] text-sm">{weapon.SpecialAttribute.label}</span>
+                    <span className="text-[var(--color-accent)] font-mono text-sm">
+                      {weapon.SpecialAttribute.isPercentage
+                        ? `+${weapon.SpecialAttribute.value.toFixed(1)}%`
+                        : `+${weapon.SpecialAttribute.value}`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {!weapon.SpecialAttribute && (
+                <div className="text-[var(--color-text-tertiary)] text-xs italic">No special attribute</div>
+              )}
+            </div>
+          </div>
+
+          {/* Potential Skill */}
+          {weapon.SkillName && (
+            <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={14} className="text-[var(--color-accent)]" />
+                <span className="text-white text-xs font-semibold uppercase tracking-wider">Potential Skill</span>
+              </div>
+              <h4 className="text-[var(--color-accent)] text-sm font-semibold mb-1">{weapon.SkillName}</h4>
+              {weapon.SkillDescription && (
+                <p className="text-[var(--color-text-secondary)] text-xs leading-relaxed">{weapon.SkillDescription}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Weapons() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<WeaponType | null>(null);
+  const [rarityFilter, setRarityFilter] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
   const filtered = useMemo(() => {
-    return WEAPONS.filter(w => {
+    return WEAPON_DATA.filter(w => {
       if (search && !w.Name.toLowerCase().includes(search.toLowerCase())) return false;
       if (typeFilter && w.WeaponType !== typeFilter) return false;
+      if (rarityFilter && w.Rarity !== rarityFilter) return false;
       return true;
     });
-  }, [search, typeFilter]);
+  }, [search, typeFilter, rarityFilter]);
+
+  const stats = useMemo(() => ({
+    total: WEAPON_DATA.length,
+    shown: filtered.length,
+    byStar: RARITY_FILTERS.map(r => ({ r, count: WEAPON_DATA.filter(w => w.Rarity === r).length })),
+  }), [filtered]);
 
   return (
     <div>
@@ -33,6 +226,16 @@ export default function Weapons() {
         icon={<Sword size={28} />}
       />
 
+      {/* Summary bar */}
+      <div className="flex items-center gap-4 mb-4 text-xs text-[var(--color-text-tertiary)]">
+        <span>{stats.shown} / {stats.total} weapons</span>
+        <span className="text-[var(--color-border)]">|</span>
+        {stats.byStar.map(s => (
+          <span key={s.r}>{s.r}★ ×{s.count}</span>
+        ))}
+      </div>
+
+      {/* Search */}
       <div className="relative mb-4">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
         <input
@@ -44,13 +247,16 @@ export default function Weapons() {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-3">
         {WEAPON_TYPES.map(t => (
           <button
             key={t}
             onClick={() => setTypeFilter(typeFilter === t ? null : t)}
             className={`px-3 py-1 text-xs font-medium transition-all border ${
-              typeFilter === t ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+              typeFilter === t
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
             }`}
           >
             {t}
@@ -58,52 +264,42 @@ export default function Weapons() {
         ))}
       </div>
 
-      <div className="space-y-3">
-        {filtered.map(weapon => (
-          <div
-            key={weapon.id}
-            className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all cursor-pointer ${
-              expanded === weapon.id ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
+      <div className="flex flex-wrap gap-2 mb-6">
+        {RARITY_FILTERS.map(r => (
+          <button
+            key={r}
+            onClick={() => setRarityFilter(rarityFilter === r ? null : r)}
+            className={`px-3 py-1 text-xs font-medium transition-all border ${
+              rarityFilter === r
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
             }`}
-            onClick={() => setExpanded(expanded === weapon.id ? null : weapon.id)}
           >
-            <div className="flex items-center gap-4 p-4">
-              <div className="w-12 h-12 clip-corner-tl flex items-center justify-center text-lg font-bold" style={{ backgroundColor: `${RARITY_COLORS[weapon.Rarity]}20`, color: RARITY_COLORS[weapon.Rarity] }}>
-                {WEAPON_ICONS[weapon.Name] ? (
-                  <Image
-                    src={WEAPON_ICONS[weapon.Name]}
-                    alt={weapon.Name}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  weapon.Name[0]
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-white font-semibold text-sm">{weapon.Name}</h3>
-                  <span className="text-[11px]" style={{ color: RARITY_COLORS[weapon.Rarity] }}>
-                    {'★'.repeat(weapon.Rarity)}
-                  </span>
-                </div>
-                <div className="flex gap-3 mt-1">
-                  <span className="text-[var(--color-text-tertiary)] text-xs">{weapon.WeaponType}</span>
-                </div>
-              </div>
-            </div>
-            {expanded === weapon.id && weapon.Description && (
-              <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3">
-                <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
-                  <p className="text-[var(--color-text-secondary)] text-sm">{weapon.Description}</p>
-                </div>
-              </div>
-            )}
-          </div>
+            <span style={{ color: rarityFilter === r ? 'var(--color-accent)' : RARITY_COLORS[r] }}>
+              {'★'.repeat(r)}
+            </span>
+          </button>
         ))}
       </div>
+
+      {/* Weapon list */}
+      <div className="space-y-2">
+        {filtered.map(weapon => (
+          <WeaponCard
+            key={weapon.id}
+            weapon={weapon}
+            isExpanded={expanded === weapon.id}
+            onToggle={() => setExpanded(expanded === weapon.id ? null : weapon.id)}
+          />
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-12 text-[var(--color-text-tertiary)]">
+          <Sword size={48} className="mx-auto mb-3 opacity-30" />
+          <p>No weapons match your filters</p>
+        </div>
+      )}
     </div>
   );
 }
