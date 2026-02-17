@@ -5,10 +5,10 @@
     "singularName": "blueprint",
     "pluralName": "blueprints",
     "displayName": "Blueprint",
-    "description": "Factory Layouts for Arknights Endfield"
+    "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -17,10 +17,11 @@
       "required": true
     },
     "Description": {
-      "type": "blocks"
+      "type": "text",
+      "required": true
     },
     "ImportString": {
-      "type": "text",
+      "type": "string",
       "required": true
     },
     "Upvotes": {
@@ -29,7 +30,7 @@
     },
     "Screenshot": {
       "type": "media",
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "allowedTypes": ["images"]
     }
