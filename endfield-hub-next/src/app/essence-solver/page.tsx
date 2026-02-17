@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calculator, Zap, FlaskConical } from 'lucide-react';
+import { Calculator, Zap, FlaskConical, Copy, Download } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const ESSENCE_VALUES = [1, 2, 3, 5, 10, 20, 50, 100];
@@ -95,11 +95,83 @@ export default function EssenceSolverPage() {
   const { solution, remaining, conversions, insufficient } = calculateConversionSolution();
   const waste = remaining < 0 ? Math.abs(remaining) : 0;
 
+  const copyResultsToClipboard = async () => {
+    if (insufficient || Object.keys(solution).length === 0) return;
+
+    let results = `Essence Solver Results\nTarget: ${target}\n\n`;
+
+    results += 'Optimal Solution:\n';
+    Object.entries(solution)
+      .sort(([a], [b]) => Number(b) - Number(a))
+      .forEach(([value, count]) => {
+        results += `• Use Essence ×${value}: ×${count}\n`;
+      });
+
+    results += `\nTotal Used: ${target - remaining}\n`;
+    results += `Waste: ${waste}\n`;
+
+    if (conversions && conversions.length > 0) {
+      results += '\nConversion Steps:\n';
+      conversions.forEach(c => {
+        results += `• ${c}\n`;
+      });
+    }
+
+    results += '\nCreated with Zero Sanity Toolkit - zerosanity.app';
+
+    try {
+      await navigator.clipboard.writeText(results);
+      alert('Results copied to clipboard!');
+    } catch (error) {
+      alert('Failed to copy. Please try again.');
+    }
+  };
+
+  const exportResultsJSON = () => {
+    const resultsData = {
+      target,
+      inventory,
+      solution,
+      totalUsed: target - remaining,
+      waste,
+      conversions,
+      insufficient,
+      timestamp: new Date().toISOString()
+    };
+    const data = JSON.stringify(resultsData, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zerosanity-essence-solution-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Essence Optimization" category="ANALYSIS" code="RIOS-ESS-001" icon={<FlaskConical size={28} />} />
-        <div className="mb-8"></div>
+
+        {/* Export/Share Buttons */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={copyResultsToClipboard}
+            disabled={insufficient || Object.keys(solution).length === 0}
+            className="px-4 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Copy className="w-4 h-4" />
+            Copy Results
+          </button>
+          <button
+            onClick={exportResultsJSON}
+            disabled={insufficient || Object.keys(solution).length === 0}
+            className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            Export Results (JSON)
+          </button>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Input Section */}

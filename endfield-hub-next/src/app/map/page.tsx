@@ -7,7 +7,7 @@ export default function MapPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
-        <RIOSHeader title="Tactical Map Interface" category="NAVIGATION" code="RIOS-MAP-001" icon={<MapIcon size={28} />} />
+        <RIOSHeader title="Interactive Map Interface" category="NAVIGATION" code="RIOS-MAP-001" icon={<MapIcon size={28} />} />
         <div className="mb-8"></div>
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-12">

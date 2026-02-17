@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Sparkles, RotateCcw, Dice6 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { CHARACTERS, WEAPONS } from '@/lib/data';
+import { CHARACTER_ICONS, WEAPON_ICONS } from '@/lib/assets';
 
 const RATES = {
   6: 0.008,  // 0.8%
@@ -18,6 +21,8 @@ interface Pull {
   rarity: number;
   item: string;
   isPity: boolean;
+  icon?: string;
+  type: 'character' | 'weapon' | 'material';
 }
 
 export default function SummonSimulatorPage() {
@@ -25,6 +30,48 @@ export default function SummonSimulatorPage() {
   const [pityCounter, setPityCounter] = useState(0);
   const [totalPulls, setTotalPulls] = useState(0);
   const [stats, setStats] = useState({ 6: 0, 5: 0, 4: 0, 3: 0 });
+
+  const getRandomItem = (rarity: number): { name: string; icon?: string; type: 'character' | 'weapon' | 'material' } => {
+    if (rarity === 6) {
+      // 50% character, 50% weapon for 6-star
+      const isCharacter = Math.random() < 0.5;
+      if (isCharacter) {
+        const sixStarChars = CHARACTERS.filter(c => c.Rarity === 6);
+        const char = sixStarChars[Math.floor(Math.random() * sixStarChars.length)];
+        return { name: char.Name, icon: CHARACTER_ICONS[char.Name], type: 'character' };
+      } else {
+        const sixStarWeapons = WEAPONS.filter(w => w.Rarity === 6);
+        const weapon = sixStarWeapons[Math.floor(Math.random() * sixStarWeapons.length)];
+        return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon' };
+      }
+    } else if (rarity === 5) {
+      // 60% character, 40% weapon for 5-star
+      const isCharacter = Math.random() < 0.6;
+      if (isCharacter) {
+        const fiveStarChars = CHARACTERS.filter(c => c.Rarity === 5);
+        const char = fiveStarChars[Math.floor(Math.random() * fiveStarChars.length)];
+        return { name: char.Name, icon: CHARACTER_ICONS[char.Name], type: 'character' };
+      } else {
+        const fiveStarWeapons = WEAPONS.filter(w => w.Rarity === 5);
+        const weapon = fiveStarWeapons[Math.floor(Math.random() * fiveStarWeapons.length)];
+        return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon' };
+      }
+    } else if (rarity === 4) {
+      // 70% character, 30% weapon for 4-star
+      const isCharacter = Math.random() < 0.7;
+      if (isCharacter) {
+        const fourStarChars = CHARACTERS.filter(c => c.Rarity === 4);
+        const char = fourStarChars[Math.floor(Math.random() * fourStarChars.length)];
+        return { name: char.Name, icon: CHARACTER_ICONS[char.Name], type: 'character' };
+      } else {
+        const fourStarWeapons = WEAPONS.filter(w => w.Rarity === 4);
+        const weapon = fourStarWeapons[Math.floor(Math.random() * fourStarWeapons.length)];
+        return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon' };
+      }
+    }
+    // 3-star is just materials
+    return { name: 'Material', icon: undefined, type: 'material' };
+  };
 
   const calculateRarity = (counter: number): number => {
     let rate6 = RATES[6];
@@ -45,11 +92,14 @@ export default function SummonSimulatorPage() {
   const performPull = () => {
     const rarity = calculateRarity(pityCounter);
     const isPity = pityCounter >= PITY_SOFT && rarity === 6;
+    const itemData = getRandomItem(rarity);
 
     const newPull: Pull = {
       rarity,
-      item: `${rarity}★ ${rarity === 6 ? 'Operator' : rarity === 5 ? 'Item' : 'Material'}`,
-      isPity
+      item: itemData.name,
+      isPity,
+      icon: itemData.icon,
+      type: itemData.type
     };
 
     setPulls([newPull, ...pulls]);
@@ -71,11 +121,14 @@ export default function SummonSimulatorPage() {
     for (let i = 0; i < count; i++) {
       const rarity = calculateRarity(counter);
       const isPity = counter >= PITY_SOFT && rarity === 6;
+      const itemData = getRandomItem(rarity);
 
       newPulls.push({
         rarity,
-        item: `${rarity}★ ${rarity === 6 ? 'Operator' : rarity === 5 ? 'Item' : 'Material'}`,
-        isPity
+        item: itemData.name,
+        isPity,
+        icon: itemData.icon,
+        type: itemData.type
       });
 
       newStats[rarity as keyof typeof newStats]++;
@@ -242,18 +295,40 @@ export default function SummonSimulatorPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-sm text-[var(--color-text-tertiary)]">#{pulls.length - index}</div>
                         <div className="flex items-center gap-3">
-                          <Sparkles className={`w-5 h-5 ${
-                            pull.rarity === 6 ? 'text-orange-400' :
-                            pull.rarity === 5 ? 'text-purple-400' :
-                            pull.rarity === 4 ? 'text-blue-400' : 'text-gray-400'
-                          }`} />
-                          <span className={`font-bold ${
-                            pull.rarity === 6 ? 'text-orange-400' :
-                            pull.rarity === 5 ? 'text-purple-400' :
-                            pull.rarity === 4 ? 'text-blue-400' : 'text-gray-400'
-                          }`}>
-                            {pull.item}
-                          </span>
+                          {pull.icon ? (
+                            <div className="w-12 h-12 flex items-center justify-center rounded-lg overflow-hidden" style={{
+                              backgroundColor: pull.rarity === 6 ? 'rgba(249, 115, 22, 0.1)' :
+                                pull.rarity === 5 ? 'rgba(168, 85, 247, 0.1)' :
+                                'rgba(59, 130, 246, 0.1)'
+                            }}>
+                              <Image
+                                src={pull.icon}
+                                alt={pull.item}
+                                width={48}
+                                height={48}
+                                className="w-full h-full object-contain"
+                                unoptimized
+                              />
+                            </div>
+                          ) : (
+                            <Sparkles className={`w-5 h-5 ${
+                              pull.rarity === 6 ? 'text-orange-400' :
+                              pull.rarity === 5 ? 'text-purple-400' :
+                              pull.rarity === 4 ? 'text-blue-400' : 'text-gray-400'
+                            }`} />
+                          )}
+                          <div>
+                            <span className={`font-bold block ${
+                              pull.rarity === 6 ? 'text-orange-400' :
+                              pull.rarity === 5 ? 'text-purple-400' :
+                              pull.rarity === 4 ? 'text-blue-400' : 'text-gray-400'
+                            }`}>
+                              {pull.item}
+                            </span>
+                            <span className="text-xs text-[var(--color-text-tertiary)] capitalize">
+                              {pull.rarity}★ {pull.type}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       {pull.isPity && (

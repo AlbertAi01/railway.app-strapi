@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { RECIPES } from '@/lib/data';
-import { Factory, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Factory, Plus, Trash2, AlertCircle, Download, Copy } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 interface ProductionNode {
@@ -85,11 +85,87 @@ export default function FactoryPlannerPage() {
   const totalOutputs = calculateTotalOutputs();
   const bottlenecks = calculateBottlenecks();
 
+  const exportLayoutJSON = () => {
+    const layoutData = {
+      productionChain,
+      totalInputs,
+      totalOutputs,
+      bottlenecks,
+      timestamp: new Date().toISOString()
+    };
+    const data = JSON.stringify(layoutData, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zerosanity-factory-layout-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyPlanToClipboard = async () => {
+    if (productionChain.length === 0) return;
+
+    let plan = 'Factory Production Plan\n\n';
+
+    plan += 'Production Chain:\n';
+    productionChain.forEach((node, idx) => {
+      plan += `${idx + 1}. ${node.recipe.Name} (×${node.quantity})\n`;
+      plan += `   Inputs: ${node.recipe.Inputs.map(i => `${i.item} ×${i.quantity * node.quantity}`).join(', ')}\n`;
+      plan += `   Output: ${node.recipe.Outputs[0]?.item} ×${(node.recipe.Outputs[0]?.quantity || 1) * node.quantity}\n\n`;
+    });
+
+    plan += '\nTotal Inputs Required:\n';
+    Object.entries(totalInputs).forEach(([item, amount]) => {
+      plan += `• ${item}: ×${amount}\n`;
+    });
+
+    plan += '\nTotal Outputs Produced:\n';
+    Object.entries(totalOutputs).forEach(([item, amount]) => {
+      plan += `• ${item}: ×${amount}\n`;
+    });
+
+    if (bottlenecks.length > 0) {
+      plan += '\nBottlenecks:\n';
+      bottlenecks.forEach(b => {
+        plan += `• ${b}\n`;
+      });
+    }
+
+    plan += '\nCreated with Zero Sanity Toolkit - zerosanity.app';
+
+    try {
+      await navigator.clipboard.writeText(plan);
+      alert('Production plan copied to clipboard!');
+    } catch (error) {
+      alert('Failed to copy. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="AIC Production Planner" category="LOGISTICS" code="RIOS-FAC-001" icon={<Factory size={28} />} />
-        <div className="mb-8"></div>
+
+        {/* Export/Share Buttons */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={exportLayoutJSON}
+            disabled={productionChain.length === 0}
+            className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            Export Layout (JSON)
+          </button>
+          <button
+            onClick={copyPlanToClipboard}
+            disabled={productionChain.length === 0}
+            className="px-4 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Copy className="w-4 h-4" />
+            Copy Plan
+          </button>
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Add Recipe */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trophy, Check, Search } from 'lucide-react';
+import { Trophy, Check, Search, Download, Share2 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 interface Achievement {
@@ -17,21 +17,21 @@ const ACHIEVEMENTS: Achievement[] = [
   { id: '2', name: 'Chapter 1 Complete', description: 'Complete Chapter 1', category: 'Story', points: 20 },
   { id: '3', name: 'Chapter 2 Complete', description: 'Complete Chapter 2', category: 'Story', points: 20 },
   { id: '4', name: 'Chapter 3 Complete', description: 'Complete Chapter 3', category: 'Story', points: 20 },
-  { id: '5', name: 'First E2', description: 'E2 your first operator', category: 'Progression', points: 30 },
-  { id: '6', name: 'Master Tactician', description: 'M3 any skill', category: 'Progression', points: 50 },
-  { id: '7', name: 'Full Roster', description: 'Collect 50 operators', category: 'Collection', points: 50 },
+  { id: '5', name: 'Elite Operator', description: 'Promote your first operator to E4', category: 'Progression', points: 30 },
+  { id: '6', name: 'Master Tactician', description: 'Max out any skill level', category: 'Progression', points: 50 },
+  { id: '7', name: 'Full Roster', description: 'Collect 20 operators', category: 'Collection', points: 50 },
   { id: '8', name: 'Rare Collector', description: 'Collect all 6-star operators', category: 'Collection', points: 100 },
-  { id: '9', name: 'Lucky Draw', description: 'Get a 6-star in your first 10 pulls', category: 'Gacha', points: 30 },
-  { id: '10', name: 'Whale Watch', description: 'Perform 500 pulls', category: 'Gacha', points: 50 },
-  { id: '11', name: 'Resource Hoarder', description: 'Save 100,000 Originium', category: 'Economy', points: 40 },
-  { id: '12', name: 'Factory Manager', description: 'Fully upgrade your base', category: 'Economy', points: 60 },
-  { id: '13', name: 'Risk Taker', description: 'Clear CC Risk 18', category: 'Challenge', points: 80 },
-  { id: '14', name: 'True Challenger', description: 'Clear CC Risk 26', category: 'Challenge', points: 150 },
-  { id: '15', name: 'Annihilation Expert', description: 'Clear all Annihilation stages', category: 'Challenge', points: 70 },
-  { id: '16', name: 'Social Butterfly', description: 'Visit 50 friend supports', category: 'Social', points: 20 },
-  { id: '17', name: 'Team Player', description: 'Join a guild', category: 'Social', points: 10 },
-  { id: '18', name: 'Guild Champion', description: 'Contribute 10,000 guild points', category: 'Social', points: 50 },
-  { id: '19', name: 'Daily Devotion', description: 'Complete dailies for 30 days', category: 'Daily', points: 40 },
+  { id: '9', name: 'Lucky Draw', description: 'Get a 6-star in your first 10 pulls', category: 'Headhunt', points: 30 },
+  { id: '10', name: 'Veteran Recruiter', description: 'Perform 500 headhunt operations', category: 'Headhunt', points: 50 },
+  { id: '11', name: 'Resource Hoarder', description: 'Save 100,000 Credits', category: 'Economy', points: 40 },
+  { id: '12', name: 'Factory Manager', description: 'Fully optimize your AIC Factory', category: 'Economy', points: 60 },
+  { id: '13', name: 'Challenge Accepted', description: 'Complete high-difficulty operations', category: 'Challenge', points: 80 },
+  { id: '14', name: 'True Challenger', description: 'Clear extreme difficulty operations', category: 'Challenge', points: 150 },
+  { id: '15', name: 'Combat Expert', description: 'Clear all combat trials with perfect scores', category: 'Challenge', points: 70 },
+  { id: '16', name: 'Social Butterfly', description: 'Use 50 friend support operators', category: 'Social', points: 20 },
+  { id: '17', name: 'Team Player', description: 'Join a squad', category: 'Social', points: 10 },
+  { id: '18', name: 'Squad Champion', description: 'Contribute 10,000 squad points', category: 'Social', points: 50 },
+  { id: '19', name: 'Daily Devotion', description: 'Complete daily missions for 30 days', category: 'Daily', points: 40 },
   { id: '20', name: 'Veteran Player', description: 'Log in for 365 days', category: 'Daily', points: 100 }
 ];
 
@@ -71,6 +71,34 @@ export default function AchievementsPage() {
   const earnedPoints = ACHIEVEMENTS.filter(a => completed.has(a.id)).reduce((sum, a) => sum + a.points, 0);
   const completionPercentage = ((completed.size / ACHIEVEMENTS.length) * 100).toFixed(1);
 
+  const exportProgressJSON = () => {
+    const progressData = {
+      completed: Array.from(completed),
+      completionPercentage,
+      earnedPoints,
+      totalPoints,
+      timestamp: new Date().toISOString()
+    };
+    const data = JSON.stringify(progressData, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zerosanity-achievements-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const shareCompletionLink = async () => {
+    try {
+      const text = `I've completed ${completionPercentage}% of Endfield achievements! (${completed.size}/${ACHIEVEMENTS.length}) with ${earnedPoints}/${totalPoints} points - Track yours at ${window.location.origin}/achievements`;
+      await navigator.clipboard.writeText(text);
+      alert('Achievement progress copied to clipboard!');
+    } catch (error) {
+      alert('Failed to copy. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
@@ -80,6 +108,26 @@ export default function AchievementsPage() {
           code="RIOS-ACH-001"
           icon={<Trophy size={28} />}
         />
+
+        {/* Export/Share Buttons */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={exportProgressJSON}
+            disabled={completed.size === 0}
+            className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            Export Progress (JSON)
+          </button>
+          <button
+            onClick={shareCompletionLink}
+            disabled={completed.size === 0}
+            className="px-4 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Share2 className="w-4 h-4" />
+            Share Completion %
+          </button>
+        </div>
 
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-4 mb-6">

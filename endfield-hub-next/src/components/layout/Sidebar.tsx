@@ -50,7 +50,7 @@ const navigation: NavItem[] = [
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
     ],
   },
-  { label: 'Tactical Map', path: '/map', icon: <Map size={18} /> },
+  { label: 'Interactive Map', path: '/map', icon: <Map size={18} /> },
   {
     label: 'Headhunt Ops', path: '/headhunt-tracker', icon: <Target size={18} />,
     isNew: true,
