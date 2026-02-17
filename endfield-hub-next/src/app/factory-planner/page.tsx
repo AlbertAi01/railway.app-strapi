@@ -143,7 +143,7 @@ export default function FactoryPlannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#080c12] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="AIC Production Planner" category="LOGISTICS" code="RIOS-FAC-001" icon={<Factory size={28} />} />
 
@@ -180,7 +180,7 @@ export default function FactoryPlannerPage() {
                 <select
                   value={selectedRecipe}
                   onChange={(e) => setSelectedRecipe(e.target.value)}
-                  className="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                  className="flex-1 px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                 >
                   <option value="">Select a recipe to add...</option>
                   {RECIPES.map(recipe => (
@@ -202,7 +202,7 @@ export default function FactoryPlannerPage() {
               {productionChain.length > 0 ? (
                 <div className="space-y-3">
                   {productionChain.map(node => (
-                    <div key={node.id} className="bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl p-4">
+                    <div key={node.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-bold text-white">{node.recipe.Name}</h3>
@@ -223,7 +223,7 @@ export default function FactoryPlannerPage() {
                           min="1"
                           value={node.quantity}
                           onChange={(e) => updateQuantity(node.id, Number(e.target.value))}
-                          className="w-20 px-3 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-white"
+                          className="w-20 px-3 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                         />
                       </div>
 
@@ -263,7 +263,7 @@ export default function FactoryPlannerPage() {
               {Object.keys(totalInputs).length > 0 ? (
                 <div className="space-y-2">
                   {Object.entries(totalInputs).map(([item, amount]) => (
-                    <div key={item} className="flex items-center justify-between bg-[#0a0a0a] p-3 rounded">
+                    <div key={item} className="flex items-center justify-between bg-[var(--color-surface)] border border-[var(--color-border)] p-3 clip-corner-tl">
                       <span className="text-sm">{item}</span>
                       <span className="font-bold text-white">×{amount}</span>
                     </div>
@@ -279,7 +279,7 @@ export default function FactoryPlannerPage() {
               {Object.keys(totalOutputs).length > 0 ? (
                 <div className="space-y-2">
                   {Object.entries(totalOutputs).map(([item, amount]) => (
-                    <div key={item} className="flex items-center justify-between bg-[#0a0a0a] p-3 rounded">
+                    <div key={item} className="flex items-center justify-between bg-[var(--color-surface)] border border-[var(--color-border)] p-3 clip-corner-tl">
                       <span className="text-sm">{item}</span>
                       <span className="font-bold text-[var(--color-accent)]">×{amount}</span>
                     </div>
@@ -298,7 +298,7 @@ export default function FactoryPlannerPage() {
                 </h2>
                 <div className="space-y-2">
                   {bottlenecks.map((bottleneck, idx) => (
-                    <div key={idx} className="bg-red-900/20 border border-red-500/50 p-3 rounded text-sm text-red-300">
+                    <div key={idx} className="bg-red-900/20 border-l-4 border-l-red-500 border border-red-500/50 p-3 clip-corner-tl text-sm text-red-300">
                       {bottleneck}
                     </div>
                   ))}
@@ -307,7 +307,7 @@ export default function FactoryPlannerPage() {
             )}
 
             {productionChain.length > 0 && bottlenecks.length === 0 && (
-              <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-4">
+              <div className="bg-green-900/20 border-l-4 border-l-green-500 border border-green-500/50 clip-corner-tl p-4">
                 <h3 className="font-bold text-green-400 mb-2">Balanced Chain!</h3>
                 <p className="text-sm text-green-300">
                   All required materials are produced within the chain.

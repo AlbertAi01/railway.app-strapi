@@ -75,11 +75,11 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
               </div>
               <h1 className="text-2xl font-bold text-white">{char.Name}</h1>
               <div className="flex gap-2 mt-1">
-                <span className="text-xs px-2 py-0.5 rounded-full border" style={{ color: ELEMENT_COLORS[char.Element], borderColor: ELEMENT_COLORS[char.Element] }}>
+                <span className="text-xs px-2 py-0.5 border" style={{ color: ELEMENT_COLORS[char.Element], borderColor: ELEMENT_COLORS[char.Element] }}>
                   {char.Element}
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full border border-gray-600 text-gray-300">{char.Role}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full border border-gray-600 text-gray-300">{char.WeaponType}</span>
+                <span className="text-xs px-2 py-0.5 border border-gray-600 text-gray-300">{char.Role}</span>
+                <span className="text-xs px-2 py-0.5 border border-gray-600 text-gray-300">{char.WeaponType}</span>
               </div>
             </div>
           </div>

@@ -160,7 +160,7 @@ export default function AchievementsPage() {
               placeholder="Search achievements..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
+              className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
             />
           </div>
 
@@ -169,10 +169,10 @@ export default function AchievementsPage() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-lg transition-colors ${
+                className={`px-4 py-2 border transition-colors ${
                   selectedCategory === cat
-                    ? 'bg-[var(--color-accent)] text-black font-bold'
-                    : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                    ? 'bg-[var(--color-accent)] text-black font-bold border-[var(--color-accent)]'
+                    : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-[var(--color-accent)]'
                 }`}
               >
                 {cat}
@@ -214,14 +214,14 @@ export default function AchievementsPage() {
                       <h3 className={`font-bold text-lg ${isCompleted ? 'text-[var(--color-accent)]' : 'text-white'}`}>
                         {achievement.name}
                       </h3>
-                      <span className="text-sm px-3 py-1 bg-[var(--color-border)] rounded-full text-[var(--color-accent)] font-bold">
+                      <span className="text-sm px-3 py-1 bg-[var(--color-border)] border border-[var(--color-border)] text-[var(--color-accent)] font-bold">
                         {achievement.points}
                       </span>
                     </div>
 
                     <p className="text-sm mb-2">{achievement.description}</p>
 
-                    <span className="text-xs px-3 py-1 bg-[var(--color-border)] rounded-full">
+                    <span className="text-xs px-3 py-1 bg-[var(--color-border)] border border-[var(--color-border)]">
                       {achievement.category}
                     </span>
                   </div>

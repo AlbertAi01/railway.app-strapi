@@ -149,7 +149,7 @@ export default function EssenceSolverPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#080c12] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Essence Optimization" category="ANALYSIS" code="RIOS-ESS-001" icon={<FlaskConical size={28} />} />
 
@@ -191,7 +191,7 @@ export default function EssenceSolverPage() {
                   value={target}
                   onChange={(e) => setTarget(Number(e.target.value))}
                   min="1"
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                  className="w-full px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
 
@@ -199,7 +199,7 @@ export default function EssenceSolverPage() {
                 <h3 className="font-bold text-white mb-3">Current Inventory</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {ESSENCE_VALUES.map(value => (
-                    <div key={value} className="bg-[#0a0a0a] p-3 clip-corner-tl">
+                    <div key={value} className="bg-[var(--color-surface-2)] p-3 clip-corner-tl">
                       <label className="block text-sm mb-2 text-[var(--color-text-secondary)]">
                         Essence ×{value}
                       </label>
@@ -211,14 +211,14 @@ export default function EssenceSolverPage() {
                           [value]: Number(e.target.value)
                         })}
                         min="0"
-                        className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-white"
+                        className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-[#0a0a0a] p-4 clip-corner-tl">
+              <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
                 <h3 className="font-bold text-white mb-2">Total Essence Value</h3>
                 <p className="text-2xl text-[var(--color-accent)] font-bold">
                   {Object.entries(inventory).reduce(
@@ -238,7 +238,7 @@ export default function EssenceSolverPage() {
             </h2>
 
             {insufficient ? (
-              <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+              <div className="bg-red-900/20 border-l-4 border-red-500 clip-corner-tl p-4">
                 <h3 className="font-bold text-red-400 mb-2">Insufficient Essence</h3>
                 <p className="text-sm text-red-300">
                   You don't have enough essence in your inventory to reach the target amount.
@@ -252,7 +252,7 @@ export default function EssenceSolverPage() {
                       {Object.entries(solution)
                         .sort(([a], [b]) => Number(b) - Number(a))
                         .map(([value, count]) => (
-                          <div key={value} className="flex items-center justify-between bg-[#0a0a0a] p-4 clip-corner-tl">
+                          <div key={value} className="flex items-center justify-between bg-[var(--color-surface-2)] p-4 clip-corner-tl">
                             <span className="text-white font-medium">Use Essence ×{value}</span>
                             <span className="text-[var(--color-accent)] font-bold text-lg">×{count}</span>
                           </div>
@@ -260,13 +260,13 @@ export default function EssenceSolverPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-[#0a0a0a] p-4 clip-corner-tl">
+                      <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
                         <span className="text-sm text-[var(--color-text-tertiary)]">Total Used</span>
                         <p className="text-xl text-white font-bold">
                           {target - remaining}
                         </p>
                       </div>
-                      <div className="bg-[#0a0a0a] p-4 clip-corner-tl">
+                      <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
                         <span className="text-sm text-[var(--color-text-tertiary)]">Waste</span>
                         <p className="text-xl text-[var(--color-accent)] font-bold">
                           {waste}
@@ -275,7 +275,7 @@ export default function EssenceSolverPage() {
                     </div>
 
                     {conversions && conversions.length > 0 && (
-                      <div className="bg-[#0a0a0a] p-4 clip-corner-tl border border-[var(--color-accent)]">
+                      <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl border-l-4 border-[var(--color-accent)]">
                         <h3 className="font-bold text-white mb-2">Conversion Steps:</h3>
                         <ul className="text-sm space-y-1">
                           {conversions.map((conv, idx) => (
@@ -286,7 +286,7 @@ export default function EssenceSolverPage() {
                     )}
 
                     {waste === 0 && (
-                      <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-4">
+                      <div className="bg-green-900/20 border-l-4 border-green-500 clip-corner-tl p-4">
                         <h3 className="font-bold text-green-400">Perfect Solution!</h3>
                         <p className="text-sm text-green-300">No essence wasted.</p>
                       </div>

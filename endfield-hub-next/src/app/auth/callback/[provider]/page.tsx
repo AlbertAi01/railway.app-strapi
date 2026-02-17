@@ -51,14 +51,14 @@ export default function AuthCallbackPage({
   }, [resolvedParams.provider, searchParams, handleProviderCallback, router]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#080c12] text-[var(--color-text-secondary)] flex items-center justify-center p-6">
       <div className="max-w-md w-full">
-        <div className="bg-[#111] border border-[#222] rounded-lg p-8 text-center">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-8 text-center">
           {status === 'loading' && (
             <>
-              <Loader2 className="w-16 h-16 text-[#FFE500] animate-spin mx-auto mb-4" />
+              <Loader2 className="w-16 h-16 text-[var(--color-accent)] animate-spin mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-white mb-2">Completing Sign In</h2>
-              <p className="text-gray-400">
+              <p className="text-[var(--color-text-secondary)]">
                 Authenticating with {resolvedParams.provider}...
               </p>
             </>
@@ -68,10 +68,10 @@ export default function AuthCallbackPage({
             <>
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-white mb-2">Success!</h2>
-              <p className="text-gray-400 mb-4">
+              <p className="text-[var(--color-text-secondary)] mb-4">
                 You have been successfully authenticated.
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--color-text-tertiary)]">
                 Redirecting to your profile...
               </p>
             </>
@@ -82,7 +82,7 @@ export default function AuthCallbackPage({
               <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-white mb-2">Authentication Failed</h2>
               <p className="text-red-400 mb-4">{error}</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--color-text-tertiary)]">
                 Redirecting to login page...
               </p>
             </>
@@ -90,11 +90,11 @@ export default function AuthCallbackPage({
         </div>
 
         <div className="mt-6 text-center text-sm">
-          <p className="text-gray-500">
+          <p className="text-[var(--color-text-tertiary)]">
             If you are not redirected automatically,{' '}
             <button
               onClick={() => router.push(status === 'success' ? '/profile' : '/login')}
-              className="text-[#FFE500] hover:underline"
+              className="text-[var(--color-accent)] hover:underline"
             >
               click here
             </button>

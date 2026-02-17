@@ -10,11 +10,11 @@ import html2canvas from 'html2canvas';
 
 const TIERS = ['S', 'A', 'B', 'C', 'D'];
 const TIER_COLORS = {
-  S: 'bg-red-900/30 border-red-500',
-  A: 'bg-orange-900/30 border-orange-500',
-  B: 'bg-yellow-900/30 border-yellow-500',
-  C: 'bg-green-900/30 border-green-500',
-  D: 'bg-blue-900/30 border-blue-500'
+  S: 'bg-[#3a1515] border-l-4 border-red-500 border-y border-r border-[var(--color-border)]',
+  A: 'bg-[#3a2a15] border-l-4 border-orange-500 border-y border-r border-[var(--color-border)]',
+  B: 'bg-[#3a3515] border-l-4 border-yellow-500 border-y border-r border-[var(--color-border)]',
+  C: 'bg-[#153a20] border-l-4 border-green-500 border-y border-r border-[var(--color-border)]',
+  D: 'bg-[#152a3a] border-l-4 border-blue-500 border-y border-r border-[var(--color-border)]'
 };
 
 export default function TierListPage() {
@@ -102,7 +102,7 @@ export default function TierListPage() {
     setIsExporting(true);
     try {
       const canvas = await html2canvas(tierListRef.current, {
-        backgroundColor: '#0a0a0a',
+        backgroundColor: '#080c12',
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -158,7 +158,7 @@ export default function TierListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#080c12] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <RIOSHeader title="Combat Assessment Matrix" category="ANALYSIS" code="RIOS-TIER-001" icon={<LayoutGrid size={28} />} />
@@ -180,7 +180,7 @@ export default function TierListPage() {
                 Share
               </button>
               {showShareMenu && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl shadow-xl z-50 overflow-hidden">
                   <button onClick={copyShareLink} className="w-full px-4 py-3 text-left text-sm hover:bg-[var(--color-surface-2)] flex items-center gap-3 text-gray-300">
                     <LinkIcon className="w-4 h-4" />
                     Copy Link
@@ -219,7 +219,7 @@ export default function TierListPage() {
               key={tier}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(tier)}
-              className={`border rounded-lg p-4 ${TIER_COLORS[tier as keyof typeof TIER_COLORS]}`}
+              className={`p-4 ${TIER_COLORS[tier as keyof typeof TIER_COLORS]}`}
             >
               <div className="flex items-start gap-4">
                 <div className="w-16 flex-shrink-0">
@@ -240,14 +240,14 @@ export default function TierListPage() {
                           onDragStart={() => handleDragStart(charName)}
                           className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
                         >
-                          <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-3">
                             {iconUrl && (
                               <Image
                                 src={iconUrl}
                                 alt={character.Name}
                                 width={48}
                                 height={48}
-                                className="rounded border border-[var(--color-border)]"
+                                className="border border-[var(--color-border)]"
                               />
                             )}
                             <div>
@@ -257,13 +257,13 @@ export default function TierListPage() {
                           </div>
 
                           {/* Quick move buttons */}
-                          <div className="mt-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {TIERS.map(t => (
                               t !== tier && (
                                 <button
                                   key={t}
                                   onClick={() => moveCharacter(charName, t)}
-                                  className="text-xs px-2 py-1 bg-[var(--color-border)] rounded hover:bg-[var(--color-accent)] hover:text-black"
+                                  className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-accent)] hover:text-black"
                                 >
                                   {t}
                                 </button>
@@ -298,16 +298,16 @@ export default function TierListPage() {
                     key={charName}
                     draggable
                     onDragStart={() => handleDragStart(charName)}
-                    className="bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
+                    className="bg-[#080c12] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
                   >
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3">
                       {iconUrl && (
                         <Image
                           src={iconUrl}
                           alt={character.Name}
                           width={48}
                           height={48}
-                          className="rounded border border-[var(--color-border)]"
+                          className="border border-[var(--color-border)]"
                         />
                       )}
                       <div>
@@ -317,12 +317,12 @@ export default function TierListPage() {
                     </div>
 
                     {/* Quick move buttons */}
-                    <div className="mt-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {TIERS.map(tier => (
                         <button
                           key={tier}
                           onClick={() => moveCharacter(charName, tier)}
-                          className="text-xs px-2 py-1 bg-[var(--color-border)] rounded hover:bg-[var(--color-accent)] hover:text-black"
+                          className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-accent)] hover:text-black"
                         >
                           {tier}
                         </button>

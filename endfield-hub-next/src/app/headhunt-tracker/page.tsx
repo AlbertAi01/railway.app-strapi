@@ -171,7 +171,7 @@ export default function HeadhuntTrackerPage() {
     setIsExporting(true);
     try {
       const canvas = await html2canvas(statsRef.current, {
-        backgroundColor: '#0a0a0a',
+        backgroundColor: '#080c12',
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -256,7 +256,7 @@ export default function HeadhuntTrackerPage() {
                   <select
                     value={selectedBanner}
                     onChange={(e) => setSelectedBanner(e.target.value)}
-                    className="w-full px-4 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
+                    className="w-full px-4 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
                     {BANNERS.map(banner => (
                       <option key={banner} value={banner}>{banner}</option>
@@ -271,7 +271,7 @@ export default function HeadhuntTrackerPage() {
                       <button
                         key={rarity}
                         onClick={() => setSelectedRarity(rarity)}
-                        className={`py-2 rounded-lg font-bold transition-colors ${
+                        className={`py-2 clip-corner-tl font-bold transition-colors ${
                           selectedRarity === rarity
                             ? rarity === 6
                               ? 'bg-orange-500 text-white'
@@ -292,7 +292,7 @@ export default function HeadhuntTrackerPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setSelectedType('character')}
-                      className={`py-2 rounded-lg font-medium transition-colors ${
+                      className={`py-2 clip-corner-tl font-medium transition-colors ${
                         selectedType === 'character'
                           ? 'bg-[var(--color-accent)] text-black'
                           : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
@@ -302,7 +302,7 @@ export default function HeadhuntTrackerPage() {
                     </button>
                     <button
                       onClick={() => setSelectedType('weapon')}
-                      className={`py-2 rounded-lg font-medium transition-colors ${
+                      className={`py-2 clip-corner-tl font-medium transition-colors ${
                         selectedType === 'weapon'
                           ? 'bg-[var(--color-accent)] text-black'
                           : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
@@ -320,7 +320,7 @@ export default function HeadhuntTrackerPage() {
                     value={customItemName}
                     onChange={(e) => setCustomItemName(e.target.value)}
                     placeholder="Enter or select item..."
-                    className="w-full px-4 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white text-sm mb-2"
+                    className="w-full px-4 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white text-sm mb-2"
                     list="items-datalist"
                   />
                   <datalist id="items-datalist">
@@ -330,7 +330,7 @@ export default function HeadhuntTrackerPage() {
                   </datalist>
                   <button
                     onClick={addCustomPull}
-                    className="w-full py-3 bg-[var(--color-accent)] text-black font-bold rounded-lg hover:bg-[var(--color-accent)]/90 transition-colors"
+                    className="w-full py-3 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors"
                   >
                     <Plus className="w-4 h-4 inline mr-2" />
                     Add Pull
@@ -347,7 +347,7 @@ export default function HeadhuntTrackerPage() {
 
               <div className="space-y-3">
                 {BANNERS.map(banner => (
-                  <div key={banner} className="bg-[var(--color-surface-2)] p-4 rounded-lg">
+                  <div key={banner} className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-white">{banner}</span>
                       <span className={`text-2xl font-bold ${
@@ -356,7 +356,7 @@ export default function HeadhuntTrackerPage() {
                         {pityCounters[banner]}
                       </span>
                     </div>
-                    <div className="w-full bg-[var(--color-border)] h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-[var(--color-border)] h-2 overflow-hidden">
                       <div
                         className={`h-full transition-all ${
                           pityCounters[banner] >= 50 ? 'bg-red-500' : 'bg-[var(--color-accent)]'
@@ -376,19 +376,19 @@ export default function HeadhuntTrackerPage() {
               <h2 className="text-xl font-bold text-white mb-4">Statistics ({selectedBanner})</h2>
 
               <div className="space-y-3">
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex items-center justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex items-center justify-between">
                   <span>Total Pulls</span>
                   <span className="text-white font-bold">{stats.total}</span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex items-center justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex items-center justify-between">
                   <span>6★ Pulls</span>
                   <span className="text-orange-400 font-bold">{stats.sixStar}</span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex items-center justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex items-center justify-between">
                   <span>6★ Rate</span>
                   <span className="text-[var(--color-accent)] font-bold">{stats.sixStarRate}%</span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex items-center justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex items-center justify-between">
                   <span>5★ Rate</span>
                   <span className="text-purple-400 font-bold">{stats.fiveStarRate}%</span>
                 </div>
@@ -406,7 +406,7 @@ export default function HeadhuntTrackerPage() {
                   {pulls.filter(p => p.banner === selectedBanner).map((pull, index) => (
                     <div
                       key={pull.id}
-                      className={`flex items-center justify-between p-4 rounded-lg ${
+                      className={`flex items-center justify-between p-4 clip-corner-tl ${
                         pull.rarity === 6
                           ? 'bg-orange-900/20 border border-orange-500/50'
                           : pull.rarity === 5
@@ -417,7 +417,7 @@ export default function HeadhuntTrackerPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-sm text-[var(--color-text-tertiary)]">#{pulls.filter(p => p.banner === selectedBanner).length - index}</div>
                         {pull.icon ? (
-                          <div className="w-12 h-12 flex items-center justify-center rounded-lg overflow-hidden" style={{
+                          <div className="w-12 h-12 flex items-center justify-center clip-corner-tl overflow-hidden" style={{
                             backgroundColor: pull.rarity === 6 ? 'rgba(249, 115, 22, 0.1)' :
                               pull.rarity === 5 ? 'rgba(168, 85, 247, 0.1)' :
                               'rgba(59, 130, 246, 0.1)'
@@ -440,11 +440,11 @@ export default function HeadhuntTrackerPage() {
                             }`}>
                               {pull.item}
                             </span>
-                            <span className="text-xs px-2 py-1 bg-[var(--color-border)] rounded">
+                            <span className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl">
                               {pull.rarity}★
                             </span>
                             {pull.type && (
-                              <span className="text-xs px-2 py-1 bg-[var(--color-surface-2)] rounded capitalize">
+                              <span className="text-xs px-2 py-1 bg-[var(--color-surface-2)] clip-corner-tl capitalize">
                                 {pull.type}
                               </span>
                             )}

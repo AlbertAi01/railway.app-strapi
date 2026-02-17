@@ -40,7 +40,7 @@ export default function Weapons() {
           placeholder="Search weapons..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
+          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
         />
       </div>
 
@@ -49,7 +49,7 @@ export default function Weapons() {
           <button
             key={t}
             onClick={() => setTypeFilter(typeFilter === t ? null : t)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+            className={`px-3 py-1 text-xs font-medium transition-all border ${
               typeFilter === t ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
             }`}
           >
@@ -68,7 +68,7 @@ export default function Weapons() {
             onClick={() => setExpanded(expanded === weapon.id ? null : weapon.id)}
           >
             <div className="flex items-center gap-4 p-4">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold" style={{ backgroundColor: `${RARITY_COLORS[weapon.Rarity]}20`, color: RARITY_COLORS[weapon.Rarity] }}>
+              <div className="w-12 h-12 clip-corner-tl flex items-center justify-center text-lg font-bold" style={{ backgroundColor: `${RARITY_COLORS[weapon.Rarity]}20`, color: RARITY_COLORS[weapon.Rarity] }}>
                 {WEAPON_ICONS[weapon.Name] ? (
                   <Image
                     src={WEAPON_ICONS[weapon.Name]}
@@ -121,7 +121,7 @@ export default function Weapons() {
                   )}
                 </div>
                 {weapon.PassiveName && (
-                  <div className="mt-3 p-3 bg-[var(--color-surface-2)] rounded-lg">
+                  <div className="mt-3 p-3 bg-[var(--color-surface-2)] clip-corner-tl">
                     <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">{weapon.PassiveName}</p>
                     <p className="text-[var(--color-text-secondary)] text-xs leading-relaxed">{weapon.PassiveDescription}</p>
                   </div>

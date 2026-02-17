@@ -308,7 +308,7 @@ export default function GuidesPage() {
                   placeholder="Search guides..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
 
@@ -317,7 +317,7 @@ export default function GuidesPage() {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
+                    className={`px-4 py-2 clip-corner-tl transition-colors ${
                       selectedCategory === cat
                         ? 'bg-[var(--color-accent)] text-black font-bold'
                         : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
@@ -344,7 +344,7 @@ export default function GuidesPage() {
                         <h2 className="text-2xl font-bold text-white">{guide.title}</h2>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
-                        <span className="px-3 py-1 bg-[var(--color-border)] rounded-full text-[var(--color-accent)]">
+                        <span className="px-3 py-1 bg-[var(--color-border)] text-[var(--color-accent)]">
                           {guide.category}
                         </span>
                         <span>By {guide.author}</span>
@@ -367,7 +367,7 @@ export default function GuidesPage() {
             {/* Guide Reader */}
             <button
               onClick={() => setSelectedGuide(null)}
-              className="mb-6 flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors"
+              className="mb-6 flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors"
             >
               <X className="w-4 h-4" />
               Back to Guides
@@ -380,7 +380,7 @@ export default function GuidesPage() {
               </div>
 
               <div className="flex items-center gap-4 mb-8 text-sm">
-                <span className="px-3 py-1 bg-[var(--color-border)] rounded-full text-[var(--color-accent)]">
+                <span className="px-3 py-1 bg-[var(--color-border)] text-[var(--color-accent)]">
                   {selectedGuide.category}
                 </span>
                 <span>By {selectedGuide.author}</span>

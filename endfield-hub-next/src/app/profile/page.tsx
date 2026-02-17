@@ -310,7 +310,7 @@ export default function ProfilePage() {
                   </div>
 
                   {user.email && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-900/20 border border-green-500/50 rounded-full text-green-400 text-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-900/20 border border-green-500/50 text-green-400 text-sm">
                       <Shield className="w-4 h-4" />
                       Verified Account
                     </div>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-white text-xl mb-4">Account Details</h3>
 
                 <div className="grid md:grid-cols-2 gap-3">
-                  <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg p-4">
+                  <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
                     <div className="flex items-center gap-3">
                       <User className="w-5 h-5 text-[var(--color-accent)]" />
                       <div>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg p-4">
+                  <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
                     <div className="flex items-center gap-3">
                       <Calendar className="w-5 h-5 text-[var(--color-accent)]" />
                       <div>
@@ -359,7 +359,7 @@ export default function ProfilePage() {
                   <Link
                     key={tool.key}
                     href={tool.link}
-                    className={`group p-4 rounded-lg border transition-all no-underline ${
+                    className={`group p-4 clip-corner-tl border transition-all no-underline ${
                       toolsData[tool.key]?.hasData
                         ? 'bg-[var(--color-accent)]/5 border-[var(--color-accent)]/50 hover:border-[var(--color-accent)]'
                         : 'bg-[var(--color-surface-2)] border-[var(--color-border)] hover:border-[var(--color-accent)]'
@@ -398,21 +398,21 @@ export default function ProfilePage() {
               <h3 className="font-bold text-white text-xl mb-4">Saved Data Summary</h3>
 
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg p-4 text-center">
+                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
                   <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
                     {stats.totalPulls}
                   </div>
                   <div className="text-xs text-[var(--color-text-tertiary)]">Total Pulls Tracked</div>
                 </div>
 
-                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg p-4 text-center">
+                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
                   <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
                     {stats.achievementPercent}%
                   </div>
                   <div className="text-xs text-[var(--color-text-tertiary)]">Achievements</div>
                 </div>
 
-                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg p-4 text-center">
+                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
                   <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
                     {stats.tierListEntries}
                   </div>
@@ -428,7 +428,7 @@ export default function ProfilePage() {
               <div className="space-y-3">
                 <button
                   onClick={exportAllData}
-                  className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left"
+                  className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left"
                 >
                   <Download className="w-5 h-5 text-[var(--color-accent)]" />
                   <div>
@@ -437,7 +437,7 @@ export default function ProfilePage() {
                   </div>
                 </button>
 
-                <label className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left cursor-pointer">
+                <label className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left cursor-pointer">
                   <Upload className="w-5 h-5 text-[var(--color-accent)]" />
                   <div>
                     <div className="text-white font-medium">Import Data</div>
@@ -453,7 +453,7 @@ export default function ProfilePage() {
 
                 <button
                   onClick={clearAllData}
-                  className="w-full py-3 px-4 bg-red-900/20 border border-red-500/50 rounded-lg hover:bg-red-900/30 transition-colors flex items-center gap-3 text-left text-red-400"
+                  className="w-full py-3 px-4 bg-red-900/20 border border-red-500/50 clip-corner-tl hover:bg-red-900/30 transition-colors flex items-center gap-3 text-left text-red-400"
                 >
                   <Trash2 className="w-5 h-5" />
                   <div>
@@ -471,19 +471,19 @@ export default function ProfilePage() {
               <h3 className="font-bold text-white mb-4">Quick Actions</h3>
 
               <div className="space-y-3">
-                <button className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
+                <button className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
                   <Settings className="w-5 h-5 text-[var(--color-accent)]" />
                   <span>Edit Profile</span>
                 </button>
 
-                <button className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
+                <button className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
                   <Shield className="w-5 h-5 text-[var(--color-accent)]" />
                   <span>Security Settings</span>
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full py-3 px-4 bg-red-900/20 border border-red-500/50 rounded-lg hover:bg-red-900/30 transition-colors flex items-center gap-3 text-left text-red-400"
+                  className="w-full py-3 px-4 bg-red-900/20 border border-red-500/50 clip-corner-tl hover:bg-red-900/30 transition-colors flex items-center gap-3 text-left text-red-400"
                 >
                   <LogOut className="w-5 h-5" />
                   <span>Sign Out</span>

@@ -35,7 +35,7 @@ export default function Characters() {
   const FilterChip = ({ label, active, onClick, color }: { label: string; active: boolean; onClick: () => void; color?: string }) => (
     <button
       onClick={onClick}
-      className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+      className={`px-3 py-1 text-xs font-medium transition-all border ${
         active ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
       }`}
       style={active && color ? { borderColor: color, color: color, backgroundColor: `${color}15` } : {}}
@@ -61,7 +61,7 @@ export default function Characters() {
           placeholder="Search characters..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
+          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
         />
       </div>
 

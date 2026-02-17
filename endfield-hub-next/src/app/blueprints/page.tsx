@@ -113,7 +113,7 @@ export default function Blueprints() {
             <button
               key={r}
               onClick={() => setRegionFilter(regionFilter === r ? null : r)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+              className={`px-3 py-1 text-xs font-medium border ${
                 regionFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
               }`}
             >
@@ -166,7 +166,7 @@ export default function Blueprints() {
                     <div className="flex items-center gap-2 mb-0.5">
                       <h3 className="text-white font-semibold truncate">{bp.Title}</h3>
                       {bp.productName && (
-                        <span className="flex-shrink-0 text-[10px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 border border-[var(--color-accent)]/30 font-mono uppercase">
+                        <span className="flex-shrink-0 text-[10px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 clip-corner-tl border border-[var(--color-accent)]/30 font-mono uppercase">
                           {bp.productName}
                         </span>
                       )}
@@ -182,7 +182,7 @@ export default function Blueprints() {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-1">
                     {bp.Tags.map(tag => (
-                      <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 rounded-full border border-[#333]">{tag}</span>
+                      <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 border border-[#333]">{tag}</span>
                     ))}
                   </div>
                   {bp.ImportString.startsWith('EFO') && (

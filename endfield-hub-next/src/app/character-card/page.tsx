@@ -152,7 +152,7 @@ export default function CharacterCardPage() {
                 <select
                   value={selectedCharacter}
                   onChange={(e) => setSelectedCharacter(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-[#080c12] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
+                  className="w-full px-3 py-2.5 bg-[#080c12] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
                 >
                   <option value="">Choose a character...</option>
                   {CHARACTERS.map(char => (
@@ -171,7 +171,7 @@ export default function CharacterCardPage() {
                   onChange={(e) => setCustomText(e.target.value)}
                   placeholder="&quot;My main DPS&quot; or &quot;C6 finally!&quot;..."
                   maxLength={80}
-                  className="w-full px-3 py-2.5 bg-[#080c12] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
+                  className="w-full px-3 py-2.5 bg-[#080c12] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
                 />
               </div>
 
@@ -183,13 +183,13 @@ export default function CharacterCardPage() {
                       type="color"
                       value={backgroundColor}
                       onChange={(e) => setBackgroundColor(e.target.value)}
-                      className="w-10 h-10 rounded cursor-pointer border border-[var(--color-border)]"
+                      className="w-10 h-10 cursor-pointer border border-[var(--color-border)]"
                     />
                     <input
                       type="text"
                       value={backgroundColor}
                       onChange={(e) => setBackgroundColor(e.target.value)}
-                      className="flex-1 px-2 py-2 bg-[#080c12] border border-[var(--color-border)] rounded text-xs focus:outline-none focus:border-[var(--color-accent)] text-white font-mono"
+                      className="flex-1 px-2 py-2 bg-[#080c12] border border-[var(--color-border)] text-xs focus:outline-none focus:border-[var(--color-accent)] text-white font-mono"
                     />
                   </div>
                 </div>
@@ -200,13 +200,13 @@ export default function CharacterCardPage() {
                       type="color"
                       value={accentColor}
                       onChange={(e) => setAccentColor(e.target.value)}
-                      className="w-10 h-10 rounded cursor-pointer border border-[var(--color-border)]"
+                      className="w-10 h-10 cursor-pointer border border-[var(--color-border)]"
                     />
                     <input
                       type="text"
                       value={accentColor}
                       onChange={(e) => setAccentColor(e.target.value)}
-                      className="flex-1 px-2 py-2 bg-[#080c12] border border-[var(--color-border)] rounded text-xs focus:outline-none focus:border-[var(--color-accent)] text-white font-mono"
+                      className="flex-1 px-2 py-2 bg-[#080c12] border border-[var(--color-border)] text-xs focus:outline-none focus:border-[var(--color-accent)] text-white font-mono"
                     />
                   </div>
                 </div>
@@ -219,27 +219,27 @@ export default function CharacterCardPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setBackgroundColor('#1a1a2e'); setAccentColor(elementColor); }}
-                      className="flex-1 py-2 text-xs rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
+                      className="flex-1 py-2 text-xs clip-corner-tl border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
                       style={{ color: elementColor }}
                     >
                       Element
                     </button>
                     <button
                       onClick={() => { setBackgroundColor('#0d0d0d'); setAccentColor(RARITY_COLORS[character.Rarity]); }}
-                      className="flex-1 py-2 text-xs rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
+                      className="flex-1 py-2 text-xs clip-corner-tl border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
                       style={{ color: RARITY_COLORS[character.Rarity] }}
                     >
                       Rarity
                     </button>
                     <button
                       onClick={() => { setBackgroundColor('#0a1628'); setAccentColor('#00BFFF'); }}
-                      className="flex-1 py-2 text-xs rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-[#00BFFF]"
+                      className="flex-1 py-2 text-xs clip-corner-tl border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-[#00BFFF]"
                     >
                       Frost
                     </button>
                     <button
                       onClick={() => { setBackgroundColor('#1a0a0a'); setAccentColor('#FF6B35'); }}
-                      className="flex-1 py-2 text-xs rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-[#FF6B35]"
+                      className="flex-1 py-2 text-xs clip-corner-tl border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-[#FF6B35]"
                     >
                       Ember
                     </button>
@@ -252,7 +252,7 @@ export default function CharacterCardPage() {
                 <button
                   onClick={downloadCard}
                   disabled={!character || isExporting}
-                  className="flex-1 py-2.5 bg-[var(--color-accent)] text-black font-bold rounded-lg hover:bg-[var(--color-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                  className="flex-1 py-2.5 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                 >
                   <Download className="w-4 h-4" />
                   {isExporting ? 'Exporting...' : 'Download PNG'}
@@ -261,13 +261,13 @@ export default function CharacterCardPage() {
                   <button
                     onClick={() => setShowShareMenu(!showShareMenu)}
                     disabled={!character || isExporting}
-                    className="py-2.5 px-4 bg-[var(--color-border)] text-white font-bold rounded-lg hover:bg-[var(--color-border)]/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                    className="py-2.5 px-4 bg-[var(--color-border)] text-white font-bold clip-corner-tl hover:bg-[var(--color-border)]/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                   >
                     <Share2 className="w-4 h-4" />
                     Share
                   </button>
                   {showShareMenu && character && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl z-50 overflow-hidden">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl shadow-xl z-50 overflow-hidden">
                       <button onClick={shareToTwitter} className="w-full px-4 py-3 text-left text-sm hover:bg-[var(--color-surface-2)] flex items-center gap-3 text-gray-300">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                         Post on X
@@ -343,7 +343,7 @@ export default function CharacterCardPage() {
             {character ? (
               <div
                 ref={cardRef}
-                className="rounded-xl overflow-hidden shadow-2xl"
+                className="clip-corner-tl overflow-hidden shadow-2xl"
                 style={{ backgroundColor }}
               >
                 {/* Card header band */}
@@ -364,13 +364,13 @@ export default function CharacterCardPage() {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <div
-                        className="px-3 py-1 rounded-md font-bold text-xs text-black"
+                        className="px-3 py-1 font-bold text-xs text-black"
                         style={{ backgroundColor: accentColor }}
                       >
                         {character.Role}
                       </div>
                       <div
-                        className="px-3 py-1 rounded-md text-xs font-semibold"
+                        className="px-3 py-1 text-xs font-semibold"
                         style={{ color: elementColor, backgroundColor: `${elementColor}20` }}
                       >
                         {character.Element}
@@ -380,7 +380,7 @@ export default function CharacterCardPage() {
 
                   {/* Character portrait */}
                   <div
-                    className="w-full aspect-[4/3] rounded-lg mb-4 overflow-hidden relative"
+                    className="w-full aspect-[4/3] clip-corner-tl mb-4 overflow-hidden relative"
                     style={{
                       background: `linear-gradient(135deg, ${backgroundColor} 0%, ${accentColor}15 50%, ${elementColor}20 100%)`
                     }}
@@ -414,15 +414,15 @@ export default function CharacterCardPage() {
 
                   {/* Stats grid */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${accentColor}12` }}>
+                    <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
                       <div className="text-[10px] text-white/50 uppercase tracking-wider">ATK</div>
                       <div className="text-lg font-bold text-white">{character.MaxATK}</div>
                     </div>
-                    <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${accentColor}12` }}>
+                    <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
                       <div className="text-[10px] text-white/50 uppercase tracking-wider">HP</div>
                       <div className="text-lg font-bold text-white">{character.MaxHP}</div>
                     </div>
-                    <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${accentColor}12` }}>
+                    <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
                       <div className="text-[10px] text-white/50 uppercase tracking-wider">DEF</div>
                       <div className="text-lg font-bold text-white">{character.MaxDEF}</div>
                     </div>
@@ -437,7 +437,7 @@ export default function CharacterCardPage() {
                   {/* Custom text */}
                   {customText && (
                     <div
-                      className="p-3 rounded-lg mb-4"
+                      className="p-3 clip-corner-tl mb-4"
                       style={{
                         backgroundColor: `${accentColor}10`,
                         borderLeft: `3px solid ${accentColor}`
@@ -450,7 +450,7 @@ export default function CharacterCardPage() {
                   {/* Watermark footer */}
                   <div className="pt-3 border-t border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm flex items-center justify-center" style={{ backgroundColor: accentColor }}>
+                      <div className="w-4 h-4 flex items-center justify-center" style={{ backgroundColor: accentColor }}>
                         <span className="text-[8px] font-black text-black">ZS</span>
                       </div>
                       <span className="text-white/40 text-[11px] font-medium tracking-wide">zerosanity.app</span>

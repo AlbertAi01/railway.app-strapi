@@ -32,15 +32,10 @@ const navigation: NavItem[] = [
       { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={16} /> },
     ],
   },
+  { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={18} /> },
   {
     label: 'Operator Card', path: '/character-card', icon: <Sparkles size={18} />,
     isNew: true,
-  },
-  {
-    label: 'Combat Analysis', path: '/tier-list', icon: <LayoutGrid size={18} />,
-    children: [
-      { label: 'Tier Matrix', path: '/tier-list', icon: <LayoutGrid size={16} /> },
-    ],
   },
   {
     label: 'Logistics', path: '/factory-planner', icon: <Factory size={18} />,

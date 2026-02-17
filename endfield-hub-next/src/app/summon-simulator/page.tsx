@@ -171,7 +171,7 @@ export default function SummonSimulatorPage() {
           />
           <button
             onClick={reset}
-            className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
           >
             <RotateCcw className="w-4 h-4" />
             Reset
@@ -187,19 +187,19 @@ export default function SummonSimulatorPage() {
               <div className="space-y-3">
                 <button
                   onClick={() => performPull()}
-                  className="w-full py-4 bg-[var(--color-accent)] text-black font-bold rounded-lg hover:bg-[var(--color-accent)]/90 transition-colors"
+                  className="w-full py-4 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors"
                 >
                   Single Pull
                 </button>
                 <button
                   onClick={() => performMultiPull(10)}
-                  className="w-full py-4 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
+                  className="w-full py-4 bg-purple-600 text-white font-bold clip-corner-tl hover:bg-purple-700 transition-colors"
                 >
                   10-Pull
                 </button>
                 <button
                   onClick={() => performMultiPull(100)}
-                  className="w-full py-4 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 transition-colors"
+                  className="w-full py-4 bg-orange-600 text-white font-bold clip-corner-tl hover:bg-orange-700 transition-colors"
                 >
                   100-Pull (Whale Mode)
                 </button>
@@ -209,14 +209,14 @@ export default function SummonSimulatorPage() {
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-xl font-bold text-white mb-4">Pity Counter</h2>
 
-              <div className="bg-[var(--color-surface-2)] p-4 rounded-lg mb-4">
+              <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span>Pulls Since Last 6★</span>
                   <span className={`text-2xl font-bold ${pityCounter >= PITY_SOFT ? 'text-red-400' : 'text-[var(--color-accent)]'}`}>
                     {pityCounter}
                   </span>
                 </div>
-                <div className="w-full bg-[var(--color-border)] h-3 rounded-full overflow-hidden">
+                <div className="w-full bg-[var(--color-border)] h-3 overflow-hidden">
                   <div
                     className={`h-full transition-all ${pityCounter >= PITY_SOFT ? 'bg-red-500' : 'bg-[var(--color-accent)]'}`}
                     style={{ width: `${Math.min((pityCounter / 100) * 100, 100)}%` }}
@@ -244,25 +244,25 @@ export default function SummonSimulatorPage() {
               <h2 className="text-xl font-bold text-white mb-4">Statistics</h2>
 
               <div className="space-y-3">
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex justify-between">
                   <span>Total Pulls</span>
                   <span className="text-white font-bold">{totalPulls}</span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex justify-between">
                   <span>6★ Pulled</span>
                   <span className="text-orange-400 font-bold">{stats[6]}</span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex justify-between">
                   <span>6★ Rate</span>
                   <span className="text-[var(--color-accent)] font-bold">
                     {totalPulls > 0 ? ((stats[6] / totalPulls) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex justify-between">
                   <span>5★ Pulled</span>
                   <span className="text-purple-400 font-bold">{stats[5]}</span>
                 </div>
-                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl flex justify-between">
                   <span>5★ Rate</span>
                   <span className="text-purple-300 font-bold">
                     {totalPulls > 0 ? ((stats[5] / totalPulls) * 100).toFixed(2) : '0.00'}%
@@ -282,7 +282,7 @@ export default function SummonSimulatorPage() {
                   {pulls.map((pull, index) => (
                     <div
                       key={index}
-                      className={`p-4 rounded-lg flex items-center justify-between ${
+                      className={`p-4 clip-corner-tl flex items-center justify-between ${
                         pull.rarity === 6
                           ? 'bg-orange-900/30 border-2 border-orange-500'
                           : pull.rarity === 5
@@ -296,7 +296,7 @@ export default function SummonSimulatorPage() {
                         <div className="text-sm text-[var(--color-text-tertiary)]">#{pulls.length - index}</div>
                         <div className="flex items-center gap-3">
                           {pull.icon ? (
-                            <div className="w-12 h-12 flex items-center justify-center rounded-lg overflow-hidden" style={{
+                            <div className="w-12 h-12 flex items-center justify-center clip-corner-tl overflow-hidden" style={{
                               backgroundColor: pull.rarity === 6 ? 'rgba(249, 115, 22, 0.1)' :
                                 pull.rarity === 5 ? 'rgba(168, 85, 247, 0.1)' :
                                 'rgba(59, 130, 246, 0.1)'
@@ -332,7 +332,7 @@ export default function SummonSimulatorPage() {
                         </div>
                       </div>
                       {pull.isPity && (
-                        <span className="text-xs px-3 py-1 bg-red-500 text-white rounded-full font-bold">
+                        <span className="text-xs px-3 py-1 bg-red-500 text-white font-bold">
                           PITY
                         </span>
                       )}

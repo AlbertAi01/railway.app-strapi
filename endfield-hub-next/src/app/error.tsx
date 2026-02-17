@@ -13,7 +13,7 @@ export default function Error({
     <div className="flex min-h-screen items-center justify-center bg-[#080c12]">
       <div className="flex flex-col items-center gap-6 max-w-md px-6">
         <div className="relative">
-          <div className="rounded-full bg-[var(--color-surface)] p-4 border border-[var(--color-border)]">
+          <div className="bg-[var(--color-surface)] p-4 border border-[var(--color-border)] clip-corner-tl">
             <AlertCircle className="w-12 h-12 text-[var(--color-accent)]" />
           </div>
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-[var(--color-accent)] rotate-45"></div>
@@ -26,7 +26,7 @@ export default function Error({
         </div>
         <button
           onClick={reset}
-          className="px-6 py-3 bg-[var(--color-accent)] text-black font-medium rounded-lg hover:bg-[var(--color-accent)]/90 transition-colors"
+          className="px-6 py-3 bg-[var(--color-accent)] text-black font-medium clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors"
         >
           Try Again
         </button>

@@ -141,7 +141,7 @@ export default function AscensionPlannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#080c12] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Operator Development" category="DEVELOPMENT" code="RIOS-ASC-001" icon={<Star size={28} />} />
 
@@ -179,7 +179,7 @@ export default function AscensionPlannerPage() {
                 <select
                   value={selectedCharacter}
                   onChange={(e) => setSelectedCharacter(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                  className="w-full px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                 >
                   <option value="">Choose a character...</option>
                   {CHARACTERS.map(char => (
@@ -191,7 +191,7 @@ export default function AscensionPlannerPage() {
               </div>
 
               {character && (
-                <div className="bg-[#0a0a0a] p-4 rounded-lg">
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 clip-corner-tl">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-xl font-bold text-white">{character.Name}</h3>
                     <div className="flex items-center gap-1">
@@ -210,7 +210,7 @@ export default function AscensionPlannerPage() {
                   <select
                     value={currentLevel}
                     onChange={(e) => setCurrentLevel(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                    className="w-full px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
                     <option value="E0 1">E0 1</option>
                     <option value="E1 1">E1 1</option>
@@ -228,7 +228,7 @@ export default function AscensionPlannerPage() {
                   <select
                     value={targetLevel}
                     onChange={(e) => setTargetLevel(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                    className="w-full px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
                     <option value="E1 40">E1 40 (Max)</option>
                     <option value="E2 60">E2 60 (Max)</option>
@@ -271,7 +271,7 @@ export default function AscensionPlannerPage() {
               <div className="space-y-3">
                 {Object.keys(materials).length > 0 ? (
                   Object.entries(materials).map(([item, amount]) => (
-                    <div key={item} className="flex items-center justify-between bg-[#0a0a0a] p-4 clip-corner-tl">
+                    <div key={item} className="flex items-center justify-between bg-[var(--color-surface)] border border-[var(--color-border)] p-4 clip-corner-tl">
                       <span className="font-medium text-white">{item}</span>
                       <span className="text-[var(--color-accent)] font-bold text-lg">×{amount}</span>
                     </div>
@@ -283,7 +283,7 @@ export default function AscensionPlannerPage() {
                 )}
 
                 {Object.keys(materials).length > 0 && (
-                  <div className="mt-6 p-4 bg-[#0a0a0a] border border-[var(--color-accent)] clip-corner-tl">
+                  <div className="mt-6 p-4 bg-[var(--color-surface)] border-l-4 border-l-[var(--color-accent)] border border-[var(--color-border)] clip-corner-tl">
                     <h3 className="font-bold text-white mb-2">Farming Tips:</h3>
                     <ul className="text-sm space-y-1">
                       <li>• Farm LMD from CE-5 or event stages</li>
