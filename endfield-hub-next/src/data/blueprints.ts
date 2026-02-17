@@ -1,5 +1,7 @@
 // Scraped blueprint data from endfieldtools.dev
-// 21 community blueprints
+// 21 community blueprints with preview images and product icons
+
+const TOOLS_CDN = 'https://endfieldtools.dev';
 
 export interface BlueprintEntry {
   id: number;
@@ -10,6 +12,9 @@ export interface BlueprintEntry {
   Region: string;
   Author: string;
   Tags: string[];
+  previewImage?: string;
+  productIcon?: string;
+  productName?: string;
 }
 
 export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
@@ -20,10 +25,13 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO01O3E2i3Uo2IA9oe4",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "endmi-fi",
     "Tags": [
       "Origocrust"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/thumbnails/c458e931-0bac-44e6-9109-6734c5a71c88/1bdda232-2b8f-44df-95fc-c02c2eb1a2e9.png`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_iron_enr_bottle.png`,
+    "productName": "Steel Bottle"
   },
   {
     "id": 2,
@@ -32,12 +40,15 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO010U96AUAa7iaE179",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "evernight0307",
     "Tags": [
       "Buck Capsule B",
       "Early Game",
       "Beginner-Friendly"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/a1608137-546c-4632-921c-4eb96bb1d451/33e0d66a-a1b4-437e-b4aa-824972576772.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_bottled_rec_hp_2.png`,
+    "productName": "Buck Capsule [B]"
   },
   {
     "id": 3,
@@ -46,12 +57,15 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO0158OE65055uaeIoe",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "virrupt",
     "Tags": [
       "Buck Capsule C",
       "Early Game",
       "Beginner-Friendly"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/b97dbd0f-57a0-4ddc-8e4f-84b62df3aa8e/60b174af-a90b-424b-9915-cc926e009926.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_bottled_rec_hp_1.png`,
+    "productName": "Buck Capsule [C]"
   },
   {
     "id": 4,
@@ -65,7 +79,9 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
       "Buck Capsule B",
       "Mid Game",
       "Resource Efficient"
-    ]
+    ],
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_bottled_rec_hp_2.png`,
+    "productName": "Buck Capsule [B]"
   },
   {
     "id": 5,
@@ -74,12 +90,15 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO0136uIO2uE1ae0i79",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "snooflo",
     "Tags": [
       "Buck Capsule A",
       "Mid Game",
       "Large"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/500cf784-a240-40aa-8b70-3fb37b327867/2af95079-8330-40d2-9360-86b83d696224.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_bottled_rec_hp_3.png`,
+    "productName": "Buck Capsule [A]"
   },
   {
     "id": 6,
@@ -88,10 +107,13 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO01ouiOAiO1i60IieO",
     "Upvotes": 0,
     "Region": "Asia",
-    "Author": "guest",
+    "Author": "topazlh",
     "Tags": [
       "Cryston Component"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/271d5cf2-3065-4074-bc08-f58efc4fd94f/cec61769-8f9f-437f-bf35-16d776f0b40f.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_equip_script_3.png`,
+    "productName": "Cryston Component"
   },
   {
     "id": 7,
@@ -100,10 +122,13 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO016i1aAaUaO7AOa3e",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "ultima",
     "Tags": [
       "Buckflower"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/a87b8fa5-6a24-49ff-90e5-58210dafd564/508cb6f9-3130-4392-9277-e501c42f26c6.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_plant_moss_1.png`,
+    "productName": "Buckflower"
   },
   {
     "id": 8,
@@ -119,7 +144,9 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
       "Beginner-Friendly",
       "Compact",
       "Small"
-    ]
+    ],
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_plant_moss_2.png`,
+    "productName": "Citrome"
   },
   {
     "id": 9,
@@ -128,13 +155,16 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO01893u5E3O61AuUI73",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "snooflo",
     "Tags": [
       "Hc Valley Battery",
       "Mid Game",
       "Resource Efficient",
       "Battery"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/500cf784-a240-40aa-8b70-3fb37b327867/93ed1fd3-a884-4b4f-b137-1b17861df69e.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_3.png`,
+    "productName": "HC Valley Battery"
   },
   {
     "id": 10,
@@ -143,14 +173,17 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO0172UAoo11U59O0Ai",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "chizuneko",
     "Tags": [
       "Lc Wuling Battery",
       "Late Game",
       "Battery",
       "Large",
       "Compact"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/964d49da-a693-4b2d-b0d4-6f85e7b31df5/c4310ee7-4306-4326-b728-cc356a9a8aad.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_4.png`,
+    "productName": "LC Wuling Battery"
   },
   {
     "id": 11,
@@ -159,13 +192,16 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO01602IE4e1U79O83e",
     "Upvotes": 0,
     "Region": "Asia",
-    "Author": "guest",
+    "Author": "shibarchik",
     "Tags": [
       "Industrial Explosive",
       "Early Game",
       "Beginner-Friendly",
       "Battery"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/846d3340-cc00-4584-9b94-bed4167ed4ef/caf7db2d-2910-4b14-978e-d92da4418289.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_bomb_1.png`,
+    "productName": "Industrial Explosive"
   },
   {
     "id": 12,
@@ -174,12 +210,15 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO014o5O11OI53aE71A",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "Trakan",
     "Tags": [
       "Xiranite Component",
       "Late Game",
       "Large"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/thumbnails/3587097a-1857-42da-8420-c2d2a1bcc3fc/729167a5-9868-4f35-8b9b-f96468ef8d76.png`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_equip_script_4.png`,
+    "productName": "Xiranite Component"
   },
   {
     "id": 13,
@@ -188,14 +227,17 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO0136uIU9o79a10579",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "redssuns",
     "Tags": [
       "Xiranite Component",
       "Late Game",
       "Beginner-Friendly",
       "Compact",
       "Advanced"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/6c91cc2d-07f6-48f8-abbb-3ba94265c9da/60abaaa3-48de-41f5-8a15-803c421be8e5.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_equip_script_4.png`,
+    "productName": "Xiranite Component"
   },
   {
     "id": 14,
@@ -204,14 +246,17 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO011ea07931OU834O7",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "shibarchik",
     "Tags": [
       "Buck Capsule B",
       "Early Game",
       "Beginner-Friendly",
       "Resource Efficient",
       "Battery"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/846d3340-cc00-4584-9b94-bed4167ed4ef/743307cd-b685-4c88-9180-db5a16a26790.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_equip_script_2.png`,
+    "productName": "Ferrium Component"
   },
   {
     "id": 15,
@@ -220,14 +265,17 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO01u8U47AaI90aaAoOU",
     "Upvotes": 0,
     "Region": "Asia",
-    "Author": "guest",
+    "Author": "shibarchik",
     "Tags": [
       "Buck Capsule B",
       "Mid Game",
       "Battery",
       "Compact",
       "Advanced"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/846d3340-cc00-4584-9b94-bed4167ed4ef/a4d6a80e-abdf-4ef0-8b62-87f2a8abb778.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_2.png`,
+    "productName": "SC Valley Battery"
   },
   {
     "id": 16,
@@ -236,12 +284,15 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "EFO012O9A06o43858eIOo",
     "Upvotes": 0,
     "Region": "Asia",
-    "Author": "guest",
+    "Author": "shibarchik",
     "Tags": [
       "Yazhen Syringe C",
       "Late Game",
       "Battery"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/846d3340-cc00-4584-9b94-bed4167ed4ef/cc6a9fe1-dbe9-4110-94e4-bc9d03f4848f.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_4.png`,
+    "productName": "LC Wuling Battery"
   },
   {
     "id": 17,
@@ -250,10 +301,13 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "No code available",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "endmi-fi",
     "Tags": [
       "Buck Capsule A"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/thumbnails/c458e931-0bac-44e6-9109-6734c5a71c88/cfb4eaa4-101d-49a0-8c94-ae6a086a013b.png`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_bottled_rec_hp_3.png`,
+    "productName": "Buck Capsule [A]"
   },
   {
     "id": 18,
@@ -262,13 +316,16 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "No code available",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "Trakan",
     "Tags": [
       "Ferrium Component",
       "Early Game",
       "Beginner-Friendly",
       "Small"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/thumbnails/3587097a-1857-42da-8420-c2d2a1bcc3fc/a43303b8-040e-4292-bb53-1f3facc6b114.png`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_equip_script_2.png`,
+    "productName": "Ferrium Component"
   },
   {
     "id": 19,
@@ -277,14 +334,17 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "No code available",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "topazlh",
     "Tags": [
       "Lc Valley Battery",
       "Mid Game",
       "Beginner-Friendly",
       "Battery",
       "Compact"
-    ]
+    ],
+    "previewImage": `${TOOLS_CDN}/uploads/factory/screenshots/271d5cf2-3065-4074-bc08-f58efc4fd94f/96fa0ad0-c5d5-40ec-88c8-20d06e111a9f.webp`,
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_1.png`,
+    "productName": "LC Valley Battery"
   },
   {
     "id": 20,
@@ -293,11 +353,13 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "ImportString": "No code available",
     "Upvotes": 0,
     "Region": "NA / EU",
-    "Author": "guest",
+    "Author": "zain",
     "Tags": [
       "Hc Valley Battery",
       "Battery"
-    ]
+    ],
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_3.png`,
+    "productName": "HC Valley Battery"
   },
   {
     "id": 21,
@@ -309,6 +371,8 @@ export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
     "Author": "guest",
     "Tags": [
       "Lc Wuling Battery"
-    ]
+    ],
+    "productIcon": `${TOOLS_CDN}/assets/images/endfield/itemicon/item_proc_battery_4.png`,
+    "productName": "LC Wuling Battery"
   }
 ];

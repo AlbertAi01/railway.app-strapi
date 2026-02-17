@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid } from 'lucide-react';
+import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
+import Image from 'next/image';
 import { fetchBlueprints } from '@/lib/api';
 import { SCRAPED_BLUEPRINTS, type BlueprintEntry } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
@@ -124,32 +125,76 @@ export default function Blueprints() {
 
       <div className="space-y-3">
         {filtered.map(bp => (
-          <div key={bp.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h3 className="text-white font-semibold">{bp.Title}</h3>
-                <p className="text-[var(--color-text-tertiary)] text-xs mt-0.5">by {bp.Author} &middot; {bp.Region}</p>
+          <div key={bp.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-all overflow-hidden">
+            <div className="flex">
+              {/* Preview Image */}
+              <div className="relative w-48 min-h-[140px] flex-shrink-0 bg-[#0a0a0a] border-r border-[var(--color-border)]">
+                {bp.previewImage ? (
+                  <Image
+                    src={bp.previewImage}
+                    alt={`${bp.Title} factory preview`}
+                    fill
+                    className="object-cover"
+                    sizes="192px"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--color-text-tertiary)]">
+                    <ImageOff size={28} className="mb-1 opacity-40" />
+                    <span className="text-[10px] uppercase tracking-wider opacity-40">No Preview</span>
+                  </div>
+                )}
+                {/* Product icon overlay */}
+                {bp.productIcon && (
+                  <div className="absolute bottom-2 right-2 w-10 h-10 bg-[#0a0a0a]/80 border border-[var(--color-border)] p-1 backdrop-blur-sm">
+                    <Image
+                      src={bp.productIcon}
+                      alt={bp.productName || ''}
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1 text-[#FFE500]">
-                <ThumbsUp size={14} />
-                <span className="text-sm font-semibold">{bp.Upvotes}</span>
+
+              {/* Content */}
+              <div className="flex-1 p-5 min-w-0">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-white font-semibold truncate">{bp.Title}</h3>
+                      {bp.productName && (
+                        <span className="flex-shrink-0 text-[10px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 border border-[var(--color-accent)]/30 font-mono uppercase">
+                          {bp.productName}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[var(--color-text-tertiary)] text-xs mt-0.5">by {bp.Author} &middot; {bp.Region}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-[#FFE500] flex-shrink-0 ml-3">
+                    <ThumbsUp size={14} />
+                    <span className="text-sm font-semibold">{bp.Upvotes}</span>
+                  </div>
+                </div>
+                <p className="text-[var(--color-text-secondary)] text-sm mb-3 whitespace-pre-line line-clamp-2">{bp.Description}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-1">
+                    {bp.Tags.map(tag => (
+                      <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 rounded-full border border-[#333]">{tag}</span>
+                    ))}
+                  </div>
+                  {bp.ImportString.startsWith('EFO') && (
+                    <button
+                      onClick={() => copyImportString(bp.id, bp.ImportString)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface-2)] border border-[#333] clip-corner-tl text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
+                    >
+                      {copiedId === bp.id ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy Import</>}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            <p className="text-[var(--color-text-secondary)] text-sm mb-3 whitespace-pre-line">{bp.Description}</p>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-wrap gap-1">
-                {bp.Tags.map(tag => (
-                  <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 rounded-full border border-[#333]">{tag}</span>
-                ))}
-              </div>
-              {bp.ImportString.startsWith('EFO') && (
-                <button
-                  onClick={() => copyImportString(bp.id, bp.ImportString)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface-2)] border border-[#333] clip-corner-tl text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
-                >
-                  {copiedId === bp.id ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy Import</>}
-                </button>
-              )}
             </div>
           </div>
         ))}
