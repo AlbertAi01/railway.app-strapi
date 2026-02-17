@@ -141,7 +141,7 @@ export default function AscensionPlannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c12] text-[var(--color-text-secondary)] p-6">
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Operator Development" category="DEVELOPMENT" code="RIOS-ASC-001" icon={<Star size={28} />} />
 

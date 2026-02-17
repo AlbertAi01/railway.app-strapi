@@ -268,7 +268,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#080c12] text-gray-400 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p>Loading profile...</p>
@@ -282,7 +282,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c12] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader
           title="Operator Profile"

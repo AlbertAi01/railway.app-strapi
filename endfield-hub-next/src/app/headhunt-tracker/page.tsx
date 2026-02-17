@@ -171,7 +171,7 @@ export default function HeadhuntTrackerPage() {
     setIsExporting(true);
     try {
       const canvas = await html2canvas(statsRef.current, {
-        backgroundColor: '#080c12',
+        backgroundColor: '#0A0A0A',
         scale: 2,
         useCORS: true,
         allowTaint: true,

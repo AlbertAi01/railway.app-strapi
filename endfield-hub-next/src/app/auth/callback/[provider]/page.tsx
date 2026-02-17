@@ -51,7 +51,7 @@ export default function AuthCallbackPage({
   }, [resolvedParams.provider, searchParams, handleProviderCallback, router]);
 
   return (
-    <div className="min-h-screen bg-[#080c12] text-[var(--color-text-secondary)] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] flex items-center justify-center p-6">
       <div className="max-w-md w-full">
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-8 text-center">
           {status === 'loading' && (

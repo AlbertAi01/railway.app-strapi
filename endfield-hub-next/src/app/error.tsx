@@ -10,7 +10,7 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#080c12]">
+    <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
       <div className="flex flex-col items-center gap-6 max-w-md px-6">
         <div className="relative">
           <div className="bg-[var(--color-surface)] p-4 border border-[var(--color-border)] clip-corner-tl">

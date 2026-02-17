@@ -314,14 +314,14 @@ export default function SummonSimulatorPage() {
                             <Sparkles className={`w-5 h-5 ${
                               pull.rarity === 6 ? 'text-orange-400' :
                               pull.rarity === 5 ? 'text-purple-400' :
-                              pull.rarity === 4 ? 'text-blue-400' : 'text-gray-400'
+                              pull.rarity === 4 ? 'text-blue-400' : 'text-[var(--color-text-secondary)]'
                             }`} />
                           )}
                           <div>
                             <span className={`font-bold block ${
                               pull.rarity === 6 ? 'text-orange-400' :
                               pull.rarity === 5 ? 'text-purple-400' :
-                              pull.rarity === 4 ? 'text-blue-400' : 'text-gray-400'
+                              pull.rarity === 4 ? 'text-blue-400' : 'text-[var(--color-text-secondary)]'
                             }`}>
                               {pull.item}
                             </span>

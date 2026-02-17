@@ -64,7 +64,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c12] text-gray-400 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] flex items-center justify-center p-6">
       <div className="max-w-md w-full">
         <div className="mb-8">
           <RIOSHeader
@@ -129,7 +129,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-[#080c12] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-[#080c12] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
             </div>

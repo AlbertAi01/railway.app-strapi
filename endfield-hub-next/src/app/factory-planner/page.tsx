@@ -143,7 +143,7 @@ export default function FactoryPlannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c12] text-[var(--color-text-secondary)] p-6">
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="AIC Production Planner" category="LOGISTICS" code="RIOS-FAC-001" icon={<Factory size={28} />} />
 

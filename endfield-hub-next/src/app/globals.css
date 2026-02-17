@@ -2,23 +2,23 @@
 @import "tailwindcss";
 
 @theme {
-  /* Primary Colors - Rhodes Island OS */
-  --color-accent: #00B0FF;
-  --color-accent-hover: #4FC3F7;
-  --color-accent-secondary: #FFE500;
-  --color-originium: #F5A623;
+  /* Primary Colors - Endfield Yellow */
+  --color-accent: #FFD429;
+  --color-accent-hover: #FFE066;
+  --color-accent-secondary: #3B82F6;
+  --color-originium: #FF6B35;
 
-  /* Surfaces - Tactical blue-tinted blacks */
-  --color-surface: #0d1b2a;
-  --color-surface-2: #1a2332;
-  --color-surface-3: #253548;
-  --color-border: #2d4a6d;
-  --color-border-accent: #00B0FF;
+  /* Surfaces - Neutral slate blacks */
+  --color-surface: #141414;
+  --color-surface-2: #1A1A1A;
+  --color-surface-3: #222222;
+  --color-border: #2A2A2A;
+  --color-border-accent: #FFD429;
 
   /* Text */
-  --color-text-primary: #E8F4F8;
-  --color-text-secondary: #8BA3B8;
-  --color-text-tertiary: #5A6F85;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #999999;
+  --color-text-tertiary: #555555;
 
   /* Element Colors */
   --color-physical: #CCCCCC;
@@ -40,7 +40,7 @@
 
 body {
   margin: 0;
-  background-color: #080c12;
+  background-color: #0A0A0A;
   color: var(--color-text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   position: relative;
@@ -57,10 +57,10 @@ body::before {
   bottom: 0;
   background-image: repeating-linear-gradient(
     0deg,
-    rgba(0, 176, 255, 0.015) 0px,
+    rgba(255, 212, 41, 0.008) 0px,
     transparent 1px,
     transparent 3px,
-    rgba(0, 176, 255, 0.015) 4px
+    rgba(255, 212, 41, 0.008) 4px
   );
   pointer-events: none;
   z-index: 9999;
@@ -177,7 +177,7 @@ body::before {
 }
 
 ::-webkit-scrollbar-track {
-  background: #080c12;
+  background: #0A0A0A;
 }
 
 ::-webkit-scrollbar-thumb {

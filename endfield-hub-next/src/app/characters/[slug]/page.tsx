@@ -15,7 +15,7 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
   if (!char) {
     return (
       <div className="text-center py-20">
-        <p className="text-gray-400">Character not found</p>
+        <p className="text-[var(--color-text-secondary)]">Character not found</p>
         <Link href="/characters" className="text-[#FFE500] text-sm mt-2 inline-block">Back to Characters</Link>
       </div>
     );
@@ -33,7 +33,7 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
 
   return (
     <div>
-      <Link href="/characters" className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 no-underline">
+      <Link href="/characters" className="inline-flex items-center gap-2 text-[var(--color-text-secondary)] hover:text-white text-sm mb-6 no-underline">
         <ArrowLeft size={16} /> Back to Characters
       </Link>
 
@@ -78,8 +78,8 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
                 <span className="text-xs px-2 py-0.5 border" style={{ color: ELEMENT_COLORS[char.Element], borderColor: ELEMENT_COLORS[char.Element] }}>
                   {char.Element}
                 </span>
-                <span className="text-xs px-2 py-0.5 border border-gray-600 text-gray-300">{char.Role}</span>
-                <span className="text-xs px-2 py-0.5 border border-gray-600 text-gray-300">{char.WeaponType}</span>
+                <span className="text-xs px-2 py-0.5 border border-gray-600 text-[var(--color-text-secondary)]">{char.Role}</span>
+                <span className="text-xs px-2 py-0.5 border border-gray-600 text-[var(--color-text-secondary)]">{char.WeaponType}</span>
               </div>
             </div>
           </div>

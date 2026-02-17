@@ -205,7 +205,7 @@ export default function AchievementsPage() {
                     {isCompleted ? (
                       <Check className="w-6 h-6 text-black" />
                     ) : (
-                      <Trophy className="w-6 h-6 text-gray-600" />
+                      <Trophy className="w-6 h-6 text-[var(--color-text-tertiary)]" />
                     )}
                   </div>
 

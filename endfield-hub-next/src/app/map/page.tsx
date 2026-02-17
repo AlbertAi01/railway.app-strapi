@@ -5,7 +5,7 @@ import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function MapPage() {
   return (
-    <div className="min-h-screen bg-[#080c12] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Interactive Map Interface" category="NAVIGATION" code="RIOS-MAP-001" icon={<MapIcon size={28} />} />
         <div className="mb-8"></div>
@@ -21,28 +21,28 @@ export default function MapPage() {
             </p>
 
             <div className="grid md:grid-cols-2 gap-4 text-left mb-8">
-              <div className="bg-[#080c12] border border-[var(--color-border)] clip-corner-tl p-4">
+              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
                 <h3 className="font-bold text-[var(--color-accent)] mb-2">Resource Locations</h3>
                 <p className="text-sm">Mark and track farming locations for materials, ores, and collectibles.</p>
               </div>
 
-              <div className="bg-[#080c12] border border-[var(--color-border)] clip-corner-tl p-4">
+              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
                 <h3 className="font-bold text-[var(--color-accent)] mb-2">Quest Markers</h3>
                 <p className="text-sm">View main story, side quest, and world quest locations.</p>
               </div>
 
-              <div className="bg-[#080c12] border border-[var(--color-border)] clip-corner-tl p-4">
+              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
                 <h3 className="font-bold text-[var(--color-accent)] mb-2">Enemy Spawns</h3>
                 <p className="text-sm">Locate elite enemies and boss spawn points with timers.</p>
               </div>
 
-              <div className="bg-[#080c12] border border-[var(--color-border)] clip-corner-tl p-4">
+              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
                 <h3 className="font-bold text-[var(--color-accent)] mb-2">Custom Markers</h3>
                 <p className="text-sm">Add your own notes and markers to personalize your map.</p>
               </div>
             </div>
 
-            <div className="bg-[#080c12] border border-[var(--color-accent)] clip-corner-tl p-6">
+            <div className="bg-[#0A0A0A] border border-[var(--color-accent)] clip-corner-tl p-6">
               <h3 className="font-bold text-white mb-2">Technical Note</h3>
               <p className="text-sm">
                 Interactive maps in Next.js require dynamic imports for libraries like Leaflet

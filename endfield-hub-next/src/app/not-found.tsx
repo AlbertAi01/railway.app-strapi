@@ -3,7 +3,7 @@ import { Home } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#080c12]">
+    <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
       <div className="flex flex-col items-center gap-6 max-w-md px-6">
         <div className="text-center space-y-2">
           <div className="relative inline-block">

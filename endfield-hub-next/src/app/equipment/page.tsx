@@ -65,12 +65,12 @@ export default function Equipment() {
               <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3 space-y-3">
                 <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
                   <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">2-Piece Bonus</p>
-                  <p className="text-gray-300 text-sm">{set.TwoPieceBonus}</p>
+                  <p className="text-[var(--color-text-secondary)] text-sm">{set.TwoPieceBonus}</p>
                 </div>
                 {set.FourPieceBonus && (
                   <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
                     <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">4-Piece Bonus</p>
-                    <p className="text-gray-300 text-sm">{set.FourPieceBonus}</p>
+                    <p className="text-[var(--color-text-secondary)] text-sm">{set.FourPieceBonus}</p>
                   </div>
                 )}
                 {set.RecommendedFor && set.RecommendedFor.length > 0 && (
@@ -78,7 +78,7 @@ export default function Equipment() {
                     <p className="text-[var(--color-text-tertiary)] text-xs mb-2">Recommended For</p>
                     <div className="flex flex-wrap gap-2">
                       {set.RecommendedFor.map(name => (
-                        <span key={name} className="text-xs bg-[var(--color-surface-2)] text-gray-300 px-2 py-1 border border-[var(--color-border)]">{name}</span>
+                        <span key={name} className="text-xs bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-1 border border-[var(--color-border)]">{name}</span>
                       ))}
                     </div>
                   </div>
