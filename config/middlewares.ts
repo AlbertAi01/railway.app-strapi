@@ -8,22 +8,8 @@ export default [
         useDefaults: true,
         directives: {
           'connect-src': ["'self'", 'https:'],
-          'img-src': [
-            "'self'",
-            'data:',
-            'blob:',
-            'market-assets.strapi.io',
-            'res.cloudinary.com',
-            '*.r2.cloudflarestorage.com',
-          ],
-          'media-src': [
-            "'self'",
-            'data:',
-            'blob:',
-            'market-assets.strapi.io',
-            'res.cloudinary.com',
-            '*.r2.cloudflarestorage.com',
-          ],
+          'img-src': ["'self'", 'data:', 'blob:', 'market-assets.strapi.io', 'res.cloudinary.com'],
+          'media-src': ["'self'", 'data:', 'blob:', 'market-assets.strapi.io', 'res.cloudinary.com'],
           upgradeInsecureRequests: null,
         },
       },
@@ -32,7 +18,7 @@ export default [
   {
     name: 'strapi::cors',
     config: {
-      origin: ['*'], // This allows HappyCapy and your local dev to talk to the backend
+      origin: ['*'], 
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
       headers: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
       keepHeaderOnError: true,
