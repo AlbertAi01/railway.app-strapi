@@ -33,6 +33,11 @@
       "multiple": true,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "Region": {
+      "type": "enumeration",
+      "enum": ["Asia", "NA / EU", "CN"],
+      "required": false
     }
   }
 }
