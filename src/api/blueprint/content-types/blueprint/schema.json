@@ -5,10 +5,10 @@
     "singularName": "blueprint",
     "pluralName": "blueprints",
     "displayName": "Blueprint",
-    "description": ""
+    "description": "Factory blueprints for Arknights: Endfield"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
@@ -17,11 +17,11 @@
       "required": true
     },
     "Description": {
-      "type": "text",
+      "type": "richtext",
       "required": true
     },
     "ImportString": {
-      "type": "string",
+      "type": "text",
       "required": true
     },
     "Upvotes": {
