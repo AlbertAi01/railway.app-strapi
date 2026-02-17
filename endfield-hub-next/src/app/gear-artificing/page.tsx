@@ -1,63 +1,175 @@
 'use client';
 
-import { useState } from 'react';
-import { Shield, TrendingUp, Wrench } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Wrench, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import {
+  GEAR_SETS,
+  STANDALONE_GEAR,
+  TIER_COLORS,
+  TIER_BORDER_COLORS,
+  type GearSet,
+  type GearPiece,
+  type GamePhase,
+  type GearTier
+} from '@/data/gear';
 
-const EQUIPMENT_TIERS = ['T1', 'T2', 'T3', 'T4', 'T5'];
-
-const SUBSTAT_TYPES = [
-  'ATK%',
-  'DEF%',
-  'HP%',
-  'ATK Flat',
-  'DEF Flat',
-  'HP Flat',
-  'CRIT Rate',
-  'CRIT DMG',
-  'Effect RES',
-  'Effect HIT'
-];
-
-const PROBABILITY_TABLE = {
-  T1: { 1: 100, 2: 0, 3: 0, 4: 0 },
-  T2: { 1: 80, 2: 20, 3: 0, 4: 0 },
-  T3: { 1: 60, 2: 30, 3: 10, 4: 0 },
-  T4: { 1: 40, 2: 35, 3: 20, 4: 5 },
-  T5: { 1: 20, 2: 35, 3: 30, 4: 15 }
-};
-
-const UPGRADE_LEVELS = [0, 3, 6, 9, 12, 15];
+type PhaseFilter = GamePhase | 'Standalone';
 
 export default function GearArtificingPage() {
-  const [selectedTier, setSelectedTier] = useState('T5');
-  const [numSubstats, setNumSubstats] = useState(2);
-  const [upgradeLevel, setUpgradeLevel] = useState(15);
+  const [selectedPhase, setSelectedPhase] = useState<PhaseFilter>('Late Game (Lv70)');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedSets, setExpandedSets] = useState<Set<string>>(new Set());
 
-  const getUpgradeProbabilities = () => {
-    const probabilities: { [key: number]: number } = {};
-    const tierProbs = PROBABILITY_TABLE[selectedTier as keyof typeof PROBABILITY_TABLE];
+  const phases: PhaseFilter[] = [
+    'Late Game (Lv70)',
+    'Mid Game (Lv36-50)',
+    'Early Game (Lv10-28)',
+    'Standalone'
+  ];
 
-    Object.entries(tierProbs).forEach(([substats, prob]) => {
-      probabilities[Number(substats)] = prob;
+  // Filter gear sets by phase and search query
+  const filteredSets = useMemo(() => {
+    if (selectedPhase === 'Standalone') return [];
+
+    return GEAR_SETS.filter(set => {
+      if (set.phase !== selectedPhase) return false;
+      if (!searchQuery) return true;
+
+      const query = searchQuery.toLowerCase();
+      const matchesSetName = set.name.toLowerCase().includes(query);
+      const matchesPieceName = set.pieces.some(piece =>
+        piece.name.toLowerCase().includes(query)
+      );
+
+      return matchesSetName || matchesPieceName;
     });
+  }, [selectedPhase, searchQuery]);
 
-    return probabilities;
+  // Filter standalone gear by search query
+  const filteredStandalone = useMemo(() => {
+    if (selectedPhase !== 'Standalone') return [];
+
+    if (!searchQuery) return STANDALONE_GEAR;
+
+    const query = searchQuery.toLowerCase();
+    return STANDALONE_GEAR.filter(piece =>
+      piece.name.toLowerCase().includes(query)
+    );
+  }, [selectedPhase, searchQuery]);
+
+  // Group standalone gear by tier
+  const standaloneByTier = useMemo(() => {
+    const grouped = new Map<GearTier, GearPiece[]>();
+    filteredStandalone.forEach(piece => {
+      if (!grouped.has(piece.tier)) {
+        grouped.set(piece.tier, []);
+      }
+      grouped.get(piece.tier)!.push(piece);
+    });
+    return grouped;
+  }, [filteredStandalone]);
+
+  const toggleSetExpanded = (setName: string) => {
+    setExpandedSets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(setName)) {
+        newSet.delete(setName);
+      } else {
+        newSet.add(setName);
+      }
+      return newSet;
+    });
   };
 
-  const calculateExpectedValue = () => {
-    const probs = getUpgradeProbabilities();
-    let expected = 0;
+  const renderGearPiece = (piece: GearPiece) => (
+    <div
+      key={piece.id}
+      className="bg-[var(--color-surface-2)] border-l-4 clip-corner-tl p-4"
+      style={{ borderLeftColor: TIER_BORDER_COLORS[piece.tier] }}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <h5 className="text-white font-bold">{piece.name}</h5>
+          <div className="flex gap-3 text-sm text-[var(--color-text-tertiary)] mt-1">
+            <span>Lv.{piece.level}</span>
+            <span>DEF: {piece.def}</span>
+            <span
+              className="font-bold"
+              style={{ color: TIER_COLORS[piece.tier] }}
+            >
+              {piece.tier}
+            </span>
+          </div>
+        </div>
+      </div>
 
-    Object.entries(probs).forEach(([substats, prob]) => {
-      expected += Number(substats) * (prob / 100);
-    });
+      <div className="space-y-1">
+        {piece.stats.map((stat, idx) => (
+          <div key={idx} className="flex justify-between text-sm">
+            <span className="text-[var(--color-text-secondary)]">{stat.name}</span>
+            <span className="text-[var(--color-accent)] font-mono">{stat.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
-    return expected.toFixed(2);
+  const renderGearSet = (set: GearSet) => {
+    const isExpanded = expandedSets.has(set.name);
+
+    return (
+      <div
+        key={set.name}
+        className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden"
+      >
+        {/* Set Header */}
+        <button
+          onClick={() => toggleSetExpanded(set.name)}
+          className="w-full p-6 text-left hover:bg-[var(--color-surface-2)] transition-colors"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl font-bold text-white">{set.name}</h3>
+                <span
+                  className="px-3 py-1 text-xs font-bold clip-corner-tl"
+                  style={{
+                    backgroundColor: TIER_COLORS[set.pieces[0]?.tier] + '20',
+                    color: TIER_COLORS[set.pieces[0]?.tier],
+                    border: `1px solid ${TIER_BORDER_COLORS[set.pieces[0]?.tier]}`
+                  }}
+                >
+                  {set.pieces[0]?.tier}
+                </span>
+              </div>
+
+              <div className="text-sm text-[var(--color-text-secondary)]">
+                <span className="text-[var(--color-accent)] font-bold">3-Piece Set Bonus:</span> {set.setBonus}
+              </div>
+
+              <div className="text-xs text-[var(--color-text-tertiary)] mt-2">
+                {set.pieces.length} {set.pieces.length === 1 ? 'piece' : 'pieces'}
+              </div>
+            </div>
+
+            <div className="ml-4 text-[var(--color-accent)]">
+              {isExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+            </div>
+          </div>
+        </button>
+
+        {/* Expanded Set Pieces */}
+        {isExpanded && (
+          <div className="border-t border-[var(--color-border)] p-6 bg-[var(--color-surface-2)]">
+            <div className="grid gap-4 md:grid-cols-2">
+              {set.pieces.map(piece => renderGearPiece(piece))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
-
-  const probabilities = getUpgradeProbabilities();
-  const numUpgrades = UPGRADE_LEVELS.filter(l => l <= upgradeLevel && l > 0).length;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
@@ -69,175 +181,98 @@ export default function GearArtificingPage() {
           icon={<Wrench size={28} />}
         />
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Configuration */}
-          <div className="space-y-6">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <Shield className="w-6 h-6 text-[var(--color-accent)]" />
-                Equipment Settings
-              </h2>
+        {/* Phase Filter Tabs */}
+        <div className="flex gap-2 mb-6 flex-wrap">
+          {phases.map(phase => (
+            <button
+              key={phase}
+              onClick={() => setSelectedPhase(phase)}
+              className={`px-6 py-3 clip-corner-tl font-bold transition-colors ${
+                selectedPhase === phase
+                  ? 'bg-[var(--color-accent)] text-black'
+                  : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white'
+              }`}
+            >
+              {phase}
+            </button>
+          ))}
+        </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-white">
-                    Equipment Tier
-                  </label>
-                  <div className="flex gap-2">
-                    {EQUIPMENT_TIERS.map(tier => (
-                      <button
-                        key={tier}
-                        onClick={() => setSelectedTier(tier)}
-                        className={`flex-1 py-3 clip-corner-tl font-bold transition-colors ${
-                          selectedTier === tier
-                            ? 'bg-[var(--color-accent)] text-black'
-                            : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
-                        }`}
-                      >
-                        {tier}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-white">
-                    Starting Substats: {numSubstats}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="4"
-                    value={numSubstats}
-                    onChange={(e) => setNumSubstats(Number(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs mt-1">
-                    <span>1</span>
-                    <span>2</span>
-                    <span>3</span>
-                    <span>4</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-white">
-                    Target Upgrade Level: +{upgradeLevel}
-                  </label>
-                  <div className="flex gap-2">
-                    {UPGRADE_LEVELS.filter(l => l > 0).map(level => (
-                      <button
-                        key={level}
-                        onClick={() => setUpgradeLevel(level)}
-                        className={`flex-1 py-2 clip-corner-tl transition-colors ${
-                          upgradeLevel === level
-                            ? 'bg-[var(--color-accent)] text-black font-bold'
-                            : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
-                        }`}
-                      >
-                        +{level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Mechanics Info */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-              <h3 className="font-bold text-white mb-3">Equipment Upgrade Mechanics</h3>
-              <ul className="text-sm space-y-2">
-                <li>• Equipment gains substats when upgraded at +3, +6, +9, +12, +15</li>
-                <li>• Higher tier equipment has better substat probability</li>
-                <li>• Each upgrade adds or enhances one random substat</li>
-                <li>• T5 equipment has the highest chance for 4 starting substats</li>
-                <li>• Starting with 4 substats means all upgrades enhance existing ones</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Results */}
-          <div className="space-y-6">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-[var(--color-accent)]" />
-                Probability Analysis
-              </h2>
-
-              <div className="space-y-4">
-                <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
-                  <h3 className="font-bold text-white mb-3">Starting Substat Probabilities</h3>
-                  <div className="space-y-2">
-                    {Object.entries(probabilities).map(([substats, prob]) => (
-                      <div key={substats} className="flex items-center justify-between">
-                        <span>{substats} Substats</span>
-                        <div className="flex items-center gap-3 flex-1 ml-4">
-                          <div className="flex-1 bg-[var(--color-border)] h-6 overflow-hidden">
-                            <div
-                              className="bg-[var(--color-accent)] h-full transition-all duration-300"
-                              style={{ width: `${prob}%` }}
-                            />
-                          </div>
-                          <span className="text-[var(--color-accent)] font-bold w-12 text-right">
-                            {prob}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
-                    <span className="text-sm text-[var(--color-text-tertiary)]">Number of Upgrades</span>
-                    <p className="text-2xl text-white font-bold">{numUpgrades}</p>
-                  </div>
-                  <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
-                    <span className="text-sm text-[var(--color-text-tertiary)]">Expected Substats</span>
-                    <p className="text-2xl text-[var(--color-accent)] font-bold">{calculateExpectedValue()}</p>
-                  </div>
-                </div>
-
-                <div className="bg-[var(--color-surface-2)] p-4 clip-corner-tl border-l-4 border-[var(--color-accent)]">
-                  <h3 className="font-bold text-white mb-2">Final Substat Count</h3>
-                  <p className="text-sm mb-2">
-                    Starting with {numSubstats} substats and {numUpgrades} upgrades:
-                  </p>
-                  <div className="space-y-1 text-sm">
-                    {numSubstats < 4 && (
-                      <p className="text-[var(--color-accent)]">
-                        • New substats added until reaching 4 total
-                      </p>
-                    )}
-                    {numSubstats === 4 && (
-                      <p className="text-green-400">
-                        • All upgrades enhance existing substats (optimal!)
-                      </p>
-                    )}
-                    <p>
-                      • Minimum final substats: {Math.min(4, numSubstats + numUpgrades)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Substat Types */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-              <h3 className="font-bold text-white mb-3">Available Substats</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {SUBSTAT_TYPES.map(stat => (
-                  <div key={stat} className="bg-[var(--color-surface-2)] px-3 py-2 clip-corner-tl text-sm">
-                    {stat}
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs mt-3 text-[var(--color-text-tertiary)]">
-                Each substat has equal probability when rolled
-              </p>
-            </div>
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)]"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search by set or piece name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl pl-12 pr-4 py-4 text-white placeholder-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none transition-colors"
+            />
           </div>
         </div>
+
+        {/* Gear Sets */}
+        {selectedPhase !== 'Standalone' && (
+          <div className="space-y-4">
+            {filteredSets.length === 0 ? (
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-12 text-center">
+                <p className="text-[var(--color-text-tertiary)]">
+                  No gear sets found matching your search.
+                </p>
+              </div>
+            ) : (
+              filteredSets.map(set => renderGearSet(set))
+            )}
+          </div>
+        )}
+
+        {/* Standalone Gear */}
+        {selectedPhase === 'Standalone' && (
+          <div className="space-y-6">
+            {Array.from(standaloneByTier.keys())
+              .sort((a, b) => {
+                const tierOrder = { T4: 0, T3: 1, T2: 2, T1: 3, T0: 4 };
+                return tierOrder[a] - tierOrder[b];
+              })
+              .map(tier => {
+                const pieces = standaloneByTier.get(tier)!;
+
+                return (
+                  <div key={tier} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <h3 className="text-xl font-bold text-white">Tier {tier}</h3>
+                      <span
+                        className="px-3 py-1 text-xs font-bold clip-corner-tl"
+                        style={{
+                          backgroundColor: TIER_COLORS[tier] + '20',
+                          color: TIER_COLORS[tier],
+                          border: `1px solid ${TIER_BORDER_COLORS[tier]}`
+                        }}
+                      >
+                        {pieces.length} {pieces.length === 1 ? 'piece' : 'pieces'}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {pieces.map(piece => renderGearPiece(piece))}
+                    </div>
+                  </div>
+                );
+              })}
+
+            {standaloneByTier.size === 0 && (
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-12 text-center">
+                <p className="text-[var(--color-text-tertiary)]">
+                  No standalone gear found matching your search.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

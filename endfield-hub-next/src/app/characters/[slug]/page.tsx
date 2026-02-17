@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Swords, Shield, Heart, Star } from 'lucide-react';
+import { ArrowLeft, Zap, Wind, Brain, Heart, Star } from 'lucide-react';
 import { CHARACTERS } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import { CHARACTER_BANNERS, CHARACTER_ICONS } from '@/lib/assets';
@@ -21,11 +21,14 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
     );
   }
 
-  const statBar = (label: string, value: number, max: number, color: string) => (
+  const statBar = (label: string, value: number, max: number, color: string, icon: React.ReactNode) => (
     <div className="flex items-center gap-3">
-      <span className="text-[var(--color-text-secondary)] text-xs w-16">{label}</span>
-      <div className="flex-1 h-2 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${(value / max) * 100}%`, backgroundColor: color }} />
+      <div className="flex items-center gap-2 w-24">
+        {icon}
+        <span className="text-[var(--color-text-secondary)] text-xs">{label}</span>
+      </div>
+      <div className="flex-1 h-2 bg-[var(--color-surface-2)] overflow-hidden">
+        <div className="h-full transition-all" style={{ width: `${(value / max) * 100}%`, backgroundColor: color }} />
       </div>
       <span className="text-white text-xs w-12 text-right">{value}</span>
     </div>
@@ -92,38 +95,35 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
           </div>
 
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
-            <h2 className="text-lg font-bold text-white mb-4">Base Stats (Lv. 1)</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Attributes</h2>
             <div className="space-y-3">
-              {statBar('HP', char.BaseHP, 1500, '#27AE60')}
-              {statBar('ATK', char.BaseATK, 400, '#FF6B35')}
-              {statBar('DEF', char.BaseDEF, 250, '#00BFFF')}
+              {statBar('Strength', char.Strength, 400, '#FF6B35', <Zap size={14} className="text-orange-400" />)}
+              {statBar('Agility', char.Agility, 400, '#00BFFF', <Wind size={14} className="text-blue-400" />)}
+              {statBar('Intellect', char.Intellect, 400, '#9B59B6', <Brain size={14} className="text-purple-400" />)}
+              {statBar('Will', char.Will, 400, '#27AE60', <Heart size={14} className="text-green-400" />)}
             </div>
           </div>
 
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
-            <h2 className="text-lg font-bold text-white mb-4">Max Stats (Lv. 90)</h2>
-            <div className="space-y-3">
-              {statBar('HP', char.MaxHP, 11000, '#27AE60')}
-              {statBar('ATK', char.MaxATK, 2600, '#FF6B35')}
-              {statBar('DEF', char.MaxDEF, 1500, '#00BFFF')}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+              <Zap size={20} className="mx-auto mb-2 text-orange-400" />
+              <p className="text-white font-bold">{char.Strength}</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Strength</p>
             </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+              <Wind size={20} className="mx-auto mb-2 text-blue-400" />
+              <p className="text-white font-bold">{char.Agility}</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Agility</p>
+            </div>
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+              <Brain size={20} className="mx-auto mb-2 text-purple-400" />
+              <p className="text-white font-bold">{char.Intellect}</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Intellect</p>
+            </div>
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
               <Heart size={20} className="mx-auto mb-2 text-green-400" />
-              <p className="text-white font-bold">{char.MaxHP}</p>
-              <p className="text-[var(--color-text-tertiary)] text-xs">Max HP</p>
-            </div>
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
-              <Swords size={20} className="mx-auto mb-2 text-orange-400" />
-              <p className="text-white font-bold">{char.MaxATK}</p>
-              <p className="text-[var(--color-text-tertiary)] text-xs">Max ATK</p>
-            </div>
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
-              <Shield size={20} className="mx-auto mb-2 text-blue-400" />
-              <p className="text-white font-bold">{char.MaxDEF}</p>
-              <p className="text-[var(--color-text-tertiary)] text-xs">Max DEF</p>
+              <p className="text-white font-bold">{char.Will}</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Will</p>
             </div>
           </div>
         </div>

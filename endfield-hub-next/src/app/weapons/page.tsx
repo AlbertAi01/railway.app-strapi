@@ -91,41 +91,14 @@ export default function Weapons() {
                 </div>
                 <div className="flex gap-3 mt-1">
                   <span className="text-[var(--color-text-tertiary)] text-xs">{weapon.WeaponType}</span>
-                  <span className="text-[var(--color-text-tertiary)] text-xs">ATK: {weapon.BaseATK} - {weapon.MaxATK}</span>
-                  {weapon.SubStat && <span className="text-[var(--color-text-tertiary)] text-xs">{weapon.SubStat}: {weapon.SubStatValue}%</span>}
                 </div>
               </div>
             </div>
-            {expanded === weapon.id && (
+            {expanded === weapon.id && weapon.Description && (
               <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-[var(--color-text-tertiary)] text-xs mb-1">Base ATK</p>
-                    <p className="text-white font-medium">{weapon.BaseATK}</p>
-                  </div>
-                  <div>
-                    <p className="text-[var(--color-text-tertiary)] text-xs mb-1">Max ATK (Lv. 90)</p>
-                    <p className="text-white font-medium">{weapon.MaxATK}</p>
-                  </div>
-                  {weapon.SubStat && (
-                    <>
-                      <div>
-                        <p className="text-[var(--color-text-tertiary)] text-xs mb-1">Sub Stat</p>
-                        <p className="text-white font-medium">{weapon.SubStat}</p>
-                      </div>
-                      <div>
-                        <p className="text-[var(--color-text-tertiary)] text-xs mb-1">Sub Stat Value</p>
-                        <p className="text-white font-medium">{weapon.SubStatValue}%</p>
-                      </div>
-                    </>
-                  )}
+                <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+                  <p className="text-[var(--color-text-secondary)] text-sm">{weapon.Description}</p>
                 </div>
-                {weapon.PassiveName && (
-                  <div className="mt-3 p-3 bg-[var(--color-surface-2)] clip-corner-tl">
-                    <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">{weapon.PassiveName}</p>
-                    <p className="text-[var(--color-text-secondary)] text-xs leading-relaxed">{weapon.PassiveDescription}</p>
-                  </div>
-                )}
               </div>
             )}
           </div>

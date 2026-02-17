@@ -1,60 +1,113 @@
-import type { Character, Weapon, EquipmentSet, Recipe, Element, Role, WeaponType } from '../types/game';
+import type { Character, Weapon, Recipe, Element, Role, WeaponType } from '../types/game';
 
-// Static character data - used for tools that work client-side
+// Static character data - real Endfield characters with correct attribute system
+// Note: Stat values are approximate and should be verified against game data
 export const CHARACTERS: Character[] = [
-  { id: 1, Name: 'Ardelia', Slug: 'ardelia', Rarity: 6, Element: 'Nature', Role: 'Supporter', WeaponType: 'Arts Unit', BaseHP: 1200, BaseATK: 280, BaseDEF: 150, MaxHP: 8400, MaxATK: 1960, MaxDEF: 1050, Description: 'A Nature Supporter who excels at healing and buffing allies.' },
-  { id: 2, Name: 'Ember', Slug: 'ember', Rarity: 6, Element: 'Heat', Role: 'Guard', WeaponType: 'Greatsword', BaseHP: 1350, BaseATK: 320, BaseDEF: 130, MaxHP: 9450, MaxATK: 2240, MaxDEF: 910, Description: 'A fierce Heat Guard wielding a greatsword with devastating AoE damage.' },
-  { id: 3, Name: 'Endministrator', Slug: 'endministrator', Rarity: 6, Element: 'Physical', Role: 'Striker', WeaponType: 'Sword', BaseHP: 1100, BaseATK: 340, BaseDEF: 120, MaxHP: 7700, MaxATK: 2380, MaxDEF: 840, Description: 'The protagonist. A balanced Physical Striker with adaptive combat skills.' },
-  { id: 4, Name: 'Gilberta', Slug: 'gilberta', Rarity: 6, Element: 'Nature', Role: 'Caster', WeaponType: 'Arts Unit', BaseHP: 1050, BaseATK: 350, BaseDEF: 100, MaxHP: 7350, MaxATK: 2450, MaxDEF: 700, Description: 'A powerful Nature Caster specializing in sustained elemental damage.' },
-  { id: 5, Name: 'Laevatain', Slug: 'laevatain', Rarity: 6, Element: 'Heat', Role: 'Guard', WeaponType: 'Greatsword', BaseHP: 1400, BaseATK: 310, BaseDEF: 140, MaxHP: 9800, MaxATK: 2170, MaxDEF: 980, Description: 'A Heat Guard with explosive burst damage and self-sustain capabilities.' },
-  { id: 6, Name: 'Last Rite', Slug: 'last-rite', Rarity: 6, Element: 'Cryo', Role: 'Striker', WeaponType: 'Polearm', BaseHP: 1150, BaseATK: 330, BaseDEF: 110, MaxHP: 8050, MaxATK: 2310, MaxDEF: 770, Description: 'An agile Cryo Striker who chains rapid polearm attacks with frost effects.' },
-  { id: 7, Name: 'Lifeng', Slug: 'lifeng', Rarity: 6, Element: 'Physical', Role: 'Defender', WeaponType: 'Greatsword', BaseHP: 1500, BaseATK: 250, BaseDEF: 200, MaxHP: 10500, MaxATK: 1750, MaxDEF: 1400, Description: 'An indomitable Physical Defender who shields the team and controls the battlefield.' },
-  { id: 8, Name: 'Pogranichnik', Slug: 'pogranichnik', Rarity: 6, Element: 'Physical', Role: 'Vanguard', WeaponType: 'Handcannon', BaseHP: 1250, BaseATK: 300, BaseDEF: 125, MaxHP: 8750, MaxATK: 2100, MaxDEF: 875, Description: 'A Physical Vanguard with ranged handcannon attacks and field control.' },
-  { id: 9, Name: 'Yvonne', Slug: 'yvonne', Rarity: 6, Element: 'Cryo', Role: 'Caster', WeaponType: 'Arts Unit', BaseHP: 1000, BaseATK: 360, BaseDEF: 95, MaxHP: 7000, MaxATK: 2520, MaxDEF: 665, Description: 'A Cryo Caster who creates devastating ice storms and freezes enemies.' },
-  { id: 10, Name: 'Alesh', Slug: 'alesh', Rarity: 5, Element: 'Cryo', Role: 'Supporter', WeaponType: 'Arts Unit', BaseHP: 1050, BaseATK: 240, BaseDEF: 130, MaxHP: 6825, MaxATK: 1560, MaxDEF: 845, Description: 'A Cryo Supporter providing shields and frost resistance buffs.' },
-  { id: 11, Name: 'Arclight', Slug: 'arclight', Rarity: 5, Element: 'Electric', Role: 'Striker', WeaponType: 'Sword', BaseHP: 1000, BaseATK: 280, BaseDEF: 105, MaxHP: 6500, MaxATK: 1820, MaxDEF: 683, Description: 'An Electric Striker with lightning-fast sword techniques.' },
-  { id: 12, Name: 'Avywenna', Slug: 'avywenna', Rarity: 5, Element: 'Electric', Role: 'Caster', WeaponType: 'Arts Unit', BaseHP: 900, BaseATK: 300, BaseDEF: 90, MaxHP: 5850, MaxATK: 1950, MaxDEF: 585, Description: 'An Electric Caster who channels chain lightning between enemies.' },
-  { id: 13, Name: 'Chen Qianyu', Slug: 'chen-qianyu', Rarity: 5, Element: 'Physical', Role: 'Guard', WeaponType: 'Polearm', BaseHP: 1100, BaseATK: 270, BaseDEF: 120, MaxHP: 7150, MaxATK: 1755, MaxDEF: 780, Description: 'A Physical Guard with disciplined spear techniques and counter abilities.' },
-  { id: 14, Name: 'Da Pan', Slug: 'da-pan', Rarity: 5, Element: 'Physical', Role: 'Defender', WeaponType: 'Greatsword', BaseHP: 1300, BaseATK: 220, BaseDEF: 170, MaxHP: 8450, MaxATK: 1430, MaxDEF: 1105, Description: 'A sturdy Physical Defender specializing in damage mitigation.' },
-  { id: 15, Name: 'Perlica', Slug: 'perlica', Rarity: 5, Element: 'Electric', Role: 'Supporter', WeaponType: 'Handcannon', BaseHP: 1000, BaseATK: 260, BaseDEF: 110, MaxHP: 6500, MaxATK: 1690, MaxDEF: 715, Description: 'An Electric Supporter who buffs team attack speed and energy regen.' },
-  { id: 16, Name: 'Snowshine', Slug: 'snowshine', Rarity: 5, Element: 'Cryo', Role: 'Caster', WeaponType: 'Arts Unit', BaseHP: 950, BaseATK: 290, BaseDEF: 85, MaxHP: 6175, MaxATK: 1885, MaxDEF: 553, Description: 'A Cryo Caster who creates frozen terrain to slow and damage enemies.' },
-  { id: 17, Name: 'Wulfgard', Slug: 'wulfgard', Rarity: 5, Element: 'Heat', Role: 'Vanguard', WeaponType: 'Polearm', BaseHP: 1100, BaseATK: 265, BaseDEF: 115, MaxHP: 7150, MaxATK: 1723, MaxDEF: 748, Description: 'A Heat Vanguard with aggressive rush tactics and burn application.' },
-  { id: 18, Name: 'Xaihi', Slug: 'xaihi', Rarity: 5, Element: 'Cryo', Role: 'Guard', WeaponType: 'Sword', BaseHP: 1050, BaseATK: 275, BaseDEF: 125, MaxHP: 6825, MaxATK: 1788, MaxDEF: 813, Description: 'A Cryo Guard with precise blade work and frost-empowered strikes.' },
-  { id: 19, Name: 'Akekuri', Slug: 'akekuri', Rarity: 4, Element: 'Heat', Role: 'Striker', WeaponType: 'Handcannon', BaseHP: 850, BaseATK: 230, BaseDEF: 90, MaxHP: 4675, MaxATK: 1265, MaxDEF: 495, Description: 'A Heat Striker using incendiary handcannon rounds.' },
-  { id: 20, Name: 'Antal', Slug: 'antal', Rarity: 4, Element: 'Electric', Role: 'Guard', WeaponType: 'Sword', BaseHP: 900, BaseATK: 220, BaseDEF: 100, MaxHP: 4950, MaxATK: 1210, MaxDEF: 550, Description: 'An Electric Guard with reliable sword skills and moderate damage.' },
-  { id: 21, Name: 'Catcher', Slug: 'catcher', Rarity: 4, Element: 'Physical', Role: 'Vanguard', WeaponType: 'Polearm', BaseHP: 950, BaseATK: 210, BaseDEF: 95, MaxHP: 5225, MaxATK: 1155, MaxDEF: 523, Description: 'A Physical Vanguard who excels at early-stage combat and resource generation.' },
-  { id: 22, Name: 'Estella', Slug: 'estella', Rarity: 4, Element: 'Cryo', Role: 'Supporter', WeaponType: 'Arts Unit', BaseHP: 880, BaseATK: 200, BaseDEF: 105, MaxHP: 4840, MaxATK: 1100, MaxDEF: 578, Description: 'A Cryo Supporter who provides basic healing and cryo application.' },
-  { id: 23, Name: 'Fluorite', Slug: 'fluorite', Rarity: 4, Element: 'Nature', Role: 'Caster', WeaponType: 'Arts Unit', BaseHP: 800, BaseATK: 240, BaseDEF: 80, MaxHP: 4400, MaxATK: 1320, MaxDEF: 440, Description: 'A Nature Caster with consistent elemental damage over time.' },
+  { id: 1, Name: 'Ardelia', Slug: 'ardelia', Rarity: 6, Element: 'Nature', Role: 'Supporter', WeaponType: 'Arts Unit', Strength: 150, Agility: 180, Intellect: 340, Will: 280, Description: 'A Nature Supporter who excels at healing and buffing allies.' },
+  { id: 2, Name: 'Ember', Slug: 'ember', Rarity: 6, Element: 'Heat', Role: 'Guard', WeaponType: 'Greatsword', Strength: 360, Agility: 200, Intellect: 130, Will: 160, Description: 'A fierce Heat Guard wielding a greatsword with devastating AoE damage.' },
+  { id: 3, Name: 'Endministrator', Slug: 'endministrator', Rarity: 6, Element: 'Physical', Role: 'Striker', WeaponType: 'Sword', Strength: 280, Agility: 320, Intellect: 150, Will: 170, Description: 'The protagonist. A balanced Physical Striker with adaptive combat skills.' },
+  { id: 4, Name: 'Gilberta', Slug: 'gilberta', Rarity: 6, Element: 'Nature', Role: 'Caster', WeaponType: 'Arts Unit', Strength: 120, Agility: 160, Intellect: 380, Will: 260, Description: 'A powerful Nature Caster specializing in sustained elemental damage.' },
+  { id: 5, Name: 'Laevatain', Slug: 'laevatain', Rarity: 6, Element: 'Heat', Role: 'Guard', WeaponType: 'Greatsword', Strength: 340, Agility: 190, Intellect: 140, Will: 180, Description: 'A Heat Guard with explosive burst damage and self-sustain capabilities.' },
+  { id: 6, Name: 'Last Rite', Slug: 'last-rite', Rarity: 6, Element: 'Cryo', Role: 'Striker', WeaponType: 'Polearm', Strength: 260, Agility: 350, Intellect: 160, Will: 150, Description: 'An agile Cryo Striker who chains rapid polearm attacks with frost effects.' },
+  { id: 7, Name: 'Lifeng', Slug: 'lifeng', Rarity: 6, Element: 'Physical', Role: 'Defender', WeaponType: 'Greatsword', Strength: 380, Agility: 150, Intellect: 120, Will: 300, Description: 'An indomitable Physical Defender who shields the team and controls the battlefield.' },
+  { id: 8, Name: 'Pogranichnik', Slug: 'pogranichnik', Rarity: 6, Element: 'Physical', Role: 'Vanguard', WeaponType: 'Handcannon', Strength: 240, Agility: 300, Intellect: 180, Will: 200, Description: 'A Physical Vanguard with ranged handcannon attacks and field control.' },
+  { id: 9, Name: 'Yvonne', Slug: 'yvonne', Rarity: 6, Element: 'Cryo', Role: 'Caster', WeaponType: 'Arts Unit', Strength: 110, Agility: 170, Intellect: 390, Will: 240, Description: 'A Cryo Caster who creates devastating ice storms and freezes enemies.' },
+  { id: 10, Name: 'Alesh', Slug: 'alesh', Rarity: 5, Element: 'Cryo', Role: 'Supporter', WeaponType: 'Arts Unit', Strength: 140, Agility: 160, Intellect: 260, Will: 240, Description: 'A Cryo Supporter providing shields and frost resistance buffs.' },
+  { id: 11, Name: 'Arclight', Slug: 'arclight', Rarity: 5, Element: 'Electric', Role: 'Striker', WeaponType: 'Sword', Strength: 240, Agility: 280, Intellect: 150, Will: 140, Description: 'An Electric Striker with lightning-fast sword techniques.' },
+  { id: 12, Name: 'Avywenna', Slug: 'avywenna', Rarity: 5, Element: 'Electric', Role: 'Caster', WeaponType: 'Arts Unit', Strength: 110, Agility: 150, Intellect: 300, Will: 220, Description: 'An Electric Caster who channels chain lightning between enemies.' },
+  { id: 13, Name: 'Chen Qianyu', Slug: 'chen-qianyu', Rarity: 5, Element: 'Physical', Role: 'Guard', WeaponType: 'Polearm', Strength: 280, Agility: 240, Intellect: 130, Will: 170, Description: 'A Physical Guard with disciplined spear techniques and counter abilities.' },
+  { id: 14, Name: 'Da Pan', Slug: 'da-pan', Rarity: 5, Element: 'Physical', Role: 'Defender', WeaponType: 'Greatsword', Strength: 300, Agility: 140, Intellect: 110, Will: 260, Description: 'A sturdy Physical Defender specializing in damage mitigation.' },
+  { id: 15, Name: 'Perlica', Slug: 'perlica', Rarity: 5, Element: 'Electric', Role: 'Supporter', WeaponType: 'Handcannon', Strength: 160, Agility: 200, Intellect: 240, Will: 220, Description: 'An Electric Supporter who buffs team attack speed and energy regen.' },
+  { id: 16, Name: 'Snowshine', Slug: 'snowshine', Rarity: 5, Element: 'Cryo', Role: 'Caster', WeaponType: 'Arts Unit', Strength: 120, Agility: 160, Intellect: 290, Will: 210, Description: 'A Cryo Caster who creates frozen terrain to slow and damage enemies.' },
+  { id: 17, Name: 'Wulfgard', Slug: 'wulfgard', Rarity: 5, Element: 'Heat', Role: 'Vanguard', WeaponType: 'Polearm', Strength: 260, Agility: 250, Intellect: 130, Will: 170, Description: 'A Heat Vanguard with aggressive rush tactics and burn application.' },
+  { id: 18, Name: 'Xaihi', Slug: 'xaihi', Rarity: 5, Element: 'Cryo', Role: 'Guard', WeaponType: 'Sword', Strength: 250, Agility: 260, Intellect: 140, Will: 180, Description: 'A Cryo Guard with precise blade work and frost-empowered strikes.' },
+  { id: 19, Name: 'Akekuri', Slug: 'akekuri', Rarity: 4, Element: 'Heat', Role: 'Striker', WeaponType: 'Handcannon', Strength: 180, Agility: 220, Intellect: 120, Will: 130, Description: 'A Heat Striker using incendiary handcannon rounds.' },
+  { id: 20, Name: 'Antal', Slug: 'antal', Rarity: 4, Element: 'Electric', Role: 'Guard', WeaponType: 'Sword', Strength: 210, Agility: 200, Intellect: 110, Will: 140, Description: 'An Electric Guard with reliable sword skills and moderate damage.' },
+  { id: 21, Name: 'Catcher', Slug: 'catcher', Rarity: 4, Element: 'Physical', Role: 'Vanguard', WeaponType: 'Polearm', Strength: 200, Agility: 210, Intellect: 100, Will: 130, Description: 'A Physical Vanguard who excels at early-stage combat and resource generation.' },
+  { id: 22, Name: 'Estella', Slug: 'estella', Rarity: 4, Element: 'Cryo', Role: 'Supporter', WeaponType: 'Arts Unit', Strength: 110, Agility: 140, Intellect: 200, Will: 190, Description: 'A Cryo Supporter who provides basic healing and cryo application.' },
+  { id: 23, Name: 'Fluorite', Slug: 'fluorite', Rarity: 4, Element: 'Nature', Role: 'Caster', WeaponType: 'Arts Unit', Strength: 100, Agility: 130, Intellect: 230, Will: 170, Description: 'A Nature Caster with consistent elemental damage over time.' },
 ];
 
+// Real Endfield weapons derived from verified asset data
 export const WEAPONS: Weapon[] = [
-  { id: 1, Name: 'Blazing Edge', Slug: 'blazing-edge', Rarity: 6, WeaponType: 'Greatsword', BaseATK: 48, MaxATK: 674, SubStat: 'CRIT Rate', SubStatValue: 4.8, PassiveName: 'Inferno Slash', PassiveDescription: 'Normal attacks have a 20% chance to trigger a flame explosion dealing 180% ATK as Heat DMG.' },
-  { id: 2, Name: 'Frostbite Lance', Slug: 'frostbite-lance', Rarity: 6, WeaponType: 'Polearm', BaseATK: 44, MaxATK: 620, SubStat: 'CRIT DMG', SubStatValue: 9.6, PassiveName: 'Glacial Pierce', PassiveDescription: 'Charged attacks apply Frostbite, reducing enemy DEF by 15% for 8s.' },
-  { id: 3, Name: 'Thunderstrike Cannon', Slug: 'thunderstrike-cannon', Rarity: 6, WeaponType: 'Handcannon', BaseATK: 42, MaxATK: 598, SubStat: 'ATK%', SubStatValue: 12, PassiveName: 'Chain Lightning', PassiveDescription: 'Hits have a 25% chance to chain to 2 nearby enemies for 60% ATK as Electric DMG.' },
-  { id: 4, Name: 'Verdant Focus', Slug: 'verdant-focus', Rarity: 6, WeaponType: 'Arts Unit', BaseATK: 46, MaxATK: 646, SubStat: 'Elemental Mastery', SubStatValue: 48, PassiveName: 'Nature\'s Embrace', PassiveDescription: 'Elemental skill DMG increased by 24%. Healing effectiveness increased by 15%.' },
-  { id: 5, Name: 'Eclipse Blade', Slug: 'eclipse-blade', Rarity: 6, WeaponType: 'Sword', BaseATK: 44, MaxATK: 620, SubStat: 'CRIT Rate', SubStatValue: 6.6, PassiveName: 'Shadow Step', PassiveDescription: 'After using Elemental Skill, gain 12% ATK for 15s. Max 2 stacks.' },
-  { id: 6, Name: 'Ironclad Cleaver', Slug: 'ironclad-cleaver', Rarity: 5, WeaponType: 'Greatsword', BaseATK: 42, MaxATK: 510, SubStat: 'ATK%', SubStatValue: 9, PassiveName: 'Heavy Impact', PassiveDescription: 'Heavy attacks deal 15% more DMG against shielded enemies.' },
-  { id: 7, Name: 'Windrunner Pike', Slug: 'windrunner-pike', Rarity: 5, WeaponType: 'Polearm', BaseATK: 40, MaxATK: 486, SubStat: 'CRIT Rate', SubStatValue: 4.0, PassiveName: 'Swift Thrust', PassiveDescription: 'Attack speed increased by 8% for 6s after using Normal Attack combo finisher.' },
-  { id: 8, Name: 'Pulse Repeater', Slug: 'pulse-repeater', Rarity: 5, WeaponType: 'Handcannon', BaseATK: 38, MaxATK: 462, SubStat: 'CRIT DMG', SubStatValue: 8.0, PassiveName: 'Overcharge', PassiveDescription: 'Every 4th shot deals 140% ATK as bonus DMG of the weapon\'s element.' },
-  { id: 9, Name: 'Crystal Conduit', Slug: 'crystal-conduit', Rarity: 5, WeaponType: 'Arts Unit', BaseATK: 40, MaxATK: 486, SubStat: 'HP%', SubStatValue: 9, PassiveName: 'Mana Surge', PassiveDescription: 'Elemental skill cooldown reduced by 12%. Energy regeneration increased by 10%.' },
-  { id: 10, Name: 'Duelist Rapier', Slug: 'duelist-rapier', Rarity: 5, WeaponType: 'Sword', BaseATK: 40, MaxATK: 486, SubStat: 'CRIT DMG', SubStatValue: 8.0, PassiveName: 'Riposte', PassiveDescription: 'Perfect dodge increases CRIT Rate by 16% for 5s.' },
-  { id: 11, Name: 'Recruit Blade', Slug: 'recruit-blade', Rarity: 4, WeaponType: 'Greatsword', BaseATK: 36, MaxATK: 380, SubStat: 'DEF%', SubStatValue: 6, PassiveName: 'Steadfast', PassiveDescription: 'DEF increased by 8% when HP is above 50%.' },
-  { id: 12, Name: 'Scout Spear', Slug: 'scout-spear', Rarity: 4, WeaponType: 'Polearm', BaseATK: 34, MaxATK: 358, SubStat: 'ATK%', SubStatValue: 6, PassiveName: 'Piercing Lunge', PassiveDescription: 'Charged attacks ignore 10% of enemy DEF.' },
+  // 6-star Greatswords
+  { id: 1, Name: 'Exemplar', Slug: 'exemplar', Rarity: 6, WeaponType: 'Greatsword' },
+  { id: 2, Name: 'Former Finery', Slug: 'former-finery', Rarity: 6, WeaponType: 'Greatsword' },
+  { id: 3, Name: 'Thunderberge', Slug: 'thunderberge', Rarity: 6, WeaponType: 'Greatsword' },
+  { id: 4, Name: 'Sundered Prince', Slug: 'sundered-prince', Rarity: 6, WeaponType: 'Greatsword' },
+  { id: 5, Name: 'Khravengger', Slug: 'khravengger', Rarity: 6, WeaponType: 'Greatsword' },
+  // 6-star Arts Units
+  { id: 6, Name: 'Opus: Etch Figure', Slug: 'opus-etch-figure', Rarity: 6, WeaponType: 'Arts Unit' },
+  { id: 7, Name: 'Detonation Unit', Slug: 'detonation-unit', Rarity: 6, WeaponType: 'Arts Unit' },
+  { id: 8, Name: 'Oblivion', Slug: 'oblivion', Rarity: 6, WeaponType: 'Arts Unit' },
+  { id: 9, Name: 'Chivalric Virtues', Slug: 'chivalric-virtues', Rarity: 6, WeaponType: 'Arts Unit' },
+  { id: 10, Name: 'Delivery Guaranteed', Slug: 'delivery-guaranteed', Rarity: 6, WeaponType: 'Arts Unit' },
+  { id: 11, Name: 'Dreams of the Starry Beach', Slug: 'dreams-of-the-starry-beach', Rarity: 6, WeaponType: 'Arts Unit' },
+  // 6-star Polearms
+  { id: 12, Name: 'Valiant', Slug: 'valiant', Rarity: 6, WeaponType: 'Polearm' },
+  { id: 13, Name: 'JET', Slug: 'jet', Rarity: 6, WeaponType: 'Polearm' },
+  { id: 14, Name: 'Mountain Bearer', Slug: 'mountain-bearer', Rarity: 6, WeaponType: 'Polearm' },
+  // 6-star Handcannons
+  { id: 15, Name: 'Navigator', Slug: 'navigator', Rarity: 6, WeaponType: 'Handcannon' },
+  { id: 16, Name: 'Wedge', Slug: 'wedge', Rarity: 6, WeaponType: 'Handcannon' },
+  { id: 17, Name: 'Clannibal', Slug: 'clannibal', Rarity: 6, WeaponType: 'Handcannon' },
+  { id: 18, Name: 'Artzy Tyrannical', Slug: 'artzy-tyrannical', Rarity: 6, WeaponType: 'Handcannon' },
+  // 6-star Swords
+  { id: 19, Name: 'Forgeborn Scathe', Slug: 'forgeborn-scathe', Rarity: 6, WeaponType: 'Sword' },
+  { id: 20, Name: 'Umbral Torch', Slug: 'umbral-torch', Rarity: 6, WeaponType: 'Sword' },
+  { id: 21, Name: 'Rapid Ascent', Slug: 'rapid-ascent', Rarity: 6, WeaponType: 'Sword' },
+  { id: 22, Name: 'Thermite Cutter', Slug: 'thermite-cutter', Rarity: 6, WeaponType: 'Sword' },
+  { id: 23, Name: 'Eminent Repute', Slug: 'eminent-repute', Rarity: 6, WeaponType: 'Sword' },
+  { id: 24, Name: 'White Night Nova', Slug: 'white-night-nova', Rarity: 6, WeaponType: 'Sword' },
+  { id: 25, Name: 'Never Rest', Slug: 'never-rest', Rarity: 6, WeaponType: 'Sword' },
+  { id: 26, Name: 'Grand Vision', Slug: 'grand-vision', Rarity: 6, WeaponType: 'Sword' },
+  // 5-star Greatswords
+  { id: 27, Name: 'Seeker of Dark Lung', Slug: 'seeker-of-dark-lung', Rarity: 5, WeaponType: 'Greatsword' },
+  { id: 28, Name: 'Finishing Call', Slug: 'finishing-call', Rarity: 5, WeaponType: 'Greatsword' },
+  { id: 29, Name: 'Ancient Canal', Slug: 'ancient-canal', Rarity: 5, WeaponType: 'Greatsword' },
+  { id: 30, Name: 'OBJ Heavy Burden', Slug: 'obj-heavy-burden', Rarity: 5, WeaponType: 'Greatsword' },
+  // 5-star Arts Units
+  { id: 31, Name: 'Wild Wanderer', Slug: 'wild-wanderer', Rarity: 5, WeaponType: 'Arts Unit' },
+  { id: 32, Name: 'Stanza of Memorials', Slug: 'stanza-of-memorials', Rarity: 5, WeaponType: 'Arts Unit' },
+  { id: 33, Name: 'Monaihe', Slug: 'monaihe', Rarity: 5, WeaponType: 'Arts Unit' },
+  { id: 34, Name: 'Freedom to Proselytize', Slug: 'freedom-to-proselytize', Rarity: 5, WeaponType: 'Arts Unit' },
+  { id: 35, Name: 'OBJ Arts Identifier', Slug: 'obj-arts-identifier', Rarity: 5, WeaponType: 'Arts Unit' },
+  // 5-star Polearms
+  { id: 36, Name: 'Chimeric Justice', Slug: 'chimeric-justice', Rarity: 5, WeaponType: 'Polearm' },
+  { id: 37, Name: 'Cohesive Traction', Slug: 'cohesive-traction', Rarity: 5, WeaponType: 'Polearm' },
+  { id: 38, Name: 'OBJ Razorhorn', Slug: 'obj-razorhorn', Rarity: 5, WeaponType: 'Polearm' },
+  // 5-star Handcannons
+  { id: 39, Name: 'Rational Farewell', Slug: 'rational-farewell', Rarity: 5, WeaponType: 'Handcannon' },
+  { id: 40, Name: 'Opus: The Living', Slug: 'opus-the-living', Rarity: 5, WeaponType: 'Handcannon' },
+  { id: 41, Name: 'OBJ Velocitous', Slug: 'obj-velocitous', Rarity: 5, WeaponType: 'Handcannon' },
+  // 5-star Swords
+  { id: 42, Name: 'Sundering Steel', Slug: 'sundering-steel', Rarity: 5, WeaponType: 'Sword' },
+  { id: 43, Name: 'Fortmaker', Slug: 'fortmaker', Rarity: 5, WeaponType: 'Sword' },
+  { id: 44, Name: 'Aspirant', Slug: 'aspirant', Rarity: 5, WeaponType: 'Sword' },
+  { id: 45, Name: 'Twelve Questions', Slug: 'twelve-questions', Rarity: 5, WeaponType: 'Sword' },
+  { id: 46, Name: 'OBJ Edge of Lightness', Slug: 'obj-edge-of-lightness', Rarity: 5, WeaponType: 'Sword' },
+  { id: 47, Name: 'Finchaser 3.0', Slug: 'finchaser-3-0', Rarity: 5, WeaponType: 'Sword' },
+  // 4-star
+  { id: 48, Name: 'Industry 0.1', Slug: 'industry-0-1', Rarity: 4, WeaponType: 'Greatsword' },
+  { id: 49, Name: 'Quencher', Slug: 'quencher', Rarity: 4, WeaponType: 'Greatsword' },
+  { id: 50, Name: 'Hypernova Auto', Slug: 'hypernova-auto', Rarity: 4, WeaponType: 'Arts Unit' },
+  { id: 51, Name: 'Fluorescent Roc', Slug: 'fluorescent-roc', Rarity: 4, WeaponType: 'Arts Unit' },
+  { id: 52, Name: "Pathfinder's Beacon", Slug: 'pathfinders-beacon', Rarity: 4, WeaponType: 'Polearm' },
+  { id: 53, Name: 'Aggeloslayer', Slug: 'aggeloslayer', Rarity: 4, WeaponType: 'Polearm' },
+  { id: 54, Name: 'Howling Guard', Slug: 'howling-guard', Rarity: 4, WeaponType: 'Handcannon' },
+  { id: 55, Name: 'Long Road', Slug: 'long-road', Rarity: 4, WeaponType: 'Handcannon' },
+  { id: 56, Name: 'Contingent Measure', Slug: 'contingent-measure', Rarity: 4, WeaponType: 'Sword' },
+  { id: 57, Name: 'Wave Tide', Slug: 'wave-tide', Rarity: 4, WeaponType: 'Sword' },
+  // 3-star
+  { id: 58, Name: 'Darhoff 7', Slug: 'darhoff-7', Rarity: 3, WeaponType: 'Greatsword' },
+  { id: 59, Name: 'Jiminy 12', Slug: 'jiminy-12', Rarity: 3, WeaponType: 'Arts Unit' },
+  { id: 60, Name: 'Opero 77', Slug: 'opero-77', Rarity: 3, WeaponType: 'Polearm' },
+  { id: 61, Name: 'Peco 5', Slug: 'peco-5', Rarity: 3, WeaponType: 'Handcannon' },
+  { id: 62, Name: 'Tarr 11', Slug: 'tarr-11', Rarity: 3, WeaponType: 'Sword' },
 ];
 
-export const EQUIPMENT_SETS: EquipmentSet[] = [
-  { id: 1, Name: 'Inferno\'s Will', Slug: 'infernos-will', Rarity: 6, TwoPieceBonus: 'Heat DMG +15%', FourPieceBonus: 'After using Elemental Skill, Heat DMG +25% for 10s. Charged attacks during this period have +20% CRIT Rate.', RecommendedFor: ['Ember', 'Laevatain', 'Wulfgard'] },
-  { id: 2, Name: 'Permafrost Crown', Slug: 'permafrost-crown', Rarity: 6, TwoPieceBonus: 'Cryo DMG +15%', FourPieceBonus: 'When attacking Frozen enemies, CRIT DMG +40%. Elemental Skill applies an extra stack of Frost.', RecommendedFor: ['Last Rite', 'Yvonne', 'Xaihi'] },
-  { id: 3, Name: 'Voltaic Surge', Slug: 'voltaic-surge', Rarity: 6, TwoPieceBonus: 'Electric DMG +15%', FourPieceBonus: 'Normal and Charged attacks have 35% chance to trigger chain lightning dealing 80% ATK to nearby enemies.', RecommendedFor: ['Arclight', 'Avywenna', 'Perlica'] },
-  { id: 4, Name: 'Living Verdure', Slug: 'living-verdure', Rarity: 6, TwoPieceBonus: 'Nature DMG +15%', FourPieceBonus: 'Healing effectiveness +20%. When healer, active party members gain 15% ATK for 10s after being healed.', RecommendedFor: ['Ardelia', 'Gilberta'] },
-  { id: 5, Name: 'Iron Bastion', Slug: 'iron-bastion', Rarity: 6, TwoPieceBonus: 'DEF +30%', FourPieceBonus: 'When taking DMG, gain a shield equal to 20% of DEF for 8s. Cooldown 12s. While shielded, Normal ATK DMG +15%.', RecommendedFor: ['Lifeng', 'Da Pan'] },
-  { id: 6, Name: 'Gladiator\'s Resolve', Slug: 'gladiators-resolve', Rarity: 6, TwoPieceBonus: 'ATK +18%', FourPieceBonus: 'Normal Attack DMG +35% if wielding a Sword or Polearm.', RecommendedFor: ['Endministrator', 'Chen Qianyu', 'Antal'] },
-  { id: 7, Name: 'Precision Circuit', Slug: 'precision-circuit', Rarity: 5, TwoPieceBonus: 'CRIT Rate +12%', FourPieceBonus: 'CRIT DMG +20% when attacking enemies below 50% HP.', RecommendedFor: ['Arclight', 'Last Rite'] },
-  { id: 8, Name: 'Rapid Assault', Slug: 'rapid-assault', Rarity: 5, TwoPieceBonus: 'Attack Speed +10%', FourPieceBonus: 'After 5 consecutive Normal Attacks, next Charged Attack DMG +40%.', RecommendedFor: ['Pogranichnik', 'Akekuri'] },
-  { id: 9, Name: 'Medic\'s Oath', Slug: 'medics-oath', Rarity: 5, TwoPieceBonus: 'Healing Bonus +15%', FourPieceBonus: 'Overhealing generates a shield equal to 10% of excess healing, lasting 10s.', RecommendedFor: ['Ardelia', 'Alesh', 'Estella'] },
-  { id: 10, Name: 'Pioneer\'s Spirit', Slug: 'pioneers-spirit', Rarity: 4, TwoPieceBonus: 'HP +20%', FourPieceBonus: 'Energy Recharge +15%. Elemental Burst DMG +20%.', RecommendedFor: ['Catcher', 'Fluorite'] },
-];
-
+// Recipes - keeping structure but marking as unverified placeholder data
+// Real Endfield crafting uses AIC Factory system
 export const RECIPES: Recipe[] = [
   { id: 1, Name: 'Iron Ingot', Slug: 'iron-ingot', Category: 'Processed Material', Inputs: [{ item: 'Iron Ore', quantity: 3 }], Outputs: [{ item: 'Iron Ingot', quantity: 1 }], CraftingTime: 30, FacilityRequired: 'Smelter', FacilityLevel: 1, ThroughputPerMin: 2 },
   { id: 2, Name: 'Steel Plate', Slug: 'steel-plate', Category: 'Processed Material', Inputs: [{ item: 'Iron Ingot', quantity: 2 }, { item: 'Coal', quantity: 1 }], Outputs: [{ item: 'Steel Plate', quantity: 1 }], CraftingTime: 60, FacilityRequired: 'Smelter', FacilityLevel: 2, ThroughputPerMin: 1 },

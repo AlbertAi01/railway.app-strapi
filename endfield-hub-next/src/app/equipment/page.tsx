@@ -4,16 +4,15 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Search, Shield } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
-import { EQUIPMENT_SETS } from '@/lib/data';
-import { RARITY_COLORS } from '@/types/game';
+import { GEAR_SETS, TIER_COLORS } from '@/data/gear';
 import { EQUIPMENT_ICONS } from '@/lib/assets';
 
 export default function Equipment() {
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const filtered = EQUIPMENT_SETS.filter(s =>
-    !search || s.Name.toLowerCase().includes(search.toLowerCase())
+  const filtered = GEAR_SETS.filter(s =>
+    !search || s.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -37,56 +36,68 @@ export default function Equipment() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map(set => (
-          <div
-            key={set.id}
-            className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all cursor-pointer ${
-              expanded === set.id ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
-            }`}
-            onClick={() => setExpanded(expanded === set.id ? null : set.id)}
-          >
-            <div className="flex items-center gap-4 p-4">
-              <div className="w-14 h-14 clip-corner-tl flex items-center justify-center" style={{ backgroundColor: `${RARITY_COLORS[set.Rarity]}20` }}>
-                {EQUIPMENT_ICONS[set.Name] ? (
-                  <Image src={EQUIPMENT_ICONS[set.Name]} alt={set.Name} width={56} height={56} className="object-contain" loading="lazy" />
-                ) : (
-                  <span className="text-lg font-bold" style={{ color: RARITY_COLORS[set.Rarity] }}>{set.Name[0]}</span>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-white font-semibold">{set.Name}</h3>
-                  <span className="text-[11px]" style={{ color: RARITY_COLORS[set.Rarity] }}>{'★'.repeat(set.Rarity)}</span>
+        {filtered.map(set => {
+          const tierColor = TIER_COLORS[set.pieces[0]?.tier] || TIER_COLORS.T0;
+          return (
+            <div
+              key={set.name}
+              className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all cursor-pointer ${
+                expanded === set.name ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
+              }`}
+              onClick={() => setExpanded(expanded === set.name ? null : set.name)}
+            >
+              <div className="flex items-center gap-4 p-4">
+                <div className="w-14 h-14 clip-corner-tl flex items-center justify-center" style={{ backgroundColor: `${tierColor}20` }}>
+                  {set.icon ? (
+                    <Image src={set.icon} alt={set.name} width={56} height={56} className="object-contain" loading="lazy" />
+                  ) : EQUIPMENT_ICONS[set.name] ? (
+                    <Image src={EQUIPMENT_ICONS[set.name]} alt={set.name} width={56} height={56} className="object-contain" loading="lazy" />
+                  ) : (
+                    <span className="text-lg font-bold" style={{ color: tierColor }}>{set.name[0]}</span>
+                  )}
                 </div>
-                <p className="text-[var(--color-text-tertiary)] text-xs mt-1">2-Piece: {set.TwoPieceBonus}</p>
-              </div>
-            </div>
-            {expanded === set.id && (
-              <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3 space-y-3">
-                <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
-                  <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">2-Piece Bonus</p>
-                  <p className="text-[var(--color-text-secondary)] text-sm">{set.TwoPieceBonus}</p>
-                </div>
-                {set.FourPieceBonus && (
-                  <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
-                    <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">4-Piece Bonus</p>
-                    <p className="text-[var(--color-text-secondary)] text-sm">{set.FourPieceBonus}</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-white font-semibold">{set.name}</h3>
+                    <span className="text-[11px] px-2 py-0.5 clip-corner-tl" style={{ backgroundColor: `${tierColor}30`, color: tierColor }}>
+                      {set.pieces[0]?.tier}
+                    </span>
+                    <span className="text-[11px] text-[var(--color-text-tertiary)]">{set.phase}</span>
                   </div>
-                )}
-                {set.RecommendedFor && set.RecommendedFor.length > 0 && (
+                  <p className="text-[var(--color-text-tertiary)] text-xs mt-1 line-clamp-1">3-Piece: {set.setBonus}</p>
+                </div>
+              </div>
+              {expanded === set.name && (
+                <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3 space-y-3">
+                  <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+                    <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">3-Piece Set Bonus</p>
+                    <p className="text-[var(--color-text-secondary)] text-sm">{set.setBonus}</p>
+                  </div>
                   <div>
-                    <p className="text-[var(--color-text-tertiary)] text-xs mb-2">Recommended For</p>
-                    <div className="flex flex-wrap gap-2">
-                      {set.RecommendedFor.map(name => (
-                        <span key={name} className="text-xs bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-1 border border-[var(--color-border)]">{name}</span>
+                    <p className="text-[var(--color-text-tertiary)] text-xs font-semibold mb-2">Set Pieces ({set.pieces.length})</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {set.pieces.map(piece => (
+                        <div key={piece.id} className="p-2 bg-[var(--color-surface-2)] clip-corner-tl text-xs">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-white font-medium">{piece.name}</span>
+                            <span className="text-[var(--color-text-tertiary)]">DEF {piece.def}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {piece.stats.map((stat, idx) => (
+                              <span key={idx} className="text-[var(--color-accent)]">
+                                {stat.name} {stat.value}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

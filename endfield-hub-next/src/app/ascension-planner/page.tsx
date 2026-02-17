@@ -6,54 +6,53 @@ import { TrendingUp, Star, Download, Copy } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const ASCENSION_MATERIALS = {
-  E1: [
-    { item: 'LMD', amount: 30000 },
-    { item: 'Chip (Class)', amount: 5 },
-    { item: 'Generic Material T3', amount: 4 }
+  'Promotion 1': [
+    { item: 'Credits', amount: 30000 },
+    { item: 'Promotion Material T1', amount: 5 },
+    { item: 'Generic Material T2', amount: 4 }
   ],
-  E2: [
-    { item: 'LMD', amount: 180000 },
-    { item: 'Chip Pack (Class)', amount: 4 },
+  'Promotion 2': [
+    { item: 'Credits', amount: 80000 },
+    { item: 'Promotion Material T2', amount: 4 },
+    { item: 'Generic Material T3', amount: 5 },
+    { item: 'Rare Material T2', amount: 8 }
+  ],
+  'Promotion 3': [
+    { item: 'Credits', amount: 150000 },
+    { item: 'Promotion Material T3', amount: 6 },
     { item: 'Generic Material T4', amount: 5 },
-    { item: 'Rare Material T4', amount: 8 }
+    { item: 'Rare Material T3', amount: 10 }
   ],
-  E3: [
-    { item: 'LMD', amount: 300000 },
-    { item: 'Chip Pack (Class)', amount: 6 },
-    { item: 'Generic Material T5', amount: 5 },
-    { item: 'Rare Material T5', amount: 10 }
+  'Promotion 4': [
+    { item: 'Credits', amount: 300000 },
+    { item: 'Promotion Material T4', amount: 8 },
+    { item: 'Generic Material T4', amount: 8 },
+    { item: 'Rare Material T4', amount: 15 }
   ],
-  E4: [
-    { item: 'LMD', amount: 500000 },
-    { item: 'Chip Pack (Class)', amount: 8 },
-    { item: 'Generic Material T6', amount: 8 },
-    { item: 'Rare Material T6', amount: 15 }
+  'Skill Lv5': [
+    { item: 'Skill Material T2', amount: 6 },
+    { item: 'Generic Material T2', amount: 4 }
   ],
-  'Skill 7': [
-    { item: 'Skill Summary 3', amount: 8 },
+  'Skill Lv7': [
+    { item: 'Skill Material T3', amount: 8 },
     { item: 'Generic Material T3', amount: 6 }
   ],
-  'M1': [
-    { item: 'Skill Summary 3', amount: 8 },
+  'Skill Lv9': [
+    { item: 'Skill Material T3', amount: 12 },
     { item: 'Generic Material T4', amount: 4 },
     { item: 'Rare Material T3', amount: 7 }
   ],
-  'M2': [
-    { item: 'Skill Summary 3', amount: 12 },
-    { item: 'Generic Material T4', amount: 4 },
-    { item: 'Rare Material T4', amount: 4 }
-  ],
-  'M3': [
-    { item: 'Skill Summary 3', amount: 15 },
-    { item: 'Generic Material T5', amount: 6 },
+  'Skill Lv10': [
+    { item: 'Skill Material T4', amount: 15 },
+    { item: 'Generic Material T4', amount: 6 },
     { item: 'Rare Material T4', amount: 6 }
   ]
 };
 
 export default function AscensionPlannerPage() {
   const [selectedCharacter, setSelectedCharacter] = useState<string>('');
-  const [currentLevel, setCurrentLevel] = useState('E0 1');
-  const [targetLevel, setTargetLevel] = useState('E4 90');
+  const [currentLevel, setCurrentLevel] = useState('Lv 1');
+  const [targetLevel, setTargetLevel] = useState('Lv 70 (Max)');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const character = CHARACTERS.find(c => c.Name === selectedCharacter);
@@ -62,23 +61,25 @@ export default function AscensionPlannerPage() {
     const materials: { [key: string]: number } = {};
 
     // Add promotion materials based on target level
-    if (targetLevel.includes('E1') || targetLevel.includes('E2') || targetLevel.includes('E3') || targetLevel.includes('E4')) {
-      ASCENSION_MATERIALS.E1.forEach(mat => {
+    const targetLevelNum = parseInt(targetLevel.match(/\d+/)?.[0] || '1');
+
+    if (targetLevelNum >= 20) {
+      ASCENSION_MATERIALS['Promotion 1'].forEach(mat => {
         materials[mat.item] = (materials[mat.item] || 0) + mat.amount;
       });
     }
-    if (targetLevel.includes('E2') || targetLevel.includes('E3') || targetLevel.includes('E4')) {
-      ASCENSION_MATERIALS.E2.forEach(mat => {
+    if (targetLevelNum >= 40) {
+      ASCENSION_MATERIALS['Promotion 2'].forEach(mat => {
         materials[mat.item] = (materials[mat.item] || 0) + mat.amount;
       });
     }
-    if (targetLevel.includes('E3') || targetLevel.includes('E4')) {
-      ASCENSION_MATERIALS.E3.forEach(mat => {
+    if (targetLevelNum >= 60) {
+      ASCENSION_MATERIALS['Promotion 3'].forEach(mat => {
         materials[mat.item] = (materials[mat.item] || 0) + mat.amount;
       });
     }
-    if (targetLevel.includes('E4')) {
-      ASCENSION_MATERIALS.E4.forEach(mat => {
+    if (targetLevelNum >= 70) {
+      ASCENSION_MATERIALS['Promotion 4'].forEach(mat => {
         materials[mat.item] = (materials[mat.item] || 0) + mat.amount;
       });
     }
@@ -143,7 +144,7 @@ export default function AscensionPlannerPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
       <div className="max-w-7xl mx-auto">
-        <RIOSHeader title="Operator Development" category="DEVELOPMENT" code="RIOS-ASC-001" icon={<Star size={28} />} />
+        <RIOSHeader title="Character Development" category="DEVELOPMENT" code="RIOS-ASC-001" icon={<Star size={28} />} />
 
         {/* Export/Share Buttons */}
         <div className="flex gap-3 mb-6">
@@ -212,14 +213,10 @@ export default function AscensionPlannerPage() {
                     onChange={(e) => setCurrentLevel(e.target.value)}
                     className="w-full px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
-                    <option value="E0 1">E0 1</option>
-                    <option value="E1 1">E1 1</option>
-                    <option value="E1 40">E1 40 (Max)</option>
-                    <option value="E2 1">E2 1</option>
-                    <option value="E2 60">E2 60 (Max)</option>
-                    <option value="E3 1">E3 1</option>
-                    <option value="E3 80">E3 80 (Max)</option>
-                    <option value="E4 1">E4 1</option>
+                    <option value="Lv 1">Lv 1</option>
+                    <option value="Lv 20">Lv 20 (Promotion 1)</option>
+                    <option value="Lv 40">Lv 40 (Promotion 2)</option>
+                    <option value="Lv 60">Lv 60 (Promotion 3)</option>
                   </select>
                 </div>
 
@@ -230,18 +227,18 @@ export default function AscensionPlannerPage() {
                     onChange={(e) => setTargetLevel(e.target.value)}
                     className="w-full px-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
-                    <option value="E1 40">E1 40 (Max)</option>
-                    <option value="E2 60">E2 60 (Max)</option>
-                    <option value="E3 80">E3 80 (Max)</option>
-                    <option value="E4 90">E4 90 (Max)</option>
+                    <option value="Lv 20">Lv 20 (Promotion 1)</option>
+                    <option value="Lv 40">Lv 40 (Promotion 2)</option>
+                    <option value="Lv 60">Lv 60 (Promotion 3)</option>
+                    <option value="Lv 70 (Max)">Lv 70 (Max Promotion)</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2 text-white">Skill Mastery Goals</label>
+                <label className="block text-sm font-bold mb-2 text-white">Skill Level Goals</label>
                 <div className="space-y-2">
-                  {['Skill 7', 'M1', 'M2', 'M3'].map(skill => (
+                  {['Skill Lv5', 'Skill Lv7', 'Skill Lv9', 'Skill Lv10'].map(skill => (
                     <label key={skill} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -286,10 +283,10 @@ export default function AscensionPlannerPage() {
                   <div className="mt-6 p-4 bg-[var(--color-surface)] border-l-4 border-l-[var(--color-accent)] border border-[var(--color-border)] clip-corner-tl">
                     <h3 className="font-bold text-white mb-2">Farming Tips:</h3>
                     <ul className="text-sm space-y-1">
-                      <li>• Farm LMD from CE-5 or event stages</li>
-                      <li>• Get chips from chip stages (Mon-Fri rotation)</li>
-                      <li>• Event shops have the best material value</li>
-                      <li>• Use your base to produce EXP and Gold</li>
+                      <li>• Farm materials from Talos-II regions</li>
+                      <li>• Use AIC Factory for passive material production</li>
+                      <li>• Event shops offer best material value</li>
+                      <li>• Complete daily missions for Credits and materials</li>
                     </ul>
                   </div>
                 )}

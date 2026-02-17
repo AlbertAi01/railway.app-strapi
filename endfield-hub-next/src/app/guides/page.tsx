@@ -13,35 +13,54 @@ const GUIDES = [
     date: '2024-01-15',
     content: `# Beginner's Guide to Endfield
 
-Welcome to Endfield! This comprehensive guide will help you get started on your journey.
+Welcome to Arknights: Endfield! This action RPG will take you on an adventure across Talos-II.
 
 ## Getting Started
 
-1. **Complete the Tutorial**: The game's tutorial is essential and teaches you the basic mechanics.
-2. **Gacha System**: Understand the gacha rates - 0.8% for 6-star, 8% for 5-star operators.
-3. **Resource Management**: Don't waste resources early on. Focus on a core team of 3-4 operators.
+1. **Complete the Tutorial**: Learn the real-time combat mechanics, dodging, and skill combos.
+2. **Team Composition**: Build a team of 4 characters for missions.
+3. **Resource Management**: Focus on developing your main team first.
 
-## Early Game Tips
+## Combat Basics
 
-- Focus on completing the main story to unlock features
-- Join a guild early for guild shop access
-- Complete daily missions for consistent rewards
-- Save your Originium for limited banners
+Endfield features real-time action RPG combat:
+- **Dodge**: Time your dodges to avoid enemy attacks
+- **Battle Skills**: Active abilities with cooldowns
+- **Combo Skills**: Chain attacks between team members
+- **Ultimates**: Powerful abilities charged by SP generation
 
-## Team Building
+## Character Attributes
 
-A balanced team typically includes:
-- 1-2 Vanguards (DP generation)
-- 2-3 Guards/Defenders (frontline)
-- 2-3 Snipers/Casters (DPS)
-- 1-2 Medics (healing)
-- 1 Supporter/Specialist (utility)
+Each character has four base attributes:
+- **Strength**: Physical damage and defense
+- **Agility**: Attack speed and evasion
+- **Intellect**: Skill damage and effect
+- **Will**: Ultimate charge rate and resistance
+
+## Elements and Status Effects
+
+Five elemental types affect combat:
+- **Physical**: Raw damage, no special effects
+- **Heat**: Causes Combustion (damage over time)
+- **Cryo**: Inflicts Solidification (slow movement)
+- **Electric**: Triggers Electrification (chain damage)
+- **Nature**: Applies Vulnerability (increased damage taken)
+
+## Character Roles
+
+Build a balanced team with:
+- **Guard**: Melee DPS characters
+- **Defender**: Tanky frontline protectors
+- **Supporter**: Buffs and healing
+- **Caster**: Ranged magical damage
+- **Vanguard**: Balanced offense and defense
+- **Striker**: High-burst damage dealers
 
 ## Progression Path
 
-Week 1: Focus on story and leveling your core team to E1 Level 40
-Week 2-3: Start farming skill materials and consider first E2
-Month 1+: Build diverse roster for different content`
+Week 1: Complete story chapters, build your main 4-character team
+Week 2-3: Farm gear and materials, optimize character builds
+Month 1+: Challenge high-difficulty content, collect diverse roster`
   },
   {
     id: 2,
@@ -51,43 +70,59 @@ Month 1+: Build diverse roster for different content`
     date: '2024-01-20',
     content: `# Advanced Combat Tactics
 
-Master the combat system with these advanced strategies.
+Master Endfield's action RPG combat system with these strategies.
 
-## Deployment Order
+## Dodge Timing
 
-The order you deploy operators matters significantly:
-1. Deploy Vanguards first for DP generation
-2. Place blockers before enemies arrive
-3. Deploy ranged DPS to cover lanes
-4. Save utility operators for crisis moments
+Perfect dodging is essential:
+1. Watch enemy telegraph animations
+2. Dodge just before impact for i-frames
+3. Practice dodge canceling for faster recovery
+4. Some attacks require multiple dodges
 
-## Skill Timing
+## Combo Skill Chains
 
-- **Auto-activation skills**: Great for consistent DPS
-- **Manual skills**: Save for boss phases or enemy waves
-- **Defensive skills**: Activate just before big attacks
+Maximize damage with skill combos:
+- Chain skills between characters for bonus damage
+- Watch for combo indicators above enemies
+- Time skills during enemy stagger for extra damage
+- Ultimate skills can extend combo windows
 
-## Map Analysis
+## Ultimate SP Management
 
-Before starting a stage:
-1. Identify enemy spawn points and paths
-2. Locate high-value deployment tiles
-3. Plan for aerial enemies
-4. Consider boss mechanics
+Manage SP generation wisely:
+- Dealing damage generates SP over time
+- Taking damage also generates SP
+- Some characters have SP generation buffs
+- Save ultimates for boss phases or crisis moments
+- Ultimate animations provide invulnerability
 
-## Synergies
+## Element Status Effects
 
-Combine operators for maximum effect:
-- Debuffers + Nukers
-- Buffers + Main DPS
-- Crowd Control + Area Damage
+Exploit elemental weaknesses:
+- **Combustion**: Stack Heat damage for burning DOT
+- **Solidification**: Freeze enemies to stop movement
+- **Electrification**: Chain lightning to grouped enemies
+- **Vulnerability**: Apply before burst damage windows
+- Combine elements for devastating effects
 
-## Resource Efficiency
+## Stagger Mechanics
 
-- Use 3-star operators early game (cheaper to build)
-- E2 your main DPS first
-- Don't ignore support operators
-- Farm efficiently during events`
+Break enemy guard for massive damage:
+- Heavy attacks build stagger faster
+- Staggered enemies take bonus damage
+- Break state lasts 5-10 seconds
+- Plan burst damage during break windows
+- Some bosses require stagger to expose weakpoints
+
+## Team Synergies
+
+Coordinate your team:
+- Defenders draw aggro while DPS attacks
+- Supporters buff before damage windows
+- Casters apply debuffs for the team
+- Strikers execute during break state
+- Practice character swapping for combos`
   },
   {
     id: 3,
@@ -97,51 +132,65 @@ Combine operators for maximum effect:
     date: '2024-01-25',
     content: `# Resource Farming Guide
 
-Maximize your farming efficiency with this comprehensive guide.
+Maximize your resource efficiency in Endfield.
 
-## Sanity Management
+## AIC Factory Production
 
-Sanity is your stamina resource. Use it wisely:
-- 240 max sanity (without items)
-- Regenerates 1 per 6 minutes
-- Focus on your current goals
+Your base for passive income:
+- Unlock AIC Factory through story progression
+- Assign characters to production stations
+- Higher rarity characters boost production speed
+- Balance between material production and Credits
+- Check factory every 8-12 hours for optimal efficiency
 
 ## Material Farming Priority
 
 **High Priority:**
-- Skill books (farm during half-sanity events)
-- Chips for promotions
-- Event shop materials
+- Character promotion materials (T3-T4)
+- Weapon enhancement materials
+- Gear upgrade components
+- Event-exclusive materials
 
 **Medium Priority:**
-- Generic materials (rocks, devices, etc.)
-- LMD (can farm CE-5)
-- EXP cards (can farm LS-5)
+- Skill level-up materials
+- Credits for gear crafting
+- Common crafting materials
 
 **Low Priority:**
-- Basic materials (often stage drops)
+- Basic materials (farmable anywhere)
+- Excess character EXP items
 
-## Event Efficiency
+## Gear Farming Strategy
 
-Events are the most efficient:
-1. Clear event shop first
-2. Farm event stages for materials
-3. Events give better drop rates than standard stages
+Gear sets provide powerful bonuses:
+- Farm specific regions for gear types
+- Target T4 gear sets for endgame
+- Focus on 3-piece set bonuses first
+- Save stamina for double-drop events
+- Recycle unwanted gear for materials
 
-## Base Production
+## Talos-II Region Farming
 
-Optimize your base:
-- 2-5-2 setup (2 Trading Posts, 5 Factories, 2 Power Plants)
-- Focus factories on EXP or Gold bars based on needs
-- Don't neglect dorm ambience
+Different regions drop different materials:
+- Northern zones: Cryo-related materials
+- Desert regions: Heat-based resources
+- Forest areas: Nature element items
+- Industrial sectors: Electric components
+- Complete region exploration for bonus rewards
 
-## Weekly Routine
+## Daily and Weekly Priorities
 
-- Monday: Chip farming
-- Tuesday-Thursday: Skill books
-- Friday-Sunday: Material farming
-- Always: Annihilation (weekly orundum)
-- Daily: Complete all dailies`
+**Daily:**
+- Complete all daily missions
+- Spend natural stamina efficiently
+- Collect AIC Factory production
+- Farm priority materials
+
+**Weekly:**
+- Clear high-difficulty weekly challenges
+- Complete all weekly mission objectives
+- Participate in limited-time events
+- Stock up on materials during bonus periods`
   },
   {
     id: 4,
@@ -151,12 +200,12 @@ Optimize your base:
     date: '2024-02-01',
     content: `# Gacha and Banner Guide
 
-Understand the gacha system and make informed pulling decisions.
+Understand Endfield's gacha system and make smart pulling decisions.
 
 ## Gacha Rates
 
 **Standard Rates:**
-- 6-star: 0.8% (2% after 50 pulls)
+- 6-star: 0.8% (increases after 50 pulls)
 - 5-star: 8%
 - 4-star: 40%
 - 3-star: 51.2%
@@ -165,47 +214,51 @@ Understand the gacha system and make informed pulling decisions.
 
 - Soft pity starts at 50 pulls
 - Rate increases by 2% per pull after 50
-- Guaranteed 6-star at 100 pulls (very rare to reach)
+- Guaranteed 6-star within 100 pulls
 - Pity carries between banners of same type
+- Track your pity count carefully
 
 ## Banner Types
 
-**Limited Banners:**
-- Feature limited operators
-- Best value for new operators
-- Pity carries between limited banners
-- Save for meta-defining units
+**Featured Character Banners:**
+- Rate-up for specific 6-star characters
+- Best chance to get desired characters
+- Pity carries between character banners
+- 50/50 chance on first 6-star, guaranteed on second
 
-**Standard Banners:**
-- Feature standard pool operators
+**Standard Banner:**
+- All standard pool characters
+- Use free tickets here
 - Good for beginners building roster
-- Use headhunting tickets here
+- No rate-ups, equal chance for all
 
-**Recruitment:**
-- Free way to get operators
-- Tag combinations guarantee rarities
-- Senior Operator and Top Operator tags are rare
+**Weapon Banners:**
+- Focus on signature weapons
+- Lower priority than characters
+- Consider only after building character roster
 
 ## Pulling Strategy
 
-**For F2P:**
-- Pull on guaranteed 5-star (first 10 pulls)
-- Save for limited/meta operators
-- Use recruitment extensively
+**For F2P Players:**
+- Pull guaranteed 5-star on new banners (first 10 pulls)
+- Save premium currency for limited characters
+- Use free daily pulls on standard banner
+- Skip banners without characters you need
 
 **For Light Spenders:**
-- Monthly card is best value
-- Pull on must-have operators
-- Skip mediocre banners
+- Monthly pass provides best value
+- Pull for meta-defining characters
+- Consider weapon banners for favorites
+- Save for anniversary/limited events
 
-## Must-Pull Operators
+## Building Your Roster
 
-General consensus on meta operators:
-- Damage: SilverAsh, Eyjafjalla, Surtr, Chen
-- Support: Saria, Ifrit, Angelina
-- Utility: Thorns, Mountain, Mudrock
-
-Save your pulls for these when they appear!`
+Focus on collecting:
+- At least one character of each role
+- Characters covering all element types
+- Balanced team for different content
+- Meta characters for difficult challenges
+- Favorites for enjoyment`
   },
   {
     id: 5,
@@ -215,61 +268,70 @@ Save your pulls for these when they appear!`
     date: '2024-02-05',
     content: `# End Game Content Guide
 
-Tackle the hardest content Endfield has to offer.
+Conquer Endfield's most challenging content.
 
-## Contingency Contract (CC)
+## High-Difficulty Combat Missions
 
-The ultimate challenge mode:
-- Select risk contracts to increase difficulty
-- Higher risks = better rewards
-- Risk 18 is standard clear goal
-- Risk 26+ requires maxed operators and strategy
+The ultimate test of skill:
+- Require fully built characters
+- Enemies have massive HP and damage
+- Perfect dodge timing is essential
+- Elemental weaknesses matter significantly
+- Rewards include exclusive materials
 
-**CC Preparation:**
-- E2 Level 90 main DPS
-- M3 crucial skills
-- Build diverse roster
-- Study daily map rotations
+**Preparation Tips:**
+- Max level your main team
+- Optimize gear sets for maximum stats
+- Practice boss patterns in normal mode
+- Bring balanced team composition
+- Stock up on consumable items
 
-## Integrated Strategies (IS)
+## Gear Optimization
 
-Roguelike mode with random elements:
-- Start with basic squad
-- Collect items and recruits
-- Each run is different
-- Unlock permanent upgrades
+Endgame is all about perfect gear:
+- **T4 Gear Sets**: Highest tier equipment
+- **3-Piece Bonuses**: Complete sets for powerful effects
+- **Stat Priority**: Focus on main stat and substats
+- **Set Combinations**: Mix sets for optimal builds
+- **Enhancement**: Max level your equipped gear
 
-**IS Tips:**
-- Learn enemy patterns
-- Collect HP items
-- Balance team composition
-- Don't over-extend
+## Recommended Gear Sets
 
-## High-End Story Stages
+**For DPS Characters:**
+- Berserker Set: +Crit Rate and Crit DMG
+- Elemental Mastery Set: +Elemental Damage
+- Combo Set: +Damage during combo chains
 
-Chapter 9+ difficulty spikes:
-- Require specific strategies
-- May need guide references
-- Test your operator roster depth
+**For Defenders:**
+- Guardian Set: +DEF and damage reduction
+- Counter Set: Reflect damage when hit
+- Endurance Set: +Max HP and healing received
 
-## Annihilation
+**For Supporters:**
+- Support Set: Buff effectiveness increased
+- Recovery Set: +Healing output
+- Energy Set: +Ultimate charge rate
 
-Weekly orundum farming:
-- Clear for first-time rewards
-- Auto-deploy for weekly farming
-- 400 kills = max rewards
-- Stable auto-deploy is goal
+## Challenge Modes
 
-## Preparing for End Game
+Test your limits:
+- Time Attack: Complete missions quickly
+- No Damage: Perfect clear requirements
+- Limited Characters: Restricted roster
+- Boss Rush: Multiple bosses back-to-back
+- Survival: Endless waves with increasing difficulty
 
-1. E2 and level core team
-2. M3 important skills
-3. Build meta operators
-4. Join active guild
-5. Study mechanics and strategies
-6. Don't neglect 4-star operators (often key in CC)
+## Endgame Checklist
 
-Remember: Endgame is about roster depth, not just individual power!`
+1. Max level and promote all main team characters
+2. Equip full T4 gear sets with 3-piece bonuses
+3. Level all combat skills to maximum
+4. Farm and craft optimal gear combinations
+5. Complete all high-difficulty story missions
+6. Challenge limited-time extreme difficulty events
+7. Build multiple teams for different content types
+
+Remember: Endgame is about perfecting your builds and mastering combat mechanics!`
   }
 ];
 

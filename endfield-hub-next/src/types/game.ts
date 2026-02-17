@@ -11,17 +11,13 @@ export interface Character {
   Element: Element;
   Role: Role;
   WeaponType: WeaponType;
-  BaseHP: number;
-  BaseATK: number;
-  BaseDEF: number;
-  MaxHP: number;
-  MaxATK: number;
-  MaxDEF: number;
+  Strength: number;
+  Agility: number;
+  Intellect: number;
+  Will: number;
   Description?: string;
   Lore?: string;
   Skills?: Skill[];
-  AscensionMaterials?: Record<string, number>[];
-  StatScaling?: Record<string, number[]>;
   Tags?: string[];
   IsLimited?: boolean;
 }
@@ -29,12 +25,10 @@ export interface Character {
 export interface Skill {
   id: number;
   Name: string;
-  SkillType: 'Normal Attack' | 'Elemental Skill' | 'Endfield Skill' | 'Passive' | 'Talent';
+  SkillType: 'Normal Attack' | 'Battle Skill' | 'Combo Skill' | 'Ultimate' | 'Passive' | 'Talent';
   Description: string;
   Cooldown?: number;
-  EnergyCost?: number;
-  DamageMultipliers?: Record<string, number>;
-  LevelScaling?: Record<string, number[]>;
+  SPCost?: number;
   Order: number;
 }
 
@@ -44,26 +38,16 @@ export interface Weapon {
   Slug: string;
   Rarity: number;
   WeaponType: WeaponType;
-  BaseATK: number;
-  MaxATK: number;
-  SubStat?: string;
-  SubStatValue?: number;
-  PassiveName?: string;
-  PassiveDescription?: string;
   Description?: string;
-  ObtainMethod?: string;
 }
 
 export interface EquipmentSet {
   id: number;
   Name: string;
   Slug: string;
-  Rarity: number;
-  TwoPieceBonus: string;
-  FourPieceBonus?: string;
-  Description?: string;
+  SetBonus: string; // 3-piece set effect
+  Tier: 'T0' | 'T1' | 'T2' | 'T3' | 'T4';
   RecommendedFor?: string[];
-  ObtainMethod?: string;
 }
 
 export interface Guide {

@@ -319,16 +319,20 @@ export default function CharacterCardPage() {
                   <span className="font-semibold" style={{ color: RARITY_COLORS[character.Rarity] }}>{'★'.repeat(character.Rarity)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[var(--color-text-tertiary)]">Max ATK</span>
-                  <span className="text-white font-semibold">{character.MaxATK}</span>
+                  <span className="text-[var(--color-text-tertiary)]">Strength</span>
+                  <span className="text-white font-semibold">{character.Strength}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[var(--color-text-tertiary)]">Max HP</span>
-                  <span className="text-white font-semibold">{character.MaxHP}</span>
+                  <span className="text-[var(--color-text-tertiary)]">Agility</span>
+                  <span className="text-white font-semibold">{character.Agility}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[var(--color-text-tertiary)]">Max DEF</span>
-                  <span className="text-white font-semibold">{character.MaxDEF}</span>
+                  <span className="text-[var(--color-text-tertiary)]">Intellect</span>
+                  <span className="text-white font-semibold">{character.Intellect}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-text-tertiary)]">Will</span>
+                  <span className="text-white font-semibold">{character.Will}</span>
                 </div>
               </div>
             </div>
@@ -413,18 +417,22 @@ export default function CharacterCardPage() {
                   </div>
 
                   {/* Stats grid */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-2 mb-4">
                     <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
-                      <div className="text-[10px] text-white/50 uppercase tracking-wider">ATK</div>
-                      <div className="text-lg font-bold text-white">{character.MaxATK}</div>
+                      <div className="text-[10px] text-white/50 uppercase tracking-wider">STR</div>
+                      <div className="text-lg font-bold text-white">{character.Strength}</div>
                     </div>
                     <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
-                      <div className="text-[10px] text-white/50 uppercase tracking-wider">HP</div>
-                      <div className="text-lg font-bold text-white">{character.MaxHP}</div>
+                      <div className="text-[10px] text-white/50 uppercase tracking-wider">AGI</div>
+                      <div className="text-lg font-bold text-white">{character.Agility}</div>
                     </div>
                     <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
-                      <div className="text-[10px] text-white/50 uppercase tracking-wider">DEF</div>
-                      <div className="text-lg font-bold text-white">{character.MaxDEF}</div>
+                      <div className="text-[10px] text-white/50 uppercase tracking-wider">INT</div>
+                      <div className="text-lg font-bold text-white">{character.Intellect}</div>
+                    </div>
+                    <div className="p-3 clip-corner-tl text-center" style={{ backgroundColor: `${accentColor}12` }}>
+                      <div className="text-[10px] text-white/50 uppercase tracking-wider">WILL</div>
+                      <div className="text-lg font-bold text-white">{character.Will}</div>
                     </div>
                   </div>
 
