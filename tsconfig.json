@@ -38,6 +38,10 @@
     // Do not include test files
     "**/*.test.*",
     // Do not include plugins in the server compilation
-    "src/plugins/**"
+    "src/plugins/**",
+
+    // Exclude Next.js and React SPA frontends (they have their own tsconfig)
+    "endfield-hub-next/",
+    "endfield-hub/"
   ]
 }
