@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ThumbsUp, Copy, Check, Plus, LogIn } from 'lucide-react';
+import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import { fetchBlueprints } from '@/lib/api';
 import { SCRAPED_BLUEPRINTS, type BlueprintEntry } from '@/data/blueprints';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function Blueprints() {
   const [search, setSearch] = useState('');
@@ -55,20 +56,20 @@ export default function Blueprints() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">BLUEPRINTS</h1>
-          <p className="text-gray-500 text-sm">Community factory blueprints for Arknights: Endfield</p>
+          <RIOSHeader title="Blueprint Registry" category="LOGISTICS" code="RIOS-BP-001" icon={<LayoutGrid size={28} />} />
+          <p className="text-[var(--color-text-tertiary)] text-sm mt-2">Community factory blueprints for Arknights: Endfield</p>
         </div>
         {isAuthenticated ? (
           <button
             onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-2 bg-[#FFE500] text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#FFD700] transition-colors"
+            className="flex items-center gap-2 bg-[var(--color-accent)] text-black px-4 py-2 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-accent)]/90 transition-colors"
           >
             <Plus size={16} /> Submit Blueprint
           </button>
         ) : (
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-[#333] text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#444] transition-colors no-underline"
+            className="flex items-center gap-2 bg-[#333] text-[var(--color-text-secondary)] px-4 py-2 clip-corner-tl text-sm font-semibold hover:bg-[#444] transition-colors no-underline"
           >
             <LogIn size={16} /> Login to Submit
           </Link>
@@ -76,20 +77,20 @@ export default function Blueprints() {
       </div>
 
       {showCreate && isAuthenticated && (
-        <div className="bg-[#111] border border-[#FFE500] rounded-xl p-5 mb-6">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-accent)] clip-corner-tl p-5 mb-6">
           <h3 className="text-white font-semibold mb-3">Submit a Blueprint</h3>
-          <p className="text-gray-500 text-xs mb-3">Submitting as {user?.username}</p>
+          <p className="text-[var(--color-text-tertiary)] text-xs mb-3">Submitting as {user?.username}</p>
           <div className="space-y-3">
-            <input placeholder="Blueprint Title" className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#FFE500]" />
-            <textarea placeholder="Description" rows={3} className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#FFE500]" />
-            <input placeholder="Import String (EFO code)" className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[#FFE500]" />
+            <input placeholder="Blueprint Title" className="w-full bg-[#0a0a0a] border border-[#333] clip-corner-tl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
+            <textarea placeholder="Description" rows={3} className="w-full bg-[#0a0a0a] border border-[#333] clip-corner-tl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
+            <input placeholder="Import String (EFO code)" className="w-full bg-[#0a0a0a] border border-[#333] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]" />
             <div className="flex gap-2">
-              <select className="bg-[#0a0a0a] border border-[#333] rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
+              <select className="bg-[#0a0a0a] border border-[#333] clip-corner-tl px-3 py-2 text-white text-sm focus:outline-none">
                 <option>Asia</option>
                 <option>NA / EU</option>
                 <option>CN</option>
               </select>
-              <button className="bg-[#FFE500] text-black px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#FFD700]">Submit</button>
+              <button className="bg-[var(--color-accent)] text-black px-6 py-2 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-accent)]/90">Submit</button>
             </div>
           </div>
         </div>
@@ -97,13 +98,13 @@ export default function Blueprints() {
 
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
           <input
             type="text"
             placeholder="Search blueprints..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#111] border border-[#333] rounded-lg pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FFE500]"
+            className="w-full bg-[var(--color-surface)] border border-[#333] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
           />
         </div>
         <div className="flex gap-2">
@@ -112,7 +113,7 @@ export default function Blueprints() {
               key={r}
               onClick={() => setRegionFilter(regionFilter === r ? null : r)}
               className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                regionFilter === r ? 'border-[#FFE500] text-[#FFE500] bg-[#FFE500]/10' : 'border-[#333] text-gray-400 hover:border-[#555]'
+                regionFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
               }`}
             >
               {r}
@@ -123,28 +124,28 @@ export default function Blueprints() {
 
       <div className="space-y-3">
         {filtered.map(bp => (
-          <div key={bp.id} className="bg-[#111] border border-[#222] rounded-xl p-5 hover:border-[#444] transition-all">
+          <div key={bp.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all">
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="text-white font-semibold">{bp.Title}</h3>
-                <p className="text-gray-500 text-xs mt-0.5">by {bp.Author} &middot; {bp.Region}</p>
+                <p className="text-[var(--color-text-tertiary)] text-xs mt-0.5">by {bp.Author} &middot; {bp.Region}</p>
               </div>
               <div className="flex items-center gap-1 text-[#FFE500]">
                 <ThumbsUp size={14} />
                 <span className="text-sm font-semibold">{bp.Upvotes}</span>
               </div>
             </div>
-            <p className="text-gray-400 text-sm mb-3 whitespace-pre-line">{bp.Description}</p>
+            <p className="text-[var(--color-text-secondary)] text-sm mb-3 whitespace-pre-line">{bp.Description}</p>
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-1">
                 {bp.Tags.map(tag => (
-                  <span key={tag} className="text-[10px] bg-[#1a1a1a] text-gray-400 px-2 py-0.5 rounded-full border border-[#333]">{tag}</span>
+                  <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 rounded-full border border-[#333]">{tag}</span>
                 ))}
               </div>
               {bp.ImportString.startsWith('EFO') && (
                 <button
                   onClick={() => copyImportString(bp.id, bp.ImportString)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] border border-[#333] rounded-lg text-xs text-gray-300 hover:border-[#FFE500] hover:text-[#FFE500] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface-2)] border border-[#333] clip-corner-tl text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
                 >
                   {copiedId === bp.id ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy Import</>}
                 </button>

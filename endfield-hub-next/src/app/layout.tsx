@@ -40,11 +40,36 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+function AutoDeployOverlay() {
+  const topText =
+    'PRTS SYSTEM ACTIVE // NEURAL LINK ESTABLISHED // OPERATOR STATUS: NORMAL // DATA SYNC: COMPLETE // ORIGINIUM MONITORING: ACTIVE // RHODES ISLAND OS INITIALIZED // ENDFIELD TACTICAL SUITE ONLINE // ';
+  const bottomText =
+    'RIOS.v2.0 // ZEROSANITY.APP // DATA SOURCE: VERIFIED // ENDFIELD TOOLKIT OPERATIONAL // GRYPHLINE ASSET DATABASE // COMBAT READINESS: OPTIMAL // SYSTEM INTEGRITY: 100% // ';
+
+  return (
+    <>
+      <div className="fixed top-0 left-0 right-0 h-7 bg-gradient-to-b from-[#080c12] via-[#080c12ee] to-transparent z-[100] pointer-events-none overflow-hidden flex items-center">
+        <div className="terminal-text opacity-40 whitespace-nowrap animate-scroll-left text-[10px]">
+          {topText}
+          {topText}
+        </div>
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 h-7 bg-gradient-to-t from-[#080c12] via-[#080c12ee] to-transparent z-[100] pointer-events-none overflow-hidden flex items-end">
+        <div className="terminal-text opacity-40 whitespace-nowrap animate-scroll-right text-[10px] pb-1">
+          {bottomText}
+          {bottomText}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <div className="min-h-screen bg-[#0a0a0a]">
+        <AutoDeployOverlay />
+        <div className="min-h-screen bg-[#080c12]">
           <Sidebar />
           <main className="lg:ml-64 min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 lg:pt-8">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { UserPlus, User, Mail, Lock, Chrome } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -58,17 +59,19 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#080c12] text-gray-400 flex items-center justify-center p-6">
       <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-[#FFE500] rounded-full mb-4">
-            <UserPlus className="w-8 h-8 text-black" />
-          </div>
-          <h1 className="text-4xl font-bold text-[#FFE500] mb-2">Create Account</h1>
-          <p>Sign up to join the Endfield Hub community</p>
+        <div className="mb-8">
+          <RIOSHeader
+            title="Registration Terminal"
+            category="AUTH"
+            code="RIOS-AUTH-002"
+            icon={<UserPlus size={28} />}
+          />
+          <p className="text-center mt-4">Sign up to join the Endfield Hub community</p>
         </div>
 
-        <div className="bg-[#111] border border-[#222] rounded-lg p-8">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
               {error}
@@ -100,10 +103,10 @@ export default function SignupPage() {
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#222]"></div>
+              <div className="w-full border-t border-[var(--color-border)]"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#111] text-gray-500">Or continue with email</span>
+              <span className="px-2 bg-[var(--color-surface)] text-[var(--color-text-tertiary)]">Or continue with email</span>
             </div>
           </div>
 
@@ -114,14 +117,14 @@ export default function SignupPage() {
                 Username
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Your username"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[#080c12] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
             </div>
@@ -131,14 +134,14 @@ export default function SignupPage() {
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[#080c12] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
             </div>
@@ -148,7 +151,7 @@ export default function SignupPage() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
                 <input
                   type="password"
                   value={password}
@@ -156,7 +159,7 @@ export default function SignupPage() {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[#080c12] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
             </div>
@@ -166,7 +169,7 @@ export default function SignupPage() {
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
                 <input
                   type="password"
                   value={confirmPassword}
@@ -174,7 +177,7 @@ export default function SignupPage() {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[#080c12] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
             </div>
@@ -182,16 +185,16 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-[#FFE500] text-black font-bold rounded-lg hover:bg-[#FFE500]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 bg-[var(--color-accent)] text-black font-bold rounded-lg hover:bg-[var(--color-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? 'Creating account...' : 'Sign Up'}
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-[#222] text-center text-sm">
+          <div className="mt-6 pt-6 border-t border-[var(--color-border)] text-center text-sm">
             <p>
               Already have an account?{' '}
-              <Link href="/login" className="text-[#FFE500] hover:underline font-bold">
+              <Link href="/login" className="text-[var(--color-accent)] hover:underline font-bold">
                 Sign in
               </Link>
             </p>

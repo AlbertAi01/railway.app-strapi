@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Users } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 import { CHARACTERS } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Element, Role, WeaponType } from '@/types/game';
@@ -35,7 +36,7 @@ export default function Characters() {
     <button
       onClick={onClick}
       className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
-        active ? 'border-[#FFE500] text-[#FFE500] bg-[#FFE500]/10' : 'border-[#333] text-gray-400 hover:border-[#555]'
+        active ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
       }`}
       style={active && color ? { borderColor: color, color: color, backgroundColor: `${color}15` } : {}}
     >
@@ -45,22 +46,27 @@ export default function Characters() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">CHARACTERS</h1>
-      <p className="text-gray-500 text-sm mb-6">{filtered.length} characters found</p>
+      <RIOSHeader
+        title="Operator Database"
+        category="PERSONNEL"
+        code="RIOS-OPS-DB"
+        icon={<Users size={28} />}
+        subtitle={`${filtered.length} operators indexed`}
+      />
 
       <div className="relative mb-4">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
         <input
           type="text"
           placeholder="Search characters..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[#111] border border-[#333] rounded-lg pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FFE500]"
+          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
         />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        <Filter size={14} className="text-gray-500 self-center" />
+        <Filter size={14} className="text-[var(--color-text-tertiary)] self-center" />
         {[6, 5, 4].map(r => (
           <FilterChip key={r} label={`${r}★`} active={rarityFilter === r} onClick={() => setRarityFilter(rarityFilter === r ? null : r)} color={RARITY_COLORS[r]} />
         ))}
@@ -80,7 +86,7 @@ export default function Characters() {
           <Link
             key={char.Slug}
             href={`/characters/${char.Slug}`}
-            className="group bg-[#111] border border-[#222] rounded-xl overflow-hidden hover:border-[#444] transition-all no-underline"
+            className="group bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-all no-underline"
           >
             <div
               className="aspect-[3/4] relative flex items-center justify-center"
@@ -109,10 +115,10 @@ export default function Characters() {
               />
             </div>
             <div className="p-2.5">
-              <p className="text-white text-sm font-semibold group-hover:text-[#FFE500] transition-colors truncate">{char.Name}</p>
+              <p className="text-white text-sm font-semibold group-hover:text-[var(--color-accent)] transition-colors truncate">{char.Name}</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[11px]" style={{ color: ELEMENT_COLORS[char.Element] }}>{char.Element}</span>
-                <span className="text-gray-600 text-[11px]">{char.Role}</span>
+                <span className="text-[var(--color-text-tertiary)] text-[11px]">{char.Role}</span>
               </div>
             </div>
           </Link>

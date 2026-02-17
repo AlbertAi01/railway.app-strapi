@@ -23,8 +23,8 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
 
   const statBar = (label: string, value: number, max: number, color: string) => (
     <div className="flex items-center gap-3">
-      <span className="text-gray-400 text-xs w-16">{label}</span>
-      <div className="flex-1 h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
+      <span className="text-[var(--color-text-secondary)] text-xs w-16">{label}</span>
+      <div className="flex-1 h-2 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all" style={{ width: `${(value / max) * 100}%`, backgroundColor: color }} />
       </div>
       <span className="text-white text-xs w-12 text-right">{value}</span>
@@ -38,7 +38,7 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
       </Link>
 
       {CHARACTER_BANNERS[char.Name] && (
-        <div className="mb-6 rounded-xl overflow-hidden border border-[#222]">
+        <div className="mb-6 clip-corner-tl overflow-hidden border border-[var(--color-border)]">
           <Image
             src={CHARACTER_BANNERS[char.Name]}
             alt={`${char.Name} banner`}
@@ -53,8 +53,8 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <div
-            className="aspect-[3/4] rounded-xl flex items-center justify-center relative overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${ELEMENT_COLORS[char.Element]}30, #111)` }}
+            className="aspect-[3/4] clip-corner-tl flex items-center justify-center relative overflow-hidden"
+            style={{ background: `linear-gradient(135deg, ${ELEMENT_COLORS[char.Element]}30, var(--color-surface))` }}
           >
             {CHARACTER_ICONS[char.Name] ? (
               <Image
@@ -86,12 +86,12 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
             <h2 className="text-lg font-bold text-white mb-2">Overview</h2>
-            <p className="text-gray-400 text-sm leading-relaxed">{char.Description}</p>
+            <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">{char.Description}</p>
           </div>
 
-          <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
             <h2 className="text-lg font-bold text-white mb-4">Base Stats (Lv. 1)</h2>
             <div className="space-y-3">
               {statBar('HP', char.BaseHP, 1500, '#27AE60')}
@@ -100,7 +100,7 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
             </div>
           </div>
 
-          <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
             <h2 className="text-lg font-bold text-white mb-4">Max Stats (Lv. 90)</h2>
             <div className="space-y-3">
               {statBar('HP', char.MaxHP, 11000, '#27AE60')}
@@ -110,20 +110,20 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-[#111] border border-[#222] rounded-xl p-4 text-center">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
               <Heart size={20} className="mx-auto mb-2 text-green-400" />
               <p className="text-white font-bold">{char.MaxHP}</p>
-              <p className="text-gray-500 text-xs">Max HP</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Max HP</p>
             </div>
-            <div className="bg-[#111] border border-[#222] rounded-xl p-4 text-center">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
               <Swords size={20} className="mx-auto mb-2 text-orange-400" />
               <p className="text-white font-bold">{char.MaxATK}</p>
-              <p className="text-gray-500 text-xs">Max ATK</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Max ATK</p>
             </div>
-            <div className="bg-[#111] border border-[#222] rounded-xl p-4 text-center">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
               <Shield size={20} className="mx-auto mb-2 text-blue-400" />
               <p className="text-white font-bold">{char.MaxDEF}</p>
-              <p className="text-gray-500 text-xs">Max DEF</p>
+              <p className="text-[var(--color-text-tertiary)] text-xs">Max DEF</p>
             </div>
           </div>
         </div>

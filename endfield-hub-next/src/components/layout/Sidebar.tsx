@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Users, Sword, Shield, BookOpen, Factory, Map,
-  Trophy, Target, Dice6, LayoutGrid, Star,  Crosshair,
+  Trophy, Target, Dice6, LayoutGrid, Star, Crosshair,
   FlaskConical, Wrench, Sparkles, ChevronDown, ChevronRight,
   Menu, X, LogIn, User
 } from 'lucide-react';
@@ -22,9 +22,9 @@ interface NavItem {
 const navigation: NavItem[] = [
   { label: 'Home', path: '/', icon: <Home size={18} /> },
   {
-    label: 'Characters', path: '/characters', icon: <Users size={18} />,
+    label: 'Operators', path: '/characters', icon: <Users size={18} />,
     children: [
-      { label: 'All Characters', path: '/characters', icon: <Users size={16} /> },
+      { label: 'All Operators', path: '/characters', icon: <Users size={16} /> },
       { label: 'Weapons', path: '/weapons', icon: <Sword size={16} /> },
       { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={16} /> },
       { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={16} /> },
@@ -33,31 +33,31 @@ const navigation: NavItem[] = [
     ],
   },
   {
-    label: 'Character Card', path: '/character-card', icon: <Sparkles size={18} />,
+    label: 'Operator Card', path: '/character-card', icon: <Sparkles size={18} />,
     isNew: true,
   },
   {
-    label: 'Character Builds', path: '/tier-list', icon: <LayoutGrid size={18} />,
+    label: 'Combat Analysis', path: '/tier-list', icon: <LayoutGrid size={18} />,
     children: [
-      { label: 'Tier List Builder', path: '/tier-list', icon: <LayoutGrid size={16} /> },
+      { label: 'Tier Matrix', path: '/tier-list', icon: <LayoutGrid size={16} /> },
     ],
   },
   {
-    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />,
+    label: 'Logistics', path: '/factory-planner', icon: <Factory size={18} />,
     children: [
-      { label: 'Planner', path: '/factory-planner', icon: <Factory size={16} /> },
+      { label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={16} /> },
       { label: 'Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
     ],
   },
-  { label: 'Interactive Map', path: '/map', icon: <Map size={18} /> },
+  { label: 'Tactical Map', path: '/map', icon: <Map size={18} /> },
   {
-    label: 'Headhunt Tracker', path: '/headhunt-tracker', icon: <Target size={18} />,
+    label: 'Headhunt Ops', path: '/headhunt-tracker', icon: <Target size={18} />,
     isNew: true,
   },
-  { label: 'Achievement Tracker', path: '/achievements', icon: <Trophy size={18} /> },
-  { label: 'Summon Simulator', path: '/summon-simulator', icon: <Dice6 size={18} /> },
-  { label: 'Guides', path: '/guides', icon: <BookOpen size={18} /> },
+  { label: 'Achievements', path: '/achievements', icon: <Trophy size={18} /> },
+  { label: 'Recruitment Sim', path: '/summon-simulator', icon: <Dice6 size={18} /> },
+  { label: 'Intel Briefings', path: '/guides', icon: <BookOpen size={18} /> },
 ];
 
 export default function Sidebar() {
@@ -80,26 +80,30 @@ export default function Sidebar() {
             <>
               <button
                 onClick={() => toggleExpand(item.label)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[#1a1a1a] ${
-                  pathname.startsWith(item.path) ? 'text-[#FFE500]' : 'text-gray-300'
+                className={`w-full flex items-center gap-3 px-3 py-2 clip-corner-tl text-sm font-medium transition-colors hover:bg-[var(--color-surface-2)] border-l-2 ${
+                  pathname.startsWith(item.path)
+                    ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)] border-[var(--color-accent)]'
+                    : 'text-[var(--color-text-secondary)] border-transparent'
                 }`}
               >
                 {item.icon}
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.isNew && (
-                  <span className="text-[10px] bg-[#FFE500] text-black px-1.5 py-0.5 rounded font-bold">NEW</span>
+                  <span className="text-[10px] bg-[#FFE500] text-black px-1.5 py-0.5 font-bold clip-corner-tl">NEW</span>
                 )}
                 {expanded[item.label] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
               {expanded[item.label] && (
-                <div className="ml-4 flex flex-col gap-0.5">
+                <div className="ml-4 flex flex-col gap-0.5 border-l border-[var(--color-border)]">
                   {item.children.map((child) => (
                     <Link
                       key={child.path}
                       href={child.path}
                       onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#1a1a1a] no-underline ${
-                        isActive(child.path) ? 'text-[#FFE500] bg-[#1a1a1a]' : 'text-gray-400'
+                      className={`flex items-center gap-3 px-3 py-1.5 text-sm transition-colors hover:bg-[var(--color-surface-2)] ${
+                        isActive(child.path)
+                          ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)]'
+                          : 'text-[var(--color-text-tertiary)]'
                       }`}
                     >
                       {child.icon}
@@ -113,14 +117,16 @@ export default function Sidebar() {
             <Link
               href={item.path}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[#1a1a1a] no-underline ${
-                isActive(item.path) ? 'text-[#FFE500] bg-[#1a1a1a]' : 'text-gray-300'
+              className={`flex items-center gap-3 px-3 py-2 clip-corner-tl text-sm font-medium transition-colors hover:bg-[var(--color-surface-2)] border-l-2 ${
+                isActive(item.path)
+                  ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)] border-[var(--color-accent)]'
+                  : 'text-[var(--color-text-secondary)] border-transparent'
               }`}
             >
               {item.icon}
               <span className="flex-1">{item.label}</span>
               {item.isNew && (
-                <span className="text-[10px] bg-[#FFE500] text-black px-1.5 py-0.5 rounded font-bold">NEW</span>
+                <span className="text-[10px] bg-[#FFE500] text-black px-1.5 py-0.5 font-bold clip-corner-tl">NEW</span>
               )}
             </Link>
           )}
@@ -131,34 +137,48 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[#111] rounded-lg border border-[#333]"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl"
       >
-        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        {mobileOpen ? <X size={20} className="text-[var(--color-accent)]" /> : <Menu size={20} className="text-[var(--color-accent)]" />}
       </button>
 
+      {/* Mobile backdrop */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={() => setMobileOpen(false)} />
+        <div className="lg:hidden fixed inset-0 bg-black/70 z-30" onClick={() => setMobileOpen(false)} />
       )}
 
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-[#0d0d0d] border-r border-[#222] z-40 flex flex-col overflow-y-auto transition-transform ${
+      {/* Sidebar */}
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] z-40 flex flex-col overflow-y-auto transition-transform ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        <div className="p-4 border-b border-[#222]">
-          <Link href="/" className="flex items-center gap-2 no-underline">
-            <Crosshair size={24} className="text-[#FFE500]" />
-            <span className="text-lg font-bold text-white tracking-wide">ZERO SANITY</span>
+        {/* RIOS Logo Header */}
+        <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="diamond diamond-md" />
+            <div>
+              <span className="text-base font-bold text-white tracking-wider font-tactical uppercase">
+                RHODES ISLAND OS
+              </span>
+              <p className="terminal-text text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
+                ENDFIELD.TOOLKIT.v2.0
+              </p>
+            </div>
           </Link>
-          <p className="text-[11px] text-gray-500 mt-1">Arknights: Endfield Toolkit</p>
         </div>
-        <div className="px-2 py-3 border-b border-[#222]">
+
+        {/* User/Auth section */}
+        <div className="px-2 py-3 border-b border-[var(--color-border)]">
           {user ? (
             <Link
               href="/profile"
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[#1a1a1a] no-underline ${
-                isActive('/profile') ? 'text-[#FFE500] bg-[#1a1a1a]' : 'text-gray-300'
+              className={`flex items-center gap-3 px-3 py-2 clip-corner-tl text-sm font-medium transition-colors hover:bg-[var(--color-surface-2)] border-l-2 ${
+                isActive('/profile')
+                  ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)] border-[var(--color-accent)]'
+                  : 'text-[var(--color-text-secondary)] border-transparent'
               }`}
             >
               <User size={18} />
@@ -168,19 +188,23 @@ export default function Sidebar() {
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[#FFE500] hover:bg-[#1a1a1a] transition-colors no-underline"
+              className="flex items-center gap-3 px-3 py-2 clip-corner-tl text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-surface-2)] transition-colors border-l-2 border-transparent"
             >
               <LogIn size={18} />
-              <span>Login / Register</span>
+              <span>Authorize</span>
             </Link>
           )}
         </div>
+
+        {/* Navigation */}
         <div className="flex-1 py-3 overflow-y-auto">
           {renderNav()}
         </div>
-        <div className="p-4 border-t border-[#222] text-[11px] text-gray-600">
-          <p>v2.0.0 &middot; zerosanity.app</p>
-          <p className="mt-1">Game assets &copy; GRYPHLINE</p>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-[var(--color-border)]">
+          <p className="terminal-text text-[10px] text-[var(--color-text-tertiary)]">RIOS.v2.0.0 &middot; zerosanity.app</p>
+          <p className="terminal-text text-[10px] text-[var(--color-text-tertiary)] mt-1">GAME ASSETS &copy; GRYPHLINE</p>
         </div>
       </aside>
     </>

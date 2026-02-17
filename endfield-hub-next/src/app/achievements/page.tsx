@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Trophy, Check, Search } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 interface Achievement {
   id: string;
@@ -71,45 +72,47 @@ export default function AchievementsPage() {
   const completionPercentage = ((completed.size / ACHIEVEMENTS.length) * 100).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#FFE500] mb-8 flex items-center gap-3">
-          <Trophy className="w-10 h-10" />
-          Achievement Tracker
-        </h1>
+        <RIOSHeader
+          title="Achievement Registry"
+          category="RECORDS"
+          code="RIOS-ACH-001"
+          icon={<Trophy size={28} />}
+        />
 
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-[#111] border border-[#222] rounded-lg p-4">
-            <div className="text-sm text-gray-500">Completed</div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
+            <div className="text-sm text-[var(--color-text-tertiary)]">Completed</div>
             <div className="text-2xl font-bold text-white">
               {completed.size}/{ACHIEVEMENTS.length}
             </div>
           </div>
-          <div className="bg-[#111] border border-[#222] rounded-lg p-4">
-            <div className="text-sm text-gray-500">Completion</div>
-            <div className="text-2xl font-bold text-[#FFE500]">{completionPercentage}%</div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
+            <div className="text-sm text-[var(--color-text-tertiary)]">Completion</div>
+            <div className="text-2xl font-bold text-[var(--color-accent)]">{completionPercentage}%</div>
           </div>
-          <div className="bg-[#111] border border-[#222] rounded-lg p-4">
-            <div className="text-sm text-gray-500">Points Earned</div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
+            <div className="text-sm text-[var(--color-text-tertiary)]">Points Earned</div>
             <div className="text-2xl font-bold text-white">{earnedPoints}</div>
           </div>
-          <div className="bg-[#111] border border-[#222] rounded-lg p-4">
-            <div className="text-sm text-gray-500">Total Points</div>
-            <div className="text-2xl font-bold text-gray-500">{totalPoints}</div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
+            <div className="text-sm text-[var(--color-text-tertiary)]">Total Points</div>
+            <div className="text-2xl font-bold text-[var(--color-text-tertiary)]">{totalPoints}</div>
           </div>
         </div>
 
         {/* Search and Filter */}
         <div className="mb-6 space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
             <input
               type="text"
               placeholder="Search achievements..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-[#111] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+              className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
             />
           </div>
 
@@ -120,8 +123,8 @@ export default function AchievementsPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   selectedCategory === cat
-                    ? 'bg-[#FFE500] text-black font-bold'
-                    : 'bg-[#111] border border-[#222] hover:border-[#FFE500]'
+                    ? 'bg-[var(--color-accent)] text-black font-bold'
+                    : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
                 }`}
               >
                 {cat}
@@ -141,14 +144,14 @@ export default function AchievementsPage() {
                 onClick={() => toggleAchievement(achievement.id)}
                 className={`cursor-pointer transition-all ${
                   isCompleted
-                    ? 'bg-[#FFE500]/10 border-[#FFE500]'
-                    : 'bg-[#111] border-[#222] hover:border-[#FFE500]'
-                } border rounded-lg p-6`}
+                    ? 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]'
+                    : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                } border clip-corner-tl p-6`}
               >
                 <div className="flex items-start gap-4">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isCompleted ? 'bg-[#FFE500]' : 'bg-[#222]'
+                      isCompleted ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'
                     }`}
                   >
                     {isCompleted ? (
@@ -160,17 +163,17 @@ export default function AchievementsPage() {
 
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className={`font-bold text-lg ${isCompleted ? 'text-[#FFE500]' : 'text-white'}`}>
+                      <h3 className={`font-bold text-lg ${isCompleted ? 'text-[var(--color-accent)]' : 'text-white'}`}>
                         {achievement.name}
                       </h3>
-                      <span className="text-sm px-3 py-1 bg-[#222] rounded-full text-[#FFE500] font-bold">
+                      <span className="text-sm px-3 py-1 bg-[var(--color-border)] rounded-full text-[var(--color-accent)] font-bold">
                         {achievement.points}
                       </span>
                     </div>
 
                     <p className="text-sm mb-2">{achievement.description}</p>
 
-                    <span className="text-xs px-3 py-1 bg-[#222] rounded-full">
+                    <span className="text-xs px-3 py-1 bg-[var(--color-border)] rounded-full">
                       {achievement.category}
                     </span>
                   </div>
@@ -181,7 +184,7 @@ export default function AchievementsPage() {
         </div>
 
         {filteredAchievements.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-[var(--color-text-tertiary)]">
             No achievements found matching your search.
           </div>
         )}

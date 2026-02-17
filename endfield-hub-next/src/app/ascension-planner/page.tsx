@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CHARACTERS } from '@/lib/data';
 import { TrendingUp, Star } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const ASCENSION_MATERIALS = {
   E1: [
@@ -77,13 +78,14 @@ export default function AscensionPlannerPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#FFE500] mb-8">Ascension Planner</h1>
+        <RIOSHeader title="Operator Development" category="DEVELOPMENT" code="RIOS-ASC-001" icon={<Star size={28} />} />
+        <div className="mb-8"></div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Character Selection */}
-          <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
             <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-[#FFE500]" />
+              <TrendingUp className="w-6 h-6 text-[var(--color-accent)]" />
               Character Selection
             </h2>
 
@@ -93,7 +95,7 @@ export default function AscensionPlannerPage() {
                 <select
                   value={selectedCharacter}
                   onChange={(e) => setSelectedCharacter(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                 >
                   <option value="">Choose a character...</option>
                   {CHARACTERS.map(char => (
@@ -124,7 +126,7 @@ export default function AscensionPlannerPage() {
                   <select
                     value={currentLevel}
                     onChange={(e) => setCurrentLevel(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                    className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
                     <option value="E0 1">E0 1</option>
                     <option value="E0 50">E0 50</option>
@@ -139,7 +141,7 @@ export default function AscensionPlannerPage() {
                   <select
                     value={targetLevel}
                     onChange={(e) => setTargetLevel(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                    className="w-full px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                   >
                     <option value="E1 70">E1 70</option>
                     <option value="E2 1">E2 1</option>
@@ -174,26 +176,26 @@ export default function AscensionPlannerPage() {
           </div>
 
           {/* Materials Required */}
-          <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
             <h2 className="text-2xl font-bold text-white mb-4">Required Materials</h2>
 
             {selectedCharacter ? (
               <div className="space-y-3">
                 {Object.keys(materials).length > 0 ? (
                   Object.entries(materials).map(([item, amount]) => (
-                    <div key={item} className="flex items-center justify-between bg-[#0a0a0a] p-4 rounded-lg">
+                    <div key={item} className="flex items-center justify-between bg-[#0a0a0a] p-4 clip-corner-tl">
                       <span className="font-medium text-white">{item}</span>
-                      <span className="text-[#FFE500] font-bold text-lg">×{amount}</span>
+                      <span className="text-[var(--color-accent)] font-bold text-lg">×{amount}</span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-center py-8 text-gray-500">
+                  <p className="text-center py-8 text-[var(--color-text-tertiary)]">
                     Select target levels and skills to see required materials
                   </p>
                 )}
 
                 {Object.keys(materials).length > 0 && (
-                  <div className="mt-6 p-4 bg-[#0a0a0a] border border-[#FFE500] rounded-lg">
+                  <div className="mt-6 p-4 bg-[#0a0a0a] border border-[var(--color-accent)] clip-corner-tl">
                     <h3 className="font-bold text-white mb-2">Farming Tips:</h3>
                     <ul className="text-sm space-y-1">
                       <li>• Farm LMD from CE-5 or event stages</li>
@@ -205,7 +207,7 @@ export default function AscensionPlannerPage() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-[var(--color-text-tertiary)]">
                 Select a character to begin planning
               </div>
             )}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, TrendingUp } from 'lucide-react';
+import { Shield, TrendingUp, Wrench } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const EQUIPMENT_TIERS = ['T1', 'T2', 'T3', 'T4', 'T5'];
 
@@ -59,16 +60,21 @@ export default function GearArtificingPage() {
   const numUpgrades = UPGRADE_LEVELS.filter(l => l <= upgradeLevel && l > 0).length;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen bg-[#080c12] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#FFE500] mb-8">Gear Artificing Calculator</h1>
+        <RIOSHeader
+          title="Gear Analysis"
+          category="EQUIPMENT"
+          code="RIOS-ART-001"
+          icon={<Wrench size={28} />}
+        />
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Configuration */}
           <div className="space-y-6">
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <Shield className="w-6 h-6 text-[#FFE500]" />
+                <Shield className="w-6 h-6 text-[var(--color-accent)]" />
                 Equipment Settings
               </h2>
 
@@ -84,8 +90,8 @@ export default function GearArtificingPage() {
                         onClick={() => setSelectedTier(tier)}
                         className={`flex-1 py-3 rounded-lg font-bold transition-colors ${
                           selectedTier === tier
-                            ? 'bg-[#FFE500] text-black'
-                            : 'bg-[#0a0a0a] border border-[#222] hover:border-[#FFE500]'
+                            ? 'bg-[var(--color-accent)] text-black'
+                            : 'bg-[#080c12] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
                         }`}
                       >
                         {tier}
@@ -125,8 +131,8 @@ export default function GearArtificingPage() {
                         onClick={() => setUpgradeLevel(level)}
                         className={`flex-1 py-2 rounded-lg transition-colors ${
                           upgradeLevel === level
-                            ? 'bg-[#FFE500] text-black font-bold'
-                            : 'bg-[#0a0a0a] border border-[#222] hover:border-[#FFE500]'
+                            ? 'bg-[var(--color-accent)] text-black font-bold'
+                            : 'bg-[#080c12] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
                         }`}
                       >
                         +{level}
@@ -138,7 +144,7 @@ export default function GearArtificingPage() {
             </div>
 
             {/* Mechanics Info */}
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h3 className="font-bold text-white mb-3">Equipment Upgrade Mechanics</h3>
               <ul className="text-sm space-y-2">
                 <li>• Equipment gains substats when upgraded at +3, +6, +9, +12, +15</li>
@@ -152,27 +158,27 @@ export default function GearArtificingPage() {
 
           {/* Results */}
           <div className="space-y-6">
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-[#FFE500]" />
+                <TrendingUp className="w-6 h-6 text-[var(--color-accent)]" />
                 Probability Analysis
               </h2>
 
               <div className="space-y-4">
-                <div className="bg-[#0a0a0a] p-4 rounded-lg">
+                <div className="bg-[var(--color-surface-2)] p-4 rounded-lg">
                   <h3 className="font-bold text-white mb-3">Starting Substat Probabilities</h3>
                   <div className="space-y-2">
                     {Object.entries(probabilities).map(([substats, prob]) => (
                       <div key={substats} className="flex items-center justify-between">
                         <span>{substats} Substats</span>
                         <div className="flex items-center gap-3 flex-1 ml-4">
-                          <div className="flex-1 bg-[#222] h-6 rounded-full overflow-hidden">
+                          <div className="flex-1 bg-[var(--color-border)] h-6 rounded-full overflow-hidden">
                             <div
-                              className="bg-[#FFE500] h-full transition-all duration-300"
+                              className="bg-[var(--color-accent)] h-full transition-all duration-300"
                               style={{ width: `${prob}%` }}
                             />
                           </div>
-                          <span className="text-[#FFE500] font-bold w-12 text-right">
+                          <span className="text-[var(--color-accent)] font-bold w-12 text-right">
                             {prob}%
                           </span>
                         </div>
@@ -182,24 +188,24 @@ export default function GearArtificingPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#0a0a0a] p-4 rounded-lg">
-                    <span className="text-sm text-gray-500">Number of Upgrades</span>
+                  <div className="bg-[var(--color-surface-2)] p-4 rounded-lg">
+                    <span className="text-sm text-[var(--color-text-tertiary)]">Number of Upgrades</span>
                     <p className="text-2xl text-white font-bold">{numUpgrades}</p>
                   </div>
-                  <div className="bg-[#0a0a0a] p-4 rounded-lg">
-                    <span className="text-sm text-gray-500">Expected Substats</span>
-                    <p className="text-2xl text-[#FFE500] font-bold">{calculateExpectedValue()}</p>
+                  <div className="bg-[var(--color-surface-2)] p-4 rounded-lg">
+                    <span className="text-sm text-[var(--color-text-tertiary)]">Expected Substats</span>
+                    <p className="text-2xl text-[var(--color-accent)] font-bold">{calculateExpectedValue()}</p>
                   </div>
                 </div>
 
-                <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#FFE500]">
+                <div className="bg-[var(--color-surface-2)] p-4 rounded-lg border border-[var(--color-accent)]">
                   <h3 className="font-bold text-white mb-2">Final Substat Count</h3>
                   <p className="text-sm mb-2">
                     Starting with {numSubstats} substats and {numUpgrades} upgrades:
                   </p>
                   <div className="space-y-1 text-sm">
                     {numSubstats < 4 && (
-                      <p className="text-[#FFE500]">
+                      <p className="text-[var(--color-accent)]">
                         • New substats added until reaching 4 total
                       </p>
                     )}
@@ -217,16 +223,16 @@ export default function GearArtificingPage() {
             </div>
 
             {/* Substat Types */}
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h3 className="font-bold text-white mb-3">Available Substats</h3>
               <div className="grid grid-cols-2 gap-2">
                 {SUBSTAT_TYPES.map(stat => (
-                  <div key={stat} className="bg-[#0a0a0a] px-3 py-2 rounded text-sm">
+                  <div key={stat} className="bg-[var(--color-surface-2)] px-3 py-2 rounded text-sm">
                     {stat}
                   </div>
                 ))}
               </div>
-              <p className="text-xs mt-3 text-gray-500">
+              <p className="text-xs mt-3 text-[var(--color-text-tertiary)]">
                 Each substat has equal probability when rolled
               </p>
             </div>

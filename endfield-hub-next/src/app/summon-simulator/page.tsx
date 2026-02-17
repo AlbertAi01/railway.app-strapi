@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, RotateCcw } from 'lucide-react';
+import { Sparkles, RotateCcw, Dice6 } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const RATES = {
   6: 0.008,  // 0.8%
@@ -106,16 +107,18 @@ export default function SummonSimulatorPage() {
     : RATES[6] * 100;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-[#FFE500] flex items-center gap-3">
-            <Sparkles className="w-10 h-10" />
-            Summon Simulator
-          </h1>
+          <RIOSHeader
+            title="Recruitment Simulator"
+            category="SIMULATION"
+            code="RIOS-SIM-001"
+            icon={<Dice6 size={28} />}
+          />
           <button
             onClick={reset}
-            className="px-4 py-2 bg-[#111] border border-[#222] rounded-lg hover:border-[#FFE500] transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
           >
             <RotateCcw className="w-4 h-4" />
             Reset
@@ -125,13 +128,13 @@ export default function SummonSimulatorPage() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Controls */}
           <div className="space-y-6">
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-xl font-bold text-white mb-4">Pull Controls</h2>
 
               <div className="space-y-3">
                 <button
                   onClick={() => performPull()}
-                  className="w-full py-4 bg-[#FFE500] text-black font-bold rounded-lg hover:bg-[#FFE500]/90 transition-colors"
+                  className="w-full py-4 bg-[var(--color-accent)] text-black font-bold rounded-lg hover:bg-[var(--color-accent)]/90 transition-colors"
                 >
                   Single Pull
                 </button>
@@ -150,19 +153,19 @@ export default function SummonSimulatorPage() {
               </div>
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-xl font-bold text-white mb-4">Pity Counter</h2>
 
-              <div className="bg-[#0a0a0a] p-4 rounded-lg mb-4">
+              <div className="bg-[var(--color-surface-2)] p-4 rounded-lg mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span>Pulls Since Last 6★</span>
-                  <span className={`text-2xl font-bold ${pityCounter >= PITY_SOFT ? 'text-red-400' : 'text-[#FFE500]'}`}>
+                  <span className={`text-2xl font-bold ${pityCounter >= PITY_SOFT ? 'text-red-400' : 'text-[var(--color-accent)]'}`}>
                     {pityCounter}
                   </span>
                 </div>
-                <div className="w-full bg-[#222] h-3 rounded-full overflow-hidden">
+                <div className="w-full bg-[var(--color-border)] h-3 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all ${pityCounter >= PITY_SOFT ? 'bg-red-500' : 'bg-[#FFE500]'}`}
+                    className={`h-full transition-all ${pityCounter >= PITY_SOFT ? 'bg-red-500' : 'bg-[var(--color-accent)]'}`}
                     style={{ width: `${Math.min((pityCounter / 100) * 100, 100)}%` }}
                   />
                 </div>
@@ -171,7 +174,7 @@ export default function SummonSimulatorPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Current 6★ Rate</span>
-                  <span className="text-[#FFE500] font-bold">{currentRate.toFixed(2)}%</span>
+                  <span className="text-[var(--color-accent)] font-bold">{currentRate.toFixed(2)}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Soft Pity At</span>
@@ -184,29 +187,29 @@ export default function SummonSimulatorPage() {
               </div>
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-xl font-bold text-white mb-4">Statistics</h2>
 
               <div className="space-y-3">
-                <div className="bg-[#0a0a0a] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
                   <span>Total Pulls</span>
                   <span className="text-white font-bold">{totalPulls}</span>
                 </div>
-                <div className="bg-[#0a0a0a] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
                   <span>6★ Pulled</span>
                   <span className="text-orange-400 font-bold">{stats[6]}</span>
                 </div>
-                <div className="bg-[#0a0a0a] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
                   <span>6★ Rate</span>
-                  <span className="text-[#FFE500] font-bold">
+                  <span className="text-[var(--color-accent)] font-bold">
                     {totalPulls > 0 ? ((stats[6] / totalPulls) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
-                <div className="bg-[#0a0a0a] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
                   <span>5★ Pulled</span>
                   <span className="text-purple-400 font-bold">{stats[5]}</span>
                 </div>
-                <div className="bg-[#0a0a0a] p-3 rounded-lg flex justify-between">
+                <div className="bg-[var(--color-surface-2)] p-3 rounded-lg flex justify-between">
                   <span>5★ Rate</span>
                   <span className="text-purple-300 font-bold">
                     {totalPulls > 0 ? ((stats[5] / totalPulls) * 100).toFixed(2) : '0.00'}%
@@ -218,7 +221,7 @@ export default function SummonSimulatorPage() {
 
           {/* Pull Results */}
           <div className="lg:col-span-2">
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-2xl font-bold text-white mb-4">Pull Results</h2>
 
               {pulls.length > 0 ? (
@@ -233,11 +236,11 @@ export default function SummonSimulatorPage() {
                           ? 'bg-purple-900/20 border border-purple-500/50'
                           : pull.rarity === 4
                           ? 'bg-blue-900/20 border border-blue-500/30'
-                          : 'bg-[#0a0a0a] border border-[#222]'
+                          : 'bg-[var(--color-surface-2)] border border-[var(--color-border)]'
                       }`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="text-sm text-gray-500">#{pulls.length - index}</div>
+                        <div className="text-sm text-[var(--color-text-tertiary)]">#{pulls.length - index}</div>
                         <div className="flex items-center gap-3">
                           <Sparkles className={`w-5 h-5 ${
                             pull.rarity === 6 ? 'text-orange-400' :
@@ -262,7 +265,7 @@ export default function SummonSimulatorPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-[var(--color-text-tertiary)]">
                   Start pulling to see results!
                 </div>
               )}

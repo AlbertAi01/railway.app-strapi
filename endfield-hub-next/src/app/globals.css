@@ -1,19 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-accent: #FFE500;
-  --color-accent-hover: #FFD700;
-  --color-surface: #111111;
-  --color-surface-2: #1a1a1a;
-  --color-surface-3: #252525;
-  --color-border: #333333;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a0a0a0;
+  /* Primary Colors - Rhodes Island OS */
+  --color-accent: #00B0FF;
+  --color-accent-hover: #4FC3F7;
+  --color-accent-secondary: #FFE500;
+  --color-originium: #F5A623;
+
+  /* Surfaces - Tactical blue-tinted blacks */
+  --color-surface: #0d1b2a;
+  --color-surface-2: #1a2332;
+  --color-surface-3: #253548;
+  --color-border: #2d4a6d;
+  --color-border-accent: #00B0FF;
+
+  /* Text */
+  --color-text-primary: #E8F4F8;
+  --color-text-secondary: #8BA3B8;
+  --color-text-tertiary: #5A6F85;
+
+  /* Element Colors */
   --color-physical: #CCCCCC;
   --color-heat: #FF6B35;
   --color-cryo: #00BFFF;
   --color-electric: #9B59B6;
   --color-nature: #27AE60;
+
+  /* Rarity Colors */
   --color-rarity-6: #FF8C00;
   --color-rarity-5: #FFD700;
   --color-rarity-4: #9B59B6;
@@ -26,24 +40,180 @@
 
 body {
   margin: 0;
-  background-color: #0a0a0a;
-  color: #ffffff;
+  background-color: #080c12;
+  color: var(--color-text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+  overflow-x: hidden;
 }
 
-::-webkit-scrollbar {
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 176, 255, 0.015) 0px,
+    transparent 1px,
+    transparent 3px,
+    rgba(0, 176, 255, 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* =========================================
+   DIAMOND (ORIGINIUM) MOTIF
+   ========================================= */
+
+.diamond {
   width: 8px;
+  height: 8px;
+  background: var(--color-originium);
+  transform: rotate(45deg);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.diamond-sm { width: 6px; height: 6px; }
+.diamond-md { width: 10px; height: 10px; }
+.diamond-lg { width: 14px; height: 14px; }
+
+.diamond-accent {
+  background: var(--color-accent);
+}
+
+.diamond-spinner {
+  width: 16px;
+  height: 16px;
+  background: var(--color-originium);
+  transform: rotate(45deg);
+  display: inline-block;
+  animation: diamond-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes diamond-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+    box-shadow: 0 0 8px rgba(245, 166, 35, 0.4);
+  }
+  50% {
+    opacity: 0.4;
+    transform: rotate(45deg) scale(0.7);
+    box-shadow: 0 0 20px rgba(245, 166, 35, 0.8);
+  }
+}
+
+/* =========================================
+   ANGULAR CLIP-PATH (Arknights corners)
+   ========================================= */
+
+.clip-corner-tl {
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+}
+
+.clip-corner-tr {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+.clip-corner-all {
+  clip-path: polygon(
+    10px 0, calc(100% - 10px) 0,
+    100% 10px, 100% calc(100% - 10px),
+    calc(100% - 10px) 100%, 10px 100%,
+    0 calc(100% - 10px), 0 10px
+  );
+}
+
+/* =========================================
+   TERMINAL TEXT
+   ========================================= */
+
+.terminal-text {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--color-accent);
+}
+
+.font-tactical {
+  font-family: 'Rajdhani', 'Inter', sans-serif;
+}
+
+/* =========================================
+   AUTO DEPLOY OVERLAY
+   ========================================= */
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scroll-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-scroll-left {
+  animation: scroll-left 40s linear infinite;
+}
+
+.animate-scroll-right {
+  animation: scroll-right 40s linear infinite;
+}
+
+/* =========================================
+   SCROLLBAR
+   ========================================= */
+
+::-webkit-scrollbar {
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #111111;
+  background: #080c12;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 4px;
+  background: var(--color-border);
+  border-radius: 0;
+  border-left: 2px solid var(--color-accent);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: var(--color-surface-3);
+  border-left-color: var(--color-accent-hover);
+}
+
+/* =========================================
+   RIOS CARD SYSTEM
+   ========================================= */
+
+.rios-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.rios-card:hover {
+  border-color: var(--color-accent);
+}
+
+.rios-card-accent {
+  border-left: 3px solid var(--color-accent);
+}
+
+/* =========================================
+   LINK RESETS
+   ========================================= */
+
+a {
+  text-decoration: none;
 }

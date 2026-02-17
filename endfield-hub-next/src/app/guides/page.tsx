@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Search, BookOpen, X } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const GUIDES = [
   {
@@ -287,22 +288,27 @@ export default function GuidesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
+    <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#FFE500] mb-8">Guides</h1>
+        <RIOSHeader
+          title="Intelligence Briefings"
+          category="INTEL"
+          code="RIOS-GDE-001"
+          icon={<BookOpen size={28} />}
+        />
 
         {!selectedGuide ? (
           <>
             {/* Search and Filter */}
             <div className="mb-6 space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search guides..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[#111] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] text-white"
                 />
               </div>
 
@@ -313,8 +319,8 @@ export default function GuidesPage() {
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-4 py-2 rounded-lg transition-colors ${
                       selectedCategory === cat
-                        ? 'bg-[#FFE500] text-black font-bold'
-                        : 'bg-[#111] border border-[#222] hover:border-[#FFE500]'
+                        ? 'bg-[var(--color-accent)] text-black font-bold'
+                        : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
                     }`}
                   >
                     {cat}
@@ -329,16 +335,16 @@ export default function GuidesPage() {
                 <div
                   key={guide.id}
                   onClick={() => setSelectedGuide(guide)}
-                  className="bg-[#111] border border-[#222] rounded-lg p-6 hover:border-[#FFE500] transition-colors cursor-pointer"
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 hover:border-[var(--color-accent)] transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <BookOpen className="w-5 h-5 text-[#FFE500]" />
+                        <BookOpen className="w-5 h-5 text-[var(--color-accent)]" />
                         <h2 className="text-2xl font-bold text-white">{guide.title}</h2>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
-                        <span className="px-3 py-1 bg-[#222] rounded-full text-[#FFE500]">
+                        <span className="px-3 py-1 bg-[var(--color-border)] rounded-full text-[var(--color-accent)]">
                           {guide.category}
                         </span>
                         <span>By {guide.author}</span>
@@ -350,7 +356,7 @@ export default function GuidesPage() {
               ))}
 
               {filteredGuides.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-[var(--color-text-tertiary)]">
                   No guides found matching your search.
                 </div>
               )}
@@ -361,20 +367,20 @@ export default function GuidesPage() {
             {/* Guide Reader */}
             <button
               onClick={() => setSelectedGuide(null)}
-              className="mb-6 flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#222] rounded-lg hover:border-[#FFE500] transition-colors"
+              className="mb-6 flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)] transition-colors"
             >
               <X className="w-4 h-4" />
               Back to Guides
             </button>
 
-            <div className="bg-[#111] border border-[#222] rounded-lg p-8">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-8">
               <div className="flex items-center gap-3 mb-4">
-                <BookOpen className="w-6 h-6 text-[#FFE500]" />
+                <BookOpen className="w-6 h-6 text-[var(--color-accent)]" />
                 <h1 className="text-3xl font-bold text-white">{selectedGuide.title}</h1>
               </div>
 
               <div className="flex items-center gap-4 mb-8 text-sm">
-                <span className="px-3 py-1 bg-[#222] rounded-full text-[#FFE500]">
+                <span className="px-3 py-1 bg-[var(--color-border)] rounded-full text-[var(--color-accent)]">
                   {selectedGuide.category}
                 </span>
                 <span>By {selectedGuide.author}</span>
@@ -385,7 +391,7 @@ export default function GuidesPage() {
                 {selectedGuide.content.split('\n').map((line, idx) => {
                   if (line.startsWith('# ')) {
                     return (
-                      <h1 key={idx} className="text-3xl font-bold text-[#FFE500] mt-8 mb-4">
+                      <h1 key={idx} className="text-3xl font-bold text-[var(--color-accent)] mt-8 mb-4">
                         {line.substring(2)}
                       </h1>
                     );

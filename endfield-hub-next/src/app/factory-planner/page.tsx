@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { RECIPES } from '@/lib/data';
 import { Factory, Plus, Trash2, AlertCircle } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 interface ProductionNode {
   id: string;
@@ -87,14 +88,15 @@ export default function FactoryPlannerPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#FFE500] mb-8">Factory Planner</h1>
+        <RIOSHeader title="AIC Production Planner" category="LOGISTICS" code="RIOS-FAC-001" icon={<Factory size={28} />} />
+        <div className="mb-8"></div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Add Recipe */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <Factory className="w-6 h-6 text-[#FFE500]" />
+                <Factory className="w-6 h-6 text-[var(--color-accent)]" />
                 Production Chain
               </h2>
 
@@ -102,7 +104,7 @@ export default function FactoryPlannerPage() {
                 <select
                   value={selectedRecipe}
                   onChange={(e) => setSelectedRecipe(e.target.value)}
-                  className="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg focus:outline-none focus:border-[#FFE500] text-white"
+                  className="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
                 >
                   <option value="">Select a recipe to add...</option>
                   {RECIPES.map(recipe => (
@@ -114,7 +116,7 @@ export default function FactoryPlannerPage() {
                 <button
                   onClick={addRecipe}
                   disabled={!selectedRecipe}
-                  className="px-6 py-3 bg-[#FFE500] text-black font-bold rounded-lg hover:bg-[#FFE500]/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-3 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
                   Add
@@ -124,11 +126,11 @@ export default function FactoryPlannerPage() {
               {productionChain.length > 0 ? (
                 <div className="space-y-3">
                   {productionChain.map(node => (
-                    <div key={node.id} className="bg-[#0a0a0a] border border-[#222] rounded-lg p-4">
+                    <div key={node.id} className="bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-bold text-white">{node.recipe.Name}</h3>
-                          <p className="text-sm text-gray-500">{node.recipe.Category}</p>
+                          <p className="text-sm text-[var(--color-text-tertiary)]">{node.recipe.Category}</p>
                         </div>
                         <button
                           onClick={() => removeRecipe(node.id)}
@@ -145,13 +147,13 @@ export default function FactoryPlannerPage() {
                           min="1"
                           value={node.quantity}
                           onChange={(e) => updateQuantity(node.id, Number(e.target.value))}
-                          className="w-20 px-3 py-1 bg-[#111] border border-[#222] rounded focus:outline-none focus:border-[#FFE500] text-white"
+                          className="w-20 px-3 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-white"
                         />
                       </div>
 
                       <div className="text-sm">
                         <div className="mb-2">
-                          <span className="text-gray-500">Inputs:</span>
+                          <span className="text-[var(--color-text-tertiary)]">Inputs:</span>
                           <div className="mt-1 space-y-1">
                             {node.recipe.Inputs.map((input, idx) => (
                               <div key={idx} className="text-white">
@@ -161,8 +163,8 @@ export default function FactoryPlannerPage() {
                           </div>
                         </div>
                         <div>
-                          <span className="text-gray-500">Output:</span>
-                          <div className="text-[#FFE500] font-bold">
+                          <span className="text-[var(--color-text-tertiary)]">Output:</span>
+                          <div className="text-[var(--color-accent)] font-bold">
                             {node.recipe.Outputs[0]?.item} ×{(node.recipe.Outputs[0]?.quantity || 1) * node.quantity}
                           </div>
                         </div>
@@ -171,7 +173,7 @@ export default function FactoryPlannerPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-[var(--color-text-tertiary)]">
                   Add recipes to start planning your production chain
                 </div>
               )}
@@ -180,7 +182,7 @@ export default function FactoryPlannerPage() {
 
           {/* Analysis */}
           <div className="space-y-6">
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-xl font-bold text-white mb-4">Total Inputs Required</h2>
               {Object.keys(totalInputs).length > 0 ? (
                 <div className="space-y-2">
@@ -192,28 +194,28 @@ export default function FactoryPlannerPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No inputs yet</p>
+                <p className="text-sm text-[var(--color-text-tertiary)]">No inputs yet</p>
               )}
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h2 className="text-xl font-bold text-white mb-4">Total Outputs Produced</h2>
               {Object.keys(totalOutputs).length > 0 ? (
                 <div className="space-y-2">
                   {Object.entries(totalOutputs).map(([item, amount]) => (
                     <div key={item} className="flex items-center justify-between bg-[#0a0a0a] p-3 rounded">
                       <span className="text-sm">{item}</span>
-                      <span className="font-bold text-[#FFE500]">×{amount}</span>
+                      <span className="font-bold text-[var(--color-accent)]">×{amount}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No outputs yet</p>
+                <p className="text-sm text-[var(--color-text-tertiary)]">No outputs yet</p>
               )}
             </div>
 
             {bottlenecks.length > 0 && (
-              <div className="bg-[#111] border border-[#222] rounded-lg p-6">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 text-red-400" />
                   Bottlenecks

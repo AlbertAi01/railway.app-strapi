@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { CHARACTERS } from '@/lib/data';
-import { Award, Save, RotateCcw } from 'lucide-react';
+import { Award, Save, RotateCcw, LayoutGrid } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
 
 const TIERS = ['S', 'A', 'B', 'C', 'D'];
 const TIER_COLORS = {
@@ -94,21 +95,18 @@ export default function TierListPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-gray-400 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-[#FFE500] flex items-center gap-3">
-            <Award className="w-10 h-10" />
-            Tier List Builder
-          </h1>
+          <RIOSHeader title="Combat Assessment Matrix" category="ANALYSIS" code="RIOS-TIER-001" icon={<LayoutGrid size={28} />} />
           <div className="flex gap-3">
             <button
               onClick={resetTierList}
-              className="px-4 py-2 bg-[#111] border border-[#222] rounded-lg hover:border-[#FFE500] transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               Reset
             </button>
             <button
               onClick={saveTierList}
-              className="px-6 py-2 bg-[#FFE500] text-black font-bold rounded-lg hover:bg-[#FFE500]/90 transition-colors flex items-center gap-2"
+              className="px-6 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
               Save
@@ -139,10 +137,10 @@ export default function TierListPage() {
                           key={charName}
                           draggable
                           onDragStart={() => handleDragStart(charName)}
-                          className="bg-[#111] border border-[#222] rounded-lg p-3 cursor-move hover:border-[#FFE500] transition-colors group"
+                          className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
                         >
                           <div className="text-sm font-bold text-white">{character.Name}</div>
-                          <div className="text-xs text-gray-500">{character.Role}</div>
+                          <div className="text-xs text-[var(--color-text-tertiary)]">{character.Role}</div>
 
                           {/* Quick move buttons */}
                           <div className="mt-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -151,7 +149,7 @@ export default function TierListPage() {
                                 <button
                                   key={t}
                                   onClick={() => moveCharacter(charName, t)}
-                                  className="text-xs px-2 py-1 bg-[#222] rounded hover:bg-[#FFE500] hover:text-black"
+                                  className="text-xs px-2 py-1 bg-[var(--color-border)] rounded hover:bg-[var(--color-accent)] hover:text-black"
                                 >
                                   {t}
                                 </button>
@@ -171,7 +169,7 @@ export default function TierListPage() {
           <div
             onDragOver={handleDragOver}
             onDrop={() => handleDrop('Unranked')}
-            className="bg-[#111] border border-[#222] rounded-lg p-4"
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4"
           >
             <h2 className="text-xl font-bold text-white mb-4">Unranked Characters</h2>
             <div className="flex flex-wrap gap-2">
@@ -184,10 +182,10 @@ export default function TierListPage() {
                     key={charName}
                     draggable
                     onDragStart={() => handleDragStart(charName)}
-                    className="bg-[#0a0a0a] border border-[#222] rounded-lg p-3 cursor-move hover:border-[#FFE500] transition-colors group"
+                    className="bg-[#0a0a0a] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
                   >
                     <div className="text-sm font-bold text-white">{character.Name}</div>
-                    <div className="text-xs text-gray-500">{character.Role}</div>
+                    <div className="text-xs text-[var(--color-text-tertiary)]">{character.Role}</div>
 
                     {/* Quick move buttons */}
                     <div className="mt-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -195,7 +193,7 @@ export default function TierListPage() {
                         <button
                           key={tier}
                           onClick={() => moveCharacter(charName, tier)}
-                          className="text-xs px-2 py-1 bg-[#222] rounded hover:bg-[#FFE500] hover:text-black"
+                          className="text-xs px-2 py-1 bg-[var(--color-border)] rounded hover:bg-[var(--color-accent)] hover:text-black"
                         >
                           {tier}
                         </button>
@@ -208,7 +206,7 @@ export default function TierListPage() {
           </div>
         </div>
 
-        <div className="mt-6 bg-[#111] border border-[#222] rounded-lg p-4 text-sm">
+        <div className="mt-6 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-sm">
           <h3 className="font-bold text-white mb-2">How to use:</h3>
           <ul className="space-y-1">
             <li>• Drag and drop characters between tiers</li>
