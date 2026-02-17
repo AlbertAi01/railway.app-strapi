@@ -16,6 +16,10 @@
       "type": "string",
       "required": true
     },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Title"
+    },
     "Description": {
       "type": "richtext",
       "required": true
@@ -38,6 +42,33 @@
       "type": "enumeration",
       "enum": ["Asia", "NA / EU", "CN"],
       "required": false
+    },
+    "Author": {
+      "type": "string"
+    },
+    "Tags": {
+      "type": "json"
+    },
+    "Category": {
+      "type": "enumeration",
+      "enum": ["Production", "Processing", "Assembly", "Power", "Storage", "Complete Chain", "Compact", "Megafactory"],
+      "default": "Production"
+    },
+    "Complexity": {
+      "type": "enumeration",
+      "enum": ["Beginner", "Intermediate", "Advanced", "Expert"],
+      "default": "Beginner"
+    },
+    "OutputsPerMin": {
+      "type": "decimal"
+    },
+    "FacilityCount": {
+      "type": "integer"
+    },
+    "Recipes": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::recipe.recipe"
     }
   }
 }

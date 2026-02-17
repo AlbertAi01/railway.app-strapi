@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "banners",
+  "info": {
+    "singularName": "banner",
+    "pluralName": "banners",
+    "displayName": "Banner",
+    "description": "Gacha/Headhunt banners for tracking"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true
+    },
+    "BannerType": {
+      "type": "enumeration",
+      "enum": ["Standard", "Limited", "Weapon", "Event"],
+      "required": true
+    },
+    "FeaturedCharacters": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::character.character"
+    },
+    "FeaturedWeapons": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::weapon.weapon"
+    },
+    "StartDate": {
+      "type": "datetime"
+    },
+    "EndDate": {
+      "type": "datetime"
+    },
+    "PityRates": {
+      "type": "json"
+    },
+    "Image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "IsActive": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "kind": "collectionType",
+  "collectionName": "weapons",
+  "info": {
+    "singularName": "weapon",
+    "pluralName": "weapons",
+    "displayName": "Weapon",
+    "description": "Weapons in Arknights: Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Name",
+      "required": true
+    },
+    "Rarity": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 6
+    },
+    "WeaponType": {
+      "type": "enumeration",
+      "enum": ["Greatsword", "Polearm", "Handcannon", "Sword", "Arts Unit"],
+      "required": true
+    },
+    "BaseATK": {
+      "type": "integer",
+      "default": 0
+    },
+    "MaxATK": {
+      "type": "integer",
+      "default": 0
+    },
+    "SubStat": {
+      "type": "string"
+    },
+    "SubStatValue": {
+      "type": "decimal"
+    },
+    "PassiveName": {
+      "type": "string"
+    },
+    "PassiveDescription": {
+      "type": "richtext"
+    },
+    "PassiveScaling": {
+      "type": "json"
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Lore": {
+      "type": "richtext"
+    },
+    "Icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "ObtainMethod": {
+      "type": "string"
+    },
+    "StatScaling": {
+      "type": "json"
+    }
+  }
+}

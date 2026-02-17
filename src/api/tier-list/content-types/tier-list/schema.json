@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tier_lists",
+  "info": {
+    "singularName": "tier-list",
+    "pluralName": "tier-lists",
+    "displayName": "Tier List",
+    "description": "Community tier list rankings"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "string",
+      "required": true
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Title",
+      "required": true
+    },
+    "Category": {
+      "type": "enumeration",
+      "enum": ["Overall", "DPS", "Support", "Tank", "PvE", "Boss", "Factory"],
+      "required": true
+    },
+    "Rankings": {
+      "type": "json",
+      "required": true
+    },
+    "Author": {
+      "type": "string"
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Upvotes": {
+      "type": "integer",
+      "default": 0
+    },
+    "IsOfficial": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

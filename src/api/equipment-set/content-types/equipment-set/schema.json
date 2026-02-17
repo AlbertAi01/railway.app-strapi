@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "equipment_sets",
+  "info": {
+    "singularName": "equipment-set",
+    "pluralName": "equipment-sets",
+    "displayName": "Equipment Set",
+    "description": "Equipment/artifact sets in Arknights: Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Name",
+      "required": true
+    },
+    "Rarity": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 6
+    },
+    "TwoPieceBonus": {
+      "type": "richtext",
+      "required": true
+    },
+    "FourPieceBonus": {
+      "type": "richtext"
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "PieceStats": {
+      "type": "json"
+    },
+    "RecommendedFor": {
+      "type": "json"
+    },
+    "ObtainMethod": {
+      "type": "string"
+    }
+  }
+}

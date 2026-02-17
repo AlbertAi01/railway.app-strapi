@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_data",
+  "info": {
+    "singularName": "user-datum",
+    "pluralName": "user-data",
+    "displayName": "User Data",
+    "description": "Stores user-specific tool data for cloud sync"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "Key": {
+      "type": "string",
+      "required": true
+    },
+    "Data": {
+      "type": "json",
+      "required": true
+    },
+    "owner": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

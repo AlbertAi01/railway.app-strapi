@@ -1,0 +1,111 @@
+{
+  "kind": "collectionType",
+  "collectionName": "characters",
+  "info": {
+    "singularName": "character",
+    "pluralName": "characters",
+    "displayName": "Character",
+    "description": "Playable characters in Arknights: Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Name",
+      "required": true
+    },
+    "Rarity": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 6
+    },
+    "Element": {
+      "type": "enumeration",
+      "enum": ["Physical", "Heat", "Cryo", "Electric", "Nature"],
+      "required": true
+    },
+    "Role": {
+      "type": "enumeration",
+      "enum": ["Guard", "Defender", "Supporter", "Caster", "Vanguard", "Striker"],
+      "required": true
+    },
+    "WeaponType": {
+      "type": "enumeration",
+      "enum": ["Greatsword", "Polearm", "Handcannon", "Sword", "Arts Unit"],
+      "required": true
+    },
+    "BaseHP": {
+      "type": "integer",
+      "default": 0
+    },
+    "BaseATK": {
+      "type": "integer",
+      "default": 0
+    },
+    "BaseDEF": {
+      "type": "integer",
+      "default": 0
+    },
+    "MaxHP": {
+      "type": "integer",
+      "default": 0
+    },
+    "MaxATK": {
+      "type": "integer",
+      "default": 0
+    },
+    "MaxDEF": {
+      "type": "integer",
+      "default": 0
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Lore": {
+      "type": "richtext"
+    },
+    "Portrait": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "SplashArt": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "Skills": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::skill.skill",
+      "mappedBy": "Character"
+    },
+    "AscensionMaterials": {
+      "type": "json"
+    },
+    "StatScaling": {
+      "type": "json"
+    },
+    "Tags": {
+      "type": "json"
+    },
+    "ReleaseDate": {
+      "type": "date"
+    },
+    "IsLimited": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

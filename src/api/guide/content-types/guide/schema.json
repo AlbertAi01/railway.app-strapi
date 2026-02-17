@@ -1,0 +1,79 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guides",
+  "info": {
+    "singularName": "guide",
+    "pluralName": "guides",
+    "displayName": "Guide",
+    "description": "Game guides and tutorials for Arknights: Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "string",
+      "required": true
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Title",
+      "required": true
+    },
+    "Category": {
+      "type": "enumeration",
+      "enum": ["Beginner", "Combat", "Factory", "Character Build", "Equipment", "Exploration", "Endgame", "Farming", "Tips & Tricks"],
+      "required": true
+    },
+    "Content": {
+      "type": "richtext",
+      "required": true
+    },
+    "Summary": {
+      "type": "text",
+      "required": true
+    },
+    "Author": {
+      "type": "string",
+      "default": "Endfield Hub Staff"
+    },
+    "FeaturedImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "Tags": {
+      "type": "json"
+    },
+    "RelatedCharacters": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::character.character"
+    },
+    "Difficulty": {
+      "type": "enumeration",
+      "enum": ["Beginner", "Intermediate", "Advanced"],
+      "default": "Beginner"
+    },
+    "IsVerified": {
+      "type": "boolean",
+      "default": false
+    },
+    "FactCheckNotes": {
+      "type": "richtext"
+    },
+    "LastVerifiedAt": {
+      "type": "datetime"
+    },
+    "ViewCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "Upvotes": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

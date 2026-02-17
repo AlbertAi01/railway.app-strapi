@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "map_markers",
+  "info": {
+    "singularName": "map-marker",
+    "pluralName": "map-markers",
+    "displayName": "Map Marker",
+    "description": "Interactive map markers for game locations"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true
+    },
+    "MapRegion": {
+      "type": "enumeration",
+      "enum": ["Valley IV", "Wuling", "Talos-II"],
+      "required": true
+    },
+    "MarkerType": {
+      "type": "enumeration",
+      "enum": ["Chest", "Puzzle", "Boss", "NPC", "Teleport", "Resource Node", "Secret", "Quest", "Collectible"],
+      "required": true
+    },
+    "PosX": {
+      "type": "decimal",
+      "required": true
+    },
+    "PosY": {
+      "type": "decimal",
+      "required": true
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "Tips": {
+      "type": "text"
+    },
+    "Rewards": {
+      "type": "json"
+    }
+  }
+}

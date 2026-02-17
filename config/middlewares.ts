@@ -18,7 +18,14 @@ export default [
   {
     name: 'strapi::cors',
     config: {
-      origin: ['*'], 
+      origin: [
+        'https://zerosanity.app',
+        'https://www.zerosanity.app',
+        'https://endfield-hub.vercel.app',
+        'https://magical-canvas-ba9361cc3f.strapiapp.com',
+        'http://localhost:5173',
+        'http://localhost:3000',
+      ],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
       headers: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
       keepHeaderOnError: true,

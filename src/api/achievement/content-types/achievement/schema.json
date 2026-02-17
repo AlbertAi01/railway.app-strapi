@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "achievements",
+  "info": {
+    "singularName": "achievement",
+    "pluralName": "achievements",
+    "displayName": "Achievement",
+    "description": "In-game achievements for Arknights: Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Description": {
+      "type": "text",
+      "required": true
+    },
+    "Category": {
+      "type": "string",
+      "required": true
+    },
+    "Reward": {
+      "type": "json"
+    },
+    "HowToObtain": {
+      "type": "richtext"
+    },
+    "IsHidden": {
+      "type": "boolean",
+      "default": false
+    },
+    "Points": {
+      "type": "integer",
+      "default": 0
+    },
+    "Icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "Order": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

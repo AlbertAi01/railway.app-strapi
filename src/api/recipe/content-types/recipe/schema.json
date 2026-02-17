@@ -1,0 +1,63 @@
+{
+  "kind": "collectionType",
+  "collectionName": "recipes",
+  "info": {
+    "singularName": "recipe",
+    "pluralName": "recipes",
+    "displayName": "Recipe",
+    "description": "Factory and crafting recipes for Arknights: Endfield"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Name",
+      "required": true
+    },
+    "Category": {
+      "type": "enumeration",
+      "enum": ["Raw Material", "Processed Material", "Component", "Equipment", "Consumable", "Building Material"],
+      "required": true
+    },
+    "Inputs": {
+      "type": "json",
+      "required": true
+    },
+    "Outputs": {
+      "type": "json",
+      "required": true
+    },
+    "CraftingTime": {
+      "type": "integer"
+    },
+    "FacilityRequired": {
+      "type": "string"
+    },
+    "FacilityLevel": {
+      "type": "integer"
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "EnergyConsumption": {
+      "type": "decimal"
+    },
+    "ThroughputPerMin": {
+      "type": "decimal"
+    }
+  }
+}

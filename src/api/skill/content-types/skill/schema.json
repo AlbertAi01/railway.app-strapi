@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "skills",
+  "info": {
+    "singularName": "skill",
+    "pluralName": "skills",
+    "displayName": "Skill",
+    "description": "Character skills and abilities"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true
+    },
+    "SkillType": {
+      "type": "enumeration",
+      "enum": ["Normal Attack", "Elemental Skill", "Endfield Skill", "Passive", "Talent"],
+      "required": true
+    },
+    "Description": {
+      "type": "richtext",
+      "required": true
+    },
+    "Cooldown": {
+      "type": "decimal"
+    },
+    "EnergyCost": {
+      "type": "integer"
+    },
+    "DamageMultipliers": {
+      "type": "json"
+    },
+    "LevelScaling": {
+      "type": "json"
+    },
+    "Icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "Character": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::character.character",
+      "inversedBy": "Skills"
+    },
+    "Order": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}
