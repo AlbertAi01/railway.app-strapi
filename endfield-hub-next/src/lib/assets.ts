@@ -126,18 +126,28 @@ export const PROFESSION_ICONS: Record<string, string> = {
 
 // Equipment set icons
 export const EQUIPMENT_ICONS: Record<string, string> = {
+  // T4 Late Game (Lv70)
+  'Æthertech': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_poise01_body_01.png`,
+  'Bonekrusha': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_attri01_body_03.png`,
   'Eternal Xiranite': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_usp02_body_01.png`,
-  'Mordvolt Insulation': `${TOOLS_CDN}/itemicon/item_equip_t2_suit_wisd01_body_01.png`,
-  'Mordvolt Resistant': `${TOOLS_CDN}/itemicon/item_equip_t2_suit_will01_body_01.png`,
+  'Frontiers': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_frontier01_body_01.png`,
+  'Hot Work': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_fire_natr01_body_01.png`,
   'LYNX': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_heal01_body_01.png`,
+  'MI Security': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_misec01_body_01.png`,
+  'Pulser Labs': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_pulser01_body_01.png`,
+  'Swordmancer': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_phy01_body_02.png`,
+  'Tide Surge': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_burst01_body_01.png`,
   'Type 50 Yinglung': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_atk02_body_01.png`,
+  // T3 Mid Game (Lv36-50)
+  "Aburrey's Legacy": `${TOOLS_CDN}/itemicon/item_equip_t3_suit_str01_body_01.png`,
   'Armored MSGR': `${TOOLS_CDN}/itemicon/item_equip_t2_suit_str01_body_01.png`,
   'Catastrophe': `${TOOLS_CDN}/itemicon/item_equip_t3_suit_usp01_body_01.png`,
+  'Mordvolt Insulation': `${TOOLS_CDN}/itemicon/item_equip_t2_suit_wisd01_body_01.png`,
+  'Mordvolt Resistant': `${TOOLS_CDN}/itemicon/item_equip_t2_suit_will01_body_01.png`,
+  'Roving MSGR': `${TOOLS_CDN}/itemicon/item_equip_t3_suit_agi01_body_01.png`,
+  // T1 Early Game (Lv10-28)
   'AIC Heavy': `${TOOLS_CDN}/itemicon/item_equip_t1_suit_stragi01_body_01.png`,
-  'Tide Surge': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_burst01_body_01.png`,
-  'Swordmancer': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_phy01_body_02.png`,
-  'Hot Work': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_fire_natr01_body_01.png`,
-  'Æthertech': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_poise01_body_01.png`,
+  'AIC Light': `${TOOLS_CDN}/itemicon/item_equip_t1_suit_intagi01_body_01.png`,
 };
 
 // Weapon icons (mapped by weapon name)

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { ArrowLeft, Zap, Wind, Brain, Heart, Star, Sword, Shield, ChevronDown, ChevronUp, Trophy, Target, Users, Crosshair, ThumbsUp, ThumbsDown, BookOpen } from 'lucide-react';
 import { CHARACTERS } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
-import { CHARACTER_BANNERS, CHARACTER_ICONS, PROFESSION_ICONS, WEAPON_ICONS } from '@/lib/assets';
+import { CHARACTER_BANNERS, CHARACTER_ICONS, PROFESSION_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
 import { getOperatorGuide, TIER_COLORS } from '@/data/guides';
 import type { TierRating } from '@/data/guides';
 
@@ -250,11 +250,15 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
               {/* Best Gear Sets */}
               <Section title="Best Gear Sets" icon={<Shield size={16} />}>
                 <div className="flex flex-wrap gap-2">
-                  {guide.bestGearSets.map((set, i) => (
-                    <span key={i} className="px-3 py-1.5 text-sm bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white">
-                      {set}
-                    </span>
-                  ))}
+                  {guide.bestGearSets.map((set, i) => {
+                    const eqIcon = EQUIPMENT_ICONS[set];
+                    return (
+                      <span key={i} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white">
+                        {eqIcon && <Image src={eqIcon} alt={set} width={24} height={24} className="w-6 h-6 object-contain" unoptimized />}
+                        {set}
+                      </span>
+                    );
+                  })}
                 </div>
               </Section>
 

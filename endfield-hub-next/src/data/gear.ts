@@ -108,6 +108,7 @@ export const GEAR_SETS: GearSet[] = [
     name: 'Frontiers',
     phase: 'Late Game (Lv70)',
     setBonus: "3-piece set effect: Wearer's Combo Skill Cooldown Reduction +15%. After the wearer's skill recovers SP, the team gains DMG +16% for 15s. This effect cannot stack.",
+    icon: `${CDN}/itemicon/item_equip_t4_suit_frontier01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'Frontiers Armor T2', setName: 'Frontiers', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Agility', value: '+87' }, { name: 'Intellect', value: '+58' }, { name: 'Normal Skill DMG', value: '+20.7%' }] },
       { id: nextId(), name: 'Frontiers Comm', setName: 'Frontiers', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Strength', value: '+32' }, { name: 'Agility', value: '+21' }, { name: 'Combo Skill DMG', value: '+41.4%' }] },
@@ -153,6 +154,7 @@ export const GEAR_SETS: GearSet[] = [
     name: 'MI Security',
     phase: 'Late Game (Lv70)',
     setBonus: "3-piece set effect: Wearer's Critical Rate +5%. After the wearer scores a critical hit, the wearer gains ATK +??? for 5s. This effect can reach 5 stacks. At max stacks, grant an additional Critical Rate +5%. This effect cannot stack.",
+    icon: `${CDN}/itemicon/item_equip_t4_suit_misec01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'MI Security Overalls', setName: 'MI Security', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Intellect', value: '+87' }, { name: 'Agility', value: '+58' }, { name: 'Normal ATK DMG', value: '+13.8%' }] },
       { id: nextId(), name: 'MI Security Armor', setName: 'MI Security', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Agility', value: '+87' }, { name: 'Strength', value: '+58' }, { name: 'Arts Intensity', value: '+21' }] },
@@ -172,6 +174,7 @@ export const GEAR_SETS: GearSet[] = [
     name: 'Pulser Labs',
     phase: 'Late Game (Lv70)',
     setBonus: "3-piece set effect: Wearer's Arts Intensity +30. After the wearer applies Electrification, the wearer gains Electric DMG +50% for 10s. After the wearer applies Solidification, the wearer gains Cryo DMG +50% for 10s. The aforementioned effects cannot stack.",
+    icon: `${CDN}/itemicon/item_equip_t4_suit_pulser01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'Pulser Labs Disruptor Suit', setName: 'Pulser Labs', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Intellect', value: '+87' }, { name: 'Will', value: '+58' }, { name: 'Arts Intensity', value: '+21' }] },
       { id: nextId(), name: 'Pulser Labs Calibrator', setName: 'Pulser Labs', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Intellect', value: '+41' }, { name: 'Arts Intensity', value: '+41' }] },
@@ -225,6 +228,7 @@ export const GEAR_SETS: GearSet[] = [
     name: "Aburrey's Legacy",
     phase: 'Mid Game (Lv36-50)',
     setBonus: "3-piece set effect: Wearer's Skill DMG +24%. When the wearer casts a battle skill, combo skill, or ultimate, the wearer gains ATK +??? for 15s. The buff from each of the three skill types is unique and does not stack with itself.",
+    icon: `${CDN}/itemicon/item_equip_t3_suit_str01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'Aburrey Auditory Chip T1', setName: "Aburrey's Legacy", tier: 'T3', level: 50, def: 15, stats: [{ name: 'Agility', value: '+23' }, { name: 'Strength', value: '+15' }, { name: 'Combo Skill DMG', value: '+29.4%' }] },
       { id: nextId(), name: 'Aburrey Flashlight', setName: "Aburrey's Legacy", tier: 'T3', level: 50, def: 15, stats: [{ name: 'Intellect', value: '+23' }, { name: 'Strength', value: '+15' }, { name: 'Ultimate SP Gain', value: '+17.5%' }] },
@@ -308,6 +312,7 @@ export const GEAR_SETS: GearSet[] = [
     name: 'Roving MSGR',
     phase: 'Mid Game (Lv36-50)',
     setBonus: "3-piece set effect: Wearer's Agility +50. When the wearer's HP is above 80%, Physical DMG +20%.",
+    icon: `${CDN}/itemicon/item_equip_t3_suit_agi01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'Roving MSGR Flashlight T1', setName: 'Roving MSGR', tier: 'T3', level: 50, def: 15, stats: [{ name: 'Agility', value: '+23' }, { name: 'Strength', value: '+15' }, { name: 'Combo Skill DMG', value: '+29.4%' }] },
       { id: nextId(), name: 'Roving MSGR Flashlight T2', setName: 'Roving MSGR', tier: 'T3', level: 50, def: 15, stats: [{ name: 'Agility', value: '+23' }, { name: 'Strength', value: '+15' }, { name: 'Ultimate DMG', value: '+36.8%' }] },
@@ -340,6 +345,7 @@ export const GEAR_SETS: GearSet[] = [
     name: 'AIC Light',
     phase: 'Early Game (Lv10-28)',
     setBonus: "3-piece set effect: Wearer's HP +500. After the wearer defeats an enemy, the wearer gains ATK +??? for 5s.",
+    icon: `${CDN}/itemicon/item_equip_t1_suit_intagi01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'AIC Ceramic Plate', setName: 'AIC Light', tier: 'T1', level: 28, def: 8, stats: [{ name: 'Will', value: '+16' }, { name: 'Normal Skill DMG', value: '+16.2%' }] },
       { id: nextId(), name: 'AIC Light Plate', setName: 'AIC Light', tier: 'T1', level: 28, def: 8, stats: [{ name: 'Intellect', value: '+16' }, { name: 'Combo Skill DMG', value: '+16.2%' }] },
