@@ -44,21 +44,48 @@ const ENTITY_ICON: Record<string, string> = {
   'int_trchest_lock': 'item_materialchest_02',
   'int_collection_coin': 'item_diamond',
   'int_collection_coin_puzzle': 'item_diamond',
+  'int_collection_common': 'item_diamond',
+  'int_collection_piece_in_door': 'item_diamond',
+  'int_collection_coin_hongshan_dynamic': 'item_diamond',
+  'int_collection_coin_hongshan_static': 'item_diamond',
   'int_doodad_bbflower_1': 'item_plant_bbflower_1',
   'int_doodad_flower_1': 'item_plant_moss_1',
   'int_doodad_flower_2': 'item_plant_moss_2',
   'int_doodad_flower_3': 'item_plant_moss_3',
+  'int_doodad_flower_once_1': 'item_plant_moss_1',
+  'int_doodad_flower_once_2': 'item_plant_moss_2',
+  'int_doodad_flower_spc_1': 'item_plant_moss_1',
+  'int_doodad_flower_spc_2': 'item_plant_moss_2',
+  'int_doodad_flower_spc_once_1': 'item_plant_moss_1',
+  'int_doodad_flower_spc_once_2': 'item_plant_moss_2',
+  'int_doodad_flower_story_1': 'item_plant_moss_1',
+  'int_doodad_grass_1': 'item_plant_moss_1',
+  'int_doodad_grass_2': 'item_plant_moss_2',
+  'int_doodad_grass_spc_1': 'item_plant_moss_1',
   'int_doodad_mushroom_1_1': 'item_plant_mushroom_1_1',
   'int_doodad_mushroom_1_2': 'item_plant_mushroom_1_2',
+  'int_doodad_mushroom_1_3': 'item_plant_mushroom_1_1',
+  'int_doodad_mushroom_spc_2_1': 'item_plant_mushroom_1_1',
   'int_doodad_insect_1': 'item_plant_tundra_insect_1',
   'int_doodad_insect_2': 'item_plant_tundra_insect_2',
   'int_doodad_crylplant_1_1': 'item_plant_crylplant_1_1',
   'int_doodad_crylplant_1_2': 'item_plant_crylplant_1_2',
+  'int_doodad_crylplant_1_3': 'item_plant_crylplant_1_1',
+  'int_doodad_crylplant_2_1': 'item_plant_crylplant_1_1',
+  'int_doodad_crylplant_2_2': 'item_plant_crylplant_1_2',
   'int_doodad_spcstone_1_1': 'item_plant_spcstone_1_1',
   'int_doodad_spcstone_1_2': 'item_plant_spcstone_1_2',
+  'int_doodad_spcstone_1_3': 'item_plant_spcstone_1_1',
+  'int_doodad_spcstone_2_1': 'item_plant_spcstone_1_1',
+  'int_doodad_spcstone_2_2': 'item_plant_spcstone_1_2',
   'int_doodad_core_mine_iron': 'item_iron_ore',
   'int_doodad_core_mine_originium': 'item_originium_ore',
   'int_doodad_core_mine_quartz': 'item_quartz_sand',
+  'int_doodad_core_recycle': 'item_iron_ore',
+  'int_doodad_corp_1': 'item_iron_ore',
+  'int_doodad_corp_2': 'item_iron_ore',
+  'int_doodad_corp_3': 'item_iron_ore',
+  'int_doodad_corp_4': 'item_iron_ore',
 };
 
 function getEntityIcon(type: string): string {
@@ -102,23 +129,34 @@ export default function WulingMapPage() {
 
   useEffect(() => {
     fetch('/data/map02-pois.json')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data: MapData) => {
         setMapData(data);
-        if (containerRef.current) {
-          const vw = containerRef.current.clientWidth;
-          const vh = containerRef.current.clientHeight;
-          const initZoom = Math.min(vw / data.width, vh / data.height) * 0.9;
-          setZoom(initZoom);
-          setOffset({
-            x: (vw - data.width * initZoom) / 2,
-            y: (vh - data.height * initZoom) / 2,
-          });
-        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error('Failed to load map data:', err);
+        setLoading(false);
+      });
   }, []);
+
+  // Calculate initial viewport after data loads AND container mounts
+  const viewportInitialized = useRef(false);
+  useEffect(() => {
+    if (!mapData || !containerRef.current || viewportInitialized.current) return;
+    viewportInitialized.current = true;
+    const vw = containerRef.current.clientWidth;
+    const vh = containerRef.current.clientHeight;
+    const initZoom = Math.min(vw / mapData.width, vh / mapData.height) * 0.9;
+    setZoom(initZoom);
+    setOffset({
+      x: (vw - mapData.width * initZoom) / 2,
+      y: (vh - mapData.height * initZoom) / 2,
+    });
+  }, [mapData]);
 
   // Load cloud data on mount
   useEffect(() => {
