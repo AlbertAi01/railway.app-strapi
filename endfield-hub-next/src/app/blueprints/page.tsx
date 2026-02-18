@@ -35,7 +35,11 @@ export default function Blueprints() {
               Tags: ((attrs as Record<string, unknown>).Tags as string[]) || [],
             };
           });
-          setBlueprints(mapped);
+          // Merge user-submitted Strapi blueprints with scraped community blueprints.
+          // Only add Strapi entries whose titles don't duplicate scraped ones.
+          const scrapedTitles = new Set(SCRAPED_BLUEPRINTS.map(bp => bp.Title.toLowerCase()));
+          const userSubmitted = mapped.filter(bp => !scrapedTitles.has(bp.Title.toLowerCase()));
+          setBlueprints([...SCRAPED_BLUEPRINTS, ...userSubmitted]);
         }
       })
       .catch(() => {});
