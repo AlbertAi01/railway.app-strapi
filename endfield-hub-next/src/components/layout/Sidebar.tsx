@@ -6,7 +6,7 @@ import {
   Home, Users, Sword, Shield, BookOpen, Factory, Map,
   Trophy, Target, Dice6, LayoutGrid, Star, Crosshair,
   FlaskConical, Wrench, Sparkles, ChevronDown, ChevronRight,
-  Menu, X, LogIn, User
+  Menu, X, LogIn, User, Hammer
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
@@ -52,6 +52,10 @@ const navigation: NavItem[] = [
   },
   { label: 'Achievements', path: '/achievements', icon: <Trophy size={18} /> },
   { label: 'Recruitment Sim', path: '/summon-simulator', icon: <Dice6 size={18} /> },
+  {
+    label: 'Community Builds', path: '/builds', icon: <Hammer size={18} />,
+    isNew: true,
+  },
   { label: 'Intel Briefings', path: '/guides', icon: <BookOpen size={18} /> },
 ];
 
