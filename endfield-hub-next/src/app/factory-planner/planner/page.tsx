@@ -17,10 +17,17 @@ import {
   Search,
   Star,
   ChevronDown,
-  ChevronUp,
+  ZoomIn,
+  ZoomOut,
+  Settings2,
+  Trash2,
+  RotateCw,
+  Copy,
+  MousePointer2,
 } from 'lucide-react';
 
-// Building data types
+// ──── Building Data Types ────
+
 interface Building {
   id: string;
   name: string;
@@ -46,7 +53,91 @@ interface GridState {
   historyIndex: number;
 }
 
-// Complete building database with correct data
+// ──── Outpost Configurations ────
+// AIC factory field sizes based on outpost upgrade levels
+// PAC base is 9x9 centered in the field
+// Dimensions are approximate based on game progression data
+interface OutpostConfig {
+  id: string;
+  name: string;
+  label: string;
+  gridWidth: number;
+  gridHeight: number;
+  description: string;
+  cost?: string;
+  pacType: 'pac' | 'sub-pac';
+  depotBusSides: number;
+}
+
+const OUTPOST_CONFIGS: OutpostConfig[] = [
+  {
+    id: 'pac-base',
+    name: 'PAC - Base',
+    label: 'Base',
+    gridWidth: 32,
+    gridHeight: 32,
+    description: 'Default Core AIC Area',
+    pacType: 'pac',
+    depotBusSides: 2,
+  },
+  {
+    id: 'pac-expansion-1',
+    name: 'PAC - Expansion I',
+    label: 'Exp. I',
+    gridWidth: 44,
+    gridHeight: 44,
+    description: 'Expanded Core AIC Area',
+    cost: '20,000 Valley Stock Bills',
+    pacType: 'pac',
+    depotBusSides: 2,
+  },
+  {
+    id: 'pac-expansion-2',
+    name: 'PAC - Expansion II',
+    label: 'Exp. II',
+    gridWidth: 56,
+    gridHeight: 56,
+    description: 'Maximum Core AIC Area',
+    cost: '160,000 Valley Stock Bills',
+    pacType: 'pac',
+    depotBusSides: 2,
+  },
+  {
+    id: 'sub-pac-base',
+    name: 'Sub-PAC - Base',
+    label: 'Sub Base',
+    gridWidth: 28,
+    gridHeight: 28,
+    description: 'Default Outpost Area',
+    pacType: 'sub-pac',
+    depotBusSides: 1,
+  },
+  {
+    id: 'sub-pac-expansion-1',
+    name: 'Sub-PAC - Expansion I',
+    label: 'Sub Exp. I',
+    gridWidth: 38,
+    gridHeight: 38,
+    description: 'Expanded Outpost Area',
+    cost: '20,000 Valley Stock Bills',
+    pacType: 'sub-pac',
+    depotBusSides: 1,
+  },
+  {
+    id: 'sub-pac-expansion-2',
+    name: 'Sub-PAC - Expansion II',
+    label: 'Sub Exp. II',
+    gridWidth: 48,
+    gridHeight: 48,
+    description: 'Maximum Outpost Area',
+    cost: '160,000 Valley Stock Bills',
+    pacType: 'sub-pac',
+    depotBusSides: 1,
+  },
+];
+
+// ──── Building Database ────
+
 const BUILDINGS: Building[] = [
   // PRODUCTION
   { id: 'external-water-port', name: 'External Water Port', category: 'Production', size: { width: 2, height: 1 }, inputs: 0, outputs: 1, power: 0, description: 'Provides water resources' },
@@ -101,7 +192,6 @@ const BUILDINGS: Building[] = [
   { id: 'aketine-plot', name: 'Aketine Plot', category: 'Plots', size: { width: 4, height: 4 }, inputs: 0, outputs: 0, power: 0, description: 'Grows aketine' },
 ];
 
-// Color map for categories
 const CATEGORY_COLORS: Record<Building['category'], string> = {
   Production: '#22c55e',
   Processing: '#3b82f6',
@@ -131,6 +221,8 @@ interface State {
   showFileMenu: boolean;
   showDataMenu: boolean;
   showEditMenu: boolean;
+  outpostConfig: string;
+  showOutpostMenu: boolean;
 }
 
 type Action =
@@ -154,11 +246,14 @@ type Action =
   | { type: 'SET_SPEED'; speed: number }
   | { type: 'TOGGLE_FILE_MENU' }
   | { type: 'TOGGLE_DATA_MENU' }
-  | { type: 'TOGGLE_EDIT_MENU' };
+  | { type: 'TOGGLE_EDIT_MENU' }
+  | { type: 'SET_OUTPOST_CONFIG'; config: string }
+  | { type: 'TOGGLE_OUTPOST_MENU' }
+  | { type: 'CLOSE_ALL_MENUS' };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'PLACE_BUILDING':
+    case 'PLACE_BUILDING': {
       const newBuildings = [...state.grid.buildings, action.building];
       const newHistory = state.grid.history.slice(0, state.grid.historyIndex + 1);
       return {
@@ -169,7 +264,8 @@ function reducer(state: State, action: Action): State {
           historyIndex: newHistory.length,
         },
       };
-    case 'REMOVE_BUILDING':
+    }
+    case 'REMOVE_BUILDING': {
       const filteredBuildings = state.grid.buildings.filter((_, i) => i !== action.index);
       const removeHistory = state.grid.history.slice(0, state.grid.historyIndex + 1);
       return {
@@ -180,6 +276,7 @@ function reducer(state: State, action: Action): State {
           historyIndex: removeHistory.length,
         },
       };
+    }
     case 'UNDO':
       if (state.grid.historyIndex > 0) {
         return {
@@ -207,11 +304,7 @@ function reducer(state: State, action: Action): State {
     case 'CLEAR_GRID':
       return {
         ...state,
-        grid: {
-          buildings: [],
-          history: [[]],
-          historyIndex: 0,
-        },
+        grid: { buildings: [], history: [[]], historyIndex: 0 },
       };
     case 'SET_SELECTED_BUILDING':
       return { ...state, selectedBuilding: action.buildingId };
@@ -240,22 +333,24 @@ function reducer(state: State, action: Action): State {
     case 'SET_SPEED':
       return { ...state, speed: action.speed };
     case 'TOGGLE_FILE_MENU':
-      return { ...state, showFileMenu: !state.showFileMenu, showDataMenu: false, showEditMenu: false };
+      return { ...state, showFileMenu: !state.showFileMenu, showDataMenu: false, showEditMenu: false, showOutpostMenu: false };
     case 'TOGGLE_DATA_MENU':
-      return { ...state, showDataMenu: !state.showDataMenu, showFileMenu: false, showEditMenu: false };
+      return { ...state, showDataMenu: !state.showDataMenu, showFileMenu: false, showEditMenu: false, showOutpostMenu: false };
     case 'TOGGLE_EDIT_MENU':
-      return { ...state, showEditMenu: !state.showEditMenu, showFileMenu: false, showDataMenu: false };
+      return { ...state, showEditMenu: !state.showEditMenu, showFileMenu: false, showDataMenu: false, showOutpostMenu: false };
+    case 'SET_OUTPOST_CONFIG':
+      return { ...state, outpostConfig: action.config, showOutpostMenu: false };
+    case 'TOGGLE_OUTPOST_MENU':
+      return { ...state, showOutpostMenu: !state.showOutpostMenu, showFileMenu: false, showDataMenu: false, showEditMenu: false };
+    case 'CLOSE_ALL_MENUS':
+      return { ...state, showFileMenu: false, showDataMenu: false, showEditMenu: false, showOutpostMenu: false };
     default:
       return state;
   }
 }
 
 const initialState: State = {
-  grid: {
-    buildings: [],
-    history: [[]],
-    historyIndex: 0,
-  },
+  grid: { buildings: [], history: [[]], historyIndex: 0 },
   selectedBuilding: null,
   toolMode: 'select',
   showBuildingPicker: false,
@@ -272,7 +367,45 @@ const initialState: State = {
   showFileMenu: false,
   showDataMenu: false,
   showEditMenu: false,
+  outpostConfig: 'pac-base',
+  showOutpostMenu: false,
 };
+
+// ──── Toolbar Button Components ────
+
+function ToolbarButton({
+  children,
+  active,
+  onClick,
+  title,
+  className = '',
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`px-2 py-1.5 border border-[var(--color-border)] text-xs font-medium flex items-center gap-1 transition-all whitespace-nowrap ${
+        active
+          ? 'bg-[var(--color-accent)] text-black border-[var(--color-accent)]'
+          : 'bg-[var(--color-surface-2)] text-gray-300 hover:bg-[#2A2A2A] hover:text-white'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ToolbarDivider() {
+  return <div className="w-px h-6 bg-[var(--color-border)] mx-0.5 flex-shrink-0" />;
+}
+
+// ──── Main Component ────
 
 export default function FactoryPlannerPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -285,17 +418,29 @@ export default function FactoryPlannerPage() {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const CELL_SIZE = 40;
-  const GRID_WIDTH = 50; // Large grid area around PAC
-  const GRID_HEIGHT = 50;
-  const PAC_SIZE = 9; // PAC is 9x9
-  const PAC_X = Math.floor((GRID_WIDTH - PAC_SIZE) / 2); // Center PAC
+  const activeConfig = OUTPOST_CONFIGS.find(c => c.id === state.outpostConfig) || OUTPOST_CONFIGS[0];
+  const GRID_WIDTH = activeConfig.gridWidth;
+  const GRID_HEIGHT = activeConfig.gridHeight;
+  const PAC_SIZE = 9;
+  const PAC_X = Math.floor((GRID_WIDTH - PAC_SIZE) / 2);
   const PAC_Y = Math.floor((GRID_HEIGHT - PAC_SIZE) / 2);
 
-  // Track container size with ResizeObserver
+  // Close menus on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-menu]')) {
+        dispatch({ type: 'CLOSE_ALL_MENUS' });
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Track container size
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -305,7 +450,6 @@ export default function FactoryPlannerPage() {
       }
     });
     observer.observe(container);
-    // Also set initial size
     const rect = container.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       setCanvasSize({ width: Math.floor(rect.width), height: Math.floor(rect.height) });
@@ -321,7 +465,6 @@ export default function FactoryPlannerPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size from tracked container dimensions
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
     canvas.width = canvasSize.width * dpr;
     canvas.height = canvasSize.height * dpr;
@@ -329,21 +472,21 @@ export default function FactoryPlannerPage() {
     canvas.style.height = `${canvasSize.height}px`;
     ctx.scale(dpr, dpr);
 
-    // Clear canvas
+    // Clear
     ctx.fillStyle = '#0A0A0A';
     ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
-    // Apply transformations
+    // Transform
     ctx.save();
     ctx.translate(pan.x + canvasSize.width / 2, pan.y + canvasSize.height / 2);
     ctx.scale(zoom, zoom);
     ctx.translate(-GRID_WIDTH * CELL_SIZE / 2, -GRID_HEIGHT * CELL_SIZE / 2);
 
-    // Draw grid background
+    // Grid background
     ctx.fillStyle = '#111318';
     ctx.fillRect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE);
 
-    // Draw grid lines
+    // Grid lines
     ctx.strokeStyle = '#1e2230';
     ctx.lineWidth = 1;
     for (let x = 0; x <= GRID_WIDTH; x++) {
@@ -359,7 +502,7 @@ export default function FactoryPlannerPage() {
       ctx.stroke();
     }
 
-    // Draw major grid lines every 5 cells
+    // Major grid lines every 5 cells
     ctx.strokeStyle = '#2a3040';
     ctx.lineWidth = 1.5;
     for (let x = 0; x <= GRID_WIDTH; x += 5) {
@@ -375,7 +518,7 @@ export default function FactoryPlannerPage() {
       ctx.stroke();
     }
 
-    // Coordinate labels on edges (every 5 cells)
+    // Coordinate labels every 5 cells
     ctx.fillStyle = '#4a5568';
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
@@ -389,7 +532,7 @@ export default function FactoryPlannerPage() {
       ctx.fillText(y.toString(), -6, y * CELL_SIZE);
     }
 
-    // Draw the PAC (Protocol Anchor Core) - 9x9 building in center
+    // ── PAC Drawing ──
     const pacX = PAC_X * CELL_SIZE;
     const pacY = PAC_Y * CELL_SIZE;
     const pacWidth = PAC_SIZE * CELL_SIZE;
@@ -402,7 +545,7 @@ export default function FactoryPlannerPage() {
     ctx.fillRect(pacX, pacY, pacWidth, pacHeight);
     ctx.shadowBlur = 0;
 
-    // PAC inner grid lines (subtle)
+    // PAC inner grid
     ctx.strokeStyle = '#1a4050';
     ctx.lineWidth = 0.5;
     for (let x = 0; x <= PAC_SIZE; x++) {
@@ -418,121 +561,91 @@ export default function FactoryPlannerPage() {
       ctx.stroke();
     }
 
-    // PAC border (bright cyan)
+    // PAC border
     ctx.strokeStyle = '#00b0ff';
     ctx.lineWidth = 3;
     ctx.strokeRect(pacX + 1.5, pacY + 1.5, pacWidth - 3, pacHeight - 3);
 
-    // PAC corner decorations (Arknights angular style)
+    // Corner decorations
     const cornerSize = 12;
     ctx.strokeStyle = '#00b0ff';
     ctx.lineWidth = 2;
-    // Top-left
     ctx.beginPath(); ctx.moveTo(pacX, pacY + cornerSize); ctx.lineTo(pacX, pacY); ctx.lineTo(pacX + cornerSize, pacY); ctx.stroke();
-    // Top-right
     ctx.beginPath(); ctx.moveTo(pacX + pacWidth - cornerSize, pacY); ctx.lineTo(pacX + pacWidth, pacY); ctx.lineTo(pacX + pacWidth, pacY + cornerSize); ctx.stroke();
-    // Bottom-left
     ctx.beginPath(); ctx.moveTo(pacX, pacY + pacHeight - cornerSize); ctx.lineTo(pacX, pacY + pacHeight); ctx.lineTo(pacX + cornerSize, pacY + pacHeight); ctx.stroke();
-    // Bottom-right
     ctx.beginPath(); ctx.moveTo(pacX + pacWidth - cornerSize, pacY + pacHeight); ctx.lineTo(pacX + pacWidth, pacY + pacHeight); ctx.lineTo(pacX + pacWidth, pacY + pacHeight - cornerSize); ctx.stroke();
 
-    // === PAC PORT SYSTEM ===
-    // VERIFIED MECHANICS (from wiki + community guides):
-    // - Green arrow ports (top 8 + bottom 8) = INPUT ports = receive items INTO depot
-    //   Arrows point INWARD toward PAC center (down on top, up on bottom)
-    // - Orange numbered ports (1-3 right, 4-6 left) = OUTPUT ports = dispatch items FROM depot
-    //   These are the 6 configurable output ports that pull items from depot storage
-    // Sources: endfield.wiki.gg, enka.network tutorial, game8.co, allthings.how
-
+    // ── PAC PORTS ──
     const portCellSize = CELL_SIZE * 0.85;
 
-    // --- TOP EDGE: 8 green INPUT ports (items flow DOWN into PAC/depot) ---
+    // TOP: 8 green INPUT ports
     const topInputCount = 8;
     for (let i = 0; i < topInputCount; i++) {
-      const portX = pacX + (i + 0.5) * (pacWidth / topInputCount) - portCellSize / 2;
-      const portY = pacY - portCellSize - 4;
-
-      // Green port background
+      const pX = pacX + (i + 0.5) * (pacWidth / topInputCount) - portCellSize / 2;
+      const pY = pacY - portCellSize - 4;
       ctx.fillStyle = '#16a34a';
-      ctx.fillRect(portX, portY, portCellSize, portCellSize);
+      ctx.fillRect(pX, pY, portCellSize, portCellSize);
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(portX, portY, portCellSize, portCellSize);
-
-      // Down arrow (items flow DOWN into PAC = into depot)
+      ctx.strokeRect(pX, pY, portCellSize, portCellSize);
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      const cx = portX + portCellSize / 2;
-      const cy = portY + portCellSize / 2;
+      const cx = pX + portCellSize / 2;
+      const cy = pY + portCellSize / 2;
       ctx.moveTo(cx, cy + 9);
       ctx.lineTo(cx - 7, cy - 3);
       ctx.lineTo(cx + 7, cy - 3);
       ctx.closePath();
       ctx.fill();
     }
-
-    // Label above top input ports
     ctx.fillStyle = '#22c55e';
     ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText('INPUT PORTS (INTO DEPOT)', pacX + pacWidth / 2, pacY - portCellSize - 10);
 
-    // --- BOTTOM EDGE: 8 green INPUT ports (items flow UP into PAC/depot) ---
+    // BOTTOM: 8 green INPUT ports
     const bottomInputCount = 8;
     for (let i = 0; i < bottomInputCount; i++) {
-      const portX = pacX + (i + 0.5) * (pacWidth / bottomInputCount) - portCellSize / 2;
-      const portY = pacY + pacHeight + 4;
-
-      // Green port background
+      const pX = pacX + (i + 0.5) * (pacWidth / bottomInputCount) - portCellSize / 2;
+      const pY = pacY + pacHeight + 4;
       ctx.fillStyle = '#16a34a';
-      ctx.fillRect(portX, portY, portCellSize, portCellSize);
+      ctx.fillRect(pX, pY, portCellSize, portCellSize);
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(portX, portY, portCellSize, portCellSize);
-
-      // Up arrow (items flow UP into PAC = into depot)
+      ctx.strokeRect(pX, pY, portCellSize, portCellSize);
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      const cx = portX + portCellSize / 2;
-      const cy = portY + portCellSize / 2;
+      const cx = pX + portCellSize / 2;
+      const cy = pY + portCellSize / 2;
       ctx.moveTo(cx, cy - 9);
       ctx.lineTo(cx - 7, cy + 3);
       ctx.lineTo(cx + 7, cy + 3);
       ctx.closePath();
       ctx.fill();
     }
-
-    // Label below bottom input ports
     ctx.fillStyle = '#22c55e';
     ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText('INPUT PORTS (INTO DEPOT)', pacX + pacWidth / 2, pacY + pacHeight + portCellSize + 10);
 
-    // --- RIGHT SIDE: Output ports 1, 2, 3 (orange, numbered) ---
-    // These are configurable depot OUTPUT ports that dispatch items FROM depot
-    const sidePortOffsets = [2, 4, 6]; // Y positions relative to PAC top
+    // RIGHT: Output 1, 2, 3
+    const sidePortOffsets = [2, 4, 6];
     sidePortOffsets.forEach((offset, i) => {
-      const portX = pacX + pacWidth + 4;
-      const portY = pacY + offset * CELL_SIZE + (CELL_SIZE - portCellSize) / 2;
-
-      // Orange square (output port)
+      const pX = pacX + pacWidth + 4;
+      const pY = pacY + offset * CELL_SIZE + (CELL_SIZE - portCellSize) / 2;
       ctx.fillStyle = '#ea580c';
-      ctx.fillRect(portX, portY, portCellSize, portCellSize);
+      ctx.fillRect(pX, pY, portCellSize, portCellSize);
       ctx.strokeStyle = '#f97316';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(portX, portY, portCellSize, portCellSize);
-
-      // Port number
+      ctx.strokeRect(pX, pY, portCellSize, portCellSize);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText((i + 1).toString(), portX + portCellSize / 2, portY + portCellSize / 2);
+      ctx.fillText((i + 1).toString(), pX + portCellSize / 2, pY + portCellSize / 2);
     });
-
-    // RIGHT side label
     ctx.save();
     ctx.translate(pacX + pacWidth + portCellSize + 16, pacY + pacHeight / 2);
     ctx.rotate(-Math.PI / 2);
@@ -543,27 +656,21 @@ export default function FactoryPlannerPage() {
     ctx.fillText('OUTPUT (FROM DEPOT)', 0, 0);
     ctx.restore();
 
-    // --- LEFT SIDE: Output ports 4, 5, 6 (orange, numbered) ---
+    // LEFT: Output 4, 5, 6
     sidePortOffsets.forEach((offset, i) => {
-      const portX = pacX - portCellSize - 4;
-      const portY = pacY + offset * CELL_SIZE + (CELL_SIZE - portCellSize) / 2;
-
-      // Orange square (output port)
+      const pX = pacX - portCellSize - 4;
+      const pY = pacY + offset * CELL_SIZE + (CELL_SIZE - portCellSize) / 2;
       ctx.fillStyle = '#ea580c';
-      ctx.fillRect(portX, portY, portCellSize, portCellSize);
+      ctx.fillRect(pX, pY, portCellSize, portCellSize);
       ctx.strokeStyle = '#f97316';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(portX, portY, portCellSize, portCellSize);
-
-      // Port number
+      ctx.strokeRect(pX, pY, portCellSize, portCellSize);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText((i + 4).toString(), portX + portCellSize / 2, portY + portCellSize / 2);
+      ctx.fillText((i + 4).toString(), pX + portCellSize / 2, pY + portCellSize / 2);
     });
-
-    // LEFT side label
     ctx.save();
     ctx.translate(pacX - portCellSize - 16, pacY + pacHeight / 2);
     ctx.rotate(Math.PI / 2);
@@ -574,7 +681,7 @@ export default function FactoryPlannerPage() {
     ctx.fillText('OUTPUT (FROM DEPOT)', 0, 0);
     ctx.restore();
 
-    // --- PAC center text ---
+    // PAC center text
     ctx.fillStyle = '#5eead4';
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'center';
@@ -582,54 +689,74 @@ export default function FactoryPlannerPage() {
     ctx.fillText('PROTOCOL', pacX + pacWidth / 2, pacY + pacHeight / 2 - 28);
     ctx.fillText('ANCHOR', pacX + pacWidth / 2, pacY + pacHeight / 2 - 8);
     ctx.fillText('CORE', pacX + pacWidth / 2, pacY + pacHeight / 2 + 12);
-
-    // PAC size label
     ctx.fillStyle = '#4a7a8a';
     ctx.font = '10px monospace';
-    ctx.fillText('9 × 9', pacX + pacWidth / 2, pacY + pacHeight / 2 + 36);
-
-    // Legend: green = input, orange = output
+    ctx.fillText('9 x 9', pacX + pacWidth / 2, pacY + pacHeight / 2 + 36);
     ctx.fillStyle = '#22c55e';
     ctx.font = '9px monospace';
     ctx.fillText('GREEN = Items INTO Depot', pacX + pacWidth / 2, pacY + pacHeight / 2 + 52);
     ctx.fillStyle = '#f97316';
     ctx.fillText('ORANGE = Items FROM Depot (6 total)', pacX + pacWidth / 2, pacY + pacHeight / 2 + 64);
 
-    // Draw grid boundary indicator
+    // Grid boundary
     ctx.strokeStyle = '#2a3040';
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 4]);
     ctx.strokeRect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE);
     ctx.setLineDash([]);
 
-    // Draw placed buildings
-    state.grid.buildings.forEach((placedBuilding, index) => {
+    // Field size label at top
+    ctx.fillStyle = '#4a5568';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`${activeConfig.name} — ${GRID_WIDTH} x ${GRID_HEIGHT} tiles`, GRID_WIDTH * CELL_SIZE / 2, -20);
+
+    // Depot Bus indicators
+    if (activeConfig.depotBusSides >= 1) {
+      ctx.fillStyle = '#f9731630';
+      ctx.fillRect(0, 0, 4, GRID_HEIGHT * CELL_SIZE);
+      ctx.fillStyle = '#f97316';
+      ctx.save();
+      ctx.translate(10, GRID_HEIGHT * CELL_SIZE / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('DEPOT BUS SIDE', 0, 0);
+      ctx.restore();
+    }
+    if (activeConfig.depotBusSides >= 2) {
+      ctx.fillStyle = '#f9731630';
+      ctx.fillRect(GRID_WIDTH * CELL_SIZE - 4, 0, 4, GRID_HEIGHT * CELL_SIZE);
+      ctx.fillStyle = '#f97316';
+      ctx.save();
+      ctx.translate(GRID_WIDTH * CELL_SIZE - 10, GRID_HEIGHT * CELL_SIZE / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('DEPOT BUS SIDE', 0, 0);
+      ctx.restore();
+    }
+
+    // Placed buildings
+    state.grid.buildings.forEach((placedBuilding) => {
       const building = BUILDINGS.find(b => b.id === placedBuilding.buildingId);
       if (!building) return;
-
       const x = placedBuilding.x * CELL_SIZE;
       const y = placedBuilding.y * CELL_SIZE;
       const width = building.size.width * CELL_SIZE;
       const height = building.size.height * CELL_SIZE;
-
-      // Building background with transparency
       ctx.fillStyle = CATEGORY_COLORS[building.category] + '99';
       ctx.fillRect(x, y, width, height);
-
-      // Building border
       ctx.strokeStyle = CATEGORY_COLORS[building.category];
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, width, height);
-
-      // Building name (adjust font size based on building size)
       const fontSize = Math.min(width / 8, height / 3, 14);
       ctx.fillStyle = '#ffffff';
       ctx.font = `bold ${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(building.name, x + width / 2, y + height / 2);
-
-      // Show I/O and power info for larger buildings
       if (width >= 3 * CELL_SIZE && height >= 3 * CELL_SIZE) {
         ctx.font = `${fontSize * 0.7}px sans-serif`;
         ctx.fillText(
@@ -641,16 +768,141 @@ export default function FactoryPlannerPage() {
     });
 
     ctx.restore();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pan, zoom, state.grid.buildings, canvasSize]);
+  }, [pan, zoom, state.grid.buildings, canvasSize, GRID_WIDTH, GRID_HEIGHT, PAC_X, PAC_Y, activeConfig]);
 
   useEffect(() => {
     drawGrid();
   }, [drawGrid]);
 
-  // Mouse handlers
+  // Auto zoom-to-fit when outpost config changes
+  useEffect(() => {
+    if (canvasSize.width > 0 && canvasSize.height > 0) {
+      const gridPixelWidth = GRID_WIDTH * CELL_SIZE;
+      const gridPixelHeight = GRID_HEIGHT * CELL_SIZE;
+      const fitZoom = Math.min(
+        canvasSize.width / (gridPixelWidth + 120),
+        canvasSize.height / (gridPixelHeight + 120)
+      );
+      setPan({ x: 0, y: 0 });
+      setZoom(Math.max(0.1, Math.min(2, fitZoom)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.outpostConfig]);
+
+  // ── Helpers ──
+
+  // Convert screen coords to grid coords
+  const screenToGrid = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { gridX: -1, gridY: -1 };
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left - pan.x - canvasSize.width / 2) / zoom + GRID_WIDTH * CELL_SIZE / 2;
+    const y = (clientY - rect.top - pan.y - canvasSize.height / 2) / zoom + GRID_HEIGHT * CELL_SIZE / 2;
+    return { gridX: Math.floor(x / CELL_SIZE), gridY: Math.floor(y / CELL_SIZE) };
+  };
+
+  // Check if a building overlaps any existing building
+  const checkOverlap = (bx: number, by: number, bw: number, bh: number, excludeIndex?: number) => {
+    return state.grid.buildings.some((pb, i) => {
+      if (i === excludeIndex) return false;
+      const def = BUILDINGS.find(b => b.id === pb.buildingId);
+      if (!def) return false;
+      return bx < pb.x + def.size.width && bx + bw > pb.x &&
+             by < pb.y + def.size.height && by + bh > pb.y;
+    });
+  };
+
+  // Find building at grid position
+  const findBuildingAt = (gx: number, gy: number) => {
+    for (let i = state.grid.buildings.length - 1; i >= 0; i--) {
+      const pb = state.grid.buildings[i];
+      const def = BUILDINGS.find(b => b.id === pb.buildingId);
+      if (!def) continue;
+      if (gx >= pb.x && gx < pb.x + def.size.width && gy >= pb.y && gy < pb.y + def.size.height) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  // ── Save / Load ──
+
+  const saveToLocalStorage = useCallback(() => {
+    try {
+      const data = {
+        buildings: state.grid.buildings,
+        outpostConfig: state.outpostConfig,
+        version: 1,
+      };
+      localStorage.setItem('aic-planner-save', JSON.stringify(data));
+    } catch { /* silently fail */ }
+  }, [state.grid.buildings, state.outpostConfig]);
+
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      const raw = localStorage.getItem('aic-planner-save');
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.buildings && Array.isArray(data.buildings)) {
+        dispatch({ type: 'CLEAR_GRID' });
+        data.buildings.forEach((b: PlacedBuilding) => {
+          dispatch({ type: 'PLACE_BUILDING', building: b });
+        });
+        if (data.outpostConfig) {
+          dispatch({ type: 'SET_OUTPOST_CONFIG', config: data.outpostConfig });
+        }
+      }
+    } catch { /* silently fail */ }
+  }, []);
+
+  // ── Keyboard Shortcuts ──
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Don't intercept when typing in inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'Escape') {
+        dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
+        dispatch({ type: 'SET_SELECTED_BUILDING', buildingId: null });
+        if (state.showBuildingPicker) dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+        dispatch({ type: 'CLOSE_ALL_MENUS' });
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        dispatch({ type: 'UNDO' });
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        dispatch({ type: 'REDO' });
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveToLocalStorage();
+      }
+      if (e.key === 'b' && !e.ctrlKey && !e.metaKey) {
+        dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+        if (!state.showBuildingPicker) dispatch({ type: 'SET_TOOL_MODE', mode: 'build' });
+      }
+      if (e.key === 'v' && !e.ctrlKey && !e.metaKey) {
+        dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
+      }
+      if (e.key === 'x' && !e.ctrlKey && !e.metaKey) {
+        dispatch({ type: 'SET_TOOL_MODE', mode: 'delete' });
+      }
+      if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
+        handleZoomToFit();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.showBuildingPicker, saveToLocalStorage]);
+
+  // ── Mouse handlers ──
+
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 0 && state.toolMode === 'select') {
+    if (e.button === 0 && (state.toolMode === 'select' || (state.toolMode === 'build' && !state.selectedBuilding))) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
@@ -669,41 +921,57 @@ export default function FactoryPlannerPage() {
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prev => Math.max(0.15, Math.min(3, prev * delta)));
+    setZoom(prev => Math.max(0.1, Math.min(3, prev * delta)));
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
+
+    // Delete mode: remove building at click location
+    if (state.toolMode === 'delete') {
+      const idx = findBuildingAt(gridX, gridY);
+      if (idx >= 0) {
+        dispatch({ type: 'REMOVE_BUILDING', index: idx });
+      }
+      return;
+    }
+
+    // Build mode: place building with overlap detection
     if (state.toolMode === 'build' && state.selectedBuilding) {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left - pan.x - canvasSize.width / 2) / zoom + GRID_WIDTH * CELL_SIZE / 2;
-      const y = (e.clientY - rect.top - pan.y - canvasSize.height / 2) / zoom + GRID_HEIGHT * CELL_SIZE / 2;
-
-      const gridX = Math.floor(x / CELL_SIZE);
-      const gridY = Math.floor(y / CELL_SIZE);
-
-      // Check if placement is valid (not on PAC and within bounds)
       const building = BUILDINGS.find(b => b.id === state.selectedBuilding);
       if (!building) return;
 
       const isOnPAC = gridX < PAC_X + PAC_SIZE && gridX + building.size.width > PAC_X &&
                       gridY < PAC_Y + PAC_SIZE && gridY + building.size.height > PAC_Y;
 
+      const isOverlap = checkOverlap(gridX, gridY, building.size.width, building.size.height);
+
       if (gridX >= 0 && gridX + building.size.width <= GRID_WIDTH &&
           gridY >= 0 && gridY + building.size.height <= GRID_HEIGHT &&
-          !isOnPAC) {
+          !isOnPAC && !isOverlap) {
         dispatch({
           type: 'PLACE_BUILDING',
-          building: {
-            buildingId: state.selectedBuilding,
-            x: gridX,
-            y: gridY,
-            rotation: 0,
-          },
+          building: { buildingId: state.selectedBuilding, x: gridX, y: gridY, rotation: 0 },
         });
       }
+    }
+
+    // Select mode: click on a building to select it (for future operations)
+    if (state.toolMode === 'select') {
+      const idx = findBuildingAt(gridX, gridY);
+      if (idx >= 0) {
+        // TODO: Show building info panel
+      }
+    }
+  };
+
+  // Right-click to delete (context menu replacement)
+  const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
+    const idx = findBuildingAt(gridX, gridY);
+    if (idx >= 0) {
+      dispatch({ type: 'REMOVE_BUILDING', index: idx });
     }
   };
 
@@ -713,21 +981,21 @@ export default function FactoryPlannerPage() {
     dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
   };
 
-  const handleZoomToFit = () => {
+  const handleZoomToFit = useCallback(() => {
     if (canvasSize.width > 0 && canvasSize.height > 0) {
       const gridPixelWidth = GRID_WIDTH * CELL_SIZE;
       const gridPixelHeight = GRID_HEIGHT * CELL_SIZE;
       const fitZoom = Math.min(
-        canvasSize.width / (gridPixelWidth + 100),
-        canvasSize.height / (gridPixelHeight + 100)
+        canvasSize.width / (gridPixelWidth + 120),
+        canvasSize.height / (gridPixelHeight + 120)
       );
       setPan({ x: 0, y: 0 });
-      setZoom(Math.max(0.15, Math.min(2, fitZoom)));
+      setZoom(Math.max(0.1, Math.min(2, fitZoom)));
     } else {
       setPan({ x: 0, y: 0 });
       setZoom(0.45);
     }
-  };
+  }, [canvasSize, GRID_WIDTH, GRID_HEIGHT]);
 
   // Filter buildings
   const filteredBuildings = BUILDINGS.filter(building => {
@@ -741,89 +1009,357 @@ export default function FactoryPlannerPage() {
 
   const categories = ['All', 'Favorite', 'Production', 'Processing', 'Storage', 'Utility', 'Logistics', 'Plots'];
 
-  // Calculate total power consumption
   const totalPower = state.grid.buildings.reduce((sum, pb) => {
     const building = BUILDINGS.find(b => b.id === pb.buildingId);
     return sum + (building?.power || 0);
   }, 0);
 
   return (
-    <div className="h-screen flex flex-col bg-[#0A0A0A]">
-      {/* Header */}
-      <header className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-6 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Factory Planner</h1>
-        <div className="text-sm text-gray-300">
-          <span className="text-[var(--color-accent)] font-bold">{totalPower}</span>
-          <span className="text-gray-400">/0 Power </span>
-          <span className="text-[var(--color-accent)]">(Unlimited)</span>
-        </div>
-      </header>
+    <div className="h-screen flex flex-col bg-[#0A0A0A] overflow-hidden">
+      {/* ─── Top Bar: Title + Outpost Selector + Stats ─── */}
+      <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-3 py-2 flex items-center gap-3 flex-shrink-0">
+        <h1 className="text-sm font-bold text-white whitespace-nowrap">AIC Planner</h1>
 
-      {/* Main Canvas Area */}
-      <div ref={containerRef} className="flex-1 relative overflow-hidden">
+        <ToolbarDivider />
+
+        {/* Outpost Configuration Selector */}
+        <div className="relative" data-menu>
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_OUTPOST_MENU' })}
+            className="px-2.5 py-1.5 bg-[#0a2a3a] hover:bg-[#0d3548] border border-[#00b0ff50] text-xs text-[#00b0ff] font-medium flex items-center gap-1.5 transition-all"
+            title="Select outpost configuration"
+          >
+            <Settings2 size={13} />
+            <span className="hidden sm:inline">{activeConfig.name}</span>
+            <span className="sm:hidden">{activeConfig.label}</span>
+            <span className="text-[10px] text-[#00b0ff80]">({GRID_WIDTH}x{GRID_HEIGHT})</span>
+            <ChevronDown size={12} />
+          </button>
+          {state.showOutpostMenu && (
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[280px] z-50">
+              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Main PAC</div>
+              {OUTPOST_CONFIGS.filter(c => c.pacType === 'pac').map(config => (
+                <button
+                  key={config.id}
+                  onClick={() => dispatch({ type: 'SET_OUTPOST_CONFIG', config: config.id })}
+                  className={`w-full px-3 py-2 text-left flex items-center justify-between gap-3 transition-colors ${
+                    state.outpostConfig === config.id ? 'bg-[#00b0ff20] text-[#00b0ff]' : 'text-gray-300 hover:bg-[#2A2A2A] hover:text-white'
+                  }`}
+                >
+                  <div>
+                    <div className="text-xs font-medium">{config.name}</div>
+                    <div className="text-[10px] text-gray-500">{config.description}{config.cost ? ` — ${config.cost}` : ''}</div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 whitespace-nowrap">{config.gridWidth}x{config.gridHeight}</span>
+                </button>
+              ))}
+              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 font-semibold border-t border-[var(--color-border)] mt-1">Sub-PAC (Outpost)</div>
+              {OUTPOST_CONFIGS.filter(c => c.pacType === 'sub-pac').map(config => (
+                <button
+                  key={config.id}
+                  onClick={() => dispatch({ type: 'SET_OUTPOST_CONFIG', config: config.id })}
+                  className={`w-full px-3 py-2 text-left flex items-center justify-between gap-3 transition-colors ${
+                    state.outpostConfig === config.id ? 'bg-[#00b0ff20] text-[#00b0ff]' : 'text-gray-300 hover:bg-[#2A2A2A] hover:text-white'
+                  }`}
+                >
+                  <div>
+                    <div className="text-xs font-medium">{config.name}</div>
+                    <div className="text-[10px] text-gray-500">{config.description}{config.cost ? ` — ${config.cost}` : ''}</div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 whitespace-nowrap">{config.gridWidth}x{config.gridHeight}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <ToolbarDivider />
+
+        {/* Power readout */}
+        <div className="text-[11px] text-gray-400 whitespace-nowrap">
+          <span className="text-[var(--color-accent)] font-bold">{totalPower}W</span>
+          <span className="hidden sm:inline"> Power</span>
+        </div>
+
+        {/* Buildings count */}
+        <div className="text-[11px] text-gray-400 whitespace-nowrap">
+          <span className="text-white font-bold">{state.grid.buildings.length}</span>
+          <span className="hidden sm:inline"> Buildings</span>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Zoom display */}
+        <div className="text-[11px] text-gray-500 font-mono whitespace-nowrap">
+          {Math.round(zoom * 100)}%
+        </div>
+      </div>
+
+      {/* ─── Toolbar Row: ALL tools in one row ─── */}
+      <div className="bg-[#111318] border-b border-[var(--color-border)] px-2 py-1 flex items-center gap-1 flex-shrink-0 overflow-x-auto">
+        {/* File menu */}
+        <div className="relative" data-menu>
+          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_FILE_MENU' })} title="File operations">
+            <FileText size={13} />
+            <span className="hidden sm:inline">File</span>
+            <ChevronDown size={11} className="opacity-50" />
+          </ToolbarButton>
+          {state.showFileMenu && (
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
+              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">New</button>
+              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Load <span className="text-gray-500 text-[10px]">Ctrl+L</span></button>
+              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Save <span className="text-gray-500 text-[10px]">Ctrl+S</span></button>
+              <div className="border-t border-[var(--color-border)] my-1" />
+              <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed">Export Image (coming soon)</button>
+            </div>
+          )}
+        </div>
+
+        {/* Data menu */}
+        <div className="relative" data-menu>
+          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_DATA_MENU' })} title="Data operations">
+            <Database size={13} />
+            <span className="hidden sm:inline">Data</span>
+            <ChevronDown size={11} className="opacity-50" />
+          </ToolbarButton>
+          {state.showDataMenu && (
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
+              <button className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Import JSON</button>
+              <button className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Export JSON</button>
+            </div>
+          )}
+        </div>
+
+        {/* Edit menu */}
+        <div className="relative" data-menu>
+          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_EDIT_MENU' })} title="Edit operations">
+            <Edit3 size={13} />
+            <span className="hidden sm:inline">Edit</span>
+            <ChevronDown size={11} className="opacity-50" />
+          </ToolbarButton>
+          {state.showEditMenu && (
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
+              <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'delete' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Trash2 size={12} />Delete Mode <span className="text-gray-500 text-[10px] ml-auto">X</span></button>
+              <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed flex items-center gap-2"><RotateCw size={12} />Rotate (coming soon)</button>
+              <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed flex items-center gap-2"><Copy size={12} />Copy (coming soon)</button>
+              <div className="border-t border-[var(--color-border)] my-1" />
+              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Trash2 size={12} />Clear All Buildings</button>
+            </div>
+          )}
+        </div>
+
+        <ToolbarDivider />
+
+        {/* Tool mode: Select */}
+        <ToolbarButton
+          active={state.toolMode === 'select' && !state.showBuildingPicker}
+          onClick={() => {
+            dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
+            if (state.showBuildingPicker) dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+          }}
+          title="Select / Pan (drag to move)"
+        >
+          <MousePointer2 size={13} />
+          <span className="hidden sm:inline">Select</span>
+        </ToolbarButton>
+
+        {/* Build */}
+        <ToolbarButton
+          active={state.showBuildingPicker}
+          onClick={() => {
+            dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+            if (!state.showBuildingPicker) {
+              dispatch({ type: 'SET_TOOL_MODE', mode: 'build' });
+            } else {
+              dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
+            }
+          }}
+          title="Open building library (B)"
+        >
+          <Building2 size={13} />
+          Build
+        </ToolbarButton>
+
+        {/* Delete */}
+        <ToolbarButton
+          active={state.toolMode === 'delete'}
+          onClick={() => dispatch({ type: 'SET_TOOL_MODE', mode: state.toolMode === 'delete' ? 'select' : 'delete' })}
+          title="Delete buildings (X) - Right-click also deletes"
+          className={state.toolMode === 'delete' ? '!bg-red-600 !border-red-600 !text-white' : ''}
+        >
+          <Trash2 size={13} />
+          <span className="hidden sm:inline">Del</span>
+        </ToolbarButton>
+
+        {/* Zoom to Fit */}
+        <ToolbarButton onClick={handleZoomToFit} title="Zoom to fit entire grid">
+          <Maximize2 size={13} />
+          <span className="hidden md:inline">Fit</span>
+        </ToolbarButton>
+
+        <ToolbarDivider />
+
+        {/* Undo/Redo */}
+        <ToolbarButton
+          onClick={() => dispatch({ type: 'UNDO' })}
+          title="Undo"
+          className={state.grid.historyIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''}
+        >
+          <Undo2 size={13} />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => dispatch({ type: 'REDO' })}
+          title="Redo"
+          className={state.grid.historyIndex === state.grid.history.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}
+        >
+          <Redo2 size={13} />
+        </ToolbarButton>
+
+        <ToolbarDivider />
+
+        {/* Toggles */}
+        <ToolbarButton active={state.showConveyors} onClick={() => dispatch({ type: 'TOGGLE_CONVEYORS' })} title="Toggle conveyors">
+          Conv.
+        </ToolbarButton>
+        <ToolbarButton active={state.showPipes} onClick={() => dispatch({ type: 'TOGGLE_PIPES' })} title="Toggle pipes">
+          Pipes
+        </ToolbarButton>
+        <ToolbarButton active={state.showStats} onClick={() => dispatch({ type: 'TOGGLE_STATS' })} title="Toggle statistics overlay">
+          Stats
+        </ToolbarButton>
+        <ToolbarButton active={state.showAnim} onClick={() => dispatch({ type: 'TOGGLE_ANIM' })} title="Toggle animations">
+          Anim
+        </ToolbarButton>
+        <ToolbarButton active={state.autoConnect} onClick={() => dispatch({ type: 'TOGGLE_AUTO_CONNECT' })} title="Auto-connect buildings">
+          <Infinity size={13} />
+        </ToolbarButton>
+        <ToolbarButton active={state.showBus} onClick={() => dispatch({ type: 'TOGGLE_BUS' })} title="Toggle depot bus">
+          <Bus size={13} />
+        </ToolbarButton>
+
+        <ToolbarDivider />
+
+        {/* Speed */}
+        <div className="flex items-center gap-0.5">
+          {[1, 2, 5, 10].map((speed) => (
+            <ToolbarButton
+              key={speed}
+              active={state.speed === speed}
+              onClick={() => dispatch({ type: 'SET_SPEED', speed })}
+              title={`Speed: ${speed}x`}
+            >
+              {speed}x
+            </ToolbarButton>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Canvas Area (fills all remaining space) ─── */}
+      <div ref={containerRef} className="flex-1 relative overflow-hidden min-h-0">
         <canvas
           ref={canvasRef}
-          className={`w-full h-full ${state.toolMode === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'}`}
+          className={`w-full h-full ${state.toolMode === 'select' ? 'cursor-grab active:cursor-grabbing' : state.toolMode === 'delete' ? 'cursor-pointer' : 'cursor-crosshair'}`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
           onClick={handleCanvasClick}
+          onContextMenu={handleContextMenu}
         />
 
-        {/* Building Picker Panel */}
+        {/* Floating Zoom Controls (bottom-right) */}
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1 z-10">
+          <button
+            onClick={() => setZoom(prev => Math.min(3, prev * 1.25))}
+            className="w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] text-gray-300 hover:text-white hover:bg-[#2A2A2A] flex items-center justify-center transition-colors"
+            title="Zoom in"
+          >
+            <ZoomIn size={16} />
+          </button>
+          <button
+            onClick={handleZoomToFit}
+            className="w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] text-gray-300 hover:text-white hover:bg-[#2A2A2A] flex items-center justify-center transition-colors text-[10px] font-bold"
+            title="Zoom to fit"
+          >
+            FIT
+          </button>
+          <button
+            onClick={() => setZoom(prev => Math.max(0.1, prev * 0.8))}
+            className="w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] text-gray-300 hover:text-white hover:bg-[#2A2A2A] flex items-center justify-center transition-colors"
+            title="Zoom out"
+          >
+            <ZoomOut size={16} />
+          </button>
+        </div>
+
+        {/* Current tool mode indicator (bottom-left) */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className={`bg-[var(--color-surface)] border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+            state.toolMode === 'delete' ? 'border-red-600 text-red-400' : 'border-[var(--color-border)] text-gray-400'
+          }`}>
+            {state.toolMode === 'build' && state.selectedBuilding
+              ? `Placing: ${BUILDINGS.find(b => b.id === state.selectedBuilding)?.name || 'Unknown'}`
+              : state.toolMode === 'select'
+              ? 'Pan / Select — Right-click to delete'
+              : state.toolMode === 'delete'
+              ? 'Click building to delete — Esc to cancel'
+              : state.toolMode}
+          </div>
+        </div>
+
+        {/* ─── Building Picker Panel (overlay left) ─── */}
         {state.showBuildingPicker && (
-          <div className="absolute top-0 left-0 h-full w-96 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col shadow-2xl">
+          <div className="absolute top-0 left-0 h-full w-80 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col shadow-2xl z-20">
             {/* Panel Header */}
-            <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Building Library</h2>
-              <div className="flex items-center gap-2">
+            <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-white">Building Library</h2>
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => dispatch({ type: 'SET_VIEW_MODE', mode: 'list' })}
-                  className={`p-2 rounded transition-colors ${state.viewMode === 'list' ? 'bg-[var(--color-accent)] text-black' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-1.5 transition-colors ${state.viewMode === 'list' ? 'bg-[var(--color-accent)] text-black' : 'text-gray-400 hover:text-white'}`}
                   title="List view"
                 >
-                  <List size={18} />
+                  <List size={14} />
                 </button>
                 <button
                   onClick={() => dispatch({ type: 'SET_VIEW_MODE', mode: 'grid' })}
-                  className={`p-2 rounded transition-colors ${state.viewMode === 'grid' ? 'bg-[var(--color-accent)] text-black' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-1.5 transition-colors ${state.viewMode === 'grid' ? 'bg-[var(--color-accent)] text-black' : 'text-gray-400 hover:text-white'}`}
                   title="Grid view"
                 >
-                  <Grid3x3 size={18} />
+                  <Grid3x3 size={14} />
                 </button>
                 <button
                   onClick={() => dispatch({ type: 'TOGGLE_BUILDING_PICKER' })}
-                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-white transition-colors"
                   title="Close"
                 >
-                  <X size={18} />
+                  <X size={14} />
                 </button>
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="p-4 border-b border-[var(--color-border)]">
+            {/* Search */}
+            <div className="p-3 border-b border-[var(--color-border)]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                 <input
                   type="text"
-                  placeholder="Search by name, category..."
+                  placeholder="Search buildings..."
                   value={state.searchQuery}
                   onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', query: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 />
               </div>
             </div>
 
             {/* Category Tabs */}
-            <div className="flex overflow-x-auto border-b border-[var(--color-border)] px-2">
+            <div className="flex overflow-x-auto border-b border-[var(--color-border)] px-1">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => dispatch({ type: 'SET_CATEGORY', category })}
-                  className={`px-3 py-2 whitespace-nowrap border-b-2 transition-all text-sm ${
+                  className={`px-2 py-1.5 whitespace-nowrap border-b-2 transition-all text-[11px] ${
                     state.selectedCategory === category
                       ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
                       : 'border-transparent text-gray-400 hover:text-white'
@@ -835,27 +1371,27 @@ export default function FactoryPlannerPage() {
             </div>
 
             {/* Building List */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto p-2">
+              <div className="space-y-1">
                 {filteredBuildings.map((building) => (
                   <button
                     key={building.id}
                     onClick={() => handleBuildingSelect(building.id)}
-                    className="w-full p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded hover:border-[var(--color-accent)] transition-all text-left group"
+                    className="w-full p-2.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-all text-left group"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-white group-hover:text-[var(--color-accent)] transition-colors">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-xs font-semibold text-white group-hover:text-[var(--color-accent)] transition-colors">
                             {building.name}
                           </h3>
                           {building.isFavorite && (
-                            <Star size={14} className="text-[var(--color-accent)] fill-current flex-shrink-0" />
+                            <Star size={10} className="text-[var(--color-accent)] fill-current flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{building.description}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                          <span className="font-medium">Size: {building.size.width}x{building.size.height}</span>
+                        <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{building.description}</p>
+                        <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
+                          <span className="font-medium">{building.size.width}x{building.size.height}</span>
                           <span>I/O: {building.inputs}/{building.outputs}</span>
                           {building.power > 0 && (
                             <span className="text-[var(--color-accent)] font-medium">{building.power}W</span>
@@ -863,7 +1399,7 @@ export default function FactoryPlannerPage() {
                         </div>
                       </div>
                       <span
-                        className="px-2 py-1 rounded text-xs font-medium flex-shrink-0"
+                        className="px-1.5 py-0.5 text-[9px] font-medium flex-shrink-0"
                         style={{
                           backgroundColor: CATEGORY_COLORS[building.category] + '30',
                           color: CATEGORY_COLORS[building.category],
@@ -876,204 +1412,14 @@ export default function FactoryPlannerPage() {
                   </button>
                 ))}
                 {filteredBuildings.length === 0 && (
-                  <div className="text-center text-gray-500 py-8">
-                    No buildings found matching your search.
+                  <div className="text-center text-gray-500 py-6 text-xs">
+                    No buildings found.
                   </div>
                 )}
               </div>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Bottom Toolbar */}
-      <div className="bg-[var(--color-surface)] border-t border-[var(--color-border)] p-3">
-        <div className="flex flex-col gap-2">
-          {/* Row 1: File/Data */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <button
-                onClick={() => dispatch({ type: 'TOGGLE_FILE_MENU' })}
-                className="px-4 py-2 bg-[var(--color-surface-2)] hover:bg-[#2A2A2A] border border-[var(--color-border)] rounded text-white flex items-center gap-2 transition-colors"
-              >
-                <FileText size={16} />
-                File
-                <ChevronDown size={14} className="opacity-50" />
-              </button>
-              {state.showFileMenu && (
-                <div className="absolute bottom-full mb-2 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded shadow-xl py-1 min-w-[150px] z-10">
-                  <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">New</button>
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Load</button>
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Save</button>
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Export Image</button>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <button
-                onClick={() => dispatch({ type: 'TOGGLE_DATA_MENU' })}
-                className="px-4 py-2 bg-[var(--color-surface-2)] hover:bg-[#2A2A2A] border border-[var(--color-border)] rounded text-white flex items-center gap-2 transition-colors"
-              >
-                <Database size={16} />
-                Data
-                <ChevronDown size={14} className="opacity-50" />
-              </button>
-              {state.showDataMenu && (
-                <div className="absolute bottom-full mb-2 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded shadow-xl py-1 min-w-[150px] z-10">
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Import JSON</button>
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Export JSON</button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Row 2: Build tools */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => {
-                dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
-                if (!state.showBuildingPicker) {
-                  dispatch({ type: 'SET_TOOL_MODE', mode: 'build' });
-                } else {
-                  dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
-                }
-              }}
-              className={`px-4 py-2 border border-[var(--color-border)] rounded text-white flex items-center gap-2 transition-all ${
-                state.showBuildingPicker ? 'bg-[var(--color-accent)] text-black font-semibold' : 'bg-[var(--color-surface-2)] hover:bg-[#2A2A2A]'
-              }`}
-            >
-              <Building2 size={16} />
-              Build
-            </button>
-
-            <div className="relative">
-              <button
-                onClick={() => dispatch({ type: 'TOGGLE_EDIT_MENU' })}
-                className="px-4 py-2 bg-[var(--color-surface-2)] hover:bg-[#2A2A2A] border border-[var(--color-border)] rounded text-white flex items-center gap-2 transition-colors"
-              >
-                <Edit3 size={16} />
-                Edit
-                <ChevronDown size={14} className="opacity-50" />
-              </button>
-              {state.showEditMenu && (
-                <div className="absolute bottom-full mb-2 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded shadow-xl py-1 min-w-[150px] z-10">
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Delete</button>
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Rotate</button>
-                  <button className="w-full px-4 py-2 text-left text-white hover:bg-[#2A2A2A] transition-colors">Copy</button>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleZoomToFit}
-              className="px-4 py-2 bg-[var(--color-surface-2)] hover:bg-[#2A2A2A] border border-[var(--color-border)] rounded text-white flex items-center gap-2 transition-colors"
-              title="Zoom to fit"
-            >
-              <Maximize2 size={16} />
-              Zoom to Fit
-            </button>
-
-            <div className="w-px h-8 bg-[var(--color-border)]" />
-
-            <button
-              onClick={() => dispatch({ type: 'UNDO' })}
-              disabled={state.grid.historyIndex === 0}
-              className="px-3 py-2 bg-[var(--color-surface-2)] hover:bg-[#2A2A2A] border border-[var(--color-border)] rounded text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="Undo"
-            >
-              <Undo2 size={16} />
-            </button>
-
-            <button
-              onClick={() => dispatch({ type: 'REDO' })}
-              disabled={state.grid.historyIndex === state.grid.history.length - 1}
-              className="px-3 py-2 bg-[var(--color-surface-2)] hover:bg-[#2A2A2A] border border-[var(--color-border)] rounded text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="Redo"
-            >
-              <Redo2 size={16} />
-            </button>
-
-            <div className="w-px h-8 bg-[var(--color-border)]" />
-
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_CONVEYORS' })}
-              className={`px-3 py-2 border border-[var(--color-border)] rounded transition-all text-sm ${
-                state.showConveyors ? 'bg-green-600 text-white font-medium' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-              }`}
-              title="Toggle conveyor display"
-            >
-              Conveyors
-            </button>
-
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_PIPES' })}
-              className={`px-3 py-2 border border-[var(--color-border)] rounded transition-all text-sm ${
-                state.showPipes ? 'bg-green-600 text-white font-medium' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-              }`}
-              title="Toggle pipe display"
-            >
-              Pipes
-            </button>
-
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_STATS' })}
-              className={`px-3 py-2 border border-[var(--color-border)] rounded transition-all text-sm ${
-                state.showStats ? 'bg-[var(--color-accent)] text-black font-medium' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-              }`}
-              title="Toggle statistics"
-            >
-              Stats
-            </button>
-
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_ANIM' })}
-              className={`px-3 py-2 border border-[var(--color-border)] rounded transition-all text-sm ${
-                state.showAnim ? 'bg-[var(--color-accent)] text-black font-medium' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-              }`}
-              title="Toggle animations"
-            >
-              Anim
-            </button>
-
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_AUTO_CONNECT' })}
-              className={`px-3 py-2 border border-[var(--color-border)] rounded transition-all ${
-                state.autoConnect ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-              }`}
-              title="Auto-connect buildings"
-            >
-              <Infinity size={16} />
-            </button>
-
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_BUS' })}
-              className={`px-3 py-2 border border-[var(--color-border)] rounded transition-all ${
-                state.showBus ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-              }`}
-              title="Toggle depot bus"
-            >
-              <Bus size={16} />
-            </button>
-
-            <div className="w-px h-8 bg-[var(--color-border)]" />
-
-            <div className="flex items-center gap-1">
-              {[1, 2, 5, 10, 20].map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => dispatch({ type: 'SET_SPEED', speed })}
-                  className={`px-2.5 py-2 border border-[var(--color-border)] rounded transition-all text-sm ${
-                    state.speed === speed ? 'bg-[var(--color-accent)] text-black font-semibold' : 'bg-[var(--color-surface-2)] text-white hover:bg-[#2A2A2A]'
-                  }`}
-                  title={`Speed: ${speed}x`}
-                >
-                  {speed}x
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
