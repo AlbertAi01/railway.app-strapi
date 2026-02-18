@@ -1,131 +1,221 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Beaker, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
-import { RECIPES } from '@/lib/data';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, BookOpen, Filter } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
+interface RecipeItem {
+  id: string;
+  name: string;
+  count: number;
+}
+
+interface Recipe {
+  id: string;
+  name: string;
+  machine: string;
+  machineName: string;
+  inputs: RecipeItem[];
+  outputs: RecipeItem[];
+  craftTime: number;
+  power: number;
+}
+
+interface Building {
+  id: string;
+  name: string;
+  power: number;
+}
+
+interface FactoryData {
+  buildings: Record<string, Building>;
+  items: Record<string, string>;
+  recipes: Recipe[];
+}
+
+interface UniqueItem {
+  id: string;
+  name: string;
+  recipeCount: number;
+  machines: string[];
+  slug: string;
+}
+
+const ITEM_ICON_URL = 'https://endfieldtools.dev/assets/images/endfield/itemicon';
+
+function itemIdToSlug(id: string): string {
+  return id.replace(/^item_/, '');
+}
+
 export default function RecipesPage() {
+  const [factoryData, setFactoryData] = useState<FactoryData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('All');
-  const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null);
+  const [buildingFilter, setBuildingFilter] = useState('all');
 
-  const types = ['All', ...Array.from(new Set(RECIPES.map(r => r.Category)))];
+  useEffect(() => {
+    fetch('/data/factory-recipes.json')
+      .then(r => r.json())
+      .then((data: FactoryData) => {
+        setFactoryData(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  const filteredRecipes = RECIPES.filter(recipe => {
-    const matchesSearch = recipe.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         recipe.Outputs[0]?.item.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === 'All' || recipe.Category === selectedType;
-    return matchesSearch && matchesType;
-  });
+  // Build unique items list (items that can be produced)
+  const uniqueItems = useMemo(() => {
+    if (!factoryData) return [];
+    const itemMap = new Map<string, UniqueItem>();
 
-  const toggleRecipe = (recipeName: string) => {
-    setExpandedRecipe(expandedRecipe === recipeName ? null : recipeName);
-  };
+    for (const recipe of factoryData.recipes) {
+      for (const output of recipe.outputs) {
+        const existing = itemMap.get(output.id);
+        if (existing) {
+          existing.recipeCount++;
+          if (!existing.machines.includes(recipe.machineName)) {
+            existing.machines.push(recipe.machineName);
+          }
+        } else {
+          itemMap.set(output.id, {
+            id: output.id,
+            name: output.name,
+            recipeCount: 1,
+            machines: [recipe.machineName],
+            slug: itemIdToSlug(output.id),
+          });
+        }
+      }
+    }
+
+    return Array.from(itemMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [factoryData]);
+
+  const buildings = useMemo(() => {
+    if (!factoryData) return [];
+    return Object.values(factoryData.buildings).sort((a, b) => a.name.localeCompare(b.name));
+  }, [factoryData]);
+
+  const filteredItems = useMemo(() => {
+    let items = uniqueItems;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      items = items.filter(i => i.name.toLowerCase().includes(q));
+    }
+    if (buildingFilter !== 'all') {
+      items = items.filter(i => i.machines.includes(buildingFilter));
+    }
+    return items;
+  }, [uniqueItems, searchTerm, buildingFilter]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen text-[var(--color-text-secondary)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="diamond-spinner mx-auto mb-4" />
+          <p className="terminal-text">Loading recipe data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!factoryData) {
+    return (
+      <div className="min-h-screen text-[var(--color-text-secondary)] flex items-center justify-center">
+        <p className="text-red-400">Failed to load recipe data.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
+    <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Crafting Protocols" category="LOGISTICS" code="RIOS-REC-001" icon={<BookOpen size={28} />} />
-        <div className="mb-8"></div>
+        <div className="mb-6" />
 
-        {/* Search and Filter */}
-        <div className="mb-6 space-y-4">
+        {/* Search */}
+        <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
             <input
               type="text"
-              placeholder="Search recipes..."
+              placeholder="Search items..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white"
             />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {types.map(type => (
-              <button
-                key={type}
-                onClick={() => setSelectedType(type)}
-                className={`px-4 py-2 clip-corner-tl transition-colors ${
-                  selectedType === type
-                    ? 'bg-[var(--color-accent)] text-black font-bold'
-                    : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Recipe List */}
-        <div className="grid gap-4">
-          {filteredRecipes.map(recipe => (
-            <div
-              key={recipe.Name}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-colors"
+        {/* Building Filters */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <button
+            onClick={() => setBuildingFilter('all')}
+            className={`px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors ${
+              buildingFilter === 'all'
+                ? 'bg-[var(--color-accent)] text-black font-bold'
+                : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)]'
+            }`}
+          >
+            <Filter size={10} /> All
+          </button>
+          {buildings.map(b => (
+            <button
+              key={b.id}
+              onClick={() => setBuildingFilter(b.name)}
+              className={`px-3 py-1.5 text-xs transition-colors ${
+                buildingFilter === b.name
+                  ? 'bg-[var(--color-accent)] text-black font-bold'
+                  : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)]'
+              }`}
             >
-              <div
-                onClick={() => toggleRecipe(recipe.Name)}
-                className="p-6 cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  <Beaker className="w-6 h-6 text-[var(--color-accent)]" />
-                  <div>
-                    <h2 className="text-xl font-bold text-white">{recipe.Name}</h2>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="px-3 py-1 bg-[var(--color-border)] text-sm text-[var(--color-accent)]">
-                        {recipe.Category}
-                      </span>
-                      <span className="text-sm">
-                        Produces: {recipe.Outputs[0]?.item} {recipe.Outputs[0]?.quantity && `(${recipe.Outputs[0]?.quantity})`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {expandedRecipe === recipe.Name ? (
-                  <ChevronUp className="w-5 h-5" />
-                ) : (
-                  <ChevronDown className="w-5 h-5" />
+              {b.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Item Count */}
+        <p className="text-sm text-[var(--color-text-tertiary)] mb-4">{filteredItems.length} Items</p>
+
+        {/* Item Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {filteredItems.map(item => (
+            <Link
+              key={item.id}
+              href={`/factory-planner/recipes/${item.slug}`}
+              className="group bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 flex items-center gap-3 hover:border-[var(--color-accent)] transition-colors"
+            >
+              <div className="w-12 h-12 shrink-0 relative bg-[#0a0a0a] border border-[var(--color-border)] flex items-center justify-center overflow-hidden">
+                <Image
+                  src={`${ITEM_ICON_URL}/${item.id}.png`}
+                  alt={item.name}
+                  width={48}
+                  height={48}
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-white font-bold truncate group-hover:text-[var(--color-accent)] transition-colors">
+                  {item.name}
+                </p>
+                {item.recipeCount > 1 && (
+                  <p className="text-[10px] text-[var(--color-accent)] mt-0.5">
+                    {item.recipeCount} recipes
+                  </p>
                 )}
               </div>
-
-              {expandedRecipe === recipe.Name && (
-                <div className="px-6 pb-6 border-t border-[var(--color-border)]">
-                  <div className="mt-4">
-                    <h3 className="font-bold text-white mb-3">Required Inputs:</h3>
-                    <div className="grid gap-2">
-                      {recipe.Inputs.map((input, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-[#0A0A0A] p-3 clip-corner-tl">
-                          <span>{input.item}</span>
-                          <span className="text-[var(--color-accent)] font-bold">×{input.quantity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-4">
-                    <div className="bg-[#0A0A0A] p-3 clip-corner-tl">
-                      <span className="text-sm text-[var(--color-text-tertiary)]">Production Time</span>
-                      <p className="text-white font-bold">{recipe.CraftingTime}s</p>
-                    </div>
-                    <div className="bg-[#0A0A0A] p-3 clip-corner-tl">
-                      <span className="text-sm text-[var(--color-text-tertiary)]">Building Required</span>
-                      <p className="text-white font-bold">{recipe.FacilityRequired || 'Any Factory'}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            </Link>
           ))}
-
-          {filteredRecipes.length === 0 && (
-            <div className="text-center py-12 text-[var(--color-text-tertiary)]">
-              No recipes found matching your search.
-            </div>
-          )}
         </div>
+
+        {filteredItems.length === 0 && (
+          <div className="text-center py-12 text-[var(--color-text-tertiary)]">
+            No items found matching your search.
+          </div>
+        )}
       </div>
     </div>
   );
