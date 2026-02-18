@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { CHARACTERS } from '@/lib/data';
 import {
   Star, Download, Copy, TrendingUp, Crosshair, BookOpen, Plus, Trash2, ChevronDown, ChevronUp,
-  Package, Check, RotateCcw, Users, Layers, Save,
+  Package, Check, RotateCcw, Users, Layers, Save, Cloud, CloudOff, Loader2, X, Minus,
 } from 'lucide-react';
 import { CHARACTER_ICONS, MATERIAL_ICONS, MATERIAL_ID_TO_NAME } from '@/lib/assets';
 import { CHAR_MATERIALS, getBreakMaterials, getSkillMaterials } from '@/data/ascension';
 import type { MaterialCost } from '@/data/ascension';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { useAuthStore } from '@/store/authStore';
+import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 
 const BREAK_LEVELS = [0, 20, 40, 60, 70];
 const SKILL_GROUPS = [
@@ -74,18 +76,162 @@ function getMaterialsForPlan(plan: CharacterPlan): MaterialCost[] {
   return mergeMaterials(lists);
 }
 
+// ─── Material Inventory Popup Modal ──────────────────────────────────────
+function MaterialInventoryModal({ id, count, owned, onSave, onClose }: {
+  id: string; count: number; owned: number; onSave: (val: number) => void; onClose: () => void;
+}) {
+  const [value, setValue] = useState(owned);
+  const name = MATERIAL_ID_TO_NAME[id] || id;
+  const iconUrl = MATERIAL_ICONS[name];
+  const deficit = Math.max(0, count - value);
+
+  const handleSave = () => {
+    onSave(value);
+    onClose();
+  };
+
+  const adjust = (delta: number) => {
+    setValue(prev => Math.max(0, prev + delta));
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[var(--color-surface)] border-2 border-[var(--color-accent)] clip-corner-tl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Set Inventory</h3>
+          <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Material Info */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 shrink-0 clip-corner-tl bg-[var(--color-surface-2)] border-2 border-[var(--color-accent)] flex items-center justify-center overflow-hidden">
+              {iconUrl ? (
+                <Image src={iconUrl} alt={name} width={64} height={64} className="w-16 h-16 object-contain" />
+              ) : (
+                <span className="text-2xl text-[var(--color-text-tertiary)]">?</span>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-white text-lg font-bold mb-1">{name}</p>
+              <div className="text-xs text-[var(--color-text-tertiary)] font-mono">
+                <span>REQUIRED: {id === 'item_gold' ? count.toLocaleString() : `×${count.toLocaleString()}`}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Value Controls */}
+          <div className="mb-6">
+            <label className="block text-xs font-bold mb-2 text-[var(--color-text-tertiary)] uppercase tracking-wider">Current Inventory</label>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => adjust(-10)}
+                className="px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white transition-colors clip-corner-tl"
+              >
+                -10
+              </button>
+              <button
+                onClick={() => adjust(-1)}
+                className="px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white transition-colors"
+              >
+                <Minus size={16} />
+              </button>
+              <input
+                type="number"
+                min={0}
+                value={value || ''}
+                onChange={(e) => setValue(Math.max(0, parseInt(e.target.value) || 0))}
+                className="flex-1 px-4 py-3 text-center text-xl font-bold font-mono bg-[var(--color-surface-2)] border-2 border-[var(--color-accent)] focus:outline-none text-white"
+                autoFocus
+              />
+              <button
+                onClick={() => adjust(1)}
+                className="px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                onClick={() => adjust(10)}
+                className="px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white transition-colors clip-corner-tl"
+              >
+                +10
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Set Buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <button
+              onClick={() => setValue(0)}
+              className="px-3 py-2 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)] hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setValue(Math.floor(count / 2))}
+              className="px-3 py-2 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)] hover:text-white transition-colors"
+            >
+              Half
+            </button>
+            <button
+              onClick={() => setValue(count)}
+              className="px-3 py-2 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)] hover:text-white transition-colors"
+            >
+              Full
+            </button>
+          </div>
+
+          {/* Deficit Display */}
+          <div className={`p-4 border-l-3 ${deficit > 0 ? 'border-l-red-500 bg-red-500/5' : 'border-l-emerald-500 bg-emerald-500/5'} border border-[var(--color-border)] clip-corner-tl mb-6`}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">Status</span>
+              <span className={`text-sm font-bold font-mono ${deficit > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                {deficit > 0 ? `NEED ${id === 'item_gold' ? deficit.toLocaleString() : `×${deficit.toLocaleString()}`} MORE` : 'COMPLETE'}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)] hover:text-white transition-colors text-sm font-bold uppercase tracking-wider"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 px-4 py-3 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors text-sm uppercase tracking-wider"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Material Row with owned/needed display ─────────────────────────────
-function MaterialRow({ id, count, owned, onOwnedChange, compact }: {
-  id: string; count: number; owned: number; onOwnedChange?: (val: number) => void; compact?: boolean;
+function MaterialRow({ id, count, owned, onOwnedChange, compact, onClick }: {
+  id: string; count: number; owned: number; onOwnedChange?: (val: number) => void; compact?: boolean; onClick?: () => void;
 }) {
   const name = MATERIAL_ID_TO_NAME[id] || id;
   const iconUrl = MATERIAL_ICONS[name];
   const isGold = id === 'item_gold';
   const deficit = Math.max(0, count - owned);
   const sufficient = deficit === 0;
+  const progress = count > 0 ? Math.min(100, (owned / count) * 100) : 0;
 
   return (
-    <div className={`flex items-center gap-3 ${compact ? 'p-2' : 'p-3'} bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl ${sufficient ? 'border-l-2 border-l-emerald-500/60' : 'border-l-2 border-l-red-500/60'}`}>
+    <div
+      className={`flex items-center gap-3 ${compact ? 'p-2' : 'p-3'} bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl ${sufficient ? 'border-l-2 border-l-emerald-500/60' : 'border-l-2 border-l-red-500/60'} ${onClick ? 'cursor-pointer hover:border-[var(--color-accent)] transition-colors' : ''}`}
+      onClick={onClick}
+    >
       <div className="w-10 h-10 shrink-0 clip-corner-tl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center overflow-hidden">
         {iconUrl ? (
           <Image src={iconUrl} alt={name} width={40} height={40} className="w-10 h-10 object-contain" />
@@ -94,24 +240,27 @@ function MaterialRow({ id, count, owned, onOwnedChange, compact }: {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-semibold truncate">{name}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className={`text-xs font-mono ${sufficient ? 'text-emerald-400' : 'text-red-400'}`}>
-            {sufficient ? 'Complete' : `Need ${isGold ? deficit.toLocaleString() : deficit.toLocaleString()} more`}
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-white text-sm font-semibold truncate">{name}</p>
+          <span className={`text-xs font-mono font-bold ml-2 ${sufficient ? 'text-emerald-400' : 'text-red-400'}`}>
+            {sufficient ? 'DONE' : `−${isGold ? deficit.toLocaleString() : deficit.toLocaleString()}`}
+          </span>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 ${sufficient ? 'bg-emerald-500' : 'bg-[var(--color-accent)]'}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="text-[10px] font-mono text-[var(--color-text-tertiary)] shrink-0 w-16 text-right">
+            {owned}/{count}
           </span>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {onOwnedChange && (
-          <input
-            type="number"
-            min={0}
-            value={owned || ''}
-            onChange={(e) => onOwnedChange(Math.max(0, parseInt(e.target.value) || 0))}
-            placeholder="0"
-            className="w-16 px-2 py-1 text-xs font-mono text-right bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white"
-          />
-        )}
         <span className={`font-bold text-base font-mono shrink-0 ${isGold ? 'text-[#FFD700]' : 'text-[var(--color-accent)]'}`}>
           {isGold ? count.toLocaleString() : `×${count.toLocaleString()}`}
         </span>
@@ -121,10 +270,11 @@ function MaterialRow({ id, count, owned, onOwnedChange, compact }: {
 }
 
 // ─── Character Plan Card ─────────────────────────────────────────────────
-function PlanCard({ plan, onUpdate, onRemove }: {
+function PlanCard({ plan, onUpdate, onRemove, inventory }: {
   plan: CharacterPlan;
   onUpdate: (p: CharacterPlan) => void;
   onRemove: () => void;
+  inventory: Record<string, number>;
 }) {
   const character = CHARACTERS.find(c => c.Slug === plan.slug);
   const materials = useMemo(() => getMaterialsForPlan(plan), [plan]);
@@ -289,7 +439,7 @@ function PlanCard({ plan, onUpdate, onRemove }: {
               </div>
               <div className="space-y-1">
                 {materials.map(m => (
-                  <MaterialRow key={m.id} id={m.id} count={m.count} owned={0} compact />
+                  <MaterialRow key={m.id} id={m.id} count={m.count} owned={inventory[m.id] || 0} compact />
                 ))}
               </div>
             </div>
@@ -392,8 +542,13 @@ export default function AscensionPlannerPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [activeTab, setActiveTab] = useState<'plans' | 'summary' | 'inventory'>('plans');
   const [loaded, setLoaded] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [editingMaterial, setEditingMaterial] = useState<{ id: string; count: number; owned: number } | null>(null);
+  const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { token } = useAuthStore();
+  const cloudLoaded = useRef(false);
 
-  // Load from localStorage
+  // Load from localStorage on mount
   useEffect(() => {
     try {
       const savedPlans = localStorage.getItem(STORAGE_KEY);
@@ -404,16 +559,46 @@ export default function AscensionPlannerPage() {
     setLoaded(true);
   }, []);
 
-  // Save to localStorage on change
+  // Load cloud data on mount (if logged in)
+  useEffect(() => {
+    if (cloudLoaded.current || !token || !loaded) return;
+    cloudLoaded.current = true;
+    (async () => {
+      const cloud = await loadFromCloud('ascensionPlanner', token);
+      if (cloud && typeof cloud === 'object' && cloud !== null) {
+        const data = cloud as { plans?: CharacterPlan[]; inventory?: Record<string, number> };
+        if (data.plans) {
+          setPlans(data.plans);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.plans));
+        }
+        if (data.inventory) {
+          setInventory(data.inventory);
+          localStorage.setItem(INVENTORY_KEY, JSON.stringify(data.inventory));
+        }
+        setSyncStatus('synced');
+      }
+    })();
+  }, [token, loaded]);
+
+  // Save to localStorage and sync to cloud (debounced)
   useEffect(() => {
     if (!loaded) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
-  }, [plans, loaded]);
-
-  useEffect(() => {
-    if (!loaded) return;
     localStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory));
-  }, [inventory, loaded]);
+
+    if (token) {
+      if (syncTimeout.current) clearTimeout(syncTimeout.current);
+      setSyncStatus('syncing');
+      syncTimeout.current = setTimeout(async () => {
+        try {
+          await syncToCloud('ascensionPlanner', { plans, inventory }, token);
+          setSyncStatus('synced');
+        } catch {
+          setSyncStatus('error');
+        }
+      }, 2000);
+    }
+  }, [plans, inventory, loaded, token]);
 
   const addCharacter = useCallback((slug: string) => {
     setPlans(prev => [...prev, {
@@ -512,11 +697,14 @@ export default function AscensionPlannerPage() {
     try { await navigator.clipboard.writeText(summary); } catch { /* */ }
   };
 
-  const resetInventory = () => {
+  const resetInventory = useCallback(() => {
     if (confirm('Reset all owned material counts to 0?')) {
       setInventory({});
+      if (token) {
+        syncToCloud('ascensionPlanner', { plans, inventory: {} }, token).catch(() => {});
+      }
     }
-  };
+  }, [token, plans]);
 
   if (!loaded) {
     return (
@@ -586,6 +774,14 @@ export default function AscensionPlannerPage() {
             <Copy size={14} /> Copy
           </button>
           <div className="flex-1" />
+          {/* Sync Status */}
+          {token && syncStatus !== 'idle' && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+              {syncStatus === 'syncing' && <><Loader2 size={14} className="text-[var(--color-accent)] animate-spin" /><span className="text-xs text-[var(--color-text-tertiary)]">Syncing...</span></>}
+              {syncStatus === 'synced' && <><Cloud size={14} className="text-green-400" /><span className="text-xs text-green-400">Synced</span></>}
+              {syncStatus === 'error' && <><CloudOff size={14} className="text-red-400" /><span className="text-xs text-red-400">Error</span></>}
+            </div>
+          )}
           {/* Tabs */}
           <div className="flex border border-[var(--color-border)] overflow-hidden">
             {(['plans', 'summary', 'inventory'] as const).map(tab => (
@@ -668,6 +864,7 @@ export default function AscensionPlannerPage() {
                       plan={plan}
                       onUpdate={(updated) => updatePlan(plan.id, updated)}
                       onRemove={() => removePlan(plan.id)}
+                      inventory={inventory}
                     />
                   ))}
                 </div>
@@ -752,10 +949,13 @@ export default function AscensionPlannerPage() {
                           id={m.id}
                           count={m.count}
                           owned={inventory[m.id] || 0}
-                          onOwnedChange={(val) => setInventory(prev => ({ ...prev, [m.id]: val }))}
+                          onClick={() => setEditingMaterial({ id: m.id, count: m.count, owned: inventory[m.id] || 0 })}
                         />
                       ))}
                     </div>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mt-4 mb-2 italic">
+                      Click any material to set your inventory count
+                    </p>
                   </>
                 )}
               </div>
@@ -799,7 +999,7 @@ export default function AscensionPlannerPage() {
                 ) : (
                   <>
                     <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
-                      Enter the amount of each material you currently own. The planner will calculate what you still need to farm.
+                      Click any material to set your inventory count. The planner will calculate what you still need to farm.
                     </p>
                     <div className="space-y-2">
                       {aggregated.map(m => (
@@ -808,7 +1008,7 @@ export default function AscensionPlannerPage() {
                           id={m.id}
                           count={m.count}
                           owned={inventory[m.id] || 0}
-                          onOwnedChange={(val) => setInventory(prev => ({ ...prev, [m.id]: val }))}
+                          onClick={() => setEditingMaterial({ id: m.id, count: m.count, owned: inventory[m.id] || 0 })}
                         />
                       ))}
                     </div>
@@ -821,7 +1021,16 @@ export default function AscensionPlannerPage() {
 
         {/* Auto-save indicator */}
         <div className="mt-6 mb-8 flex items-center justify-center gap-2 text-[10px] text-[var(--color-text-tertiary)] font-mono">
-          <Save size={10} /> Auto-saved to browser storage
+          {token ? (
+            <>
+              {syncStatus === 'syncing' && <><Loader2 size={10} className="text-[var(--color-accent)] animate-spin" /> Syncing to cloud...</>}
+              {syncStatus === 'synced' && <><Cloud size={10} className="text-green-400" /> Synced to cloud</>}
+              {syncStatus === 'error' && <><CloudOff size={10} className="text-red-400" /> Sync error (saved locally)</>}
+              {syncStatus === 'idle' && <><Save size={10} /> Auto-saved locally</>}
+            </>
+          ) : (
+            <><Save size={10} /> Auto-saved to browser storage</>
+          )}
         </div>
       </div>
 
@@ -831,6 +1040,17 @@ export default function AscensionPlannerPage() {
           onSelect={addCharacter}
           existingSlugs={plans.map(p => p.slug)}
           onClose={() => setShowPicker(false)}
+        />
+      )}
+
+      {/* Material Inventory Modal */}
+      {editingMaterial && (
+        <MaterialInventoryModal
+          id={editingMaterial.id}
+          count={editingMaterial.count}
+          owned={editingMaterial.owned}
+          onSave={(val) => setInventory(prev => ({ ...prev, [editingMaterial.id]: val }))}
+          onClose={() => setEditingMaterial(null)}
         />
       )}
     </div>
