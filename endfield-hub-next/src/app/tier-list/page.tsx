@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import { CHARACTERS } from '@/lib/data';
 import { CHARACTER_ICONS } from '@/lib/assets';
-import { Save, RotateCcw, LayoutGrid, Download, Share2, Link as LinkIcon } from 'lucide-react';
+import { Save, RotateCcw, LayoutGrid, Download, Share2, Link as LinkIcon, Search, X } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import { DEFAULT_TIER_LIST } from '@/data/guides';
 import html2canvas from 'html2canvas';
+import type { Element, Role, WeaponType } from '@/types/game';
 
 const TIERS = ['SS', 'S', 'A', 'B', 'C', 'D'];
 const TIER_COLORS: Record<string, string> = {
@@ -28,6 +29,51 @@ const TIER_LABEL_COLORS: Record<string, string> = {
   D: '#9B59B6',
 };
 
+// ──────────── Filter Configuration ────────────
+
+const ELEMENTS: Element[] = ['Physical', 'Heat', 'Cryo', 'Electric', 'Nature'];
+const ROLES: Role[] = ['Assault', 'Guard', 'Defender', 'Vanguard', 'Supporter', 'Caster'];
+const WEAPON_TYPES: WeaponType[] = ['Sword', 'Greatsword', 'Polearm', 'Handcannon', 'Arts Unit'];
+const RARITIES = [6, 5, 4];
+
+const ELEMENT_COLORS: Record<Element, string> = {
+  Physical: '#CCCCCC',
+  Heat: '#FF6B35',
+  Cryo: '#5BC0EB',
+  Electric: '#C084FC',
+  Nature: '#34D399',
+};
+
+// ──────────── Filter Pill Component ────────────
+
+function FilterPill({
+  label,
+  active,
+  onClick,
+  color,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  color?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs font-bold border transition-colors ${
+        active
+          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-white hover:border-[var(--color-text-tertiary)]'
+      }`}
+      style={active && color ? { borderColor: color, color, backgroundColor: `${color}15` } : undefined}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ──────────── Main Page ────────────
+
 function getDefaultTierList(): { [key: string]: string[] } {
   const tiers: { [key: string]: string[] } = {
     SS: [],
@@ -39,7 +85,6 @@ function getDefaultTierList(): { [key: string]: string[] } {
     Unranked: [],
   };
 
-  // Populate from DEFAULT_TIER_LIST
   const rankedNames = new Set<string>();
   for (const tier of TIERS) {
     const entries = DEFAULT_TIER_LIST[tier as keyof typeof DEFAULT_TIER_LIST];
@@ -49,9 +94,7 @@ function getDefaultTierList(): { [key: string]: string[] } {
     }
   }
 
-  // Any characters not in the default tier list go to Unranked
   tiers.Unranked = CHARACTERS.filter(c => !rankedNames.has(c.Name)).map(c => c.Name);
-
   return tiers;
 }
 
@@ -62,12 +105,42 @@ export default function TierListPage() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const tierListRef = useRef<HTMLDivElement>(null);
 
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRarity, setFilterRarity] = useState<number | null>(null);
+  const [filterElement, setFilterElement] = useState<Element | null>(null);
+  const [filterRole, setFilterRole] = useState<Role | null>(null);
+  const [filterWeapon, setFilterWeapon] = useState<WeaponType | null>(null);
+
+  const hasActiveFilters = searchTerm || filterRarity || filterElement || filterRole || filterWeapon;
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterRarity(null);
+    setFilterElement(null);
+    setFilterRole(null);
+    setFilterWeapon(null);
+  };
+
+  // Build a set of character names that pass the current filters
+  const visibleCharacters = useMemo(() => {
+    const visible = new Set<string>();
+    CHARACTERS.forEach(c => {
+      if (searchTerm && !c.Name.toLowerCase().includes(searchTerm.toLowerCase())) return;
+      if (filterRarity && c.Rarity !== filterRarity) return;
+      if (filterElement && c.Element !== filterElement) return;
+      if (filterRole && c.Role !== filterRole) return;
+      if (filterWeapon && c.WeaponType !== filterWeapon) return;
+      visible.add(c.Name);
+    });
+    return visible;
+  }, [searchTerm, filterRarity, filterElement, filterRole, filterWeapon]);
+
   useEffect(() => {
     const saved = localStorage.getItem('endfield-tier-list-v2');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Validate it has the expected structure
         if (parsed && typeof parsed === 'object' && 'SS' in parsed) {
           setTierList(parsed);
         }
@@ -102,30 +175,20 @@ export default function TierListPage() {
     if (!draggedCharacter) return;
 
     const newTierList = { ...tierList };
-
-    // Remove from old tier
     Object.keys(newTierList).forEach(key => {
       newTierList[key] = newTierList[key].filter(c => c !== draggedCharacter);
     });
-
-    // Add to new tier
     newTierList[tier].push(draggedCharacter);
-
     setTierList(newTierList);
     setDraggedCharacter(null);
   };
 
   const moveCharacter = (character: string, tier: string) => {
     const newTierList = { ...tierList };
-
-    // Remove from old tier
     Object.keys(newTierList).forEach(key => {
       newTierList[key] = newTierList[key].filter(c => c !== character);
     });
-
-    // Add to new tier
     newTierList[tier].push(character);
-
     setTierList(newTierList);
   };
 
@@ -193,13 +256,19 @@ export default function TierListPage() {
     const character = CHARACTERS.find(c => c.Name === charName);
     if (!character) return null;
 
+    // If filters are active and this character doesn't match, dim it
+    const isFiltered = hasActiveFilters && !visibleCharacters.has(charName);
+
     const iconUrl = CHARACTER_ICONS[character.Name];
+    const elemColor = ELEMENT_COLORS[character.Element as Element] || '#888';
 
     return (
       <div
         draggable
         onDragStart={() => handleDragStart(charName)}
-        className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
+        className={`bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-all group ${
+          isFiltered ? 'opacity-20' : ''
+        }`}
       >
         <div className="flex items-center gap-3">
           {iconUrl && (
@@ -211,9 +280,17 @@ export default function TierListPage() {
               className="border border-[var(--color-border)]"
             />
           )}
-          <div>
-            <div className="text-sm font-bold text-white">{character.Name}</div>
-            <div className="text-xs text-[var(--color-text-tertiary)]">{character.Role}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold text-white truncate">{character.Name}</div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] font-bold px-1 py-0.5" style={{ color: elemColor, borderColor: elemColor, border: '1px solid' }}>
+                {character.Element}
+              </span>
+              <span className="text-[10px] text-[var(--color-text-tertiary)]">{character.Role}</span>
+            </div>
+          </div>
+          <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono">
+            {character.Rarity}★
           </div>
         </div>
 
@@ -225,7 +302,6 @@ export default function TierListPage() {
                 key={t}
                 onClick={() => moveCharacter(charName, t)}
                 className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:text-black"
-                style={{ ['--hover-bg' as string]: TIER_LABEL_COLORS[t] }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = TIER_LABEL_COLORS[t])}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
               >
@@ -302,6 +378,104 @@ export default function TierListPage() {
           </div>
         </div>
 
+        {/* ─── Filters ─── */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mb-4 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
+            <input
+              type="text"
+              placeholder="Search characters..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Rarity */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Rarity</span>
+            <FilterPill label="All" active={!filterRarity} onClick={() => setFilterRarity(null)} />
+            {RARITIES.map(r => (
+              <FilterPill
+                key={r}
+                label={`${r}★`}
+                active={filterRarity === r}
+                onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+                color={r === 6 ? '#FFD429' : r === 5 ? '#C084FC' : '#3498DB'}
+              />
+            ))}
+          </div>
+
+          {/* Element */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Element</span>
+            <FilterPill label="All" active={!filterElement} onClick={() => setFilterElement(null)} />
+            {ELEMENTS.map(e => (
+              <FilterPill
+                key={e}
+                label={e}
+                active={filterElement === e}
+                onClick={() => setFilterElement(filterElement === e ? null : e)}
+                color={ELEMENT_COLORS[e]}
+              />
+            ))}
+          </div>
+
+          {/* Role */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Role</span>
+            <FilterPill label="All" active={!filterRole} onClick={() => setFilterRole(null)} />
+            {ROLES.map(r => (
+              <FilterPill
+                key={r}
+                label={r}
+                active={filterRole === r}
+                onClick={() => setFilterRole(filterRole === r ? null : r)}
+              />
+            ))}
+          </div>
+
+          {/* Weapon */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Weapon</span>
+            <FilterPill label="All" active={!filterWeapon} onClick={() => setFilterWeapon(null)} />
+            {WEAPON_TYPES.map(w => (
+              <FilterPill
+                key={w}
+                label={w}
+                active={filterWeapon === w}
+                onClick={() => setFilterWeapon(filterWeapon === w ? null : w)}
+              />
+            ))}
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="px-3 py-1.5 text-xs font-bold border border-[#FF4444]/50 bg-[#FF4444]/10 text-[#FF4444] hover:bg-[#FF4444]/20 transition-colors flex items-center gap-1.5 ml-auto"
+              >
+                <X size={12} />
+                Reset
+              </button>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              Showing <span className="text-[var(--color-accent)] font-bold">{visibleCharacters.size}</span> of {CHARACTERS.length} characters
+              {' '}-- non-matching characters are dimmed
+            </p>
+          )}
+        </div>
+
+        {/* ─── Tier List ─── */}
         <div ref={tierListRef} className="space-y-1">
           {TIERS.map(tier => (
             <div
@@ -358,6 +532,7 @@ export default function TierListPage() {
           <ul className="space-y-1 text-[var(--color-text-secondary)]">
             <li>-- Drag and drop operators between tiers to customize rankings</li>
             <li>-- Hover over an operator and click tier buttons for quick assignment</li>
+            <li>-- Use filters above to highlight specific characters by element, role, rarity, or weapon</li>
             <li>-- Click Save to store your customized tier list in local storage</li>
             <li>-- Click Reset to restore community consensus default rankings</li>
             <li>-- Export as image or share your tier list via link</li>
