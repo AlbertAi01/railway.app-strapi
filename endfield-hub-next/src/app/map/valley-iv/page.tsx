@@ -162,6 +162,17 @@ export default function ValleyIVMapPage() {
   const lastTouchDist = useRef(0);
   const lastTouchCenter = useRef({ x: 0, y: 0 });
 
+  // Tile loading system
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tileCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  const loadingTiles = useRef<Set<string>>(new Set());
+  const [tilesLoaded, setTilesLoaded] = useState(0);
+  const [tilesTotal, setTilesTotal] = useState(0);
+  const loadQueueRef = useRef<{ src: string; x: number; y: number; key: string }[]>([]);
+  const activeLoads = useRef(0);
+  const MAX_CONCURRENT = 8;
+  const rafRef = useRef<number>(0);
+
   // Load map data
   useEffect(() => {
     fetch('/data/map01-pois.json')
@@ -454,20 +465,137 @@ export default function ValleyIVMapPage() {
     return result;
   }, [mapData]);
 
-  // Viewport-culled tiles
-  const visibleTiles = useMemo(() => {
-    if (!containerRef.current || allTiles.length === 0) return allTiles;
+  // Draw tiles onto canvas
+  const drawTiles = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container || !mapData) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const vw = container.clientWidth;
+    const vh = container.clientHeight;
+
+    // Resize canvas to container
+    if (canvas.width !== vw * dpr || canvas.height !== vh * dpr) {
+      canvas.width = vw * dpr;
+      canvas.height = vh * dpr;
+      canvas.style.width = vw + 'px';
+      canvas.style.height = vh + 'px';
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, vw, vh);
+
+    // Apply transform
+    ctx.save();
+    ctx.translate(offset.x, offset.y);
+    ctx.scale(zoom, zoom);
+
+    // Draw cached tiles
+    for (const tile of allTiles) {
+      const img = tileCache.current.get(tile.key);
+      if (img) {
+        ctx.drawImage(img, tile.x, tile.y, TILE_SIZE, TILE_SIZE);
+      }
+    }
+
+    // Draw zone labels
+    if (showZoneLabels && mapData.zoneLabels) {
+      ctx.save();
+      for (const z of mapData.zoneLabels) {
+        ctx.save();
+        ctx.translate(z.x, z.y);
+        ctx.scale(1 / zoom, 1 / zoom);
+        ctx.font = 'bold 14px system-ui';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.95)';
+        ctx.shadowBlur = 4;
+        ctx.letterSpacing = '0.05em';
+        ctx.fillText(z.name.toUpperCase(), 0, 0);
+        // Double draw for stronger shadow
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.fillText(z.name.toUpperCase(), 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }, [allTiles, offset, zoom, mapData, showZoneLabels]);
+
+  // Process tile loading queue
+  const processQueue = useCallback(() => {
+    while (activeLoads.current < MAX_CONCURRENT && loadQueueRef.current.length > 0) {
+      const tile = loadQueueRef.current.shift()!;
+      if (tileCache.current.has(tile.key) || loadingTiles.current.has(tile.key)) continue;
+
+      loadingTiles.current.add(tile.key);
+      activeLoads.current++;
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        tileCache.current.set(tile.key, img);
+        loadingTiles.current.delete(tile.key);
+        activeLoads.current--;
+        setTilesLoaded(prev => prev + 1);
+        drawTiles();
+        processQueue(); // Load next
+      };
+      img.onerror = () => {
+        loadingTiles.current.delete(tile.key);
+        activeLoads.current--;
+        processQueue(); // Skip failed, load next
+      };
+      img.src = tile.src;
+    }
+  }, [drawTiles]);
+
+  // Queue tiles for loading with center-first priority
+  useEffect(() => {
+    if (!mapData || !containerRef.current || allTiles.length === 0) return;
+
     const vw = containerRef.current.clientWidth;
     const vh = containerRef.current.clientHeight;
-    const margin = TILE_SIZE;
+    const centerX = (-offset.x / zoom) + (vw / zoom / 2);
+    const centerY = (-offset.y / zoom) + (vh / zoom / 2);
+
+    // Sort by distance from viewport center
+    const sorted = [...allTiles]
+      .filter(t => !tileCache.current.has(t.key) && !loadingTiles.current.has(t.key))
+      .map(t => ({
+        ...t,
+        dist: Math.hypot(t.x + TILE_SIZE / 2 - centerX, t.y + TILE_SIZE / 2 - centerY),
+      }))
+      .sort((a, b) => a.dist - b.dist);
+
+    // Also filter by visibility with generous margin
+    const margin = TILE_SIZE * 3;
     const left = (-offset.x / zoom) - margin;
     const top = (-offset.y / zoom) - margin;
     const right = left + (vw / zoom) + margin * 2;
     const bottom = top + (vh / zoom) + margin * 2;
-    return allTiles.filter(t =>
+
+    const visible = sorted.filter(t =>
       t.x + TILE_SIZE > left && t.x < right && t.y + TILE_SIZE > top && t.y < bottom
     );
-  }, [allTiles, offset, zoom]);
+
+    setTilesTotal(allTiles.length);
+    loadQueueRef.current = visible;
+    processQueue();
+  }, [allTiles, offset, zoom, mapData, processQueue]);
+
+  // Continuous canvas redraw on transform changes
+  useEffect(() => {
+    rafRef.current = requestAnimationFrame(() => drawTiles());
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [drawTiles]);
 
   // Completion stats (category level)
   const stats = useMemo(() => {
@@ -742,65 +870,30 @@ export default function ValleyIVMapPage() {
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'none' }}
         >
-          {/* Map layer: tiles + zone labels */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 0, top: 0,
-              width: mapData.width, height: mapData.height,
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-              transformOrigin: '0 0',
-              willChange: 'transform',
-            }}
-          >
-            {/* Tiles (viewport-culled) */}
-            {visibleTiles.map(t => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={t.key}
-                src={t.src}
-                alt=""
-                width={TILE_SIZE}
-                height={TILE_SIZE}
-                loading="eager"
-                decoding="async"
-                draggable={false}
-                style={{
-                  position: 'absolute',
-                  left: t.x, top: t.y,
-                  width: TILE_SIZE, height: TILE_SIZE,
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  imageRendering: 'auto',
-                }}
-              />
-            ))}
+          {/* Canvas tile layer */}
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0"
+            style={{ pointerEvents: 'none' }}
+          />
 
-            {/* Zone Labels */}
-            {showZoneLabels && mapData.zoneLabels.map(z => (
-              <div
-                key={z.id}
-                style={{
-                  position: 'absolute',
-                  left: z.x, top: z.y,
-                  transform: `translate(-50%, -50%) scale(${1 / zoom})`,
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span style={{
-                  fontSize: 14,
-                  fontWeight: 'bold',
-                  fontFamily: 'system-ui',
-                  color: 'white',
-                  textTransform: 'uppercase',
-                  textShadow: '0 0 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.8), 1px 1px 2px rgba(0,0,0,0.9)',
-                  letterSpacing: '0.05em',
-                }}>{z.name}</span>
+          {/* Tile loading progress */}
+          {tilesLoaded < tilesTotal && tilesTotal > 0 && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-[var(--color-surface)]/95 border border-[var(--color-border)] px-4 py-2 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <Loader2 size={14} className="text-[var(--color-accent)] animate-spin" />
+                <span className="text-xs font-mono text-[var(--color-accent)]">
+                  LOADING TILES {tilesLoaded}/{tilesTotal}
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="mt-1.5 h-1 bg-[var(--color-border)] overflow-hidden">
+                <div
+                  className="h-full bg-[var(--color-accent)] transition-all duration-300"
+                  style={{ width: `${(tilesLoaded / tilesTotal) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* POI Markers Overlay */}
           <div
