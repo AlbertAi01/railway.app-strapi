@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { Star, FlaskConical, Search, MapPin, Sword, CheckCircle } from 'lucide-react';
+import { Star, FlaskConical, Search, MapPin, Sword, CheckCircle, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import { WEAPON_ICONS } from '@/lib/assets';
+import { useAuthStore } from '@/store/authStore';
+import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 import {
   WEAPON_ESSENCES, FARMING_ZONES, PRIMARY_ATTRS, SECONDARY_STATS, SKILL_STATS,
   findCompatibleWeapons, getBestZones,
@@ -173,20 +175,19 @@ function ZoneCard({ zone, weapons, expanded, onToggle }: { zone: FarmingZone; we
 }
 
 // Tab: Farming Optimizer
-function FarmingOptimizer() {
-  const [selectedWeapons, setSelectedWeapons] = useState<string[]>([]);
+function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWeapons: string[]; setSelectedWeapons: (v: string[] | ((prev: string[]) => string[])) => void }) {
   const [showPicker, setShowPicker] = useState(false);
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [rarityFilter, setRarityFilter] = useState<number | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [rarityFilter, setRarityFilter] = useState<number[]>([]);
 
   const weapons4plus = WEAPON_ESSENCES.filter(w => w.rarity >= 4);
 
   const filteredWeapons = weapons4plus.filter(w => {
     if (selectedWeapons.includes(w.name)) return false;
     if (search && !w.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (typeFilter && w.type !== typeFilter) return false;
-    if (rarityFilter && w.rarity !== rarityFilter) return false;
+    if (typeFilter.length > 0 && !typeFilter.includes(w.type)) return false;
+    if (rarityFilter.length > 0 && !rarityFilter.includes(w.rarity)) return false;
     return true;
   });
 
@@ -289,15 +290,15 @@ function FarmingOptimizer() {
                 className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-xs"
               />
               <div className="flex flex-wrap gap-1.5">
-                <StatPill label="All" active={!rarityFilter} onClick={() => setRarityFilter(null)} />
+                <StatPill label="All" active={rarityFilter.length === 0} onClick={() => setRarityFilter([])} />
                 {[6, 5, 4].map(r => (
-                  <StatPill key={r} label={`${r}★`} active={rarityFilter === r} onClick={() => setRarityFilter(rarityFilter === r ? null : r)} color={RARITY_COLORS[r]} />
+                  <StatPill key={r} label={`${r}★`} active={rarityFilter.includes(r)} onClick={() => setRarityFilter(prev => prev.includes(r) ? prev.filter(v => v !== r) : [...prev, r])} color={RARITY_COLORS[r]} />
                 ))}
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <StatPill label="All Types" active={!typeFilter} onClick={() => setTypeFilter(null)} />
+                <StatPill label="All Types" active={typeFilter.length === 0} onClick={() => setTypeFilter([])} />
                 {['Greatsword', 'Polearm', 'Handcannon', 'Sword', 'Arts Unit'].map(t => (
-                  <StatPill key={t} label={t} active={typeFilter === t} onClick={() => setTypeFilter(typeFilter === t ? null : t)} />
+                  <StatPill key={t} label={t} active={typeFilter.includes(t)} onClick={() => setTypeFilter(prev => prev.includes(t) ? prev.filter(v => v !== t) : [...prev, t])} />
                 ))}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-[420px] overflow-y-auto pr-1">
@@ -616,17 +617,89 @@ function FarmingGuide() {
   );
 }
 
+const LOCAL_KEY = 'zerosanity-essence-solver';
+
 export default function EssenceSolverPage() {
   const [activeTab, setActiveTab] = useState<'optimizer' | 'checker' | 'guide'>('optimizer');
+  const [selectedWeapons, setSelectedWeapons] = useState<string[]>([]);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { token } = useAuthStore();
+  const loaded = useRef(false);
+
+  // Load saved state on mount
+  useEffect(() => {
+    if (loaded.current) return;
+    loaded.current = true;
+    const load = async () => {
+      if (token) {
+        const cloud = await loadFromCloud('essenceSolver', token);
+        if (cloud && typeof cloud === 'object' && Array.isArray((cloud as { selectedWeapons?: unknown }).selectedWeapons)) {
+          const data = cloud as { selectedWeapons: string[] };
+          setSelectedWeapons(data.selectedWeapons);
+          localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+          setSyncStatus('synced');
+          return;
+        }
+      }
+      try {
+        const raw = localStorage.getItem(LOCAL_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (Array.isArray(data.selectedWeapons)) setSelectedWeapons(data.selectedWeapons);
+        }
+      } catch { /* silent */ }
+    };
+    load();
+  }, [token]);
+
+  // Save + debounced cloud sync whenever selectedWeapons changes
+  const saveState = useCallback((weapons: string[]) => {
+    const data = { selectedWeapons: weapons };
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+
+    if (token) {
+      if (syncTimeout.current) clearTimeout(syncTimeout.current);
+      setSyncStatus('syncing');
+      syncTimeout.current = setTimeout(async () => {
+        try {
+          await syncToCloud('essenceSolver', data, token);
+          setSyncStatus('synced');
+        } catch {
+          setSyncStatus('error');
+        }
+      }, 2000);
+    }
+  }, [token]);
+
+  const handleSetSelectedWeapons = useCallback((v: string[] | ((prev: string[]) => string[])) => {
+    setSelectedWeapons(prev => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      saveState(next);
+      return next;
+    });
+  }, [saveState]);
 
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Essence Optimization" category="ANALYSIS" code="RIOS-ESS-001" icon={<FlaskConical size={28} />} />
 
-        <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
-          Stop guessing in Severe Energy Alluvium. Get the optimal pre-engrave setup, find your best farming zone, and land more 3/3 essence matches.
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-[var(--color-text-tertiary)]">
+            Stop guessing in Severe Energy Alluvium. Get the optimal pre-engrave setup, find your best farming zone, and land more 3/3 essence matches.
+          </p>
+          {token && (
+            <div className="flex items-center gap-1.5 shrink-0 ml-4">
+              {syncStatus === 'syncing' && <Loader2 size={14} className="text-[var(--color-accent)] animate-spin" />}
+              {syncStatus === 'synced' && <Cloud size={14} className="text-green-400" />}
+              {syncStatus === 'error' && <CloudOff size={14} className="text-red-400" />}
+              <span className="text-[10px] font-mono text-[var(--color-text-tertiary)]">
+                {syncStatus === 'syncing' ? 'Saving...' : syncStatus === 'synced' ? 'Synced' : syncStatus === 'error' ? 'Sync failed' : ''}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Tab Bar */}
         <div className="flex border-b border-[var(--color-border)] mb-6">
@@ -635,7 +708,7 @@ export default function EssenceSolverPage() {
           <TabButton active={activeTab === 'guide'} onClick={() => setActiveTab('guide')} icon={<MapPin size={14} />} label="Farming Guide" />
         </div>
 
-        {activeTab === 'optimizer' && <FarmingOptimizer />}
+        {activeTab === 'optimizer' && <FarmingOptimizer selectedWeapons={selectedWeapons} setSelectedWeapons={handleSetSelectedWeapons} />}
         {activeTab === 'checker' && <EssenceChecker />}
         {activeTab === 'guide' && <FarmingGuide />}
       </div>

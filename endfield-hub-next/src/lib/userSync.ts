@@ -2,7 +2,7 @@
 
 import api from './api';
 
-const SYNC_KEYS = ['headhuntTracker', 'achievements', 'tierList', 'characterBuilds', 'ascensionPlanner'] as const;
+const SYNC_KEYS = ['headhuntTracker', 'achievements', 'tierList', 'characterBuilds', 'ascensionPlanner', 'essenceSolver'] as const;
 type SyncKey = typeof SYNC_KEYS[number];
 
 export async function syncToCloud(key: SyncKey, data: unknown, token: string): Promise<void> {

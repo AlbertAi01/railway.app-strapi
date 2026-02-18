@@ -261,22 +261,38 @@ export default function ValleyIVMapPage() {
     setSelectedPoi(poi);
   }, [zoom]);
 
-  // Generate tile elements
-  const tiles = useMemo(() => {
+  // Generate all tile definitions
+  const allTiles = useMemo(() => {
     if (!mapData) return [];
-    const result: { href: string; x: number; y: number }[] = [];
+    const result: { src: string; x: number; y: number; key: string }[] = [];
     for (const tz of mapData.tileZones) {
       for (let col = 1; col <= tz.cols; col++) {
         for (let row = 1; row <= tz.rows; row++) {
           const x = tz.startX + (col - 1) * TILE_SIZE;
           const y = tz.startY + (row - 1) * TILE_SIZE;
-          const fname = `${tz.id.replace('_', '_')}_${col}_${row}.png`;
-          result.push({ href: `${TILE_BASE}/${tz.folder}/${fname}`, x, y });
+          const fname = `${tz.id}_${col}_${row}.png`;
+          result.push({ src: `${TILE_BASE}/${tz.folder}/${fname}`, x, y, key: `${tz.id}_${col}_${row}` });
         }
       }
     }
     return result;
   }, [mapData]);
+
+  // Viewport-culled tiles: only render tiles visible in the current view (with margin)
+  const visibleTiles = useMemo(() => {
+    if (!containerRef.current || allTiles.length === 0) return allTiles;
+    const vw = containerRef.current.clientWidth;
+    const vh = containerRef.current.clientHeight;
+    // Visible area in map coordinates
+    const margin = TILE_SIZE; // 1-tile buffer
+    const left = (-offset.x / zoom) - margin;
+    const top = (-offset.y / zoom) - margin;
+    const right = left + (vw / zoom) + margin * 2;
+    const bottom = top + (vh / zoom) + margin * 2;
+    return allTiles.filter(t =>
+      t.x + TILE_SIZE > left && t.x < right && t.y + TILE_SIZE > top && t.y < bottom
+    );
+  }, [allTiles, offset, zoom]);
 
   // Category icon component
   const CatIcon = ({ cat }: { cat: string }) => {
@@ -412,52 +428,75 @@ export default function ValleyIVMapPage() {
           onWheel={handleWheel}
           style={{ touchAction: 'none' }}
         >
-          {/* SVG Map */}
-          <svg
-            width={mapData.width}
-            height={mapData.height}
+          {/* Map layer: tiles + zone labels + POI markers (all HTML) */}
+          <div
             style={{
               position: 'absolute',
               left: 0, top: 0,
+              width: mapData.width, height: mapData.height,
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+              transformOrigin: '0 0',
+              willChange: 'transform',
+            }}
+          >
+            {/* Tiles (viewport-culled HTML img) */}
+            {visibleTiles.map(t => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={t.key}
+                src={t.src}
+                alt=""
+                width={TILE_SIZE}
+                height={TILE_SIZE}
+                loading="eager"
+                decoding="async"
+                draggable={false}
+                style={{
+                  position: 'absolute',
+                  left: t.x, top: t.y,
+                  width: TILE_SIZE, height: TILE_SIZE,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  imageRendering: 'auto',
+                }}
+              />
+            ))}
+
+            {/* Zone Labels (HTML) */}
+            {mapData.zoneLabels.map(z => (
+              <div
+                key={z.id}
+                style={{
+                  position: 'absolute',
+                  left: z.x, top: z.y,
+                  transform: `translate(-50%, -50%) scale(${1 / zoom})`,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                  fontFamily: 'system-ui',
+                  color: 'white',
+                  textTransform: 'uppercase',
+                  textShadow: '0 0 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.8), 1px 1px 2px rgba(0,0,0,0.9)',
+                  letterSpacing: '0.05em',
+                }}>{z.name}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* POI Markers Overlay */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: 0, top: 0,
+              width: mapData.width, height: mapData.height,
               transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
               transformOrigin: '0 0',
             }}
-          >
-            {/* Tiles */}
-            <g id="tiles-layer">
-              {tiles.map((t, i) => (
-                <image
-                  key={i} href={t.href}
-                  x={t.x} y={t.y}
-                  width={TILE_SIZE} height={TILE_SIZE}
-                  preserveAspectRatio="none"
-                  style={{ pointerEvents: 'none', userSelect: 'none' }}
-                />
-              ))}
-            </g>
-            {/* Zone Labels */}
-            <g id="zone-labels-layer">
-              {mapData.zoneLabels.map(z => (
-                <g key={z.id}>
-                  <text x={z.x} y={z.y} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={Math.max(14, 14 / zoom)} fontWeight="bold" fontFamily="system-ui"
-                    fill="none" stroke="rgba(0,0,0,0.9)" strokeWidth={3 / zoom}
-                    style={{ pointerEvents: 'none', userSelect: 'none' }}
-                  >{z.name.toUpperCase()}</text>
-                  <text x={z.x} y={z.y} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={Math.max(14, 14 / zoom)} fontWeight="bold" fontFamily="system-ui"
-                    fill="white"
-                    style={{ pointerEvents: 'none', userSelect: 'none' }}
-                  >{z.name.toUpperCase()}</text>
-                </g>
-              ))}
-            </g>
-          </svg>
-
-          {/* POI Markers Overlay (HTML for better interactivity) */}
-          <div
-            className="absolute inset-0 overflow-hidden pointer-events-none"
-            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`, transformOrigin: '0 0' }}
           >
             {clusters.map(cluster => {
               const p = cluster.pois[0];
