@@ -38,10 +38,10 @@ const navigation: NavItem[] = [
     isNew: true,
   },
   {
-    label: 'Logistics', path: '/factory-planner', icon: <Factory size={18} />,
+    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />,
     children: [
-      { label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={16} /> },
-      { label: 'Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
+      { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
+      { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={16} /> },
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
     ],
   },

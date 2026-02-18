@@ -5,93 +5,47 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  ArrowLeft, Clock, Zap, ArrowDown,
-  Package, Settings,
+  ArrowLeft, Clock, Zap, ArrowRight,
+  Package, Settings, ChevronRight, Layers,
 } from 'lucide-react';
-import RIOSHeader from '@/components/ui/RIOSHeader';
 
 // ─── Types ──────────────────────────────────────────────────────────
-interface RecipeItem {
-  id: string;
-  name: string;
-  count: number;
-}
-
+interface RecipeItem { id: string; name: string; count: number }
 interface Recipe {
-  id: string;
-  name: string;
-  machine: string;
-  machineName: string;
-  inputs: RecipeItem[];
-  outputs: RecipeItem[];
-  craftTime: number;
-  power: number;
+  id: string; name: string; machine: string; machineName: string;
+  inputs: RecipeItem[]; outputs: RecipeItem[];
+  craftTime: number; power: number;
 }
-
-interface Building {
-  id: string;
-  name: string;
-  power: number;
-}
-
+interface Building { id: string; name: string; power: number }
 interface FactoryData {
   buildings: Record<string, Building>;
   items: Record<string, string>;
   recipes: Recipe[];
 }
-
-// Flowchart node - flattened for layout
-interface FlowNode {
-  id: string;
-  type: 'item' | 'machine';
-  itemId?: string;
-  itemName?: string;
-  itemCount?: number;
-  isRaw?: boolean;
-  isOutput?: boolean;
-  machineName?: string;
-  machineId?: string;
-  craftTime?: number;
-  power?: number;
-  row: number;
-  col: number;
-  colSpan: number;
-}
-
-interface FlowEdge {
-  fromId: string;
-  toId: string;
-}
-
-// Production chain tree node
 interface ChainNode {
-  recipe: Recipe;
-  outputItem: RecipeItem;
-  children: ChainNode[];
-  depth: number;
+  recipe: Recipe; outputItem: RecipeItem;
+  children: ChainNode[]; depth: number;
 }
 
 const ITEM_ICON_URL = 'https://endfieldtools.dev/assets/images/endfield/itemicon';
 
 const BUILDING_COLORS: Record<string, string> = {
-  furnance_1: '#FF6B35',
-  grinder_1: '#E74C3C',
-  shaper_1: '#9B59B6',
-  thickener_1: '#3498DB',
-  winder_1: '#2ECC71',
-  filling_powder_mc_1: '#F39C12',
-  component_mc_1: '#1ABC9C',
-  tools_assebling_mc_1: '#E67E22',
-  seedcollector_1: '#27AE60',
-  planter_1: '#66BB6A',
-  mix_pool_1: '#00BCD4',
-  dismantler_1: '#95A5A6',
-  xiranite_oven_1: '#FF5722',
+  furnance_1: '#FF6B35', grinder_1: '#E74C3C', shaper_1: '#9B59B6',
+  thickener_1: '#3498DB', winder_1: '#2ECC71', filling_powder_mc_1: '#F39C12',
+  component_mc_1: '#1ABC9C', tools_assebling_mc_1: '#E67E22',
+  seedcollector_1: '#27AE60', planter_1: '#66BB6A', mix_pool_1: '#00BCD4',
+  dismantler_1: '#95A5A6', xiranite_oven_1: '#FF5722',
 };
 
-function slugToItemId(slug: string): string {
-  return `item_${slug}`;
-}
+const BUILDING_LABELS: Record<string, string> = {
+  furnance_1: 'Smelting', grinder_1: 'Grinding', shaper_1: 'Shaping',
+  thickener_1: 'Thickening', winder_1: 'Winding', filling_powder_mc_1: 'Filling',
+  component_mc_1: 'Assembling', tools_assebling_mc_1: 'Tool Assembly',
+  seedcollector_1: 'Seed Picking', planter_1: 'Planting', mix_pool_1: 'Mixing',
+  dismantler_1: 'Dismantling', xiranite_oven_1: 'Xiranite Smelting',
+};
+
+function slugToItemId(slug: string): string { return `item_${slug}`; }
 
 function pickBestRecipe(itemId: string, recipesForItem: Map<string, Recipe[]>): Recipe | null {
   const candidates = recipesForItem.get(itemId);
@@ -99,15 +53,12 @@ function pickBestRecipe(itemId: string, recipesForItem: Map<string, Recipe[]>): 
   const rawPreferred = candidates.filter(r =>
     r.inputs.every(inp => !recipesForItem.has(inp.id) || recipesForItem.get(inp.id)!.length === 0)
   );
-  if (rawPreferred.length > 0) return rawPreferred[0];
-  return candidates[0];
+  return rawPreferred.length > 0 ? rawPreferred[0] : candidates[0];
 }
 
 function buildProductionTree(
-  itemId: string,
-  recipesForItem: Map<string, Recipe[]>,
-  depth: number,
-  visited: Set<string>,
+  itemId: string, recipesForItem: Map<string, Recipe[]>,
+  depth: number, visited: Set<string>,
 ): ChainNode | null {
   if (depth > 10 || visited.has(itemId)) return null;
   const recipe = pickBestRecipe(itemId, recipesForItem);
@@ -125,154 +76,191 @@ function buildProductionTree(
 }
 
 // ─── Flowchart Layout Engine ────────────────────────────────────────
-// Converts a ChainNode tree into a flat list of positioned FlowNodes + edges
-// Layout: raw materials at top flowing down to final output at bottom
+
+interface FlowNode {
+  id: string; type: 'item' | 'machine';
+  itemId?: string; itemName?: string; itemCount?: number;
+  isRaw?: boolean; isOutput?: boolean;
+  machineName?: string; machineId?: string;
+  craftTime?: number; power?: number;
+  row: number; col: number; colSpan: number;
+}
+interface FlowEdge { fromId: string; toId: string }
 
 function layoutFlowchart(
-  rootNode: ChainNode,
-  recipesForItem: Map<string, Recipe[]>,
+  rootNode: ChainNode, recipesForItem: Map<string, Recipe[]>,
 ): { nodes: FlowNode[]; edges: FlowEdge[]; totalRows: number; totalCols: number } {
   const nodes: FlowNode[] = [];
   const edges: FlowEdge[] = [];
-  let nodeCounter = 0;
+  let ctr = 0;
 
-  function getSubtreeWidth(node: ChainNode, recipesMap: Map<string, Recipe[]>): number {
-    // Width = sum of widths of all input sub-trees + raw inputs
-    let width = 0;
+  function subtreeWidth(node: ChainNode): number {
+    let w = 0;
     for (const input of node.recipe.inputs) {
-      const childNode = node.children.find(c => c.outputItem.id === input.id);
-      if (childNode) {
-        width += getSubtreeWidth(childNode, recipesMap);
-      } else {
-        width += 1; // raw material takes 1 column
-      }
+      const child = node.children.find(c => c.outputItem.id === input.id);
+      w += child ? subtreeWidth(child) : 1;
     }
-    return Math.max(width, 1);
+    return Math.max(w, 1);
   }
 
-  const totalWidth = getSubtreeWidth(rootNode, recipesForItem);
-
-  // Now place nodes with absolute positions
-  // Row 0 = top (final output), higher rows = deeper (raw materials)
-  // We'll build bottom-up and then flip
-
-  function placeNode(
-    node: ChainNode,
-    colStart: number,
-    bottomRow: number,
-  ): string {
-    const width = getSubtreeWidth(node, recipesForItem);
-
-    // Place output item at bottomRow (will become the top after flip)
-    const outputId = `node-${nodeCounter++}`;
-    const outputRow = bottomRow;
+  function place(node: ChainNode, colStart: number, bottomRow: number): string {
+    const w = subtreeWidth(node);
+    const outId = `n${ctr++}`;
     nodes.push({
-      id: outputId,
-      type: 'item',
-      itemId: node.outputItem.id,
-      itemName: node.outputItem.name,
-      itemCount: node.outputItem.count,
-      isOutput: node.depth === 0,
-      row: outputRow,
-      col: colStart,
-      colSpan: width,
+      id: outId, type: 'item', itemId: node.outputItem.id,
+      itemName: node.outputItem.name, itemCount: node.outputItem.count,
+      isOutput: node.depth === 0, row: bottomRow, col: colStart, colSpan: w,
     });
-
-    // Place machine badge above output
-    const machineRow = bottomRow + 1;
-    const machineId = `node-${nodeCounter++}`;
+    const mId = `n${ctr++}`;
     nodes.push({
-      id: machineId,
-      type: 'machine',
-      machineName: node.recipe.machineName,
-      machineId: node.recipe.machine,
-      craftTime: node.recipe.craftTime,
-      power: node.recipe.power,
-      row: machineRow,
-      col: colStart,
-      colSpan: width,
+      id: mId, type: 'machine', machineName: node.recipe.machineName,
+      machineId: node.recipe.machine, craftTime: node.recipe.craftTime,
+      power: node.recipe.power, row: bottomRow + 1, col: colStart, colSpan: w,
     });
-    edges.push({ fromId: machineId, toId: outputId });
+    edges.push({ fromId: mId, toId: outId });
 
-    // Place inputs above machine
-    const inputRow = machineRow + 1;
-    let currentCol = colStart;
-
+    let curCol = colStart;
     for (const input of node.recipe.inputs) {
-      const childNode = node.children.find(c => c.outputItem.id === input.id);
-      if (childNode) {
-        // Recurse - place sub-tree, its output feeds into our machine
-        const childOutputId = placeNode(childNode, currentCol, inputRow);
-        edges.push({ fromId: childOutputId, toId: machineId });
-        currentCol += getSubtreeWidth(childNode, recipesForItem);
+      const child = node.children.find(c => c.outputItem.id === input.id);
+      if (child) {
+        const childOutId = place(child, curCol, bottomRow + 2);
+        edges.push({ fromId: childOutId, toId: mId });
+        curCol += subtreeWidth(child);
       } else {
-        // Raw material
-        const rawId = `node-${nodeCounter++}`;
+        const rawId = `n${ctr++}`;
         nodes.push({
-          id: rawId,
-          type: 'item',
-          itemId: input.id,
-          itemName: input.name,
-          itemCount: input.count,
-          isRaw: true,
-          row: inputRow,
-          col: currentCol,
-          colSpan: 1,
+          id: rawId, type: 'item', itemId: input.id, itemName: input.name,
+          itemCount: input.count, isRaw: true,
+          row: bottomRow + 2, col: curCol, colSpan: 1,
         });
-        edges.push({ fromId: rawId, toId: machineId });
-        currentCol += 1;
+        edges.push({ fromId: rawId, toId: mId });
+        curCol++;
       }
     }
-
-    return outputId;
+    return outId;
   }
 
-  placeNode(rootNode, 0, 0);
-
-  // Find max row to flip (we built bottom=0, but want to display top=0 as final output)
+  place(rootNode, 0, 0);
   const maxRow = Math.max(...nodes.map(n => n.row), 0);
-  for (const node of nodes) {
-    node.row = maxRow - node.row;
-  }
-
-  return { nodes, edges, totalRows: maxRow + 1, totalCols: totalWidth };
+  for (const n of nodes) n.row = maxRow - n.row;
+  return { nodes, edges, totalRows: maxRow + 1, totalCols: subtreeWidth(rootNode) };
 }
 
+// ─── Constants ──────────────────────────────────────────────────────
+const CW = 160; // cell width
+const CH = 110; // cell height
+const CARD_W = 140;
+const CARD_H_ITEM = 96;
+const CARD_H_MACHINE = 40;
+const PAD = 40;
 
-// ─── Flowchart Renderer ─────────────────────────────────────────────
+// ─── ItemCard Component ─────────────────────────────────────────────
+function ItemCard({ itemId, name, count, isRaw, isOutput, isClickable, onClick }: {
+  itemId: string; name: string; count: number;
+  isRaw?: boolean; isOutput?: boolean;
+  isClickable?: boolean; onClick?: () => void;
+}) {
+  const borderColor = isRaw ? '#8B5CF6' : isOutput ? '#22d3ee' : '#2A2A2A';
+  const glowColor = isRaw ? 'rgba(139,92,246,0.15)' : isOutput ? 'rgba(34,211,238,0.12)' : 'transparent';
+  const bgColor = isRaw ? 'rgba(139,92,246,0.06)' : isOutput ? 'rgba(34,211,238,0.06)' : '#0d1117';
 
-const CELL_WIDTH = 140;
-const CELL_HEIGHT = 100;
-const CARD_WIDTH = 120;
-const CARD_HEIGHT_ITEM = 84;
-const CARD_HEIGHT_MACHINE = 36;
+  const content = (
+    <div
+      className={`relative flex flex-col items-center justify-center gap-1 border-2 transition-all ${isClickable ? 'cursor-pointer hover:scale-105 hover:border-[var(--color-accent)]' : ''}`}
+      style={{
+        width: CARD_W, height: CARD_H_ITEM, borderColor, backgroundColor: bgColor,
+        boxShadow: `0 0 20px ${glowColor}, inset 0 0 20px ${glowColor}`,
+      }}
+    >
+      {/* Label badge */}
+      {isRaw && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#8B5CF6] text-white z-10"
+          style={{ letterSpacing: '0.12em' }}>
+          RAW
+        </span>
+      )}
+      {isOutput && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#22d3ee] text-black z-10"
+          style={{ letterSpacing: '0.12em' }}>
+          OUTPUT
+        </span>
+      )}
 
+      {/* Item icon */}
+      <div className="w-11 h-11 relative flex items-center justify-center">
+        <Image
+          src={`${ITEM_ICON_URL}/${itemId}.png`}
+          alt={name}
+          width={44}
+          height={44}
+          className="object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.15)]"
+          unoptimized
+        />
+      </div>
+
+      {/* Name */}
+      <p className="text-[11px] text-center leading-tight text-white/90 font-medium px-2 truncate w-full">
+        {name}
+      </p>
+
+      {/* Quantity badge */}
+      <div className="flex items-center gap-0.5">
+        <span className="text-[12px] font-mono font-bold text-[var(--color-accent)]">
+          x{count}
+        </span>
+      </div>
+
+      {/* Corner decorations */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2" style={{ borderColor }} />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2" style={{ borderColor }} />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2" style={{ borderColor }} />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2" style={{ borderColor }} />
+    </div>
+  );
+
+  if (isClickable && onClick) {
+    return <button onClick={onClick} className="focus:outline-none">{content}</button>;
+  }
+  return content;
+}
+
+// ─── MachineLabel Component ─────────────────────────────────────────
+function MachineLabel({ machineId, machineName, craftTime }: {
+  machineId: string; machineName: string; craftTime: number;
+}) {
+  const color = BUILDING_COLORS[machineId] || '#FFD429';
+  const label = BUILDING_LABELS[machineId] || machineName;
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-black whitespace-nowrap shadow-lg"
+      style={{
+        backgroundColor: color,
+        boxShadow: `0 2px 12px ${color}40`,
+      }}
+    >
+      <Settings size={11} className="opacity-70" />
+      <span>{label}</span>
+      <span className="opacity-60 text-[10px] flex items-center gap-0.5 ml-1">
+        <Clock size={9} /> {craftTime}s
+      </span>
+    </div>
+  );
+}
+
+// ─── FlowchartView Component ────────────────────────────────────────
 function FlowchartView({
-  rootNode,
-  recipesForItem,
+  rootNode, recipesForItem,
 }: {
-  rootNode: ChainNode;
-  recipesForItem: Map<string, Recipe[]>;
+  rootNode: ChainNode; recipesForItem: Map<string, Recipe[]>;
 }) {
   const { nodes, edges, totalRows, totalCols } = useMemo(
     () => layoutFlowchart(rootNode, recipesForItem),
     [rootNode, recipesForItem]
   );
 
-  const svgWidth = totalCols * CELL_WIDTH;
-  const svgHeight = totalRows * CELL_HEIGHT;
-  const padding = 32;
-
-  const getNodeTop = useCallback((node: FlowNode) => {
-    const centerCol = node.col + node.colSpan / 2;
-    return { x: centerCol * CELL_WIDTH, y: node.row * CELL_HEIGHT };
-  }, []);
-
-  const getNodeBottom = useCallback((node: FlowNode) => {
-    const centerCol = node.col + node.colSpan / 2;
-    const h = node.type === 'item' ? CARD_HEIGHT_ITEM : CARD_HEIGHT_MACHINE;
-    return { x: centerCol * CELL_WIDTH, y: node.row * CELL_HEIGHT + h };
-  }, []);
+  const svgW = totalCols * CW;
+  const svgH = totalRows * CH;
 
   const nodeMap = useMemo(() => {
     const m = new Map<string, FlowNode>();
@@ -280,167 +268,121 @@ function FlowchartView({
     return m;
   }, [nodes]);
 
+  const getCenter = useCallback((node: FlowNode, edge: 'top' | 'bottom') => {
+    const cx = (node.col + node.colSpan / 2) * CW;
+    const h = node.type === 'item' ? CARD_H_ITEM : CARD_H_MACHINE;
+    const cy = node.row * CH + (edge === 'top' ? 0 : h);
+    return { x: cx, y: cy };
+  }, []);
+
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto pb-4">
       <div
-        className="relative border-2 border-[var(--color-accent)]/30 bg-[#080c12]"
+        className="relative"
         style={{
-          width: svgWidth + padding * 2,
-          minHeight: svgHeight + padding * 2,
+          width: svgW + PAD * 2,
+          minHeight: svgH + PAD * 2,
+          background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.02) 0%, transparent 70%)',
         }}
       >
-        {/* SVG layer for arrows */}
+        {/* Grid pattern background */}
+        <svg className="absolute inset-0 pointer-events-none opacity-10" width="100%" height="100%">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#22d3ee" strokeWidth="0.3" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+
+        {/* SVG arrows layer */}
         <svg
           className="absolute inset-0 pointer-events-none"
-          width={svgWidth + padding * 2}
-          height={svgHeight + padding * 2}
+          width={svgW + PAD * 2}
+          height={svgH + PAD * 2}
           style={{ zIndex: 1 }}
         >
           <defs>
-            <marker
-              id="arrowhead"
-              markerWidth="8"
-              markerHeight="6"
-              refX="4"
-              refY="3"
-              orient="auto"
-            >
-              <polygon points="0 0, 8 3, 0 6" fill="var(--color-accent)" fillOpacity="0.7" />
+            <marker id="arrow" markerWidth="10" markerHeight="8" refX="5" refY="4" orient="auto">
+              <polygon points="0 0, 10 4, 0 8" fill="#22d3ee" fillOpacity="0.6" />
             </marker>
+            <linearGradient id="edgeGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.15" />
+              <stop offset="50%" stopColor="#22d3ee" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.15" />
+            </linearGradient>
           </defs>
           {edges.map((edge, i) => {
-            const fromNode = nodeMap.get(edge.fromId);
-            const toNode = nodeMap.get(edge.toId);
-            if (!fromNode || !toNode) return null;
+            const from = nodeMap.get(edge.fromId);
+            const to = nodeMap.get(edge.toId);
+            if (!from || !to) return null;
 
-            const from = getNodeBottom(fromNode);
-            const to = getNodeTop(toNode);
+            const p1 = getCenter(from, 'bottom');
+            const p2 = getCenter(to, 'top');
+            const x1 = p1.x + PAD;
+            const y1 = p1.y + PAD;
+            const x2 = p2.x + PAD;
+            const y2 = p2.y + PAD - 6;
 
-            // Offset by padding
-            const x1 = from.x + padding;
-            const y1 = from.y + padding;
-            const x2 = to.x + padding;
-            const y2 = to.y + padding;
+            // Smooth bezier curves
+            if (Math.abs(x1 - x2) < 2) {
+              return (
+                <g key={i}>
+                  <line x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke="#22d3ee" strokeOpacity="0.25" strokeWidth="2"
+                    markerEnd="url(#arrow)" />
+                  {/* Animated flow dot */}
+                  <circle r="2.5" fill="#22d3ee" opacity="0.7">
+                    <animateMotion dur="2s" repeatCount="indefinite"
+                      path={`M ${x1} ${y1} L ${x2} ${y2}`} />
+                  </circle>
+                </g>
+              );
+            }
 
             const midY = (y1 + y2) / 2;
-
+            const path = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
             return (
-              <path
-                key={i}
-                d={
-                  x1 === x2
-                    ? `M ${x1} ${y1} L ${x2} ${y2 - 4}`
-                    : `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2 - 4}`
-                }
-                fill="none"
-                stroke="var(--color-accent)"
-                strokeOpacity="0.5"
-                strokeWidth="2"
-                markerEnd="url(#arrowhead)"
-              />
+              <g key={i}>
+                <path d={path} fill="none" stroke="#22d3ee" strokeOpacity="0.25"
+                  strokeWidth="2" markerEnd="url(#arrow)" />
+                <circle r="2.5" fill="#22d3ee" opacity="0.7">
+                  <animateMotion dur="2.5s" repeatCount="indefinite" path={path} />
+                </circle>
+              </g>
             );
           })}
         </svg>
 
-        {/* Node cards */}
-        <div className="relative" style={{ padding, zIndex: 2 }}>
+        {/* Node cards layer */}
+        <div className="relative" style={{ padding: PAD, zIndex: 2 }}>
           {nodes.map(node => {
-            const centerCol = node.col + node.colSpan / 2;
-            const x = centerCol * CELL_WIDTH;
-            const y = node.row * CELL_HEIGHT;
+            const cx = (node.col + node.colSpan / 2) * CW;
+            const y = node.row * CH;
 
             if (node.type === 'machine') {
-              const color = BUILDING_COLORS[node.machineId || ''] || 'var(--color-accent)';
               return (
-                <div
-                  key={node.id}
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    left: x - CARD_WIDTH / 2,
-                    top: y,
-                    width: CARD_WIDTH,
-                    height: CARD_HEIGHT_MACHINE,
-                  }}
-                >
-                  <div
-                    className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold text-black whitespace-nowrap"
-                    style={{ backgroundColor: color }}
-                  >
-                    <span>{node.machineName}</span>
-                    <span className="opacity-70 flex items-center gap-0.5">
-                      <Clock size={9} /> {node.craftTime}s
-                    </span>
-                  </div>
+                <div key={node.id} className="absolute flex items-center justify-center"
+                  style={{ left: cx - CARD_W / 2, top: y, width: CARD_W, height: CARD_H_MACHINE }}>
+                  <MachineLabel
+                    machineId={node.machineId || ''}
+                    machineName={node.machineName || ''}
+                    craftTime={node.craftTime || 0}
+                  />
                 </div>
               );
             }
 
-            // Item card
-            const isRaw = node.isRaw;
-            const isOutput = node.isOutput;
-            const borderColor = isRaw
-              ? '#8B5CF6'
-              : isOutput
-                ? 'var(--color-accent)'
-                : 'var(--color-border)';
-            const bgColor = isRaw
-              ? 'rgba(139, 92, 246, 0.08)'
-              : isOutput
-                ? 'rgba(0, 176, 255, 0.08)'
-                : '#0d1117';
-
             return (
-              <div
-                key={node.id}
-                className="absolute"
-                style={{
-                  left: x - CARD_WIDTH / 2,
-                  top: y,
-                  width: CARD_WIDTH,
-                  height: CARD_HEIGHT_ITEM,
-                }}
-              >
-                <div
-                  className="w-full h-full flex flex-col items-center justify-center gap-1 border-2 relative"
-                  style={{
-                    borderColor,
-                    backgroundColor: bgColor,
-                  }}
-                >
-                  {/* Raw / Output label */}
-                  {isRaw && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0 text-[9px] font-bold uppercase tracking-wider bg-[#8B5CF6] text-white">
-                      Raw
-                    </span>
-                  )}
-                  {isOutput && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0 text-[9px] font-bold uppercase tracking-wider bg-[var(--color-accent)] text-black">
-                      Output
-                    </span>
-                  )}
-
-                  {/* Icon */}
-                  <div className="w-10 h-10 relative flex items-center justify-center">
-                    <Image
-                      src={`${ITEM_ICON_URL}/${node.itemId}.png`}
-                      alt={node.itemName || ''}
-                      width={40}
-                      height={40}
-                      className="object-contain"
-                      unoptimized
-                    />
-                  </div>
-
-                  {/* Name */}
-                  <p className="text-[10px] text-center leading-tight text-white font-medium px-1 truncate w-full">
-                    {node.itemName}
-                  </p>
-
-                  {/* Count */}
-                  <span className="text-[11px] font-mono font-bold text-[var(--color-accent)]">
-                    x{node.itemCount}
-                  </span>
-                </div>
+              <div key={node.id} className="absolute"
+                style={{ left: cx - CARD_W / 2, top: y }}>
+                <ItemCard
+                  itemId={node.itemId || ''}
+                  name={node.itemName || ''}
+                  count={node.itemCount || 0}
+                  isRaw={node.isRaw}
+                  isOutput={node.isOutput}
+                />
               </div>
             );
           })}
@@ -450,6 +392,66 @@ function FlowchartView({
   );
 }
 
+// ─── Recipe Flow (horizontal input -> machine -> output) ────────────
+function RecipeFlowView({ recipe }: { recipe: Recipe }) {
+  const machineColor = BUILDING_COLORS[recipe.machine] || '#FFD429';
+  const machineLabel = BUILDING_LABELS[recipe.machine] || recipe.machineName;
+
+  return (
+    <div className="flex items-center gap-3 flex-wrap justify-center py-6">
+      {/* Inputs */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {recipe.inputs.map((inp, i) => (
+          <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 bg-[#0c1018] border border-[#1e2a3a]"
+            style={{ minWidth: 120 }}>
+            <div className="w-9 h-9 relative shrink-0">
+              <Image src={`${ITEM_ICON_URL}/${inp.id}.png`} alt={inp.name}
+                width={36} height={36} className="object-contain" unoptimized />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-white/80 truncate">{inp.name}</p>
+              <p className="text-[11px] font-mono font-bold text-[var(--color-accent)]">x{inp.count}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Arrow + Machine */}
+      <div className="flex items-center gap-2">
+        <ChevronRight size={20} className="text-white/30" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="px-4 py-2 text-xs font-bold text-black flex items-center gap-2 shadow-lg"
+            style={{ backgroundColor: machineColor, boxShadow: `0 4px 20px ${machineColor}30` }}>
+            <Settings size={13} className="opacity-60" />
+            {machineLabel}
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-white/50">
+            <span className="flex items-center gap-1"><Clock size={10} /> {recipe.craftTime}s</span>
+            <span className="flex items-center gap-1"><Zap size={10} /> {recipe.power}W</span>
+          </div>
+        </div>
+        <ChevronRight size={20} className="text-white/30" />
+      </div>
+
+      {/* Outputs */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {recipe.outputs.map((out, i) => (
+          <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 bg-[rgba(34,211,238,0.05)] border-2 border-[#22d3ee]/40"
+            style={{ minWidth: 120 }}>
+            <div className="w-9 h-9 relative shrink-0">
+              <Image src={`${ITEM_ICON_URL}/${out.id}.png`} alt={out.name}
+                width={36} height={36} className="object-contain" unoptimized />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-[#22d3ee] font-bold truncate">{out.name}</p>
+              <p className="text-[11px] font-mono font-bold text-[var(--color-accent)]">x{out.count}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Page ──────────────────────────────────────────────────────
 export default function RecipeDetailPage() {
@@ -464,18 +466,13 @@ export default function RecipeDetailPage() {
   useEffect(() => {
     fetch('/data/factory-recipes.json')
       .then(r => r.json())
-      .then((data: FactoryData) => {
-        setFactoryData(data);
-        setLoading(false);
-      })
+      .then((data: FactoryData) => { setFactoryData(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
   const itemRecipes = useMemo(() => {
     if (!factoryData) return [];
-    return factoryData.recipes.filter(r =>
-      r.outputs.some(o => o.id === itemId)
-    );
+    return factoryData.recipes.filter(r => r.outputs.some(o => o.id === itemId));
   }, [factoryData, itemId]);
 
   const itemName = useMemo(() => {
@@ -496,10 +493,8 @@ export default function RecipeDetailPage() {
     return map;
   }, [factoryData]);
 
-  // Build production chains for each recipe
   const productionChains = useMemo(() => {
     if (!factoryData || itemRecipes.length === 0) return [];
-
     return itemRecipes.map(recipe => {
       const outputItem = recipe.outputs.find(o => o.id === itemId)!;
       const visited = new Set<string>([itemId]);
@@ -508,24 +503,19 @@ export default function RecipeDetailPage() {
         const child = buildProductionTree(input.id, recipesForItem, 1, visited);
         if (child) children.push(child);
       }
-
       const rootNode: ChainNode = { recipe, outputItem, children, depth: 0 };
       const cyclesPerMin = 60 / recipe.craftTime;
       const maxPerMin = outputItem.count * cyclesPerMin;
-
       return { rootNode, maxPerMin, recipe };
     });
   }, [factoryData, itemRecipes, itemId, recipesForItem]);
 
-  // Collect all raw materials across all chains
   const getAllRawMaterials = useCallback(
     (node: ChainNode): { id: string; name: string }[] => {
       const raw = new Map<string, string>();
       const collect = (n: ChainNode) => {
         for (const inp of n.recipe.inputs) {
-          if (!recipesForItem.has(inp.id)) {
-            raw.set(inp.id, inp.name);
-          }
+          if (!recipesForItem.has(inp.id)) raw.set(inp.id, inp.name);
         }
         for (const child of n.children) collect(child);
       };
@@ -550,10 +540,8 @@ export default function RecipeDetailPage() {
     return (
       <div className="min-h-screen text-[var(--color-text-secondary)]">
         <div className="max-w-7xl mx-auto">
-          <Link
-            href="/recipes"
-            className="inline-flex items-center gap-2 text-sm text-[var(--color-accent)] hover:underline mb-6"
-          >
+          <Link href="/recipes"
+            className="inline-flex items-center gap-2 text-sm text-[var(--color-accent)] hover:underline mb-6">
             <ArrowLeft size={14} /> Back to Recipes
           </Link>
           <div className="text-center py-12">
@@ -569,186 +557,139 @@ export default function RecipeDetailPage() {
 
   const activeChain = productionChains[activeRecipeIdx];
   const rawMats = activeChain ? getAllRawMaterials(activeChain.rootNode) : [];
+  const activeMachineColor = BUILDING_COLORS[activeChain?.recipe.machine || ''] || '#FFD429';
 
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        {/* Back link */}
-        <Link
-          href="/recipes"
-          className="inline-flex items-center gap-2 text-sm text-[var(--color-accent)] hover:underline mb-4"
-        >
-          <ArrowLeft size={14} /> Back to Recipes
-        </Link>
+        {/* Breadcrumb navigation */}
+        <div className="flex items-center gap-2 text-sm text-[var(--color-text-tertiary)] mb-6">
+          <Link href="/factory-planner" className="hover:text-[var(--color-accent)] transition-colors">Factory Planner</Link>
+          <ChevronRight size={14} />
+          <Link href="/recipes" className="hover:text-[var(--color-accent)] transition-colors">Recipes</Link>
+          <ChevronRight size={14} />
+          <span className="text-white">{itemName}</span>
+        </div>
 
-        <RIOSHeader title="Crafting Protocols" category="LOGISTICS" code="RIOS-REC-001" icon={<Package size={28} />} />
-        <div className="mb-6" />
+        {/* Item Hero Section */}
+        <div className="relative mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+          {/* Background gradient accent */}
+          <div className="absolute inset-0 opacity-30"
+            style={{ background: `linear-gradient(135deg, ${activeMachineColor}08 0%, transparent 50%)` }} />
 
-        {/* Item Header */}
-        <div className="flex items-center gap-5 mb-8">
-          <div className="w-20 h-20 relative bg-[var(--color-surface)] border-2 border-[var(--color-accent)]/50 flex items-center justify-center overflow-hidden">
-            <Image
-              src={`${ITEM_ICON_URL}/${itemId}.png`}
-              alt={itemName}
-              width={80}
-              height={80}
-              className="object-contain"
-              unoptimized
-            />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wide">
-              {itemName}
-            </h1>
-            <div className="flex items-center gap-4 mt-1">
-              <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-tertiary)]">
-                <Settings size={14} className="text-[var(--color-accent)]" />
-                {itemRecipes.length} recipe{itemRecipes.length > 1 ? 's' : ''}
-              </span>
-              {activeChain && (
-                <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-tertiary)]">
-                  <Zap size={14} className="text-[var(--color-accent)]" />
-                  {activeChain.maxPerMin.toFixed(1)}/min
-                </span>
-              )}
+          <div className="relative p-6">
+            <div className="flex items-start gap-6">
+              {/* Item icon - large */}
+              <div className="w-24 h-24 relative bg-[#080c12] border-2 flex items-center justify-center overflow-hidden shrink-0"
+                style={{ borderColor: activeMachineColor + '60' }}>
+                <Image
+                  src={`${ITEM_ICON_URL}/${itemId}.png`}
+                  alt={itemName}
+                  width={96}
+                  height={96}
+                  className="object-contain"
+                  unoptimized
+                />
+                {/* Glow effect */}
+                <div className="absolute inset-0"
+                  style={{ boxShadow: `inset 0 0 30px ${activeMachineColor}15` }} />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold text-white tracking-wide uppercase"
+                  style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                  {itemName}
+                </h1>
+
+                <div className="flex items-center gap-5 mt-3 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-tertiary)]">
+                    <Layers size={14} className="text-[var(--color-accent)]" />
+                    {itemRecipes.length} recipe{itemRecipes.length > 1 ? 's' : ''} available
+                  </span>
+                  {activeChain && (
+                    <>
+                      <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-tertiary)]">
+                        <Clock size={14} className="text-[var(--color-accent)]" />
+                        {activeChain.recipe.craftTime}s craft time
+                      </span>
+                      <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-tertiary)]">
+                        <Zap size={14} className="text-[var(--color-accent)]" />
+                        {activeChain.recipe.power}W
+                      </span>
+                      <span className="flex items-center gap-1.5 text-sm font-bold font-mono"
+                        style={{ color: activeMachineColor }}>
+                        <ArrowRight size={14} />
+                        {activeChain.maxPerMin.toFixed(1)}/min
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Recipe selector (if multiple recipes) */}
+        {/* Recipe Selector Tabs */}
         {itemRecipes.length > 1 && (
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
             {itemRecipes.map((recipe, idx) => {
-              const color = BUILDING_COLORS[recipe.machine] || 'var(--color-accent)';
+              const color = BUILDING_COLORS[recipe.machine] || '#FFD429';
+              const label = BUILDING_LABELS[recipe.machine] || recipe.machineName;
               const isActive = idx === activeRecipeIdx;
               return (
                 <button
                   key={recipe.id}
                   onClick={() => setActiveRecipeIdx(idx)}
-                  className={`px-4 py-2 text-sm font-bold transition-colors border-2 ${
+                  className={`px-5 py-2.5 text-sm font-bold transition-all whitespace-nowrap border-2 ${
                     isActive
-                      ? 'text-black'
-                      : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
+                      ? 'text-black scale-[1.02]'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-white/20'
                   }`}
-                  style={isActive ? { backgroundColor: color, borderColor: color } : undefined}
+                  style={isActive ? {
+                    backgroundColor: color, borderColor: color,
+                    boxShadow: `0 4px 20px ${color}30`,
+                  } : undefined}
                 >
-                  Recipe {idx + 1}: {recipe.machineName}
+                  <span className="flex items-center gap-2">
+                    <Settings size={13} className={isActive ? 'opacity-60' : 'opacity-40'} />
+                    Recipe {idx + 1}: {label}
+                  </span>
                 </button>
               );
             })}
           </div>
         )}
 
-        {/* Recipe Details Card */}
+        {/* Recipe Flow (horizontal: inputs -> machine -> outputs) */}
         {activeChain && (
-          <div className="mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-            <div className="p-5">
-              {/* Recipe info row */}
-              <div className="flex flex-wrap items-center gap-6 mb-5">
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Machine</p>
-                  <span
-                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-black"
-                    style={{ backgroundColor: BUILDING_COLORS[activeChain.recipe.machine] || 'var(--color-accent)' }}
-                  >
-                    {activeChain.recipe.machineName}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Craft Time</p>
-                  <span className="flex items-center gap-1 text-sm text-white">
-                    <Clock size={14} className="text-[var(--color-accent)]" />
-                    {activeChain.recipe.craftTime}s
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Power</p>
-                  <span className="flex items-center gap-1 text-sm text-white">
-                    <Zap size={14} className="text-[var(--color-accent)]" />
-                    {activeChain.recipe.power}W
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Output Rate</p>
-                  <span className="text-sm text-[var(--color-accent)] font-bold font-mono">
-                    {activeChain.maxPerMin.toFixed(1)}/min
-                  </span>
-                </div>
-              </div>
-
-              {/* Inputs -> Outputs summary */}
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {activeChain.recipe.inputs.map((inp, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 px-3 py-2 bg-[#0a0e16] border border-[var(--color-border)]"
-                    >
-                      <Image
-                        src={`${ITEM_ICON_URL}/${inp.id}.png`}
-                        alt={inp.name}
-                        width={28}
-                        height={28}
-                        className="object-contain"
-                        unoptimized
-                      />
-                      <div>
-                        <p className="text-xs text-white">{inp.name}</p>
-                        <p className="text-[10px] text-[var(--color-text-tertiary)] font-mono">x{inp.count}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <ArrowDown size={20} className="text-[var(--color-accent)] rotate-[-90deg]" />
-                <div className="flex items-center gap-2 flex-wrap">
-                  {activeChain.recipe.outputs.map((out, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 px-3 py-2 bg-[rgba(0,176,255,0.08)] border-2 border-[var(--color-accent)]/50"
-                    >
-                      <Image
-                        src={`${ITEM_ICON_URL}/${out.id}.png`}
-                        alt={out.name}
-                        width={28}
-                        height={28}
-                        className="object-contain"
-                        unoptimized
-                      />
-                      <div>
-                        <p className="text-xs text-[var(--color-accent)] font-bold">{out.name}</p>
-                        <p className="text-[10px] text-[var(--color-accent)] font-mono">x{out.count}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <div className="mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+            <div className="px-5 py-3 border-b border-[var(--color-border)] flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rotate-45" style={{ backgroundColor: activeMachineColor }} />
+              <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Recipe Overview</span>
             </div>
+            <RecipeFlowView recipe={activeChain.recipe} />
           </div>
         )}
 
-        {/* Raw Materials */}
+        {/* Raw Materials Section */}
         {rawMats.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-3 uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
-              <div className="w-2 h-2 bg-[#8B5CF6] rotate-45" />
-              Raw Materials Required
-            </h2>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-1.5 bg-[#8B5CF6] rotate-45" />
+              <h2 className="text-xs font-bold text-white/70 uppercase tracking-wider">Raw Materials Required</h2>
+            </div>
             <div className="flex flex-wrap gap-2">
               {rawMats.map(mat => (
-                <div
-                  key={mat.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-[rgba(139,92,246,0.08)] border border-[#8B5CF6]/40"
-                >
-                  <Image
-                    src={`${ITEM_ICON_URL}/${mat.id}.png`}
-                    alt={mat.name}
-                    width={24}
-                    height={24}
-                    className="object-contain"
-                    unoptimized
-                  />
-                  <span className="text-xs text-white">{mat.name}</span>
-                  <span className="text-[9px] font-bold uppercase text-[#8B5CF6]">Raw</span>
+                <div key={mat.id}
+                  className="flex items-center gap-2.5 px-3 py-2 bg-[rgba(139,92,246,0.05)] border border-[#8B5CF6]/30 transition-colors hover:border-[#8B5CF6]/60">
+                  <div className="w-7 h-7 relative">
+                    <Image src={`${ITEM_ICON_URL}/${mat.id}.png`} alt={mat.name}
+                      width={28} height={28} className="object-contain" unoptimized />
+                  </div>
+                  <span className="text-xs text-white/80">{mat.name}</span>
+                  <span className="text-[8px] font-bold uppercase text-[#8B5CF6] tracking-wider px-1.5 py-0.5 bg-[#8B5CF6]/10">
+                    RAW
+                  </span>
                 </div>
               ))}
             </div>
@@ -757,16 +698,29 @@ export default function RecipeDetailPage() {
 
         {/* Production Chain Flowchart */}
         <div className="mb-8">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-4 uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
-            <div className="w-2 h-2 bg-[var(--color-accent)] rotate-45" />
-            Production Chain
-          </h2>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1.5 h-1.5 bg-[#22d3ee] rotate-45" />
+            <h2 className="text-xs font-bold text-white/70 uppercase tracking-wider">Full Production Chain</h2>
+            <div className="flex-1 h-px bg-gradient-to-r from-[#22d3ee]/20 to-transparent ml-2" />
+          </div>
 
           {activeChain && (
-            <FlowchartView
-              rootNode={activeChain.rootNode}
-              recipesForItem={recipesForItem}
-            />
+            <div className="bg-[#060a10] border border-[var(--color-border)] overflow-hidden">
+              {/* Flowchart header bar */}
+              <div className="px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-between">
+                <span className="text-[10px] text-white/40 uppercase tracking-wider font-mono">
+                  CHAIN // {itemName} // RECIPE {activeRecipeIdx + 1}
+                </span>
+                <span className="text-[10px] text-white/30 font-mono">
+                  DEPTH: {activeChain.rootNode.children.length > 0 ? 'MULTI-STAGE' : 'SINGLE-STAGE'}
+                </span>
+              </div>
+
+              <FlowchartView
+                rootNode={activeChain.rootNode}
+                recipesForItem={recipesForItem}
+              />
+            </div>
           )}
         </div>
       </div>
