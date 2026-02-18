@@ -196,12 +196,71 @@ export const STAT_ICONS = {
   Will: `${TOOLS_CDN}/charinfo/icon_will_big.png`,
 };
 
-// Material/item icons
-export const MATERIAL_ICONS = {
-  Gold: `${TOOLS_CDN}/itemicon/item_gold.png`,
-  'EXP Card High': `${TOOLS_CDN}/itemicon/item_expcard_2_3.png`,
-  'EXP Card Mid': `${TOOLS_CDN}/itemicon/item_expcard_2_2.png`,
-  'EXP Card Low': `${TOOLS_CDN}/itemicon/item_expcard_2_1.png`,
+// Material/item icons — verified against EndfieldTools.dev CDN and endfield.wiki.gg names
+export const MATERIAL_ICONS: Record<string, string> = {
+  // Currency
+  'Gold': `${TOOLS_CDN}/itemicon/item_gold.png`,
+  // EXP items
+  'Elementary Combat Record': `${TOOLS_CDN}/itemicon/item_expcard_2_1.png`,
+  'Intermediate Combat Record': `${TOOLS_CDN}/itemicon/item_expcard_2_2.png`,
+  'Advanced Combat Record': `${TOOLS_CDN}/itemicon/item_expcard_2_3.png`,
+  'Elementary Cognitive Carrier': `${TOOLS_CDN}/itemicon/item_expcard_stage2_low.png`,
+  'Advanced Cognitive Carrier': `${TOOLS_CDN}/itemicon/item_expcard_stage2_high.png`,
+  // Promotion materials
+  'Protodisk': `${TOOLS_CDN}/itemicon/item_char_break_stage_1_2.png`,
+  'Protoset': `${TOOLS_CDN}/itemicon/item_char_break_stage_3_4.png`,
+  // Skill level materials
+  'Protoprism': `${TOOLS_CDN}/itemicon/item_char_skill_level_1_6.png`,
+  'Protohedron': `${TOOLS_CDN}/itemicon/item_char_skill_level_7_12.png`,
+  'Mark of Perseverance': `${TOOLS_CDN}/itemicon/item_char_skill_crown.png`,
+  // Skill specialization materials
+  'Metadiastima Photoemission Tube': `${TOOLS_CDN}/itemicon/item_char_skill_specialize_1.png`,
+  'D96 Steel Sample 4': `${TOOLS_CDN}/itemicon/item_char_skill_specialize_2.png`,
+  'Tachyon Screening Lattice': `${TOOLS_CDN}/itemicon/item_char_skill_specialize_3.png`,
+  'Quadrant Fitting Fluid': `${TOOLS_CDN}/itemicon/item_char_skill_specialize_4.png`,
+  'Triphasic Nanoflake': `${TOOLS_CDN}/itemicon/item_char_skill_specialize_5.png`,
+  // Fungi (operator promotion plants)
+  'Pink Bolete': `${TOOLS_CDN}/itemicon/item_plant_mushroom_1_1.png`,
+  'Red Bolete': `${TOOLS_CDN}/itemicon/item_plant_mushroom_1_2.png`,
+  'Ruby Bolete': `${TOOLS_CDN}/itemicon/item_plant_mushroom_1_3.png`,
+  'Bloodcap': `${TOOLS_CDN}/itemicon/item_plant_mushroom_2_1.png`,
+  'Cosmagaric': `${TOOLS_CDN}/itemicon/item_plant_mushroom_2_2.png`,
+  // Crystal plants (skill upgrade plants)
+  'Kalkodendra': `${TOOLS_CDN}/itemicon/item_plant_crylplant_1_1.png`,
+  'Chrysodendra': `${TOOLS_CDN}/itemicon/item_plant_crylplant_1_2.png`,
+  'Vitrodendra': `${TOOLS_CDN}/itemicon/item_plant_crylplant_1_3.png`,
+  'Blighted Jadeleaf': `${TOOLS_CDN}/itemicon/item_plant_crylplant_2_1.png`,
+  'False Aggela': `${TOOLS_CDN}/itemicon/item_plant_crylplant_2_2.png`,
+};
+
+// Item ID to display name mapping (for game API data)
+export const MATERIAL_ID_TO_NAME: Record<string, string> = {
+  'item_gold': 'Gold',
+  'item_expcard_2_1': 'Elementary Combat Record',
+  'item_expcard_2_2': 'Intermediate Combat Record',
+  'item_expcard_2_3': 'Advanced Combat Record',
+  'item_expcard_stage2_low': 'Elementary Cognitive Carrier',
+  'item_expcard_stage2_high': 'Advanced Cognitive Carrier',
+  'item_char_break_stage_1_2': 'Protodisk',
+  'item_char_break_stage_3_4': 'Protoset',
+  'item_char_skill_level_1_6': 'Protoprism',
+  'item_char_skill_level_7_12': 'Protohedron',
+  'item_char_skill_crown': 'Mark of Perseverance',
+  'item_char_skill_specialize_1': 'Metadiastima Photoemission Tube',
+  'item_char_skill_specialize_2': 'D96 Steel Sample 4',
+  'item_char_skill_specialize_3': 'Tachyon Screening Lattice',
+  'item_char_skill_specialize_4': 'Quadrant Fitting Fluid',
+  'item_char_skill_specialize_5': 'Triphasic Nanoflake',
+  'item_plant_mushroom_1_1': 'Pink Bolete',
+  'item_plant_mushroom_1_2': 'Red Bolete',
+  'item_plant_mushroom_1_3': 'Ruby Bolete',
+  'item_plant_mushroom_2_1': 'Bloodcap',
+  'item_plant_mushroom_2_2': 'Cosmagaric',
+  'item_plant_crylplant_1_1': 'Kalkodendra',
+  'item_plant_crylplant_1_2': 'Chrysodendra',
+  'item_plant_crylplant_1_3': 'Vitrodendra',
+  'item_plant_crylplant_2_1': 'Blighted Jadeleaf',
+  'item_plant_crylplant_2_2': 'False Aggela',
 };
 
 // Helper to get character icon with fallback
@@ -223,4 +282,12 @@ export function getWeaponIcon(name: string): string | null {
 
 export function getEquipmentIcon(name: string): string | null {
   return EQUIPMENT_ICONS[name] || null;
+}
+
+export function getMaterialIcon(name: string): string | null {
+  return MATERIAL_ICONS[name] || null;
+}
+
+export function getMaterialName(itemId: string): string {
+  return MATERIAL_ID_TO_NAME[itemId] || itemId;
 }
