@@ -44,7 +44,15 @@ interface PlacedBuilding {
   buildingId: string;
   x: number;
   y: number;
-  rotation: number;
+  rotation: number; // 0, 90, 180, 270
+}
+
+// Get effective dimensions accounting for rotation
+function getEffectiveDimensions(building: Building, rotation: number): { width: number; height: number } {
+  if (rotation === 90 || rotation === 270) {
+    return { width: building.size.height, height: building.size.width };
+  }
+  return { width: building.size.width, height: building.size.height };
 }
 
 interface GridState {
@@ -223,11 +231,17 @@ interface State {
   showEditMenu: boolean;
   outpostConfig: string;
   showOutpostMenu: boolean;
+  // Move/drag state
+  movingBuildingIndex: number | null; // Index of building being moved (picked up)
+  movingBuildingData: PlacedBuilding | null; // The building data being moved
+  // Rotation for placement/moving
+  placementRotation: number; // 0, 90, 180, 270
 }
 
 type Action =
   | { type: 'PLACE_BUILDING'; building: PlacedBuilding }
   | { type: 'REMOVE_BUILDING'; index: number }
+  | { type: 'MOVE_BUILDING'; index: number; newX: number; newY: number; newRotation: number }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'CLEAR_GRID' }
@@ -249,7 +263,12 @@ type Action =
   | { type: 'TOGGLE_EDIT_MENU' }
   | { type: 'SET_OUTPOST_CONFIG'; config: string }
   | { type: 'TOGGLE_OUTPOST_MENU' }
-  | { type: 'CLOSE_ALL_MENUS' };
+  | { type: 'CLOSE_ALL_MENUS' }
+  | { type: 'PICK_UP_BUILDING'; index: number }
+  | { type: 'DROP_MOVING_BUILDING' }
+  | { type: 'CANCEL_MOVE' }
+  | { type: 'SET_PLACEMENT_ROTATION'; rotation: number }
+  | { type: 'ROTATE_PLACEMENT' };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -277,6 +296,52 @@ function reducer(state: State, action: Action): State {
         },
       };
     }
+    case 'MOVE_BUILDING': {
+      const movedBuildings = state.grid.buildings.map((b, i) =>
+        i === action.index ? { ...b, x: action.newX, y: action.newY, rotation: action.newRotation } : b
+      );
+      const moveHistory = state.grid.history.slice(0, state.grid.historyIndex + 1);
+      return {
+        ...state,
+        grid: {
+          buildings: movedBuildings,
+          history: [...moveHistory, movedBuildings],
+          historyIndex: moveHistory.length,
+        },
+        movingBuildingIndex: null,
+        movingBuildingData: null,
+      };
+    }
+    case 'PICK_UP_BUILDING': {
+      const pickedBuilding = state.grid.buildings[action.index];
+      if (!pickedBuilding) return state;
+      return {
+        ...state,
+        movingBuildingIndex: action.index,
+        movingBuildingData: { ...pickedBuilding },
+        placementRotation: pickedBuilding.rotation,
+        toolMode: 'move',
+      };
+    }
+    case 'DROP_MOVING_BUILDING':
+      return {
+        ...state,
+        movingBuildingIndex: null,
+        movingBuildingData: null,
+        toolMode: 'select',
+      };
+    case 'CANCEL_MOVE':
+      return {
+        ...state,
+        movingBuildingIndex: null,
+        movingBuildingData: null,
+        toolMode: 'select',
+        placementRotation: 0,
+      };
+    case 'SET_PLACEMENT_ROTATION':
+      return { ...state, placementRotation: action.rotation };
+    case 'ROTATE_PLACEMENT':
+      return { ...state, placementRotation: (state.placementRotation + 90) % 360 };
     case 'UNDO':
       if (state.grid.historyIndex > 0) {
         return {
@@ -369,6 +434,9 @@ const initialState: State = {
   showEditMenu: false,
   outpostConfig: 'pac-base',
   showOutpostMenu: false,
+  movingBuildingIndex: null,
+  movingBuildingData: null,
+  placementRotation: 0,
 };
 
 // ──── Toolbar Button Components ────
@@ -416,6 +484,7 @@ export default function FactoryPlannerPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [mouseGridPos, setMouseGridPos] = useState<{ gridX: number; gridY: number } | null>(null);
 
   const CELL_SIZE = 40;
   const activeConfig = OUTPOST_CONFIGS.find(c => c.id === state.outpostConfig) || OUTPOST_CONFIGS[0];
@@ -738,14 +807,18 @@ export default function FactoryPlannerPage() {
       ctx.restore();
     }
 
-    // Placed buildings
-    state.grid.buildings.forEach((placedBuilding) => {
+    // Placed buildings (with rotation support)
+    state.grid.buildings.forEach((placedBuilding, idx) => {
+      // Skip the building being moved (it will be drawn as a ghost)
+      if (idx === state.movingBuildingIndex) return;
+
       const building = BUILDINGS.find(b => b.id === placedBuilding.buildingId);
       if (!building) return;
+      const eff = getEffectiveDimensions(building, placedBuilding.rotation);
       const x = placedBuilding.x * CELL_SIZE;
       const y = placedBuilding.y * CELL_SIZE;
-      const width = building.size.width * CELL_SIZE;
-      const height = building.size.height * CELL_SIZE;
+      const width = eff.width * CELL_SIZE;
+      const height = eff.height * CELL_SIZE;
       ctx.fillStyle = CATEGORY_COLORS[building.category] + '99';
       ctx.fillRect(x, y, width, height);
       ctx.strokeStyle = CATEGORY_COLORS[building.category];
@@ -765,10 +838,88 @@ export default function FactoryPlannerPage() {
           y + height / 2 + fontSize + 4
         );
       }
+      // Rotation indicator for rotated buildings
+      if (placedBuilding.rotation !== 0) {
+        ctx.fillStyle = '#ffffff90';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`${placedBuilding.rotation}°`, x + width - 3, y + 3);
+      }
     });
 
+    // Ghost preview for building being placed or moved
+    const ghostBuilding = state.movingBuildingData
+      ? BUILDINGS.find(b => b.id === state.movingBuildingData!.buildingId)
+      : state.toolMode === 'build' && state.selectedBuilding
+        ? BUILDINGS.find(b => b.id === state.selectedBuilding)
+        : null;
+
+    if (ghostBuilding && mouseGridPos) {
+      const rotation = state.placementRotation;
+      const eff = getEffectiveDimensions(ghostBuilding, rotation);
+      const gx = mouseGridPos.gridX;
+      const gy = mouseGridPos.gridY;
+
+      // Check validity
+      const isOnPAC = gx < PAC_X + PAC_SIZE && gx + eff.width > PAC_X &&
+                      gy < PAC_Y + PAC_SIZE && gy + eff.height > PAC_Y;
+      const isOverlap = checkOverlap(gx, gy, eff.width, eff.height, state.movingBuildingIndex ?? undefined);
+      const isInBounds = gx >= 0 && gx + eff.width <= GRID_WIDTH &&
+                         gy >= 0 && gy + eff.height <= GRID_HEIGHT;
+      const isValid = !isOnPAC && !isOverlap && isInBounds;
+
+      const x = gx * CELL_SIZE;
+      const y = gy * CELL_SIZE;
+      const width = eff.width * CELL_SIZE;
+      const height = eff.height * CELL_SIZE;
+
+      // Ghost fill
+      ctx.fillStyle = isValid
+        ? CATEGORY_COLORS[ghostBuilding.category] + '40'
+        : '#ff000030';
+      ctx.fillRect(x, y, width, height);
+
+      // Ghost border
+      ctx.strokeStyle = isValid
+        ? CATEGORY_COLORS[ghostBuilding.category]
+        : '#ff4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 3]);
+      ctx.strokeRect(x, y, width, height);
+      ctx.setLineDash([]);
+
+      // Ghost name
+      const fontSize = Math.min(width / 8, height / 3, 14);
+      ctx.fillStyle = isValid ? '#ffffffaa' : '#ff4444aa';
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ghostBuilding.name, x + width / 2, y + height / 2);
+
+      // Rotation indicator
+      if (rotation !== 0) {
+        ctx.fillStyle = '#ffffffaa';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`${rotation}°`, x + width - 3, y + 3);
+      }
+
+      // Invalid placement reason
+      if (!isValid) {
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        const reason = isOnPAC ? 'OVERLAPS PAC' : !isInBounds ? 'OUT OF BOUNDS' : 'OVERLAPS BUILDING';
+        ctx.fillText(reason, x + width / 2, y - 4);
+      }
+    }
+
     ctx.restore();
-  }, [pan, zoom, state.grid.buildings, canvasSize, GRID_WIDTH, GRID_HEIGHT, PAC_X, PAC_Y, activeConfig]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pan, zoom, state.grid.buildings, canvasSize, GRID_WIDTH, GRID_HEIGHT, PAC_X, PAC_Y, activeConfig, mouseGridPos, state.movingBuildingIndex, state.movingBuildingData, state.selectedBuilding, state.toolMode, state.placementRotation]);
 
   useEffect(() => {
     drawGrid();
@@ -801,24 +952,26 @@ export default function FactoryPlannerPage() {
     return { gridX: Math.floor(x / CELL_SIZE), gridY: Math.floor(y / CELL_SIZE) };
   };
 
-  // Check if a building overlaps any existing building
+  // Check if a building overlaps any existing building (accounts for rotation)
   const checkOverlap = (bx: number, by: number, bw: number, bh: number, excludeIndex?: number) => {
     return state.grid.buildings.some((pb, i) => {
       if (i === excludeIndex) return false;
       const def = BUILDINGS.find(b => b.id === pb.buildingId);
       if (!def) return false;
-      return bx < pb.x + def.size.width && bx + bw > pb.x &&
-             by < pb.y + def.size.height && by + bh > pb.y;
+      const eff = getEffectiveDimensions(def, pb.rotation);
+      return bx < pb.x + eff.width && bx + bw > pb.x &&
+             by < pb.y + eff.height && by + bh > pb.y;
     });
   };
 
-  // Find building at grid position
+  // Find building at grid position (accounts for rotation)
   const findBuildingAt = (gx: number, gy: number) => {
     for (let i = state.grid.buildings.length - 1; i >= 0; i--) {
       const pb = state.grid.buildings[i];
       const def = BUILDINGS.find(b => b.id === pb.buildingId);
       if (!def) continue;
-      if (gx >= pb.x && gx < pb.x + def.size.width && gy >= pb.y && gy < pb.y + def.size.height) {
+      const eff = getEffectiveDimensions(def, pb.rotation);
+      if (gx >= pb.x && gx < pb.x + eff.width && gy >= pb.y && gy < pb.y + eff.height) {
         return i;
       }
     }
@@ -863,10 +1016,20 @@ export default function FactoryPlannerPage() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === 'Escape') {
-        dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
-        dispatch({ type: 'SET_SELECTED_BUILDING', buildingId: null });
-        if (state.showBuildingPicker) dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+        // Cancel move if moving
+        if (state.movingBuildingIndex !== null) {
+          dispatch({ type: 'CANCEL_MOVE' });
+        } else {
+          dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
+          dispatch({ type: 'SET_SELECTED_BUILDING', buildingId: null });
+          dispatch({ type: 'SET_PLACEMENT_ROTATION', rotation: 0 });
+          if (state.showBuildingPicker) dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+        }
         dispatch({ type: 'CLOSE_ALL_MENUS' });
+      }
+      // R key to rotate 90 degrees
+      if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+        dispatch({ type: 'ROTATE_PLACEMENT' });
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -885,6 +1048,7 @@ export default function FactoryPlannerPage() {
         if (!state.showBuildingPicker) dispatch({ type: 'SET_TOOL_MODE', mode: 'build' });
       }
       if (e.key === 'v' && !e.ctrlKey && !e.metaKey) {
+        if (state.movingBuildingIndex !== null) dispatch({ type: 'CANCEL_MOVE' });
         dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
       }
       if (e.key === 'x' && !e.ctrlKey && !e.metaKey) {
@@ -893,16 +1057,27 @@ export default function FactoryPlannerPage() {
       if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
         handleZoomToFit();
       }
+      if (e.key === 'm' && !e.ctrlKey && !e.metaKey) {
+        dispatch({ type: 'SET_TOOL_MODE', mode: 'move' });
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.showBuildingPicker, saveToLocalStorage]);
+  }, [state.showBuildingPicker, state.movingBuildingIndex, saveToLocalStorage]);
 
   // ── Mouse handlers ──
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 0 && (state.toolMode === 'select' || (state.toolMode === 'build' && !state.selectedBuilding))) {
+    // Allow panning in select mode when not over a building, or when no building is being moved
+    const isMovingOrPlacing = state.movingBuildingIndex !== null || (state.toolMode === 'build' && state.selectedBuilding);
+    if (e.button === 0 && !isMovingOrPlacing && (state.toolMode === 'select' || state.toolMode === 'move' || (state.toolMode === 'build' && !state.selectedBuilding))) {
+      // In select/move mode, only pan if we didn't click on a building
+      if (state.toolMode === 'select' || state.toolMode === 'move') {
+        const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
+        const idx = findBuildingAt(gridX, gridY);
+        if (idx >= 0) return; // Don't pan, let click handler pick up the building
+      }
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
@@ -912,6 +1087,9 @@ export default function FactoryPlannerPage() {
     if (isDragging) {
       setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
     }
+    // Track grid position for ghost preview
+    const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
+    setMouseGridPos({ gridX, gridY });
   };
 
   const handleMouseUp = () => {
@@ -925,7 +1103,34 @@ export default function FactoryPlannerPage() {
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Ignore click if we were dragging (panning)
+    if (isDragging) return;
+
     const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
+
+    // If we're currently moving a building, drop it here
+    if (state.movingBuildingIndex !== null && state.movingBuildingData) {
+      const building = BUILDINGS.find(b => b.id === state.movingBuildingData!.buildingId);
+      if (!building) return;
+      const eff = getEffectiveDimensions(building, state.placementRotation);
+
+      const isOnPAC = gridX < PAC_X + PAC_SIZE && gridX + eff.width > PAC_X &&
+                      gridY < PAC_Y + PAC_SIZE && gridY + eff.height > PAC_Y;
+      const isOverlap = checkOverlap(gridX, gridY, eff.width, eff.height, state.movingBuildingIndex);
+      const isInBounds = gridX >= 0 && gridX + eff.width <= GRID_WIDTH &&
+                         gridY >= 0 && gridY + eff.height <= GRID_HEIGHT;
+
+      if (!isOnPAC && !isOverlap && isInBounds) {
+        dispatch({
+          type: 'MOVE_BUILDING',
+          index: state.movingBuildingIndex,
+          newX: gridX,
+          newY: gridY,
+          newRotation: state.placementRotation,
+        });
+      }
+      return;
+    }
 
     // Delete mode: remove building at click location
     if (state.toolMode === 'delete') {
@@ -936,31 +1141,41 @@ export default function FactoryPlannerPage() {
       return;
     }
 
-    // Build mode: place building with overlap detection
+    // Build mode: place building with overlap detection + rotation
     if (state.toolMode === 'build' && state.selectedBuilding) {
       const building = BUILDINGS.find(b => b.id === state.selectedBuilding);
       if (!building) return;
+      const eff = getEffectiveDimensions(building, state.placementRotation);
 
-      const isOnPAC = gridX < PAC_X + PAC_SIZE && gridX + building.size.width > PAC_X &&
-                      gridY < PAC_Y + PAC_SIZE && gridY + building.size.height > PAC_Y;
+      const isOnPAC = gridX < PAC_X + PAC_SIZE && gridX + eff.width > PAC_X &&
+                      gridY < PAC_Y + PAC_SIZE && gridY + eff.height > PAC_Y;
+      const isOverlap = checkOverlap(gridX, gridY, eff.width, eff.height);
 
-      const isOverlap = checkOverlap(gridX, gridY, building.size.width, building.size.height);
-
-      if (gridX >= 0 && gridX + building.size.width <= GRID_WIDTH &&
-          gridY >= 0 && gridY + building.size.height <= GRID_HEIGHT &&
+      if (gridX >= 0 && gridX + eff.width <= GRID_WIDTH &&
+          gridY >= 0 && gridY + eff.height <= GRID_HEIGHT &&
           !isOnPAC && !isOverlap) {
         dispatch({
           type: 'PLACE_BUILDING',
-          building: { buildingId: state.selectedBuilding, x: gridX, y: gridY, rotation: 0 },
+          building: { buildingId: state.selectedBuilding, x: gridX, y: gridY, rotation: state.placementRotation },
         });
       }
+      return;
     }
 
-    // Select mode: click on a building to select it (for future operations)
+    // Move mode: click on a building to pick it up
+    if (state.toolMode === 'move') {
+      const idx = findBuildingAt(gridX, gridY);
+      if (idx >= 0) {
+        dispatch({ type: 'PICK_UP_BUILDING', index: idx });
+      }
+      return;
+    }
+
+    // Select mode: click on a building to pick it up for moving
     if (state.toolMode === 'select') {
       const idx = findBuildingAt(gridX, gridY);
       if (idx >= 0) {
-        // TODO: Show building info panel
+        dispatch({ type: 'PICK_UP_BUILDING', index: idx });
       }
     }
   };
@@ -1027,7 +1242,7 @@ export default function FactoryPlannerPage() {
           <button
             onClick={() => dispatch({ type: 'TOGGLE_OUTPOST_MENU' })}
             className="px-2.5 py-1.5 bg-[#0a2a3a] hover:bg-[#0d3548] border border-[#00b0ff50] text-xs text-[#00b0ff] font-medium flex items-center gap-1.5 transition-all"
-            title="Select outpost configuration"
+            title="Change outpost size and type"
           >
             <Settings2 size={13} />
             <span className="hidden sm:inline">{activeConfig.name}</span>
@@ -1099,7 +1314,7 @@ export default function FactoryPlannerPage() {
       <div className="bg-[#111318] border-b border-[var(--color-border)] px-2 py-1 flex items-center gap-1 flex-shrink-0 overflow-x-auto">
         {/* File menu */}
         <div className="relative" data-menu>
-          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_FILE_MENU' })} title="File operations">
+          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_FILE_MENU' })} title="Save/load menu">
             <FileText size={13} />
             <span className="hidden sm:inline">File</span>
             <ChevronDown size={11} className="opacity-50" />
@@ -1117,7 +1332,7 @@ export default function FactoryPlannerPage() {
 
         {/* Data menu */}
         <div className="relative" data-menu>
-          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_DATA_MENU' })} title="Data operations">
+          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_DATA_MENU' })} title="Import/export JSON menu">
             <Database size={13} />
             <span className="hidden sm:inline">Data</span>
             <ChevronDown size={11} className="opacity-50" />
@@ -1132,7 +1347,7 @@ export default function FactoryPlannerPage() {
 
         {/* Edit menu */}
         <div className="relative" data-menu>
-          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_EDIT_MENU' })} title="Edit operations">
+          <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_EDIT_MENU' })} title="Edit and delete menu">
             <Edit3 size={13} />
             <span className="hidden sm:inline">Edit</span>
             <ChevronDown size={11} className="opacity-50" />
@@ -1140,7 +1355,8 @@ export default function FactoryPlannerPage() {
           {state.showEditMenu && (
             <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
               <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'delete' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Trash2 size={12} />Delete Mode <span className="text-gray-500 text-[10px] ml-auto">X</span></button>
-              <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed flex items-center gap-2"><RotateCw size={12} />Rotate (coming soon)</button>
+              <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'move' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><MousePointer2 size={12} />Move Mode <span className="text-gray-500 text-[10px] ml-auto">M</span></button>
+              <button onClick={() => { dispatch({ type: 'ROTATE_PLACEMENT' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><RotateCw size={12} />Rotate 90° <span className="text-gray-500 text-[10px] ml-auto">R</span></button>
               <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed flex items-center gap-2"><Copy size={12} />Copy (coming soon)</button>
               <div className="border-t border-[var(--color-border)] my-1" />
               <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Trash2 size={12} />Clear All Buildings</button>
@@ -1157,7 +1373,7 @@ export default function FactoryPlannerPage() {
             dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
             if (state.showBuildingPicker) dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
           }}
-          title="Select / Pan (drag to move)"
+          title="Select mode (V) - Click building to move"
         >
           <MousePointer2 size={13} />
           <span className="hidden sm:inline">Select</span>
@@ -1180,19 +1396,45 @@ export default function FactoryPlannerPage() {
           Build
         </ToolbarButton>
 
+        {/* Move */}
+        <ToolbarButton
+          active={state.toolMode === 'move' && state.movingBuildingIndex === null}
+          onClick={() => {
+            if (state.movingBuildingIndex !== null) {
+              dispatch({ type: 'CANCEL_MOVE' });
+            } else {
+              dispatch({ type: 'SET_TOOL_MODE', mode: state.toolMode === 'move' ? 'select' : 'move' });
+            }
+          }}
+          title="Move mode (M) - Click building, then click where to place"
+        >
+          <MousePointer2 size={13} />
+          <span className="hidden sm:inline">Move</span>
+        </ToolbarButton>
+
         {/* Delete */}
         <ToolbarButton
           active={state.toolMode === 'delete'}
           onClick={() => dispatch({ type: 'SET_TOOL_MODE', mode: state.toolMode === 'delete' ? 'select' : 'delete' })}
-          title="Delete buildings (X) - Right-click also deletes"
+          title="Delete mode (X) - Click building to remove"
           className={state.toolMode === 'delete' ? '!bg-red-600 !border-red-600 !text-white' : ''}
         >
           <Trash2 size={13} />
           <span className="hidden sm:inline">Del</span>
         </ToolbarButton>
 
+        {/* Rotate */}
+        <ToolbarButton
+          onClick={() => dispatch({ type: 'ROTATE_PLACEMENT' })}
+          title="Rotate building 90° clockwise (R)"
+          active={state.placementRotation !== 0}
+        >
+          <RotateCw size={13} />
+          <span className="hidden sm:inline">{state.placementRotation > 0 ? `${state.placementRotation}°` : 'Rot'}</span>
+        </ToolbarButton>
+
         {/* Zoom to Fit */}
-        <ToolbarButton onClick={handleZoomToFit} title="Zoom to fit entire grid">
+        <ToolbarButton onClick={handleZoomToFit} title="Zoom to fit grid (F)">
           <Maximize2 size={13} />
           <span className="hidden md:inline">Fit</span>
         </ToolbarButton>
@@ -1202,14 +1444,14 @@ export default function FactoryPlannerPage() {
         {/* Undo/Redo */}
         <ToolbarButton
           onClick={() => dispatch({ type: 'UNDO' })}
-          title="Undo"
+          title="Undo last action (Ctrl+Z)"
           className={state.grid.historyIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''}
         >
           <Undo2 size={13} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => dispatch({ type: 'REDO' })}
-          title="Redo"
+          title="Redo last action (Ctrl+Y)"
           className={state.grid.historyIndex === state.grid.history.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}
         >
           <Redo2 size={13} />
@@ -1218,22 +1460,22 @@ export default function FactoryPlannerPage() {
         <ToolbarDivider />
 
         {/* Toggles */}
-        <ToolbarButton active={state.showConveyors} onClick={() => dispatch({ type: 'TOGGLE_CONVEYORS' })} title="Toggle conveyors">
+        <ToolbarButton active={state.showConveyors} onClick={() => dispatch({ type: 'TOGGLE_CONVEYORS' })} title="Toggle conveyor belt visibility">
           Conv.
         </ToolbarButton>
-        <ToolbarButton active={state.showPipes} onClick={() => dispatch({ type: 'TOGGLE_PIPES' })} title="Toggle pipes">
+        <ToolbarButton active={state.showPipes} onClick={() => dispatch({ type: 'TOGGLE_PIPES' })} title="Toggle pipe visibility">
           Pipes
         </ToolbarButton>
-        <ToolbarButton active={state.showStats} onClick={() => dispatch({ type: 'TOGGLE_STATS' })} title="Toggle statistics overlay">
+        <ToolbarButton active={state.showStats} onClick={() => dispatch({ type: 'TOGGLE_STATS' })} title="Toggle building statistics overlay">
           Stats
         </ToolbarButton>
-        <ToolbarButton active={state.showAnim} onClick={() => dispatch({ type: 'TOGGLE_ANIM' })} title="Toggle animations">
+        <ToolbarButton active={state.showAnim} onClick={() => dispatch({ type: 'TOGGLE_ANIM' })} title="Toggle animations on/off">
           Anim
         </ToolbarButton>
-        <ToolbarButton active={state.autoConnect} onClick={() => dispatch({ type: 'TOGGLE_AUTO_CONNECT' })} title="Auto-connect buildings">
+        <ToolbarButton active={state.autoConnect} onClick={() => dispatch({ type: 'TOGGLE_AUTO_CONNECT' })} title="Toggle auto-connect buildings with conveyor belts">
           <Infinity size={13} />
         </ToolbarButton>
-        <ToolbarButton active={state.showBus} onClick={() => dispatch({ type: 'TOGGLE_BUS' })} title="Toggle depot bus">
+        <ToolbarButton active={state.showBus} onClick={() => dispatch({ type: 'TOGGLE_BUS' })} title="Toggle depot bus visibility">
           <Bus size={13} />
         </ToolbarButton>
 
@@ -1246,7 +1488,7 @@ export default function FactoryPlannerPage() {
               key={speed}
               active={state.speed === speed}
               onClick={() => dispatch({ type: 'SET_SPEED', speed })}
-              title={`Speed: ${speed}x`}
+              title={`Set simulation speed to ${speed}x`}
             >
               {speed}x
             </ToolbarButton>
@@ -1258,11 +1500,17 @@ export default function FactoryPlannerPage() {
       <div ref={containerRef} className="flex-1 relative overflow-hidden min-h-0">
         <canvas
           ref={canvasRef}
-          className={`w-full h-full ${state.toolMode === 'select' ? 'cursor-grab active:cursor-grabbing' : state.toolMode === 'delete' ? 'cursor-pointer' : 'cursor-crosshair'}`}
+          className={`w-full h-full ${
+            state.movingBuildingIndex !== null ? 'cursor-crosshair' :
+            state.toolMode === 'select' ? 'cursor-grab active:cursor-grabbing' :
+            state.toolMode === 'move' ? 'cursor-pointer' :
+            state.toolMode === 'delete' ? 'cursor-pointer' :
+            'cursor-crosshair'
+          }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onMouseLeave={() => { handleMouseUp(); setMouseGridPos(null); }}
           onWheel={handleWheel}
           onClick={handleCanvasClick}
           onContextMenu={handleContextMenu}
@@ -1273,21 +1521,21 @@ export default function FactoryPlannerPage() {
           <button
             onClick={() => setZoom(prev => Math.min(3, prev * 1.25))}
             className="w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] text-gray-300 hover:text-white hover:bg-[#2A2A2A] flex items-center justify-center transition-colors"
-            title="Zoom in"
+            title="Zoom in 25%"
           >
             <ZoomIn size={16} />
           </button>
           <button
             onClick={handleZoomToFit}
             className="w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] text-gray-300 hover:text-white hover:bg-[#2A2A2A] flex items-center justify-center transition-colors text-[10px] font-bold"
-            title="Zoom to fit"
+            title="Zoom to fit grid (F)"
           >
             FIT
           </button>
           <button
             onClick={() => setZoom(prev => Math.max(0.1, prev * 0.8))}
             className="w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] text-gray-300 hover:text-white hover:bg-[#2A2A2A] flex items-center justify-center transition-colors"
-            title="Zoom out"
+            title="Zoom out 20%"
           >
             <ZoomOut size={16} />
           </button>
@@ -1296,12 +1544,19 @@ export default function FactoryPlannerPage() {
         {/* Current tool mode indicator (bottom-left) */}
         <div className="absolute bottom-4 left-4 z-10">
           <div className={`bg-[var(--color-surface)] border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
-            state.toolMode === 'delete' ? 'border-red-600 text-red-400' : 'border-[var(--color-border)] text-gray-400'
+            state.toolMode === 'delete' ? 'border-red-600 text-red-400' :
+            state.movingBuildingIndex !== null ? 'border-[#00b0ff] text-[#00b0ff]' :
+            state.toolMode === 'move' ? 'border-cyan-700 text-cyan-400' :
+            'border-[var(--color-border)] text-gray-400'
           }`}>
-            {state.toolMode === 'build' && state.selectedBuilding
-              ? `Placing: ${BUILDINGS.find(b => b.id === state.selectedBuilding)?.name || 'Unknown'}`
+            {state.movingBuildingIndex !== null
+              ? `Moving: ${BUILDINGS.find(b => b.id === state.movingBuildingData?.buildingId)?.name || 'Building'} — Click to drop | R to rotate | Esc to cancel`
+              : state.toolMode === 'build' && state.selectedBuilding
+              ? `Placing: ${BUILDINGS.find(b => b.id === state.selectedBuilding)?.name || 'Unknown'}${state.placementRotation ? ` (${state.placementRotation}°)` : ''} — R to rotate`
               : state.toolMode === 'select'
-              ? 'Pan / Select — Right-click to delete'
+              ? 'Click building to move — Right-click to delete'
+              : state.toolMode === 'move'
+              ? 'Click a building to pick up — R to rotate — Esc to cancel'
               : state.toolMode === 'delete'
               ? 'Click building to delete — Esc to cancel'
               : state.toolMode}
@@ -1318,21 +1573,21 @@ export default function FactoryPlannerPage() {
                 <button
                   onClick={() => dispatch({ type: 'SET_VIEW_MODE', mode: 'list' })}
                   className={`p-1.5 transition-colors ${state.viewMode === 'list' ? 'bg-[var(--color-accent)] text-black' : 'text-gray-400 hover:text-white'}`}
-                  title="List view"
+                  title="Switch to list view"
                 >
                   <List size={14} />
                 </button>
                 <button
                   onClick={() => dispatch({ type: 'SET_VIEW_MODE', mode: 'grid' })}
                   className={`p-1.5 transition-colors ${state.viewMode === 'grid' ? 'bg-[var(--color-accent)] text-black' : 'text-gray-400 hover:text-white'}`}
-                  title="Grid view"
+                  title="Switch to grid view"
                 >
                   <Grid3x3 size={14} />
                 </button>
                 <button
                   onClick={() => dispatch({ type: 'TOGGLE_BUILDING_PICKER' })}
                   className="p-1.5 text-gray-400 hover:text-white transition-colors"
-                  title="Close"
+                  title="Close building library (Esc)"
                 >
                   <X size={14} />
                 </button>
@@ -1359,6 +1614,7 @@ export default function FactoryPlannerPage() {
                 <button
                   key={category}
                   onClick={() => dispatch({ type: 'SET_CATEGORY', category })}
+                  title={`Filter buildings by ${category === 'All' ? 'all categories' : category === 'Favorite' ? 'favorites' : category + ' category'}`}
                   className={`px-2 py-1.5 whitespace-nowrap border-b-2 transition-all text-[11px] ${
                     state.selectedCategory === category
                       ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
@@ -1377,6 +1633,7 @@ export default function FactoryPlannerPage() {
                   <button
                     key={building.id}
                     onClick={() => handleBuildingSelect(building.id)}
+                    title={`Click to place ${building.name} - ${building.description}`}
                     className="w-full p-2.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-all text-left group"
                   >
                     <div className="flex items-start justify-between gap-2">
