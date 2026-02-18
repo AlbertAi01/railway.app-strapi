@@ -1,679 +1,485 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Wrench, Search, BookOpen, ChevronDown, ChevronRight, Info, Shield, Target, Zap } from 'lucide-react';
+import { Wrench, Search, X } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
-import {
-  GEAR_ARTIFICING_DATA,
-  getGearByPart,
-  getFodderRecommendations,
-  getMatchTier,
-  getStatPriority,
-  STAT_PRIORITY_GUIDE,
-  GOOD_MATCH_GUIDE,
-  REDDIT_TIPS,
-  type ArtificingGear,
-  type PartType,
-  type MatchTier as MatchTierType,
-} from '@/data/artificing';
+import { GEAR_SETS, STANDALONE_GEAR, type GearPiece, type GearSet } from '@/data/gear';
 
-const CDN = 'https://endfieldtools.dev/assets/images/endfield';
+// ──────────── Artificing Solver Logic ────────────
 
-// Match tier colors
-const MATCH_TIER_COLORS: Record<MatchTierType, { border: string; bg: string; text: string }> = {
-  'Best Pick': { border: '#22c55e', bg: '#22c55e15', text: '#22c55e' },
-  'Good': { border: '#FFD429', bg: '#FFD42915', text: '#FFD429' },
-  'Partial': { border: '#666', bg: '#66666615', text: '#999' },
-  'Standard': { border: '#333', bg: '#33333315', text: '#666' },
-};
+// Slot type derived from DEF value: Body=56, Hand=42, EDC=21
+type SlotType = 'Body' | 'Hand' | 'EDC';
 
-function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition-colors border-b-2 ${
-        active
-          ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface)]'
-          : 'border-transparent text-[var(--color-text-tertiary)] hover:text-white hover:bg-[var(--color-surface-2)]'
-      }`}
-    >
-      {icon} {label}
-    </button>
-  );
+function getSlotType(piece: GearPiece): SlotType {
+  if (piece.def >= 50) return 'Body';
+  if (piece.def >= 35) return 'Hand';
+  return 'EDC';
 }
 
-function MatchTierBadge({ tier }: { tier: MatchTierType }) {
-  const colors = MATCH_TIER_COLORS[tier];
+// Primary attributes (Strength, Agility, Intellect, Will)
+const PRIMARY_ATTRS = ['Strength', 'Agility', 'Intellect', 'Will'];
+
+function isPrimaryAttr(statName: string): boolean {
+  return PRIMARY_ATTRS.includes(statName);
+}
+
+// Parse stat value from "+87" or "+20.7%" or "-17.1%"
+function parseStatValue(val: string): number {
+  return Math.abs(parseFloat(val.replace(/[+%]/g, '')));
+}
+
+// For each stat name, compute the max value among all gear in that slot
+function buildMaxStatMap(allGear: GearPiece[]): Record<string, Record<SlotType, number>> {
+  const map: Record<string, Record<SlotType, number>> = {};
+  allGear.forEach(piece => {
+    const slot = getSlotType(piece);
+    piece.stats.forEach(s => {
+      if (!map[s.name]) map[s.name] = { Body: 0, Hand: 0, EDC: 0 };
+      const v = parseStatValue(s.value);
+      if (v > map[s.name][slot]) map[s.name][slot] = v;
+    });
+  });
+  return map;
+}
+
+// Match tier from quality %
+type MatchTier = 'Best Pick' | 'Good' | 'Partial';
+
+function getMatchTier(qualityPct: number): MatchTier {
+  if (qualityPct >= 99.5) return 'Best Pick';
+  if (qualityPct >= 65) return 'Good';
+  return 'Partial';
+}
+
+// For a given target stat, compute which gear pieces are good fodder
+// and what tier they are at each artificing level transition
+interface FodderResult {
+  piece: GearPiece;
+  setName: string | null;
+  stat: { name: string; value: string };
+  qualityPct: number;
+  tiers: [MatchTier, MatchTier, MatchTier]; // L0→1, L1→2, L2→3
+  overallTier: MatchTier;
+}
+
+function computeFodderResults(
+  targetPiece: GearPiece,
+  targetStatName: string,
+  currentLevel: number,
+  allGear: GearPiece[],
+  maxStatMap: Record<string, Record<SlotType, number>>,
+): FodderResult[] {
+  const targetSlot = getSlotType(targetPiece);
+  const maxVal = maxStatMap[targetStatName]?.[targetSlot] || 1;
+
+  // Find all same-slot gear that has this stat (excluding the target itself)
+  const results: FodderResult[] = [];
+
+  allGear.forEach(piece => {
+    if (piece.name === targetPiece.name && piece.setName === targetPiece.setName) return;
+    if (getSlotType(piece) !== targetSlot) return;
+
+    const matchingStat = piece.stats.find(s => s.name === targetStatName);
+    if (!matchingStat) return;
+
+    const val = parseStatValue(matchingStat.value);
+    const qualityPct = (val / maxVal) * 100;
+
+    // Compute tier at each level transition
+    // Higher levels have more guarantee attempts needed, so quality threshold shifts
+    const tierAtLevel = (level: number): MatchTier => {
+      // Level adjustments: at higher levels, the quality "feel" changes
+      // L0→1: base quality, L1→2: slightly harder, L2→3: hardest
+      const adjustedPct = level === 0 ? qualityPct : level === 1 ? qualityPct * 0.85 : qualityPct * 0.7;
+      return getMatchTier(adjustedPct);
+    };
+
+    const tiers: [MatchTier, MatchTier, MatchTier] = [tierAtLevel(0), tierAtLevel(1), tierAtLevel(2)];
+
+    results.push({
+      piece,
+      setName: piece.setName,
+      stat: matchingStat,
+      qualityPct,
+      tiers,
+      overallTier: tiers[currentLevel],
+    });
+  });
+
+  // Sort: Best Pick first, then Good, then Partial. Within tier, sort by quality%
+  const tierOrder: Record<MatchTier, number> = { 'Best Pick': 0, 'Good': 1, 'Partial': 2 };
+  results.sort((a, b) => {
+    const tierDiff = tierOrder[a.overallTier] - tierOrder[b.overallTier];
+    if (tierDiff !== 0) return tierDiff;
+    return b.qualityPct - a.qualityPct;
+  });
+
+  return results;
+}
+
+// ──────────── Collect all T4 gear ────────────
+
+function getAllT4Gear(): { pieces: GearPiece[]; sets: GearSet[] } {
+  const t4Sets = GEAR_SETS.filter(s => s.phase === 'Late Game (Lv70)');
+  const t4Pieces: GearPiece[] = [];
+  t4Sets.forEach(s => t4Pieces.push(...s.pieces));
+  // Standalone gear is a flat array — filter to T4 only
+  const t4Standalone = STANDALONE_GEAR.filter(p => p.tier === 'T4');
+  t4Pieces.push(...t4Standalone);
+  return { pieces: t4Pieces, sets: t4Sets };
+}
+
+// ──────────── Tier Badge Colors ────────────
+
+const TIER_STYLES: Record<MatchTier, { border: string; bg: string; text: string }> = {
+  'Best Pick': { border: 'border-[#22c55e]', bg: 'bg-[#22c55e]/15', text: 'text-[#22c55e]' },
+  'Good': { border: 'border-[var(--color-accent)]', bg: 'bg-[var(--color-accent)]/15', text: 'text-[var(--color-accent)]' },
+  'Partial': { border: 'border-[#666]', bg: 'bg-[#666]/15', text: 'text-[#999]' },
+};
+
+// ──────────── Components ────────────
+
+function TierBadge({ tier, className = '' }: { tier: MatchTier; className?: string }) {
+  const s = TIER_STYLES[tier];
   return (
-    <span
-      className="text-xs font-bold px-2 py-1 border"
-      style={{ borderColor: colors.border, backgroundColor: colors.bg, color: colors.text }}
-    >
+    <span className={`text-xs font-bold px-2.5 py-1 border ${s.border} ${s.bg} ${s.text} ${className}`}>
       {tier}
     </span>
   );
 }
 
-// Tab 1: Artificing Solver
-function ArtificingSolver() {
-  const [selectedGear, setSelectedGear] = useState<ArtificingGear | null>(null);
-  const [selectedStat, setSelectedStat] = useState<string | null>(null);
-  const [currentLevel, setCurrentLevel] = useState<number>(0);
-  const [showGearPicker, setShowGearPicker] = useState(false);
-  const [filterPart, setFilterPart] = useState<PartType | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+function LevelTierTag({ level, tier }: { level: string; tier: MatchTier }) {
+  const isBest = tier === 'Best Pick';
+  return (
+    <span className={`text-[11px] px-2 py-0.5 border ${isBest ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)] font-bold' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+      {level}: {tier}
+    </span>
+  );
+}
 
-  const filteredGear = useMemo(() => {
-    let gear = GEAR_ARTIFICING_DATA;
-    if (filterPart) gear = gear.filter(g => g.partType === filterPart);
-    if (searchTerm) gear = gear.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    return gear;
-  }, [filterPart, searchTerm]);
+// ──────────── Gear Picker Modal ────────────
 
-  const groupedGear = useMemo(() => {
-    const grouped: Record<string, ArtificingGear[]> = {};
-    filteredGear.forEach(g => {
-      const key = g.setName || 'Standalone (Redeemer)';
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(g);
-    });
-    return grouped;
-  }, [filteredGear]);
+function GearPickerModal({
+  sets,
+  allPieces,
+  onSelect,
+  onClose,
+}: {
+  sets: GearSet[];
+  allPieces: GearPiece[];
+  onSelect: (piece: GearPiece) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
 
-  const fodderRecommendations = useMemo(() => {
-    if (!selectedGear || !selectedStat) return [];
-    return getFodderRecommendations(selectedGear.id, selectedStat, currentLevel);
-  }, [selectedGear, selectedStat, currentLevel]);
+  const filteredSets = useMemo(() => {
+    if (!search) return sets;
+    const q = search.toLowerCase();
+    return sets
+      .map(s => ({
+        ...s,
+        pieces: s.pieces.filter(p => p.name.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)),
+      }))
+      .filter(s => s.pieces.length > 0);
+  }, [sets, search]);
 
-  const selectedSubstat = selectedGear?.substats.find(s => s.statKey === selectedStat);
+  // Standalone gear
+  const standalone = useMemo(() => {
+    const q = search.toLowerCase();
+    return allPieces.filter(p => !p.setName && (!search || p.name.toLowerCase().includes(q)));
+  }, [allPieces, search]);
 
   return (
-    <div className="space-y-6">
-      {/* Gear Picker */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Select Gear Piece</h2>
-          {selectedGear && (
-            <button onClick={() => { setSelectedGear(null); setSelectedStat(null); }} className="text-xs text-[var(--color-text-tertiary)] hover:text-white">
-              Clear
-            </button>
-          )}
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-4">
+      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-[var(--color-surface)] border border-[var(--color-accent)] w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col z-10">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
+          <h2 className="text-lg font-bold text-white font-tactical">Pick a Gear</h2>
+          <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white">
+            <X size={20} />
+          </button>
         </div>
-        <div className="p-4">
-          {selectedGear ? (
-            <div className="flex items-center gap-4 p-3 bg-[var(--color-surface-2)] border border-[var(--color-accent)]/30 clip-corner-tl">
-              <div className="w-16 h-16 shrink-0 clip-corner-tl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
-                <Shield size={24} className="text-[var(--color-accent)]" />
-              </div>
-              <div>
-                <p className="text-white text-base font-bold">{selectedGear.name}</p>
-                <p className="text-xs text-[var(--color-text-tertiary)]">
-                  {selectedGear.setName || 'Standalone'} • {selectedGear.partType}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowGearPicker(!showGearPicker)}
-                className="ml-auto text-sm text-[var(--color-accent)] hover:underline"
-              >
-                Change
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowGearPicker(!showGearPicker)}
-              className="flex items-center gap-2 px-4 py-3 border-l-3 border-l-[var(--color-accent)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-sm text-white w-full justify-between"
-            >
-              <span>Select a gear piece to begin</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showGearPicker ? 'rotate-180' : ''}`} />
-            </button>
-          )}
 
-          {showGearPicker && (
-            <div className="mt-4 p-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl space-y-4">
-              <input
-                type="text"
-                placeholder="Search gear..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterPart(null)}
-                  className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                    !filterPart ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]'
-                  }`}
-                >
-                  All
-                </button>
-                {(['Body', 'Hand', 'EDC'] as PartType[]).map(part => (
+        {/* Search */}
+        <div className="px-5 py-3 border-b border-[var(--color-border)]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
+            <input
+              type="text"
+              placeholder="Search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              autoFocus
+              className="w-full pl-10 pr-3 py-2.5 bg-[var(--color-surface-2)] border border-[var(--color-accent)] focus:outline-none text-white text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Gear List */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          <div className="text-center text-sm text-[var(--color-text-tertiary)] border-b border-[var(--color-border)] pb-2">
+            Late Game (Lv70)
+          </div>
+
+          {filteredSets.map(gearSet => (
+            <div key={gearSet.name}>
+              <h3 className="text-[var(--color-accent)] font-bold text-sm mb-1">{gearSet.name}</h3>
+              <p className="text-xs text-[var(--color-text-tertiary)] mb-3 leading-relaxed">
+                <span className="text-[var(--color-accent)] font-bold">3pc:</span> {gearSet.setBonus}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                {gearSet.pieces.map(piece => (
                   <button
-                    key={part}
-                    onClick={() => setFilterPart(part === filterPart ? null : part)}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                      filterPart === part ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]'
-                    }`}
+                    key={`${piece.name}-${piece.id}`}
+                    onClick={() => { onSelect(piece); onClose(); }}
+                    className="flex items-center gap-2.5 p-2 border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)] transition-colors text-left rounded-sm"
                   >
-                    {part}
+                    {piece.icon ? (
+                      <img src={piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
+                    ) : (
+                      <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                        <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">T4</span>
+                        <span className="text-xs font-semibold text-white truncate">{piece.name}</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--color-text-tertiary)]">DEF +{piece.def}</p>
+                      {piece.stats.map((s, i) => (
+                        <p key={i} className={`text-[11px] ${isPrimaryAttr(s.name) ? 'text-[var(--color-accent)]' : 'text-[#22c55e]'}`}>
+                          {s.name} {s.value}
+                        </p>
+                      ))}
+                      <p className="text-[10px] text-[var(--color-text-tertiary)]">Lv.{piece.level}</p>
+                    </div>
                   </button>
                 ))}
               </div>
-              <div className="max-h-96 overflow-y-auto space-y-3">
-                {Object.entries(groupedGear).map(([setName, gearList]) => (
-                  <div key={setName}>
-                    <p className="text-xs text-[var(--color-accent)] font-bold mb-2 uppercase tracking-wider">{setName}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {gearList.map(gear => (
-                        <button
-                          key={gear.id}
-                          onClick={() => {
-                            setSelectedGear(gear);
-                            setShowGearPicker(false);
-                            setSelectedStat(null);
-                          }}
-                          className="flex items-center gap-2 p-2 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
-                        >
-                          <div className="w-10 h-10 shrink-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center">
-                            <Shield size={16} className="text-[var(--color-text-tertiary)]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-bold truncate">{gear.name}</p>
-                            <p className="text-[10px] text-[var(--color-text-tertiary)]">{gear.partType}</p>
-                          </div>
-                        </button>
+            </div>
+          ))}
+
+          {standalone.length > 0 && (
+            <div>
+              <h3 className="text-[var(--color-accent)] font-bold text-sm mb-3">Standalone (Redeemer)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                {standalone.map(piece => (
+                  <button
+                    key={`${piece.name}-${piece.id}`}
+                    onClick={() => { onSelect(piece); onClose(); }}
+                    className="flex items-center gap-2.5 p-2 border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)] transition-colors text-left rounded-sm"
+                  >
+                    {piece.icon ? (
+                      <img src={piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
+                    ) : (
+                      <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                        <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">T4</span>
+                        <span className="text-xs font-semibold text-white truncate">{piece.name}</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--color-text-tertiary)]">DEF +{piece.def}</p>
+                      {piece.stats.map((s, i) => (
+                        <p key={i} className={`text-[11px] ${isPrimaryAttr(s.name) ? 'text-[var(--color-accent)]' : 'text-[#22c55e]'}`}>
+                          {s.name} {s.value}
+                        </p>
                       ))}
+                      <p className="text-[10px] text-[var(--color-text-tertiary)]">Lv.{piece.level}</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Stat Selection & Level */}
-      {selectedGear && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Select Stat to Artifice</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid gap-3">
-              {selectedGear.substats.map(substat => (
-                <button
-                  key={substat.statKey}
-                  onClick={() => setSelectedStat(substat.statKey)}
-                  className={`flex items-center justify-between p-3 border transition-colors text-left ${
-                    selectedStat === substat.statKey
-                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
-                      : 'border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-text-tertiary)]'
-                  }`}
-                >
-                  <div>
-                    <p className="text-white text-sm font-bold">{substat.displayName}</p>
-                    <p className="text-xs text-[var(--color-text-tertiary)]">Base: {substat.value}</p>
-                  </div>
-                  <div className="text-right">
-                    <MatchTierBadge tier={getMatchTier(substat.qualityPct)} />
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">{substat.qualityPct.toFixed(1)}% quality</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {selectedStat && selectedSubstat && (
-              <div className="p-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl space-y-3">
-                <div>
-                  <p className="text-xs text-[var(--color-text-tertiary)] mb-2">Current Artificing Level</p>
-                  <div className="flex gap-2">
-                    {[0, 1, 2].map(level => (
-                      <button
-                        key={level}
-                        onClick={() => setCurrentLevel(level)}
-                        className={`flex-1 px-3 py-2 text-sm font-bold border transition-colors ${
-                          currentLevel === level
-                            ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                            : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-tertiary)]'
-                        }`}
-                      >
-                        Level {level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-3 bg-[var(--color-surface)] border-l-3 border-l-[var(--color-accent)] border border-[var(--color-border)]">
-                  <p className="text-xs text-[var(--color-text-tertiary)] mb-1">Stat Growth Preview</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {selectedSubstat.valueByLevel.map((val, idx) => (
-                      <span key={idx} className={`text-sm font-mono ${idx === currentLevel ? 'text-[var(--color-accent)] font-bold' : idx > currentLevel ? 'text-[var(--color-text-tertiary)]' : 'text-white'}`}>
-                        L{idx}: {val} {idx < selectedSubstat.valueByLevel.length - 1 && <span className="text-[var(--color-text-tertiary)]">→</span>}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-[var(--color-text-tertiary)] mt-2">
-                    Guarantee: {selectedSubstat.guaranteeTimes[currentLevel] || 'Max Level'} attempts for next level
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Fodder Recommendations */}
-      {selectedGear && selectedStat && fodderRecommendations.length > 0 && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical flex items-center gap-2">
-              <Target size={16} className="text-[var(--color-accent)]" />
-              Fodder Recommendations
-            </h2>
-          </div>
-          <div className="p-4 space-y-2 max-h-[500px] overflow-y-auto">
-            {fodderRecommendations.map((rec, idx) => (
-              <div key={`${rec.gear.id}-${rec.substat.statKey}-${idx}`} className="p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-bold truncate">{rec.gear.name}</p>
-                    <p className="text-xs text-[var(--color-text-tertiary)]">
-                      {rec.gear.setName || 'Standalone'} • {rec.gear.partType}
-                    </p>
-                  </div>
-                  <MatchTierBadge tier={rec.matchTier} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-[var(--color-text-secondary)]">{rec.substat.displayName}: <span className="font-mono text-white">{rec.substat.value}</span></p>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)]">Quality: {rec.substat.qualityPct.toFixed(1)}%</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--color-text-secondary)]">Guarantee</p>
-                    <p className="text-xs font-mono text-white">
-                      {rec.substat.guaranteeTimes[0]}/{rec.substat.guaranteeTimes[1]}/{rec.substat.guaranteeTimes[2]}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-// Tab 2: Good Match Guide
-function GoodMatchGuide() {
-  const [expandedSection, setExpandedSection] = useState<string | null>('explanation');
+// ──────────── Main Page ────────────
 
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section);
+export default function GearArtificingPage() {
+  const { pieces: allT4, sets: t4Sets } = useMemo(() => getAllT4Gear(), []);
+  const maxStatMap = useMemo(() => buildMaxStatMap(allT4), [allT4]);
+
+  const [selectedPiece, setSelectedPiece] = useState<GearPiece | null>(null);
+  const [selectedStat, setSelectedStat] = useState<string | null>(null);
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const fodderResults = useMemo(() => {
+    if (!selectedPiece || !selectedStat) return [];
+    return computeFodderResults(selectedPiece, selectedStat, currentLevel, allT4, maxStatMap);
+  }, [selectedPiece, selectedStat, currentLevel, allT4, maxStatMap]);
+
+  const handleSelectGear = (piece: GearPiece) => {
+    setSelectedPiece(piece);
+    setSelectedStat(null);
+    setCurrentLevel(0);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Explanation */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-        <button
-          onClick={() => toggleSection('explanation')}
-          className="w-full flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] transition-colors text-left"
-        >
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical flex items-center gap-2">
-            <Info size={16} className="text-[var(--color-accent)]" />
-            What is Good Match?
-          </h2>
-          <ChevronRight className={`w-4 h-4 transition-transform ${expandedSection === 'explanation' ? 'rotate-90' : ''}`} />
-        </button>
-        {expandedSection === 'explanation' && (
-          <div className="p-4 space-y-3">
-            {GOOD_MATCH_GUIDE.explanation.map((text, idx) => (
-              <p key={idx} className="text-sm text-[var(--color-text-secondary)]">{text}</p>
-            ))}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-              {Object.entries(MATCH_TIER_COLORS).map(([tier, colors]) => (
-                <div key={tier} className="p-2 border text-center" style={{ borderColor: colors.border, backgroundColor: colors.bg }}>
-                  <p className="text-xs font-bold" style={{ color: colors.text }}>{tier}</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
-                    {tier === 'Best Pick' && '100%'}
-                    {tier === 'Good' && '70-99%'}
-                    {tier === 'Partial' && '45-69%'}
-                    {tier === 'Standard' && '<45%'}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Examples */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-        <button
-          onClick={() => toggleSection('examples')}
-          className="w-full flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] transition-colors text-left"
-        >
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Examples</h2>
-          <ChevronRight className={`w-4 h-4 transition-transform ${expandedSection === 'examples' ? 'rotate-90' : ''}`} />
-        </button>
-        {expandedSection === 'examples' && (
-          <div className="p-4 space-y-4">
-            {GOOD_MATCH_GUIDE.examples.map((example, idx) => (
-              <div key={idx} className="p-3 bg-[var(--color-surface-2)] border-l-3 border-l-[var(--color-accent)] border border-[var(--color-border)]">
-                <p className="text-sm text-white font-bold mb-1">{example.scenario}</p>
-                <p className="text-xs text-[var(--color-text-secondary)] font-mono mb-1">{example.calculation}</p>
-                <p className="text-xs text-[var(--color-accent)]">{example.result}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Quick Reference */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-        <button
-          onClick={() => toggleSection('quickref')}
-          className="w-full flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] transition-colors text-left"
-        >
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Quick Reference</h2>
-          <ChevronRight className={`w-4 h-4 transition-transform ${expandedSection === 'quickref' ? 'rotate-90' : ''}`} />
-        </button>
-        {expandedSection === 'quickref' && (
-          <div className="p-4 overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--color-border)]">
-                  <th className="text-left py-2 px-3 text-[var(--color-accent)] font-bold">Slot</th>
-                  <th className="text-left py-2 px-3 text-[var(--color-accent)] font-bold">Stat</th>
-                  <th className="text-left py-2 px-3 text-[var(--color-accent)] font-bold">Best Fodder</th>
-                  <th className="text-left py-2 px-3 text-[var(--color-accent)] font-bold">Good Fodder</th>
-                </tr>
-              </thead>
-              <tbody>
-                {GOOD_MATCH_GUIDE.quickReference.map((ref, idx) => (
-                  <tr key={idx} className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface-2)]">
-                    <td className="py-2 px-3 text-white font-bold">{ref.slot}</td>
-                    <td className="py-2 px-3 text-[var(--color-text-secondary)]">{ref.stat}</td>
-                    <td className="py-2 px-3 text-green-400">{ref.bestFodder}</td>
-                    <td className="py-2 px-3 text-yellow-400">{ref.goodFodder}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Tips */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-        <button
-          onClick={() => toggleSection('tips')}
-          className="w-full flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] transition-colors text-left"
-        >
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical flex items-center gap-2">
-            <Zap size={16} className="text-[var(--color-accent)]" />
-            Pro Tips
-          </h2>
-          <ChevronRight className={`w-4 h-4 transition-transform ${expandedSection === 'tips' ? 'rotate-90' : ''}`} />
-        </button>
-        {expandedSection === 'tips' && (
-          <div className="p-4 space-y-2">
-            {GOOD_MATCH_GUIDE.tips.map((tip, idx) => (
-              <div key={idx} className="flex items-start gap-2 p-2 bg-[var(--color-surface-2)]">
-                <span className="text-[var(--color-accent)] text-xs mt-0.5">▸</span>
-                <p className="text-sm text-[var(--color-text-secondary)]">{tip}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Stat Priority Guide */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-        <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Stat Upgrade Priority</h2>
-        </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <p className="text-xs text-[var(--color-accent)] font-bold mb-2 uppercase tracking-wider">General Tips</p>
-            <ul className="space-y-1">
-              {STAT_PRIORITY_GUIDE.general.map((tip, idx) => (
-                <li key={idx} className="text-sm text-[var(--color-text-secondary)] flex items-start gap-2">
-                  <span className="text-[var(--color-accent)] text-xs mt-0.5">▸</span>
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {(['Body', 'Hand', 'EDC'] as PartType[]).map(part => (
-            <div key={part}>
-              <p className="text-xs text-[var(--color-accent)] font-bold mb-2 uppercase tracking-wider">{part}</p>
-              <ul className="space-y-1">
-                {getStatPriority(part).map((priority, idx) => (
-                  <li key={idx} className="text-sm text-[var(--color-text-secondary)] flex items-start gap-2">
-                    <span className="text-[var(--color-accent)] text-xs mt-0.5">▸</span>
-                    <span>{priority}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Reddit Tips */}
-      <div className="p-4 bg-[var(--color-surface)] border-l-3 border-l-[var(--color-accent)] border border-[var(--color-border)] clip-corner-tl">
-        <h3 className="font-bold text-white text-sm mb-3 flex items-center gap-2">
-          <Zap size={14} className="text-[var(--color-accent)]" />
-          Community Tips from Reddit
-        </h3>
-        <ul className="space-y-2">
-          {REDDIT_TIPS.map((tip, idx) => (
-            <li key={idx} className="text-xs text-[var(--color-text-secondary)] flex items-start gap-2">
-              <span className="text-[var(--color-accent)] mt-0.5">•</span>
-              <span>{tip}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-// Tab 3: Gear Database
-function GearDatabase() {
-  const [filterPart, setFilterPart] = useState<PartType | null>(null);
-  const [filterSet, setFilterSet] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const sets = useMemo(() => {
-    const setNames = new Set<string>();
-    GEAR_ARTIFICING_DATA.forEach(g => {
-      if (g.setName) setNames.add(g.setName);
-    });
-    return Array.from(setNames).sort();
-  }, []);
-
-  const filteredGear = useMemo(() => {
-    let gear = GEAR_ARTIFICING_DATA;
-    if (filterPart) gear = gear.filter(g => g.partType === filterPart);
-    if (filterSet) {
-      if (filterSet === 'Standalone') {
-        gear = gear.filter(g => !g.setName);
-      } else {
-        gear = gear.filter(g => g.setName === filterSet);
-      }
-    }
-    if (searchTerm) gear = gear.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    return gear;
-  }, [filterPart, filterSet, searchTerm]);
-
-  return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
-          <input
-            type="text"
-            placeholder="Search gear..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
-          />
-        </div>
-        <div>
-          <p className="text-xs text-[var(--color-text-tertiary)] mb-2 uppercase tracking-wider">Filter by Slot</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilterPart(null)}
-              className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                !filterPart ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'
-              }`}
-            >
-              All
-            </button>
-            {(['Body', 'Hand', 'EDC'] as PartType[]).map(part => (
-              <button
-                key={part}
-                onClick={() => setFilterPart(part === filterPart ? null : part)}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                  filterPart === part ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {part}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-[var(--color-text-tertiary)] mb-2 uppercase tracking-wider">Filter by Set</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilterSet(null)}
-              className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                !filterSet ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterSet(filterSet === 'Standalone' ? null : 'Standalone')}
-              className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                filterSet === 'Standalone' ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'
-              }`}
-            >
-              Standalone
-            </button>
-            {sets.map(set => (
-              <button
-                key={set}
-                onClick={() => setFilterSet(filterSet === set ? null : set)}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors border ${
-                  filterSet === set ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {set}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Results */}
-      <div className="space-y-3">
-        <p className="text-sm text-[var(--color-text-tertiary)]">
-          Showing <span className="text-[var(--color-accent)] font-bold">{filteredGear.length}</span> gear piece{filteredGear.length !== 1 ? 's' : ''}
-        </p>
-        <div className="grid md:grid-cols-2 gap-4">
-          {filteredGear.map(gear => (
-            <div key={gear.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 hover:border-[var(--color-accent)]/50 transition-colors">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-12 h-12 shrink-0 clip-corner-tl bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center">
-                  <Shield size={20} className="text-[var(--color-accent)]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-bold">{gear.name}</p>
-                  <p className="text-xs text-[var(--color-text-tertiary)]">
-                    {gear.setName || 'Standalone'} • {gear.partType}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {gear.substats.map(substat => (
-                  <div key={substat.statKey} className="p-2 bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-white font-bold">{substat.displayName}</p>
-                      <MatchTierBadge tier={getMatchTier(substat.qualityPct)} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-[var(--color-text-secondary)]">
-                        Base: <span className="font-mono text-white">{substat.value}</span>
-                      </p>
-                      <p className="text-[10px] text-[var(--color-text-tertiary)]">
-                        Quality: {substat.qualityPct.toFixed(1)}%
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 mt-1 flex-wrap">
-                      {substat.valueByLevel.map((val, idx) => (
-                        <span key={idx} className="text-[10px] font-mono text-[var(--color-text-tertiary)]">
-                          L{idx}:{val}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function GearArtificingPage() {
-  const [activeTab, setActiveTab] = useState<'solver' | 'guide' | 'database'>('solver');
-
-  return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <RIOSHeader
           title="Gear Artificing Solver"
+          subtitle="Pick your gear, then use the best matching fodder pieces by chance tier."
           category="OPTIMIZATION"
           code="RIOS-ART-001"
           icon={<Wrench size={28} />}
         />
 
-        <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
-          Find the perfect fodder gear for artificing. Understand Good Match quality, guarantee times, and stat priority.
-          No more guessing what to feed into your gear upgrades.
-        </p>
+        {/* ─── Selection Card ─── */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 p-5 space-y-5 mb-6">
+          {/* Pick Equipment */}
+          <div>
+            <h2 className="text-sm font-bold text-white mb-3">Pick your equipment</h2>
+            {!selectedPiece && (
+              <p className="text-xs text-[var(--color-text-tertiary)] mb-3">Start by selecting your current equipment.</p>
+            )}
+            <button
+              onClick={() => setShowPicker(true)}
+              className="flex items-center gap-2 px-4 py-2.5 border border-[var(--color-accent)] bg-[var(--color-surface-2)] hover:bg-[var(--color-accent)]/10 transition-colors text-sm text-[var(--color-accent)] font-bold"
+            >
+              <Search size={16} />
+              Open Equipment Picker
+            </button>
+            {selectedPiece && (
+              <p className="text-sm text-white mt-3">
+                Selected: <span className="font-bold">{selectedPiece.name}</span>
+              </p>
+            )}
+          </div>
 
-        {/* Tab Bar */}
-        <div className="flex border-b border-[var(--color-border)] mb-6">
-          <TabButton
-            active={activeTab === 'solver'}
-            onClick={() => setActiveTab('solver')}
-            icon={<Target size={14} />}
-            label="Artificing Solver"
-          />
-          <TabButton
-            active={activeTab === 'guide'}
-            onClick={() => setActiveTab('guide')}
-            icon={<BookOpen size={14} />}
-            label="Good Match Guide"
-          />
-          <TabButton
-            active={activeTab === 'database'}
-            onClick={() => setActiveTab('database')}
-            icon={<Search size={14} />}
-            label="Gear Database"
-          />
+          {/* Level & Stat Selection */}
+          {selectedPiece && (
+            <>
+              <div>
+                <h2 className="text-sm font-bold text-white mb-3">Current Artificing Level</h2>
+                <div className="flex gap-2">
+                  {[0, 1, 2].map(level => (
+                    <button
+                      key={level}
+                      onClick={() => setCurrentLevel(level)}
+                      className={`px-5 py-2 text-sm font-bold border transition-colors ${
+                        currentLevel === level
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-tertiary)]'
+                      }`}
+                    >
+                      Level {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-sm font-bold text-white mb-3">Stat to enhance</h2>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPiece.stats.map(s => (
+                    <button
+                      key={s.name}
+                      onClick={() => setSelectedStat(s.name)}
+                      className={`px-4 py-2 text-sm font-bold border transition-colors ${
+                        selectedStat === s.name
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-tertiary)]'
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {activeTab === 'solver' && <ArtificingSolver />}
-        {activeTab === 'guide' && <GoodMatchGuide />}
-        {activeTab === 'database' && <GearDatabase />}
+        {/* ─── Results ─── */}
+        {selectedPiece && selectedStat && fodderResults.length > 0 ? (
+          <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 overflow-hidden mb-6">
+            <div className="px-5 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="text-[var(--color-accent)]">&#9675;</span>
+                Best gears to artifice into
+              </h2>
+            </div>
+            <div className="p-4 space-y-3">
+              {fodderResults.map((result, idx) => {
+                const isBestOverall = idx === 0 && result.overallTier === 'Best Pick';
+                return (
+                  <div
+                    key={`${result.piece.name}-${result.piece.id}-${idx}`}
+                    className={`relative p-3.5 border-2 transition-colors ${
+                      isBestOverall
+                        ? 'border-[#22c55e] bg-[#22c55e]/5'
+                        : result.overallTier === 'Best Pick'
+                        ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
+                        : result.overallTier === 'Good'
+                        ? 'border-[var(--color-accent)]/50 bg-[var(--color-surface-2)]'
+                        : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'
+                    }`}
+                  >
+                    {/* Best Pick ribbon */}
+                    {isBestOverall && (
+                      <div className="absolute -top-0 left-3">
+                        <span className="text-[10px] font-bold bg-[#22c55e] text-black px-2 py-0.5">
+                          Best Pick
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      {/* Icon */}
+                      {result.piece.icon ? (
+                        <img src={result.piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
+                      ) : (
+                        <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                          <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+                        </div>
+                      )}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-sm">{result.piece.name}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          <LevelTierTag level="Level 0→1" tier={result.tiers[0]} />
+                          <LevelTierTag level="Level 1→2" tier={result.tiers[1]} />
+                          <LevelTierTag level="Level 2→3" tier={result.tiers[2]} />
+                        </div>
+                      </div>
+
+                      {/* Overall badge */}
+                      <TierBadge tier={result.overallTier} className="shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : selectedPiece && !selectedStat ? (
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 mb-6">
+            <p className="text-sm text-[var(--color-text-tertiary)]">
+              Select your current artificing level and stat to see the best gear list.
+            </p>
+          </div>
+        ) : null}
+
+        {/* Gear Picker Modal */}
+        {showPicker && (
+          <GearPickerModal
+            sets={t4Sets}
+            allPieces={allT4}
+            onSelect={handleSelectGear}
+            onClose={() => setShowPicker(false)}
+          />
+        )}
       </div>
     </div>
   );
