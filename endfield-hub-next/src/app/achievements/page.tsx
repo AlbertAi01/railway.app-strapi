@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Trophy, Check, Search, ChevronDown, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Trophy, Check, Search, ChevronDown, RotateCcw, Cloud, CloudOff } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { useAuthStore } from '@/store/authStore';
+import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 
 interface Achievement {
   id: string;
@@ -105,26 +107,56 @@ export default function AchievementsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'incomplete'>('all');
   const [expandAll, setExpandAll] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const { token } = useAuthStore();
+  const syncTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('endfield-achievements-v2');
-    if (saved) {
-      setProgress(JSON.parse(saved));
-    } else {
-      const v1 = localStorage.getItem('endfield-achievements');
-      if (v1) {
-        const oldCompleted: string[] = JSON.parse(v1);
-        const migrated: Record<string, number> = {};
-        oldCompleted.forEach(id => { migrated[id] = 999; });
-        setProgress(migrated);
-        localStorage.setItem('endfield-achievements-v2', JSON.stringify(migrated));
+    const loadData = async () => {
+      // Try cloud first if logged in
+      if (token) {
+        const cloudData = await loadFromCloud('achievements', token);
+        if (cloudData && typeof cloudData === 'object') {
+          setProgress(cloudData as Record<string, number>);
+          localStorage.setItem('endfield-achievements-v2', JSON.stringify(cloudData));
+          setSyncStatus('synced');
+          return;
+        }
       }
-    }
-  }, []);
+      // Fall back to localStorage
+      const saved = localStorage.getItem('endfield-achievements-v2');
+      if (saved) {
+        setProgress(JSON.parse(saved));
+      } else {
+        const v1 = localStorage.getItem('endfield-achievements');
+        if (v1) {
+          const oldCompleted: string[] = JSON.parse(v1);
+          const migrated: Record<string, number> = {};
+          oldCompleted.forEach(id => { migrated[id] = 999; });
+          setProgress(migrated);
+          localStorage.setItem('endfield-achievements-v2', JSON.stringify(migrated));
+        }
+      }
+    };
+    loadData();
+  }, [token]);
 
   const saveProgress = (newProgress: Record<string, number>) => {
     setProgress(newProgress);
     localStorage.setItem('endfield-achievements-v2', JSON.stringify(newProgress));
+    // Debounced cloud sync
+    if (token) {
+      if (syncTimeout.current) clearTimeout(syncTimeout.current);
+      setSyncStatus('syncing');
+      syncTimeout.current = setTimeout(async () => {
+        try {
+          await syncToCloud('achievements', newProgress, token);
+          setSyncStatus('synced');
+        } catch {
+          setSyncStatus('error');
+        }
+      }, 2000);
+    }
   };
 
   const toggleStep = (achievement: Achievement) => {
@@ -180,8 +212,15 @@ export default function AchievementsPage() {
 
         <p className="text-sm text-[var(--color-text-tertiary)] mb-4">Track your achievement progress and optimize your completion strategy.</p>
 
-        <div className="flex items-center justify-between p-3 mb-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm">
-          <span>Your progress is saved locally. Log in to sync across devices.</span>
+        <div className={`flex items-center justify-between p-3 mb-4 border text-sm ${token ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'}`}>
+          <span>{token ? 'Progress syncs to your account automatically.' : 'Your progress is saved locally. Log in to sync across devices.'}</span>
+          <span className="flex items-center gap-1.5 text-xs">
+            {token ? (
+              <>{syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'synced' ? 'Synced' : syncStatus === 'error' ? 'Sync error' : 'Connected'} <Cloud size={14} /></>
+            ) : (
+              <><CloudOff size={14} /> Local only</>
+            )}
+          </span>
         </div>
 
         {/* Stats Header */}
