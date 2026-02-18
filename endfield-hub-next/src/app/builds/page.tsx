@@ -830,7 +830,12 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)]/50 transition-colors">
+    <div
+      onClick={() => setExpanded(!expanded)}
+      className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden cursor-pointer transition-all ${
+        expanded ? 'border-[var(--color-accent)]/60 ring-1 ring-[var(--color-accent)]/20' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
+      }`}
+    >
       {/* Character portraits row */}
       <div className="flex bg-[var(--color-surface-2)]">
         {build.characters.map((bc, i) => {
@@ -851,7 +856,6 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
             </div>
           );
         })}
-        {/* Fill remaining space */}
         {build.characters.length < 4 && build.type === 'team' && (
           <div className="flex-1 bg-[var(--color-surface)] opacity-30" />
         )}
@@ -861,7 +865,10 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
+              <ChevronDown size={14} className={`text-[var(--color-accent)] transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+            </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
                 {build.type === 'team' ? 'TEAM' : 'SINGLE'}
@@ -877,46 +884,68 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
           </div>
         </div>
 
-        {/* Expand for details */}
-        <button onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-2 text-[10px] text-[var(--color-accent)] hover:underline">
-          <ChevronDown size={12} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          {expanded ? 'Hide details' : 'Show details'}
-        </button>
+        {/* Always show character gear summary in compact form */}
+        {!expanded && (
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-[var(--color-text-tertiary)]">
+            {build.characters.map((bc, i) => (
+              <span key={i}>
+                <span className="text-white">{bc.name}</span>
+                {bc.weapon && <span> + {bc.weapon}</span>}
+              </span>
+            ))}
+          </div>
+        )}
 
+        {/* Expanded detail view */}
         {expanded && (
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 space-y-2" onClick={e => e.stopPropagation()}>
             {build.characters.map((bc, i) => {
               const role = getCharRole(bc.name);
               const elem = getCharElement(bc.name);
+              const charIcon = CHARACTER_ICONS[bc.name];
               const weaponIcon = bc.weapon ? WEAPON_ICONS[bc.weapon] : null;
               const equipIcon = bc.equipment ? EQUIPMENT_ICONS[bc.equipment] : null;
               return (
-                <div key={i} className="flex items-center gap-2 p-2 bg-[var(--color-surface-2)] text-xs"
+                <div key={i} className="p-3 bg-[var(--color-surface-2)]"
                   style={{ borderLeft: `3px solid ${elem ? ELEMENT_COLORS[elem] : '#666'}` }}>
-                  <span className="text-white font-bold">{bc.name}</span>
-                  <span className="text-[var(--color-text-tertiary)]">{role}</span>
-                  {bc.weapon && (
-                    <span className="flex items-center gap-1 text-[var(--color-text-tertiary)]">
-                      {weaponIcon && <Image src={weaponIcon} alt="" width={14} height={14} className="inline" unoptimized />}
-                      {bc.weapon}
-                    </span>
-                  )}
-                  {bc.equipment && (
-                    <span className="flex items-center gap-1 text-[var(--color-text-tertiary)]">
-                      {equipIcon && <Image src={equipIcon} alt="" width={14} height={14} className="inline" unoptimized />}
-                      {bc.equipment}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {charIcon && (
+                      <div className="w-12 h-12 relative flex-shrink-0 overflow-hidden" style={{ borderBottom: `2px solid ${RARITY_COLORS[getCharRarity(bc.name)] || '#666'}` }}>
+                        <Image src={charIcon} alt={bc.name} fill className="object-cover" unoptimized sizes="48px" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-bold text-sm">{bc.name}</span>
+                        {role && <span className="text-[10px] text-[var(--color-text-tertiary)]">{role}</span>}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 mt-1">
+                        {bc.weapon && (
+                          <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                            {weaponIcon && <Image src={weaponIcon} alt="" width={18} height={18} className="inline" unoptimized />}
+                            {bc.weapon}
+                          </span>
+                        )}
+                        {bc.equipment && (
+                          <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                            {equipIcon && <Image src={equipIcon} alt="" width={18} height={18} className="inline" unoptimized />}
+                            {bc.equipment}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
             {build.notes && (
-              <p className="text-xs text-[var(--color-text-tertiary)] italic">{build.notes}</p>
+              <div className="p-3 bg-[var(--color-surface-2)] border-l-3 border-l-[var(--color-accent)]/30">
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{build.notes}</p>
+              </div>
             )}
-            <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)]">
+            <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)] pt-1">
               <span>{formatDate(build.createdAt)}</span>
-              <button onClick={onDuplicate} className="text-[var(--color-accent)] hover:underline flex items-center gap-1">
+              <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="text-[var(--color-accent)] hover:underline flex items-center gap-1">
                 <Copy size={10} /> Copy to My Builds
               </button>
             </div>
