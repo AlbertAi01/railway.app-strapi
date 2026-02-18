@@ -1,392 +1,763 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { RECIPES } from '@/lib/data';
-import { Factory, Plus, Trash2, ZoomIn, ArrowDown, ArrowUp, ChevronDown, Download, Copy, AlertCircle, Wrench, Move } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Factory, Search, Plus, Trash2, ChevronDown, ChevronRight, Download, Copy,
+  AlertCircle, Zap, Clock, ArrowRight, X, Filter, Settings, Package,
+} from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
-const GRID_SIZE = 6;
-const FACILITY_COLORS: Record<string, string> = {
-  'Smelter': '#FF6B35', 'Assembler': '#4ECDC4', 'Wire Press': '#FFE66D',
-  'Chemical Plant': '#95E1D3', 'Crusher': '#F38181',
-};
-
-interface GridCell {
+// ─── Types ──────────────────────────────────────────────────────────
+interface RecipeItem {
   id: string;
-  row: number;
-  col: number;
-  recipe: typeof RECIPES[0] | null;
-  quantity: number;
-  facility: string;
+  name: string;
+  count: number;
 }
 
-type Mode = 'build' | 'edit';
+interface Recipe {
+  id: string;
+  name: string;
+  machine: string;
+  machineName: string;
+  inputs: RecipeItem[];
+  outputs: RecipeItem[];
+  craftTime: number;
+  power: number;
+}
 
+interface Building {
+  id: string;
+  name: string;
+  power: number;
+}
+
+interface FactoryData {
+  buildings: Record<string, Building>;
+  items: Record<string, string>;
+  recipes: Recipe[];
+}
+
+interface ProductionNode {
+  recipe: Recipe;
+  multiplier: number;         // how many machines running this recipe
+  targetOutput: string;       // which output item this node satisfies
+  targetCount: number;        // items/cycle needed
+  depth: number;
+}
+
+interface ProductionTarget {
+  itemId: string;
+  itemName: string;
+  countPerMinute: number;
+}
+
+// ─── Constants ──────────────────────────────────────────────────────
+const BUILDING_COLORS: Record<string, string> = {
+  'furnance_1': '#FF6B35',       // Refining Unit
+  'grinder_1': '#E74C3C',        // Grinding Unit
+  'shaper_1': '#9B59B6',         // Shredding Unit
+  'thickener_1': '#3498DB',      // (enrichment)
+  'winder_1': '#2ECC71',         // Moulding Unit
+  'filling_powder_mc_1': '#F39C12', // Filling Unit
+  'component_mc_1': '#1ABC9C',   // Fitting Unit
+  'tools_assebling_mc_1': '#E67E22', // Packaging Unit
+  'seedcollector_1': '#27AE60',  // Seed-Picking Unit
+  'planter_1': '#2ECC71',        // Planting Unit
+  'mix_pool_1': '#00BCD4',       // Reactor Crucible
+  'dismantler_1': '#95A5A6',     // Separating Unit
+  'gearing_mc_1': '#FFD700',     // Gearing Unit (actually component_mc_1 handles this too)
+  'xiranite_oven_1': '#FF5722',  // Forge of the Sky
+  'squirter_1': '#4FC3F7',       // Fluid spray
+};
+
+// ─── Component ──────────────────────────────────────────────────────
 export default function FactoryPlannerPage() {
-  const [grid, setGrid] = useState<(GridCell | null)[][]>(
-    Array.from({ length: GRID_SIZE }, () => Array.from({ length: GRID_SIZE }, () => null))
-  );
-  const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
-  const [mode, setMode] = useState<Mode>('build');
-  const [showConveyors, setShowConveyors] = useState(true);
-  const [showStats, setShowStats] = useState(true);
-  const [showAnim, setShowAnim] = useState(true);
-  const [speed, setSpeed] = useState(1);
-  const [showRecipePicker, setShowRecipePicker] = useState(false);
+  const [factoryData, setFactoryData] = useState<FactoryData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const placedCells = useMemo(() => {
-    const cells: GridCell[] = [];
-    grid.forEach(row => row.forEach(cell => { if (cell) cells.push(cell); }));
-    return cells;
-  }, [grid]);
+  // Production targets
+  const [targets, setTargets] = useState<ProductionTarget[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showItemPicker, setShowItemPicker] = useState(false);
+  const [buildingFilter, setBuildingFilter] = useState<string>('all');
 
-  const totalPower = useMemo(() => {
-    return placedCells.reduce((sum, cell) => {
-      if (!cell.recipe) return sum;
-      return sum + (cell.recipe.FacilityLevel ?? 0) * 15 * cell.quantity;
-    }, 0);
-  }, [placedCells]);
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'planner' | 'recipes'>('planner');
 
-  const totalInputs = useMemo(() => {
-    const inputs: Record<string, number> = {};
-    placedCells.forEach(cell => {
-      if (!cell.recipe) return;
-      cell.recipe.Inputs.forEach(inp => {
-        inputs[inp.item] = (inputs[inp.item] || 0) + inp.quantity * cell.quantity;
-      });
-    });
-    return inputs;
-  }, [placedCells]);
+  // Recipe browser
+  const [recipeSearch, setRecipeSearch] = useState('');
+  const [recipeBuildingFilter, setRecipeBuildingFilter] = useState<string>('all');
+  const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null);
 
-  const totalOutputs = useMemo(() => {
-    const outputs: Record<string, number> = {};
-    placedCells.forEach(cell => {
-      if (!cell.recipe) return;
-      cell.recipe.Outputs.forEach(out => {
-        outputs[out.item] = (outputs[out.item] || 0) + out.quantity * cell.quantity;
-      });
-    });
-    return outputs;
-  }, [placedCells]);
-
-  const bottlenecks = useMemo(() => {
-    const issues: string[] = [];
-    Object.entries(totalInputs).forEach(([item, needed]) => {
-      const produced = totalOutputs[item] || 0;
-      if (produced < needed) {
-        issues.push(`${item}: need ${needed}, produce ${produced}`);
-      }
-    });
-    return issues;
-  }, [totalInputs, totalOutputs]);
-
-  const placeRecipe = useCallback((row: number, col: number, recipe: typeof RECIPES[0]) => {
-    setGrid(prev => {
-      const newGrid = prev.map(r => [...r]);
-      newGrid[row][col] = {
-        id: `${row}-${col}`, row, col, recipe, quantity: 1, facility: recipe.FacilityRequired ?? 'Unknown',
-      };
-      return newGrid;
-    });
-    setShowRecipePicker(false);
-    setSelectedCell(null);
+  // Load factory data
+  useEffect(() => {
+    fetch('/data/factory-recipes.json')
+      .then(r => r.json())
+      .then((data: FactoryData) => {
+        setFactoryData(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  const removeCell = useCallback((row: number, col: number) => {
-    setGrid(prev => {
-      const newGrid = prev.map(r => [...r]);
-      newGrid[row][col] = null;
-      return newGrid;
-    });
-    setSelectedCell(null);
-  }, []);
-
-  const updateQuantity = useCallback((row: number, col: number, qty: number) => {
-    setGrid(prev => {
-      const newGrid = prev.map(r => [...r]);
-      const cell = newGrid[row][col];
-      if (cell) newGrid[row][col] = { ...cell, quantity: Math.max(1, qty) };
-      return newGrid;
-    });
-  }, []);
-
-  const clearAll = () => {
-    if (confirm('Clear entire factory layout?')) {
-      setGrid(Array.from({ length: GRID_SIZE }, () => Array.from({ length: GRID_SIZE }, () => null)));
-      setSelectedCell(null);
+  // Load saved targets from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('zerosanity-factory-v2');
+    if (saved) {
+      try {
+        setTargets(JSON.parse(saved));
+      } catch { /* ignore */ }
     }
-  };
+  }, []);
 
-  const exportJSON = () => {
-    const data = { grid: placedCells, totalInputs, totalOutputs, bottlenecks, timestamp: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  // Save targets
+  const saveTargets = useCallback((newTargets: ProductionTarget[]) => {
+    setTargets(newTargets);
+    localStorage.setItem('zerosanity-factory-v2', JSON.stringify(newTargets));
+  }, []);
+
+  // ─── Production Chain Solver ──────────────────────────────────────
+  const productionChain = useMemo(() => {
+    if (!factoryData || targets.length === 0) return { nodes: [], rawInputs: {}, totalPower: 0 };
+
+    const nodes: ProductionNode[] = [];
+    const rawInputs: Record<string, number> = {}; // items with no recipe to produce them
+    const visited = new Set<string>();
+
+    // Find recipe that produces a given item
+    const findRecipe = (itemId: string): Recipe | null => {
+      return factoryData.recipes.find(r =>
+        r.outputs.some(o => o.id === itemId)
+      ) || null;
+    };
+
+    // Recursively solve production chain
+    const solve = (itemId: string, neededPerCycle: number, depth: number) => {
+      const recipe = findRecipe(itemId);
+      if (!recipe) {
+        // Raw material - no recipe produces this
+        rawInputs[itemId] = (rawInputs[itemId] || 0) + neededPerCycle;
+        return;
+      }
+
+      const output = recipe.outputs.find(o => o.id === itemId);
+      if (!output) return;
+
+      // Calculate how many machines needed
+      const outputPerCycle = output.count;
+      const cyclesNeeded = neededPerCycle / outputPerCycle;
+      const multiplier = Math.ceil(cyclesNeeded * 100) / 100; // round up to 2 decimals
+
+      // Check if we already have a node for this recipe
+      const existingIdx = nodes.findIndex(n => n.recipe.id === recipe.id && n.targetOutput === itemId);
+      if (existingIdx >= 0) {
+        nodes[existingIdx].multiplier += multiplier;
+        nodes[existingIdx].targetCount += neededPerCycle;
+      } else {
+        nodes.push({
+          recipe,
+          multiplier,
+          targetOutput: itemId,
+          targetCount: neededPerCycle,
+          depth,
+        });
+      }
+
+      // Recurse into inputs (avoid infinite loops)
+      const key = `${recipe.id}:${depth}`;
+      if (!visited.has(key)) {
+        visited.add(key);
+        for (const input of recipe.inputs) {
+          const inputNeeded = input.count * multiplier;
+          solve(input.id, inputNeeded, depth + 1);
+        }
+      }
+    };
+
+    // Solve for each target
+    for (const target of targets) {
+      // Convert count/min to count/cycle
+      // Each cycle is craftTime seconds, but we normalize to "per minute"
+      const recipe = findRecipe(target.itemId);
+      if (recipe) {
+        const cyclesPerMinute = 60 / recipe.craftTime;
+        const output = recipe.outputs.find(o => o.id === target.itemId);
+        if (output) {
+          const machinesNeeded = target.countPerMinute / (output.count * cyclesPerMinute);
+          solve(target.itemId, target.countPerMinute / cyclesPerMinute, 0);
+        }
+      } else {
+        rawInputs[target.itemId] = (rawInputs[target.itemId] || 0) + target.countPerMinute;
+      }
+    }
+
+    // Sort nodes by depth (deepest first = raw materials first)
+    nodes.sort((a, b) => b.depth - a.depth);
+
+    // Calculate total power
+    const totalPower = nodes.reduce((sum, n) => {
+      return sum + (n.recipe.power * Math.ceil(n.multiplier));
+    }, 0);
+
+    return { nodes, rawInputs, totalPower };
+  }, [factoryData, targets]);
+
+  // ─── Filterable items for picker ──────────────────────────────────
+  const produceableItems = useMemo(() => {
+    if (!factoryData) return [];
+    const items: { id: string; name: string; machine: string }[] = [];
+    const seen = new Set<string>();
+    for (const recipe of factoryData.recipes) {
+      for (const output of recipe.outputs) {
+        if (!seen.has(output.id)) {
+          seen.add(output.id);
+          items.push({ id: output.id, name: output.name, machine: recipe.machineName });
+        }
+      }
+    }
+    return items.sort((a, b) => a.name.localeCompare(b.name));
+  }, [factoryData]);
+
+  const filteredItems = useMemo(() => {
+    let items = produceableItems;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(i => i.name.toLowerCase().includes(q));
+    }
+    if (buildingFilter !== 'all') {
+      items = items.filter(i => i.machine === buildingFilter);
+    }
+    return items;
+  }, [produceableItems, searchQuery, buildingFilter]);
+
+  // ─── Recipe browser filtering ────────────────────────────────────
+  const filteredRecipes = useMemo(() => {
+    if (!factoryData) return [];
+    let recipes = factoryData.recipes;
+    if (recipeSearch) {
+      const q = recipeSearch.toLowerCase();
+      recipes = recipes.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.machineName.toLowerCase().includes(q) ||
+        r.inputs.some(i => i.name.toLowerCase().includes(q)) ||
+        r.outputs.some(o => o.name.toLowerCase().includes(q))
+      );
+    }
+    if (recipeBuildingFilter !== 'all') {
+      recipes = recipes.filter(r => r.machineName === recipeBuildingFilter);
+    }
+    return recipes;
+  }, [factoryData, recipeSearch, recipeBuildingFilter]);
+
+  const buildings = useMemo(() => {
+    if (!factoryData) return [];
+    return Object.values(factoryData.buildings).sort((a, b) => a.name.localeCompare(b.name));
+  }, [factoryData]);
+
+  // ─── Handlers ─────────────────────────────────────────────────────
+  const addTarget = useCallback((itemId: string, itemName: string) => {
+    const existing = targets.find(t => t.itemId === itemId);
+    if (existing) return; // already added
+    saveTargets([...targets, { itemId, itemName, countPerMinute: 1 }]);
+    setShowItemPicker(false);
+    setSearchQuery('');
+  }, [targets, saveTargets]);
+
+  const removeTarget = useCallback((itemId: string) => {
+    saveTargets(targets.filter(t => t.itemId !== itemId));
+  }, [targets, saveTargets]);
+
+  const updateTargetCount = useCallback((itemId: string, count: number) => {
+    saveTargets(targets.map(t => t.itemId === itemId ? { ...t, countPerMinute: Math.max(0.1, count) } : t));
+  }, [targets, saveTargets]);
+
+  const clearAll = useCallback(() => {
+    if (confirm('Clear all production targets?')) {
+      saveTargets([]);
+    }
+  }, [saveTargets]);
+
+  const exportPlan = useCallback(() => {
+    const lines = ['AIC Factory Production Plan', '═'.repeat(40), ''];
+    lines.push('Production Targets:');
+    targets.forEach(t => {
+      lines.push(`  • ${t.itemName}: ${t.countPerMinute}/min`);
+    });
+    lines.push('');
+    lines.push('Required Production Lines:');
+    productionChain.nodes.forEach(n => {
+      const inp = n.recipe.inputs.map(i => `${i.name} x${i.count}`).join(' + ');
+      const out = n.recipe.outputs.map(o => `${o.name} x${o.count}`).join(' + ');
+      lines.push(`  [${n.recipe.machineName}] x${Math.ceil(n.multiplier)} — ${inp} → ${out}`);
+    });
+    if (Object.keys(productionChain.rawInputs).length > 0) {
+      lines.push('');
+      lines.push('Raw Materials Required:');
+      const itemNames = factoryData?.items || {};
+      Object.entries(productionChain.rawInputs).forEach(([id, qty]) => {
+        lines.push(`  • ${itemNames[id] || id}: ${qty.toFixed(1)}/cycle`);
+      });
+    }
+    lines.push('');
+    lines.push(`Total Power: ${productionChain.totalPower}W`);
+    lines.push(`Generated by Zero Sanity Toolkit — zerosanity.app`);
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `factory-layout-${Date.now()}.json`; a.click();
+    a.href = url;
+    a.download = `factory-plan-${Date.now()}.txt`;
+    a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [targets, productionChain, factoryData]);
 
-  const copyPlan = async () => {
-    let plan = 'Factory Layout\n\n';
-    placedCells.forEach((cell, i) => {
-      if (cell.recipe) {
-        plan += `${i + 1}. ${cell.recipe.Name} (x${cell.quantity}) @ ${cell.facility} [${cell.row},${cell.col}]\n`;
-      }
+  const copyPlan = useCallback(async () => {
+    const lines: string[] = [];
+    targets.forEach(t => lines.push(`${t.itemName}: ${t.countPerMinute}/min`));
+    lines.push('');
+    productionChain.nodes.forEach(n => {
+      lines.push(`${n.recipe.machineName} x${Math.ceil(n.multiplier)}: ${n.recipe.name}`);
     });
-    plan += `\nTotal Power: ${totalPower}W\nCreated with Zero Sanity Toolkit`;
+    lines.push(`Power: ${productionChain.totalPower}W | zerosanity.app`);
     try {
-      await navigator.clipboard.writeText(plan);
-      alert('Layout copied!');
-    } catch { alert('Failed to copy.'); }
-  };
+      await navigator.clipboard.writeText(lines.join('\n'));
+    } catch { /* silently fail */ }
+  }, [targets, productionChain]);
+
+  // ─── Loading State ────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen text-[var(--color-text-secondary)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="diamond-spinner mx-auto mb-4" />
+          <p className="terminal-text">Loading factory data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!factoryData) {
+    return (
+      <div className="min-h-screen text-[var(--color-text-secondary)] flex items-center justify-center">
+        <p className="text-red-400">Failed to load factory data.</p>
+      </div>
+    );
+  }
+
+  const itemNames = factoryData.items;
 
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        <RIOSHeader title="Factory Planner" category="LOGISTICS" code="RIOS-FAC-001" icon={<Factory size={28} />} />
+        <RIOSHeader title="AIC Production Planner" category="LOGISTICS" code="RIOS-FAC-001" icon={<Factory size={28} />} />
 
         <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
-          Design and optimize your AIC Factory layout. Place machines, connect production chains, and identify bottlenecks.
+          Plan and optimize your Automated Industry Complex production chains. Select output targets and the solver automatically calculates the full chain.
         </p>
 
-        {/* Power Header */}
-        <div className="flex items-center justify-between bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 mb-4">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-[var(--color-text-tertiary)]">
-              <span className="text-white font-bold">{totalPower}</span> / <span className="text-[var(--color-accent)]">&#8734;</span> Power
-              <span className="text-[10px] ml-2 text-green-400">(Unlimited)</span>
-            </span>
-            <span className="text-xs text-[var(--color-text-tertiary)]">{placedCells.length} Machines</span>
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-4">
+          {([
+            { id: 'planner' as const, label: 'Production Planner', icon: <Settings size={14} /> },
+            { id: 'recipes' as const, label: `Recipe Browser (${factoryData.recipes.length})`, icon: <Package size={14} /> },
+          ]).map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface)]'
+                  : 'border-transparent text-[var(--color-text-tertiary)] hover:text-white'
+              }`}>
+              {tab.icon} {tab.label}
+            </button>
+          ))}
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_300px] gap-4">
-          {/* Grid Area */}
-          <div>
-            {showConveyors && Object.keys(totalInputs).length > 0 && (
-              <div className="flex items-center gap-2 mb-2 px-2 flex-wrap">
-                {Object.entries(totalInputs).filter(([item]) => !totalOutputs[item] || totalOutputs[item] < totalInputs[item]).map(([item, qty]) => (
-                  <div key={item} className="flex items-center gap-1 px-2 py-1 bg-green-500/10 border border-green-500/30 text-green-400 text-[10px]">
-                    <ArrowDown size={10} /> {item} x{qty - (totalOutputs[item] || 0)}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-              <div className="grid gap-1 p-3" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
-                {grid.map((row, ri) => row.map((cell, ci) => {
-                  const isSelected = selectedCell && selectedCell[0] === ri && selectedCell[1] === ci;
-                  return (
-                    <div key={`${ri}-${ci}`}
-                      onClick={() => {
-                        if (mode === 'build' && !cell) { setSelectedCell([ri, ci]); setShowRecipePicker(true); }
-                        else if (cell) { setSelectedCell(isSelected ? null : [ri, ci]); }
-                      }}
-                      className={`aspect-square border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 relative ${
-                        isSelected ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' :
-                        cell ? 'border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)]/50' :
-                        'border-dashed border-[var(--color-border)] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface-2)]/30'
-                      }`}
-                      style={cell ? { borderLeftColor: FACILITY_COLORS[cell.facility] || 'var(--color-border)', borderLeftWidth: '4px' } : {}}>
-                      {cell ? (
-                        <>
-                          <div className="absolute top-0.5 left-1">
-                            <span className="w-4 h-4 flex items-center justify-center bg-[var(--color-accent)] text-black text-[8px] font-bold rounded-full">
-                              {ri * GRID_SIZE + ci + 1}
-                            </span>
-                          </div>
-                          <Wrench size={16} style={{ color: FACILITY_COLORS[cell.facility] || 'var(--color-accent)' }} />
-                          <span className="text-[8px] text-white font-bold text-center leading-tight truncate w-full px-1">
-                            {cell.recipe?.Name || cell.facility}
-                          </span>
-                          {showStats && cell.recipe && (
-                            <span className="text-[7px] text-[var(--color-text-tertiary)]">x{cell.quantity}</span>
-                          )}
-                          {showAnim && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-accent)] animate-pulse" />}
-                        </>
-                      ) : (
-                        <Plus size={14} className="text-[var(--color-border)]" />
-                      )}
-                    </div>
-                  );
-                }))}
-              </div>
-            </div>
-
-            {showConveyors && Object.keys(totalOutputs).length > 0 && (
-              <div className="flex items-center gap-2 mt-2 px-2 flex-wrap">
-                {Object.entries(totalOutputs).filter(([item]) => !totalInputs[item] || totalOutputs[item] > totalInputs[item]).map(([item, qty]) => (
-                  <div key={item} className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px]">
-                    <ArrowUp size={10} /> {item} x{qty - (totalInputs[item] || 0)}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 mt-4 bg-[var(--color-surface)] border border-[var(--color-border)] p-3">
-              <button onClick={exportJSON} className="px-3 py-1.5 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white flex items-center gap-1">
-                <Download size={12} /> File
-              </button>
-              <button onClick={copyPlan} className="px-3 py-1.5 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white flex items-center gap-1">
-                <Copy size={12} /> Data
-              </button>
-              <div className="w-px h-6 bg-[var(--color-border)]" />
-              <button onClick={() => setMode('build')}
-                className={`px-3 py-1.5 text-xs flex items-center gap-1 border ${mode === 'build' ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-white'}`}>
-                <Wrench size={12} /> Build
-              </button>
-              <button onClick={() => setMode('edit')}
-                className={`px-3 py-1.5 text-xs flex items-center gap-1 border ${mode === 'edit' ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-white'}`}>
-                <Move size={12} /> Edit
-              </button>
-              <button className="px-3 py-1.5 text-xs border border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-white flex items-center gap-1">
-                <ZoomIn size={12} /> Zoom to Fit
-              </button>
-              <div className="w-px h-6 bg-[var(--color-border)]" />
-              {[
-                { label: 'Conveyors', active: showConveyors, toggle: () => setShowConveyors(!showConveyors) },
-                { label: 'Stats', active: showStats, toggle: () => setShowStats(!showStats) },
-                { label: 'Anim', active: showAnim, toggle: () => setShowAnim(!showAnim) },
-              ].map(t => (
-                <button key={t.label} onClick={t.toggle}
-                  className={`px-2 py-1.5 text-xs border ${t.active ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
-                  {t.label}
-                </button>
-              ))}
-              <div className="w-px h-6 bg-[var(--color-border)]" />
-              {[1, 2, 5, 10, 20].map(s => (
-                <button key={s} onClick={() => setSpeed(s)}
-                  className={`px-2 py-1 text-[10px] border ${speed === s ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
-                  {s}x
-                </button>
-              ))}
-              <div className="ml-auto">
-                <button onClick={clearAll} className="px-3 py-1.5 text-xs border border-red-500/30 text-red-400 hover:bg-red-500/10 flex items-center gap-1">
-                  <Trash2 size={12} /> Clear
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Panel */}
-          <div className="space-y-4">
-            {showRecipePicker && selectedCell && (
-              <div className="bg-[var(--color-surface)] border border-[var(--color-accent)] clip-corner-tl overflow-hidden">
+        {/* ── Production Planner ── */}
+        {activeTab === 'planner' && (
+          <div className="grid lg:grid-cols-[1fr_340px] gap-4">
+            {/* Left: Production Chain */}
+            <div className="space-y-4">
+              {/* Targets */}
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-                  <h3 className="text-sm font-bold text-white">Place Machine</h3>
-                  <button onClick={() => { setShowRecipePicker(false); setSelectedCell(null); }} className="text-[var(--color-text-tertiary)] hover:text-white">x</button>
-                </div>
-                <div className="p-3 space-y-2 max-h-[400px] overflow-y-auto">
-                  {RECIPES.map(recipe => (
-                    <button key={recipe.id} onClick={() => placeRecipe(selectedCell[0], selectedCell[1], recipe)}
-                      className="w-full text-left p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
-                      style={{ borderLeftColor: FACILITY_COLORS[recipe.FacilityRequired ?? ''] || 'var(--color-border)', borderLeftWidth: '4px' }}>
-                      <p className="text-white text-sm font-bold">{recipe.Name}</p>
-                      <p className="text-[10px] text-[var(--color-text-tertiary)]">{recipe.FacilityRequired ?? 'Unknown'} Lv.{recipe.FacilityLevel ?? '?'}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[9px] text-[var(--color-text-tertiary)]">
-                          {recipe.Inputs.map(i => `${i.item} x${i.quantity}`).join(', ')}
-                        </span>
-                        <span className="text-[9px] text-[var(--color-accent)]">{'->'}</span>
-                        <span className="text-[9px] text-green-400">
-                          {recipe.Outputs.map(o => `${o.item} x${o.quantity}`).join(', ')}
-                        </span>
-                      </div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Factory size={14} className="text-[var(--color-accent)]" />
+                    Production Targets
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowItemPicker(true)}
+                      className="px-2 py-1 text-[10px] bg-[var(--color-accent)] text-black font-bold flex items-center gap-1 hover:bg-[var(--color-accent-hover)] transition-colors">
+                      <Plus size={10} /> Add Target
                     </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {selectedCell && !showRecipePicker && grid[selectedCell[0]][selectedCell[1]] && (() => {
-              const cell = grid[selectedCell[0]][selectedCell[1]]!;
-              return (
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]"
-                    style={{ borderLeftColor: FACILITY_COLORS[cell.facility], borderLeftWidth: '4px' }}>
-                    <h3 className="text-sm font-bold text-white">{cell.recipe?.Name || cell.facility}</h3>
-                    <button onClick={() => removeCell(selectedCell[0], selectedCell[1])} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
-                  </div>
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs text-[var(--color-text-tertiary)]">Quantity:</label>
-                      <input type="number" min="1" value={cell.quantity}
-                        onChange={e => updateQuantity(selectedCell[0], selectedCell[1], parseInt(e.target.value) || 1)}
-                        className="w-16 px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm text-center" />
-                    </div>
-                    {cell.recipe && (
-                      <>
-                        <div>
-                          <p className="text-[10px] text-[var(--color-text-tertiary)] mb-1">Inputs:</p>
-                          {cell.recipe.Inputs.map((inp, i) => (
-                            <p key={i} className="text-xs text-white">{inp.item} x{inp.quantity * cell.quantity}</p>
-                          ))}
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-[var(--color-text-tertiary)] mb-1">Outputs:</p>
-                          {cell.recipe.Outputs.map((out, i) => (
-                            <p key={i} className="text-xs text-[var(--color-accent)]">{out.item} x{out.quantity * cell.quantity}</p>
-                          ))}
-                        </div>
-                        <div className="text-[10px] text-[var(--color-text-tertiary)]">
-                          <p>Facility: {cell.facility} Lv.{cell.recipe.FacilityLevel ?? 0}</p>
-                          <p>Throughput: {((cell.recipe.ThroughputPerMin ?? 0) * cell.quantity).toFixed(1)}/min</p>
-                          <p>Power: {(cell.recipe.FacilityLevel ?? 0) * 15 * cell.quantity}W</p>
-                        </div>
-                      </>
+                    {targets.length > 0 && (
+                      <button onClick={clearAll} className="px-2 py-1 text-[10px] border border-red-500/30 text-red-400 hover:bg-red-500/10">
+                        Clear
+                      </button>
                     )}
                   </div>
                 </div>
-              );
-            })()}
 
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-                <h3 className="text-sm font-bold text-white">Total Inputs</h3>
-                <ChevronDown size={14} className="text-[var(--color-text-tertiary)]" />
-              </div>
-              <div className="p-3 space-y-1">
-                {Object.keys(totalInputs).length > 0 ? Object.entries(totalInputs).map(([item, qty]) => (
-                  <div key={item} className="flex items-center justify-between text-xs">
-                    <span className="text-[var(--color-text-secondary)]">{item}</span>
-                    <span className="text-white font-bold">x{qty}</span>
+                {targets.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Factory size={32} className="mx-auto mb-2 text-[var(--color-border)]" />
+                    <p className="text-sm text-[var(--color-text-tertiary)]">No production targets set.</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Click &quot;Add Target&quot; to select what you want to produce.</p>
                   </div>
-                )) : <p className="text-xs text-[var(--color-text-tertiary)]">No machines placed</p>}
+                ) : (
+                  <div className="p-3 space-y-2">
+                    {targets.map(target => (
+                      <div key={target.itemId} className="flex items-center gap-3 p-2 bg-[var(--color-surface-2)] border-l-4 border-l-[var(--color-accent)]">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white font-bold truncate">{target.itemName}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            type="number"
+                            min="0.1"
+                            step="0.5"
+                            value={target.countPerMinute}
+                            onChange={e => updateTargetCount(target.itemId, parseFloat(e.target.value) || 0.1)}
+                            className="w-16 px-2 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] text-white text-sm text-center font-mono"
+                          />
+                          <span className="text-[10px] text-[var(--color-text-tertiary)] whitespace-nowrap">/min</span>
+                          <button onClick={() => removeTarget(target.itemId)}
+                            className="p-1 text-[var(--color-text-tertiary)] hover:text-red-400">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* Item Picker Modal */}
+              {showItemPicker && (
+                <div className="bg-[var(--color-surface)] border border-[var(--color-accent)] clip-corner-tl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                    <h3 className="text-sm font-bold text-white">Select Item to Produce</h3>
+                    <button onClick={() => { setShowItemPicker(false); setSearchQuery(''); }}
+                      className="text-[var(--color-text-tertiary)] hover:text-white"><X size={16} /></button>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder="Search items..."
+                        className="w-full pl-8 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:border-[var(--color-accent)] outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-1 flex-wrap">
+                      <button onClick={() => setBuildingFilter('all')}
+                        className={`px-2 py-0.5 text-[10px] border ${buildingFilter === 'all' ? 'border-[var(--color-accent)] text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+                        All
+                      </button>
+                      {buildings.map(b => (
+                        <button key={b.id} onClick={() => setBuildingFilter(b.name)}
+                          className={`px-2 py-0.5 text-[10px] border ${buildingFilter === b.name ? 'border-[var(--color-accent)] text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+                          {b.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto space-y-1">
+                      {filteredItems.map(item => {
+                        const alreadyAdded = targets.some(t => t.itemId === item.id);
+                        return (
+                          <button key={item.id} onClick={() => !alreadyAdded && addTarget(item.id, item.name)}
+                            disabled={alreadyAdded}
+                            className={`w-full text-left p-2 flex items-center justify-between text-sm transition-colors ${
+                              alreadyAdded
+                                ? 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed'
+                                : 'bg-[var(--color-surface-2)] hover:bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)] text-white border border-transparent'
+                            }`}>
+                            <span className="truncate">{item.name}</span>
+                            <span className="text-[10px] text-[var(--color-text-tertiary)] shrink-0 ml-2">{item.machine}</span>
+                          </button>
+                        );
+                      })}
+                      {filteredItems.length === 0 && (
+                        <p className="text-xs text-[var(--color-text-tertiary)] text-center py-4">No items match your search.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Production Chain Visualization */}
+              {productionChain.nodes.length > 0 && (
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Settings size={14} className="text-[var(--color-accent)]" />
+                      Production Chain ({productionChain.nodes.length} recipes)
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    {productionChain.nodes.map((node, i) => {
+                      const color = BUILDING_COLORS[node.recipe.machine] || 'var(--color-accent)';
+                      const machines = Math.ceil(node.multiplier);
+                      return (
+                        <div key={`${node.recipe.id}-${i}`}
+                          className="p-3 bg-[var(--color-surface-2)] border-l-4 transition-colors"
+                          style={{ borderLeftColor: color, marginLeft: `${Math.min(node.depth * 12, 48)}px` }}>
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs font-bold px-1.5 py-0.5 text-black shrink-0"
+                                style={{ backgroundColor: color }}>
+                                x{machines}
+                              </span>
+                              <span className="text-xs text-white font-bold truncate">{node.recipe.machineName}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 text-[10px] text-[var(--color-text-tertiary)]">
+                              <span className="flex items-center gap-0.5"><Zap size={9} /> {node.recipe.power * machines}W</span>
+                              <span className="flex items-center gap-0.5"><Clock size={9} /> {node.recipe.craftTime}s</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {node.recipe.inputs.map((inp, j) => (
+                                <span key={j} className="text-[var(--color-text-secondary)]">
+                                  {j > 0 && <span className="text-[var(--color-border)]"> + </span>}
+                                  {inp.name} <span className="text-white font-mono">x{(inp.count * machines)}</span>
+                                </span>
+                              ))}
+                            </div>
+                            <ArrowRight size={12} className="text-[var(--color-accent)] shrink-0" />
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {node.recipe.outputs.map((out, j) => (
+                                <span key={j} className="text-[var(--color-accent)] font-bold">
+                                  {j > 0 && <span className="text-[var(--color-border)]"> + </span>}
+                                  {out.name} <span className="font-mono">x{(out.count * machines)}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-                <h3 className="text-sm font-bold text-white">Total Outputs</h3>
-                <ChevronDown size={14} className="text-[var(--color-text-tertiary)]" />
-              </div>
-              <div className="p-3 space-y-1">
-                {Object.keys(totalOutputs).length > 0 ? Object.entries(totalOutputs).map(([item, qty]) => (
-                  <div key={item} className="flex items-center justify-between text-xs">
-                    <span className="text-[var(--color-text-secondary)]">{item}</span>
-                    <span className="text-[var(--color-accent)] font-bold">x{qty}</span>
+            {/* Right: Summary Panel */}
+            <div className="space-y-4">
+              {/* Power & Stats */}
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
+                <h3 className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">Production Summary</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center bg-[var(--color-surface-2)] p-2">
+                    <p className="text-xl font-bold text-white font-mono">{productionChain.nodes.length}</p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)]">Recipes</p>
                   </div>
-                )) : <p className="text-xs text-[var(--color-text-tertiary)]">No machines placed</p>}
+                  <div className="text-center bg-[var(--color-surface-2)] p-2">
+                    <p className="text-xl font-bold text-[var(--color-originium)] font-mono">
+                      {productionChain.nodes.reduce((s, n) => s + Math.ceil(n.multiplier), 0)}
+                    </p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)]">Machines</p>
+                  </div>
+                  <div className="text-center bg-[var(--color-surface-2)] p-2">
+                    <p className="text-xl font-bold text-yellow-400 font-mono">{productionChain.totalPower}</p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)]">Power (W)</p>
+                  </div>
+                  <div className="text-center bg-[var(--color-surface-2)] p-2">
+                    <p className="text-xl font-bold text-white font-mono">{targets.length}</p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)]">Targets</p>
+                  </div>
+                </div>
               </div>
+
+              {/* Raw Materials Needed */}
+              {Object.keys(productionChain.rawInputs).length > 0 && (
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <AlertCircle size={14} className="text-orange-400" />
+                      Raw Materials
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {Object.entries(productionChain.rawInputs)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([id, qty]) => (
+                        <div key={id} className="flex items-center justify-between text-xs p-1 bg-[var(--color-surface-2)]">
+                          <span className="text-[var(--color-text-secondary)] truncate">{itemNames[id] || id}</span>
+                          <span className="text-orange-400 font-bold font-mono shrink-0 ml-2">
+                            {qty.toFixed(1)}/cycle
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Building Breakdown */}
+              {productionChain.nodes.length > 0 && (() => {
+                const byBuilding: Record<string, { name: string; count: number; power: number }> = {};
+                productionChain.nodes.forEach(n => {
+                  const key = n.recipe.machine;
+                  if (!byBuilding[key]) {
+                    byBuilding[key] = { name: n.recipe.machineName, count: 0, power: 0 };
+                  }
+                  byBuilding[key].count += Math.ceil(n.multiplier);
+                  byBuilding[key].power += n.recipe.power * Math.ceil(n.multiplier);
+                });
+                return (
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+                    <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                      <h3 className="text-sm font-bold text-white">Building Breakdown</h3>
+                    </div>
+                    <div className="p-3 space-y-1">
+                      {Object.entries(byBuilding)
+                        .sort(([, a], [, b]) => b.count - a.count)
+                        .map(([id, info]) => (
+                          <div key={id} className="flex items-center justify-between text-xs p-1.5"
+                            style={{ borderLeft: `3px solid ${BUILDING_COLORS[id] || 'var(--color-border)'}` }}>
+                            <span className="text-white font-bold truncate">{info.name}</span>
+                            <div className="flex items-center gap-3 shrink-0 ml-2">
+                              <span className="text-[var(--color-accent)] font-mono">x{info.count}</span>
+                              <span className="text-[var(--color-text-tertiary)] font-mono text-[10px]">{info.power}W</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Export Actions */}
+              {productionChain.nodes.length > 0 && (
+                <div className="flex gap-2">
+                  <button onClick={exportPlan}
+                    className="flex-1 px-3 py-2 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white flex items-center justify-center gap-1">
+                    <Download size={12} /> Export Plan
+                  </button>
+                  <button onClick={copyPlan}
+                    className="flex-1 px-3 py-2 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-white flex items-center justify-center gap-1">
+                    <Copy size={12} /> Copy
+                  </button>
+                </div>
+              )}
             </div>
-
-            {bottlenecks.length > 0 && (
-              <div className="bg-red-900/20 border border-red-500/30 clip-corner-tl p-4">
-                <h3 className="text-sm font-bold text-red-400 flex items-center gap-2 mb-2"><AlertCircle size={14} /> Bottlenecks</h3>
-                {bottlenecks.map((b, i) => <p key={i} className="text-xs text-red-300">{b}</p>)}
-              </div>
-            )}
-
-            {placedCells.length > 0 && bottlenecks.length === 0 && (
-              <div className="bg-green-900/20 border border-green-500/30 clip-corner-tl p-4">
-                <h3 className="text-sm font-bold text-green-400 mb-1">Balanced!</h3>
-                <p className="text-xs text-green-300">All materials are supplied within the chain.</p>
-              </div>
-            )}
           </div>
-        </div>
+        )}
+
+        {/* ── Recipe Browser ── */}
+        {activeTab === 'recipes' && (
+          <div className="space-y-4">
+            {/* Search & Filters */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+                <input
+                  type="text"
+                  value={recipeSearch}
+                  onChange={e => setRecipeSearch(e.target.value)}
+                  placeholder="Search recipes, items, buildings..."
+                  className="w-full pl-8 pr-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-white text-sm focus:border-[var(--color-accent)] outline-none"
+                />
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                <button onClick={() => setRecipeBuildingFilter('all')}
+                  className={`px-3 py-1.5 text-[10px] border flex items-center gap-1 ${
+                    recipeBuildingFilter === 'all'
+                      ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                      : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-white'
+                  }`}>
+                  <Filter size={10} /> All ({factoryData.recipes.length})
+                </button>
+                {buildings.map(b => {
+                  const count = factoryData.recipes.filter(r => r.machineName === b.name).length;
+                  return (
+                    <button key={b.id} onClick={() => setRecipeBuildingFilter(b.name)}
+                      className={`px-2 py-1.5 text-[10px] border ${
+                        recipeBuildingFilter === b.name
+                          ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                          : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-white'
+                      }`}
+                      style={{ borderLeftColor: BUILDING_COLORS[b.id] || 'var(--color-border)', borderLeftWidth: '3px' }}>
+                      {b.name} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Recipe List */}
+            <div className="space-y-1">
+              <p className="text-xs text-[var(--color-text-tertiary)] mb-2">{filteredRecipes.length} recipes</p>
+              {filteredRecipes.map(recipe => {
+                const color = BUILDING_COLORS[recipe.machine] || 'var(--color-accent)';
+                const isExpanded = expandedRecipe === recipe.id;
+                return (
+                  <div key={recipe.id}
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden transition-colors hover:border-[var(--color-accent)]/30"
+                    style={{ borderLeftColor: color, borderLeftWidth: '4px' }}>
+                    <button
+                      onClick={() => setExpandedRecipe(isExpanded ? null : recipe.id)}
+                      className="w-full text-left p-3 flex items-center gap-3">
+                      {isExpanded ? <ChevronDown size={14} className="text-[var(--color-accent)] shrink-0" /> : <ChevronRight size={14} className="text-[var(--color-text-tertiary)] shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-white font-bold">{recipe.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 text-black font-bold shrink-0"
+                            style={{ backgroundColor: color }}>{recipe.machineName}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] mt-0.5">
+                          {recipe.inputs.map(i => i.name).join(' + ')}
+                          <ArrowRight size={10} className="text-[var(--color-accent)]" />
+                          <span className="text-[var(--color-accent)]">{recipe.outputs.map(o => o.name).join(' + ')}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 text-[10px] text-[var(--color-text-tertiary)]">
+                        <span><Clock size={9} className="inline" /> {recipe.craftTime}s</span>
+                        <span><Zap size={9} className="inline" /> {recipe.power}W</span>
+                      </div>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-3 pb-3 pt-0 border-t border-[var(--color-border)]">
+                        <div className="grid grid-cols-2 gap-4 p-3 bg-[var(--color-surface-2)]">
+                          <div>
+                            <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1.5">Inputs</p>
+                            {recipe.inputs.map((inp, i) => (
+                              <div key={i} className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-white">{inp.name}</span>
+                                <span className="text-[var(--color-text-tertiary)] font-mono">x{inp.count}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1.5">Outputs</p>
+                            {recipe.outputs.map((out, i) => (
+                              <div key={i} className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-[var(--color-accent)]">{out.name}</span>
+                                <span className="text-[var(--color-accent)] font-mono font-bold">x{out.count}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2 text-[10px] text-[var(--color-text-tertiary)]">
+                          <span>Craft Time: {recipe.craftTime}s ({(60 / recipe.craftTime).toFixed(1)} cycles/min)</span>
+                          <span>Power: {recipe.power}W</span>
+                        </div>
+                        <button
+                          onClick={() => addTarget(recipe.outputs[0].id, recipe.outputs[0].name)}
+                          disabled={targets.some(t => t.itemId === recipe.outputs[0].id)}
+                          className="mt-2 w-full py-1.5 text-xs bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1">
+                          <Plus size={12} /> Add to Production Targets
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -192,6 +192,64 @@ body::before {
 }
 
 /* =========================================
+   GACHA SUMMON CARD EFFECTS
+   ========================================= */
+
+@keyframes gacha-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes gacha-shine {
+  0% { transform: rotate(30deg) translateX(-150%); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: rotate(30deg) translateX(150%); opacity: 0; }
+}
+
+@keyframes gacha-glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes gacha-sparkle {
+  0% { background-position: 0px 0px, 0px 0px, 0px 0px; }
+  100% { background-position: 40px 60px, 80px 40px, 60px 80px; }
+}
+
+@keyframes gacha-reveal {
+  0% { opacity: 0; transform: translateY(20px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gacha-6star-border {
+  0%, 100% { box-shadow: 0 0 12px 3px rgba(255,165,0,0.4), inset 0 0 8px rgba(255,165,0,0.15); }
+  50% { box-shadow: 0 0 24px 6px rgba(255,165,0,0.7), inset 0 0 16px rgba(255,165,0,0.3); }
+}
+
+.gacha-card-6 {
+  background: linear-gradient(135deg, #fff8e6 0%, #ffa500 25%, #fff8cc 50%, #ffa500 75%, #fff8e6 100%);
+  background-size: 200% 200%;
+  animation: gacha-shimmer 3s linear infinite;
+}
+
+.gacha-card-5 {
+  background: linear-gradient(135deg, #f0e6ff 0%, #9B59B6 25%, #e8d5ff 50%, #9B59B6 75%, #f0e6ff 100%);
+  background-size: 200% 200%;
+  animation: gacha-shimmer 3.5s linear infinite;
+}
+
+.gacha-card-4 {
+  background: linear-gradient(135deg, #d6eaff 0%, #3498DB 30%, #d6eaff 60%, #3498DB 100%);
+  background-size: 200% 200%;
+  animation: gacha-shimmer 4s linear infinite;
+}
+
+.gacha-card-3 {
+  background: linear-gradient(135deg, #3a3a3a 0%, #555 50%, #3a3a3a 100%);
+}
+
+/* =========================================
    RIOS CARD SYSTEM
    ========================================= */
 

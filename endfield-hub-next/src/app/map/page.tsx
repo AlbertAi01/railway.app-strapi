@@ -1,65 +1,59 @@
 'use client';
 
-import { Map as MapIcon, Compass } from 'lucide-react';
+import { Map as MapIcon } from 'lucide-react';
+import Link from 'next/link';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+
+const MAPS = [
+  {
+    id: 'valley-iv',
+    name: 'Valley IV',
+    desc: 'The starting region with 6 zones: The Hub, Valley Pass, Power Plateau, Origin Lodespring, Originium Science Park, and Aburrey Quarry.',
+    pois: '2,200+ points of interest',
+    zones: '6 zones',
+    thumb: 'https://endfieldtools.dev/assets/images/endfield/levelmap/levelmapgrids/map01lv001/map01_lv001_4_3.png',
+  },
+  {
+    id: 'wuling',
+    name: 'Wuling',
+    desc: 'The second major region with Wuling City and Jingyu Valley.',
+    pois: '1,600+ points of interest',
+    zones: '2 zones',
+    thumb: 'https://endfieldtools.dev/assets/images/endfield/levelmap/levelmapgrids/map02lv002/map02_lv002_5_5.png',
+  },
+];
 
 export default function MapPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
-      <div className="max-w-7xl mx-auto">
-        <RIOSHeader title="Interactive Map Interface" category="NAVIGATION" code="RIOS-MAP-001" icon={<MapIcon size={28} />} />
-        <div className="mb-8"></div>
+      <div className="max-w-5xl mx-auto">
+        <RIOSHeader title="Tactical Map Interface" category="NAVIGATION" code="RIOS-MAP-001" icon={<MapIcon size={28} />} />
+        <div className="mb-8" />
 
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-12">
-          <div className="text-center max-w-2xl mx-auto">
-            <Compass className="w-24 h-24 text-[var(--color-accent)] mx-auto mb-6 animate-pulse" />
-
-            <h2 className="text-3xl font-bold text-white mb-4">Coming Soon</h2>
-
-            <p className="text-lg mb-6">
-              An interactive map is under development. This feature will include:
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-4 text-left mb-8">
-              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
-                <h3 className="font-bold text-[var(--color-accent)] mb-2">Resource Locations</h3>
-                <p className="text-sm">Mark and track farming locations for materials, ores, and collectibles.</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          {MAPS.map(m => (
+            <Link key={m.id} href={`/map/${m.id}`} className="group block">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-colors">
+                <div className="h-48 overflow-hidden relative bg-black">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={m.thumb} alt={m.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-surface)] via-transparent to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <h2 className="text-2xl font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wider">{m.name}</h2>
+                    <div className="flex gap-4 text-xs text-[var(--color-accent)] font-mono uppercase mt-1">
+                      <span>{m.zones}</span>
+                      <span>{m.pois}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm text-[var(--color-text-secondary)]">{m.desc}</p>
+                  <div className="mt-3 text-xs text-[var(--color-accent)] font-mono uppercase tracking-wider group-hover:underline">
+                    Open Map &rarr;
+                  </div>
+                </div>
               </div>
-
-              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
-                <h3 className="font-bold text-[var(--color-accent)] mb-2">Quest Markers</h3>
-                <p className="text-sm">View main story, side quest, and world quest locations.</p>
-              </div>
-
-              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
-                <h3 className="font-bold text-[var(--color-accent)] mb-2">Enemy Spawns</h3>
-                <p className="text-sm">Locate elite enemies and boss spawn points with timers.</p>
-              </div>
-
-              <div className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-4">
-                <h3 className="font-bold text-[var(--color-accent)] mb-2">Custom Markers</h3>
-                <p className="text-sm">Add your own notes and markers to personalize your map.</p>
-              </div>
-            </div>
-
-            <div className="bg-[#0A0A0A] border border-[var(--color-accent)] clip-corner-tl p-6">
-              <h3 className="font-bold text-white mb-2">Technical Note</h3>
-              <p className="text-sm">
-                Interactive maps in Next.js require dynamic imports for libraries like Leaflet
-                due to SSR compatibility. The map will be implemented using Next.js dynamic imports
-                with <code className="text-[var(--color-accent)]">{'{ ssr: false }'}</code> to ensure proper functionality.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Placeholder for future map regions */}
-        <div className="mt-6 grid md:grid-cols-3 gap-4">
-          {['Central District', 'Industrial Zone', 'Wilderness'].map((region, idx) => (
-            <div key={idx} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 opacity-50">
-              <h3 className="font-bold text-white mb-2">{region}</h3>
-              <p className="text-sm">Map data pending...</p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

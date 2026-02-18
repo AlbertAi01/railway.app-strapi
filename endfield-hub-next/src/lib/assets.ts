@@ -61,6 +61,32 @@ export const CHARACTER_BANNERS: Record<string, string> = {
   'Fluorite': `${TOOLS_CDN}/charhorheadicon/chr_0022_bounda.png`,
 };
 
+// Character gacha summon art (tall vertical portrait strips 236x1352)
+export const CHARACTER_GACHA: Record<string, string> = {
+  'Ardelia': `${TOOLS_CDN}/chargacha/chr_0025_ardelia.png`,
+  'Ember': `${TOOLS_CDN}/chargacha/chr_0009_azrila.png`,
+  'Gilberta': `${TOOLS_CDN}/chargacha/chr_0013_aglina.png`,
+  'Laevatain': `${TOOLS_CDN}/chargacha/chr_0016_laevat.png`,
+  'Last Rite': `${TOOLS_CDN}/chargacha/chr_0026_lastrite.png`,
+  'Lifeng': `${TOOLS_CDN}/chargacha/chr_0015_lifeng.png`,
+  'Pogranichnik': `${TOOLS_CDN}/chargacha/chr_0029_pograni.png`,
+  'Yvonne': `${TOOLS_CDN}/chargacha/chr_0017_yvonne.png`,
+  'Alesh': `${TOOLS_CDN}/chargacha/chr_0024_deepfin.png`,
+  'Arclight': `${TOOLS_CDN}/chargacha/chr_0007_ikut.png`,
+  'Avywenna': `${TOOLS_CDN}/chargacha/chr_0012_avywen.png`,
+  'Chen Qianyu': `${TOOLS_CDN}/chargacha/chr_0005_chen.png`,
+  'Da Pan': `${TOOLS_CDN}/chargacha/chr_0018_dapan.png`,
+  'Perlica': `${TOOLS_CDN}/chargacha/chr_0004_pelica.png`,
+  'Snowshine': `${TOOLS_CDN}/chargacha/chr_0014_aurora.png`,
+  'Wulfgard': `${TOOLS_CDN}/chargacha/chr_0006_wolfgd.png`,
+  'Xaihi': `${TOOLS_CDN}/chargacha/chr_0011_seraph.png`,
+  'Akekuri': `${TOOLS_CDN}/chargacha/chr_0019_karin.png`,
+  'Antal': `${TOOLS_CDN}/chargacha/chr_0023_antal.png`,
+  'Catcher': `${TOOLS_CDN}/chargacha/chr_0020_meurs.png`,
+  'Estella': `${TOOLS_CDN}/chargacha/chr_0021_whiten.png`,
+  'Fluorite': `${TOOLS_CDN}/chargacha/chr_0022_bounda.png`,
+};
+
 // Character splash art (full illustrations from wiki)
 export const CHARACTER_SPLASH: Record<string, string> = {
   'Ardelia': `${WIKI_CDN}/Ardelia_Splash_Art.png`,
@@ -266,6 +292,10 @@ export const MATERIAL_ID_TO_NAME: Record<string, string> = {
 // Helper to get character icon with fallback
 export function getCharacterIcon(name: string): string | null {
   return CHARACTER_ICONS[name] || null;
+}
+
+export function getCharacterGacha(name: string): string | null {
+  return CHARACTER_GACHA[name] || null;
 }
 
 export function getCharacterBanner(name: string): string | null {

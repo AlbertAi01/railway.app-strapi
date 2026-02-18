@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Dice6, RotateCcw, BarChart3, Info, ChevronDown, History, Sparkles, Star, X, Zap } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import { CHARACTERS, WEAPONS } from '@/lib/data';
-import { CHARACTER_ICONS, WEAPON_ICONS, CHARACTER_BANNERS } from '@/lib/assets';
+import { CHARACTER_ICONS, WEAPON_ICONS, CHARACTER_BANNERS, CHARACTER_GACHA } from '@/lib/assets';
 
 // ─── Constants ───────────────────────────────────────────────────────
 const RATES = { 6: 0.008, 5: 0.08, 4: 0.40, 3: 0.512 };
@@ -613,74 +613,28 @@ export default function SummonSimulatorPage() {
               </div>
             )}
 
-            {/* Pull Result Display */}
+            {/* Pull Result Display — Gacha Cards */}
             {currentPulls.length > 0 && (
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden"
+              <div className="bg-black/80 border border-[var(--color-border)] overflow-hidden"
                 onClick={skipReveal} style={{ cursor: isRevealing ? 'pointer' : 'default' }}>
                 {isRevealing && (
-                  <div className="text-center py-1 bg-[var(--color-accent)]/10 text-[10px] text-[var(--color-accent)]">
-                    Click to skip animation
+                  <div className="text-center py-1 bg-[var(--color-accent)]/10 text-[10px] text-[var(--color-accent)] tracking-widest uppercase font-mono">
+                    Tap to skip
                   </div>
                 )}
-                <div className={`grid gap-2 p-3 ${currentPulls.length === 1 ? 'grid-cols-1 max-w-[200px] mx-auto' : 'grid-cols-5 sm:grid-cols-10'}`}>
+                <div className={`flex justify-center items-end gap-1 sm:gap-2 p-3 sm:p-4 ${currentPulls.length === 1 ? 'max-w-[160px] mx-auto' : ''}`}>
                   {currentPulls.map((pull, i) => {
                     const isVisible = i < revealedCount;
+                    const gachaArt = pull.type === 'character' ? CHARACTER_GACHA[pull.item] : null;
                     return (
-                      <div key={i}
-                        className="relative overflow-hidden transition-all duration-300"
-                        style={{
-                          aspectRatio: '3/4',
-                          background: isVisible ? RARITY_BG[pull.rarity] : 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
-                          boxShadow: isVisible ? RARITY_GLOW[pull.rarity] : 'none',
-                          transform: isVisible ? 'scale(1)' : 'scale(0.9)',
-                          opacity: isVisible ? 1 : 0.4,
-                        }}>
-                        {isVisible ? (
-                          <>
-                            {pull.icon ? (
-                              <Image src={pull.icon} alt={pull.item} fill className="object-cover opacity-90" unoptimized sizes="100px" />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-[9px] text-white/70 text-center px-1">{pull.item}</span>
-                              </div>
-                            )}
-                            {/* Rarity bar */}
-                            <div className="absolute bottom-0 left-0 right-0 h-1.5"
-                              style={{ backgroundColor: RARITY_COLORS[pull.rarity] }} />
-                            {/* Star indicator */}
-                            <div className="absolute top-0 left-0 right-0 flex justify-center gap-px py-0.5 bg-black/40">
-                              {Array.from({ length: pull.rarity }).map((_, si) => (
-                                <span key={si} className="text-[6px]" style={{ color: RARITY_COLORS[pull.rarity] }}>&#9733;</span>
-                              ))}
-                            </div>
-                            {/* Badges */}
-                            {pull.isPity && (
-                              <div className="absolute top-3 right-0 bg-red-500 text-[6px] text-white px-1 font-bold">PITY</div>
-                            )}
-                            {pull.isNew && (
-                              <div className="absolute top-3 left-0 bg-green-500 text-[6px] text-white px-1 font-bold">NEW</div>
-                            )}
-                            {pull.isRateUp && pull.rarity >= 5 && (
-                              <div className="absolute bottom-2 left-0 right-0 text-center">
-                                <span className="bg-[var(--color-accent)] text-black text-[6px] font-bold px-1">RATE UP</span>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-3/4 h-3/4 bg-black/40" style={{
-                              clipPath: 'polygon(50% 5%, 65% 25%, 85% 30%, 70% 50%, 75% 75%, 50% 65%, 25% 75%, 30% 50%, 15% 30%, 35% 25%)',
-                            }} />
-                          </div>
-                        )}
-                      </div>
+                      <GachaCard key={i} pull={pull} isVisible={isVisible} gachaArt={gachaArt} index={i} />
                     );
                   })}
                 </div>
 
-                {/* Results List */}
+                {/* Results Summary List */}
                 {revealedCount >= currentPulls.length && (
-                  <div className="p-3 border-t border-[var(--color-border)]">
+                  <div className="p-3 border-t border-[var(--color-border)] bg-[var(--color-surface)]">
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                       {currentPulls.map((pull, i) => (
                         <div key={i} className="flex items-center gap-2 p-1.5 bg-[var(--color-surface-2)]"
@@ -978,19 +932,148 @@ export default function SummonSimulatorPage() {
   );
 }
 
+// ─── Gacha Card Sub-Component ────────────────────────────────────────
+function GachaCard({ pull, isVisible, gachaArt, index }: {
+  pull: Pull; isVisible: boolean; gachaArt: string | null; index: number;
+}) {
+  const cardClass = `gacha-card-${pull.rarity}`;
+  const isHighRarity = pull.rarity >= 5;
+
+  if (!isVisible) {
+    return (
+      <div className="relative overflow-hidden rounded-sm flex-1"
+        style={{
+          aspectRatio: '1/2.3',
+          maxWidth: '72px',
+          background: 'linear-gradient(180deg, #12121f 0%, #0a0a14 100%)',
+          opacity: 0.5,
+          transform: 'scale(0.92)',
+          transition: 'all 0.3s ease',
+        }}>
+        <div className="absolute inset-0 flex items-center justify-center opacity-20">
+          <div className="w-6 h-6 border border-white/20" style={{ transform: 'rotate(45deg)' }} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-sm flex-1"
+      style={{
+        aspectRatio: '1/2.3',
+        maxWidth: '72px',
+        animation: `gacha-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.06}s both`,
+      }}>
+      {/* Animated rarity background */}
+      <div className={`absolute inset-0 ${cardClass}`} />
+
+      {/* Character gacha portrait art */}
+      {gachaArt ? (
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url(${gachaArt})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          marginTop: '-4%',
+        }} />
+      ) : pull.icon ? (
+        <div className="absolute inset-0 flex items-center justify-center p-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={pull.icon} alt={pull.item} className="w-full h-auto object-contain drop-shadow-lg" />
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[8px] text-white/80 text-center px-1 font-bold">{pull.item}</span>
+        </div>
+      )}
+
+      {/* Gradient overlay at bottom for text readability */}
+      <div className="absolute inset-x-0 bottom-0 h-2/5"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)' }} />
+
+      {/* Particle sparkle layer for 5+ star */}
+      {isHighRarity && (
+        <div className="absolute inset-0 pointer-events-none opacity-60"
+          style={{
+            backgroundImage: `
+              radial-gradient(1px 1px at 20% 30%, rgba(255,255,200,0.9), transparent),
+              radial-gradient(0.8px 0.8px at 60% 20%, rgba(255,255,255,0.8), transparent),
+              radial-gradient(1.2px 1.2px at 40% 70%, rgba(255,230,80,0.7), transparent)
+            `,
+            backgroundSize: '40px 60px, 60px 40px, 80px 80px',
+            animation: 'gacha-sparkle 2.5s linear infinite',
+          }} />
+      )}
+
+      {/* Shine sweep overlay for 5+ star */}
+      {isHighRarity && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(30deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+            animation: 'gacha-shine 2.5s linear infinite',
+          }} />
+        </div>
+      )}
+
+      {/* 6-star pulsing border glow */}
+      {pull.rarity >= 6 && (
+        <div className="absolute inset-0 pointer-events-none rounded-sm"
+          style={{ animation: 'gacha-6star-border 3s ease-in-out infinite' }} />
+      )}
+
+      {/* Star indicators at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-px pb-1">
+        {Array.from({ length: Math.min(pull.rarity, 6) }).map((_, si) => (
+          <span key={si} className="text-[7px] drop-shadow-md" style={{
+            color: pull.rarity >= 6 ? '#FFD700' : pull.rarity >= 5 ? '#C488FF' : '#6CB4EE',
+            textShadow: pull.rarity >= 6 ? '0 0 4px rgba(255,215,0,0.8)' : 'none',
+          }}>&#9733;</span>
+        ))}
+      </div>
+
+      {/* Badges */}
+      <div className="absolute top-0 left-0 right-0 flex justify-between items-start">
+        {pull.isNew ? (
+          <span className="text-[6px] font-bold px-1 py-px bg-green-500/90 text-white tracking-wider">NEW</span>
+        ) : <span />}
+        {pull.isPity ? (
+          <span className="text-[6px] font-bold px-1 py-px bg-red-500/90 text-white tracking-wider">PITY</span>
+        ) : <span />}
+      </div>
+
+      {/* Rate Up badge */}
+      {pull.isRateUp && pull.rarity >= 5 && (
+        <div className="absolute bottom-4 left-0 right-0 text-center">
+          <span className="bg-[var(--color-accent)]/90 text-black text-[5px] font-bold px-1 py-px tracking-widest uppercase">Rate Up</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Collection Card Sub-Component ───────────────────────────────────
 function CollectionCard({ name, data }: { name: string; data: { count: number; rarity: number; type: string; icon?: string } }) {
+  const gachaArt = data.type === 'character' ? CHARACTER_GACHA[name] : null;
   return (
-    <div className="relative bg-[var(--color-surface-2)] border border-[var(--color-border)] overflow-hidden"
+    <div className="relative bg-[var(--color-surface-2)] border border-[var(--color-border)] overflow-hidden group cursor-pointer"
       style={{ borderBottomColor: RARITY_COLORS[data.rarity], borderBottomWidth: '2px' }}>
-      <div className="aspect-square flex items-center justify-center p-1">
-        {data.icon ? (
-          <Image src={data.icon} alt={name} width={60} height={60} className="w-full h-full object-contain" unoptimized />
+      <div className="aspect-square overflow-hidden">
+        {gachaArt ? (
+          <div className="w-full h-full" style={{
+            backgroundImage: `url(${gachaArt})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 15%',
+          }} />
+        ) : data.icon ? (
+          <div className="w-full h-full flex items-center justify-center p-1">
+            <Image src={data.icon} alt={name} width={60} height={60} className="w-full h-full object-contain" unoptimized />
+          </div>
         ) : (
-          <span className="text-[8px] text-center text-[var(--color-text-tertiary)]">{name}</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-[8px] text-center text-[var(--color-text-tertiary)]">{name}</span>
+          </div>
         )}
       </div>
-      <p className="text-[8px] text-white text-center truncate px-0.5 pb-0.5">{name}</p>
+      <p className="text-[8px] text-white text-center truncate px-0.5 pb-0.5 bg-black/60">{name}</p>
       {data.count > 1 && (
         <span className="absolute top-0 right-0 bg-[var(--color-accent)] text-black text-[8px] font-bold px-1">x{data.count}</span>
       )}
