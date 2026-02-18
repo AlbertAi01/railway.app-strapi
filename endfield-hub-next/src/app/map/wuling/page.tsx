@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ChevronLeft, Filter, ZoomIn, ZoomOut, Maximize2, Eye, EyeOff, Check, Search, Flame, Pickaxe, Leaf, Gem, MapPin, BookOpen, Swords, X } from 'lucide-react';
+import { ChevronLeft, Filter, ZoomIn, ZoomOut, Maximize2, Eye, EyeOff, Check, Search, Flame, Pickaxe, Leaf, Gem, MapPin, BookOpen, Swords, X, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/authStore';
+import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 
 const TOOLS_CDN = 'https://endfieldtools.dev/assets/images/endfield';
 const TILE_BASE = `${TOOLS_CDN}/levelmap/levelmapgrids`;
@@ -86,6 +88,10 @@ export default function WulingMapPage() {
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { token } = useAuthStore();
+  const cloudLoaded = useRef(false);
 
   const [zoom, setZoom] = useState(0.06);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -114,11 +120,37 @@ export default function WulingMapPage() {
       .catch(() => setLoading(false));
   }, []);
 
+  // Load cloud data on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...completed]));
+    if (cloudLoaded.current || !token) return;
+    cloudLoaded.current = true;
+    (async () => {
+      const cloud = await loadFromCloud('mapWuling', token);
+      if (cloud && Array.isArray(cloud)) {
+        setCompleted(new Set(cloud));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
+        setSyncStatus('synced');
+      }
+    })();
+  }, [token]);
+
+  // Save completed to localStorage + debounced cloud sync
+  const saveCompleted = useCallback((next: Set<string>) => {
+    const arr = [...next];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    if (token) {
+      if (syncTimeout.current) clearTimeout(syncTimeout.current);
+      setSyncStatus('syncing');
+      syncTimeout.current = setTimeout(async () => {
+        try {
+          await syncToCloud('mapWuling', arr, token);
+          setSyncStatus('synced');
+        } catch {
+          setSyncStatus('error');
+        }
+      }, 2000);
     }
-  }, [completed]);
+  }, [token]);
 
   const toggleCategory = useCallback((cat: string) => {
     setActiveCategories(prev => {
@@ -134,9 +166,10 @@ export default function WulingMapPage() {
       const next = new Set(prev);
       if (next.has(poiId)) next.delete(poiId);
       else next.add(poiId);
+      saveCompleted(next);
       return next;
     });
-  }, []);
+  }, [saveCompleted]);
 
   const visiblePois = useMemo(() => {
     if (!mapData) return [];
@@ -315,6 +348,13 @@ export default function WulingMapPage() {
         <span className="text-[var(--color-text-tertiary)] text-xs font-mono">|</span>
         <span className="text-[var(--color-text-secondary)] text-xs font-mono">{visiblePois.length} POIs visible</span>
         <div className="ml-auto flex items-center gap-2">
+          {token && syncStatus !== 'idle' && (
+            <div className="flex items-center gap-1">
+              {syncStatus === 'syncing' && <Loader2 size={12} className="text-[var(--color-accent)] animate-spin" />}
+              {syncStatus === 'synced' && <Cloud size={12} className="text-green-400" />}
+              {syncStatus === 'error' && <CloudOff size={12} className="text-red-400" />}
+            </div>
+          )}
           <span className="text-[var(--color-text-tertiary)] text-xs font-mono">{Math.round(zoom * 100)}%</span>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:text-[var(--color-accent)] text-[var(--color-text-secondary)]">
             <Filter size={16} />

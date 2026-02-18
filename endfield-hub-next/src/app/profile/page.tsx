@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
-import { User, Mail, Calendar, LogOut, Settings, Shield, List, Target, CheckSquare, Factory, Download, Upload, Trash2, Clock } from 'lucide-react';
+import api from '@/lib/api';
+import { User, Mail, Calendar, LogOut, Settings, Shield, List, Target, CheckSquare, Factory, Download, Upload, Trash2, Clock, Pencil, Check, X, Loader2 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 interface ToolData {
@@ -18,8 +19,13 @@ interface ToolData {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, logout, isLoading } = useAuthStore();
+  const { user, logout, isLoading, setUser, token } = useAuthStore();
   const [toolsData, setToolsData] = useState<{ [key: string]: { hasData: boolean; lastUsed?: number } }>({});
+  const [editingName, setEditingName] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const tools: ToolData[] = [
     {
@@ -143,6 +149,42 @@ export default function ProfilePage() {
       router.push('/');
     } catch (err) {
       console.error('Logout failed:', err);
+    }
+  };
+
+  const startEditingName = () => {
+    setNewUsername(user?.username || '');
+    setNameError('');
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.focus(), 50);
+  };
+
+  const cancelEditingName = () => {
+    setEditingName(false);
+    setNameError('');
+  };
+
+  const saveDisplayName = async () => {
+    const trimmed = newUsername.trim();
+    if (!trimmed) { setNameError('Display name cannot be empty'); return; }
+    if (trimmed.length < 3) { setNameError('Must be at least 3 characters'); return; }
+    if (trimmed.length > 30) { setNameError('Must be 30 characters or less'); return; }
+    if (trimmed === user?.username) { setEditingName(false); return; }
+
+    setSavingName(true);
+    setNameError('');
+    try {
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+      const { data } = await api.put(`/users/${user?.id}`, { username: trimmed });
+      setUser({ ...user!, username: data.username || trimmed });
+      setEditingName(false);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to update display name';
+      setNameError(msg);
+    } finally {
+      setSavingName(false);
     }
   };
 
@@ -301,9 +343,43 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-white mb-2">
-                    {user.username || user.email?.split('@')[0] || 'User'}
-                  </h2>
+                  {editingName ? (
+                    <div className="mb-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={nameInputRef}
+                          type="text"
+                          value={newUsername}
+                          onChange={e => setNewUsername(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') saveDisplayName(); if (e.key === 'Escape') cancelEditingName(); }}
+                          maxLength={30}
+                          className="bg-[var(--color-surface-2)] border border-[var(--color-accent)] text-white text-2xl font-bold px-3 py-1.5 focus:outline-none w-full max-w-xs"
+                          placeholder="Display name..."
+                          disabled={savingName}
+                        />
+                        <button onClick={saveDisplayName} disabled={savingName}
+                          className="p-2 text-green-400 hover:bg-green-500/10 disabled:opacity-50">
+                          {savingName ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                        </button>
+                        <button onClick={cancelEditingName} disabled={savingName}
+                          className="p-2 text-[var(--color-text-tertiary)] hover:text-white disabled:opacity-50">
+                          <X size={18} />
+                        </button>
+                      </div>
+                      {nameError && <p className="text-red-400 text-xs mt-1">{nameError}</p>}
+                      <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">{newUsername.length}/30 characters</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-3xl font-bold text-white">
+                        {user.username || user.email?.split('@')[0] || 'User'}
+                      </h2>
+                      <button onClick={startEditingName}
+                        className="p-1.5 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors" title="Edit display name">
+                        <Pencil size={16} />
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-4">
                     <Mail className="w-4 h-4 text-[var(--color-text-tertiary)]" />
                     <span>{user.email}</span>
@@ -323,17 +399,18 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-white text-xl mb-4">Account Details</h3>
 
                 <div className="grid md:grid-cols-2 gap-3">
-                  <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
+                  <button onClick={startEditingName} className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 hover:border-[var(--color-accent)] transition-colors text-left w-full">
                     <div className="flex items-center gap-3">
                       <User className="w-5 h-5 text-[var(--color-accent)]" />
-                      <div>
-                        <div className="text-xs text-[var(--color-text-tertiary)]">Username</div>
+                      <div className="flex-1">
+                        <div className="text-xs text-[var(--color-text-tertiary)]">Display Name</div>
                         <div className="text-white font-medium">
                           {user.username || 'Not set'}
                         </div>
                       </div>
+                      <Pencil size={14} className="text-[var(--color-text-tertiary)]" />
                     </div>
-                  </div>
+                  </button>
 
                   <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
                     <div className="flex items-center gap-3">
@@ -471,9 +548,9 @@ export default function ProfilePage() {
               <h3 className="font-bold text-white mb-4">Quick Actions</h3>
 
               <div className="space-y-3">
-                <button className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
+                <button onClick={startEditingName} className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
                   <Settings className="w-5 h-5 text-[var(--color-accent)]" />
-                  <span>Edit Profile</span>
+                  <span>Edit Display Name</span>
                 </button>
 
                 <button className="w-full py-3 px-4 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-3 text-left">
