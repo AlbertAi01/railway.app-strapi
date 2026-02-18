@@ -93,7 +93,7 @@ export const PROFESSION_ICONS: Record<string, string> = {
   'Supporter': `${TOOLS_CDN}/charprofessionicon/icon_profession_0.png`,
   'Guard': `${TOOLS_CDN}/charprofessionicon/icon_profession_1.png`,
   'Caster': `${TOOLS_CDN}/charprofessionicon/icon_profession_2.png`,
-  'Striker': `${TOOLS_CDN}/charprofessionicon/icon_profession_3.png`,
+  'Assault': `${TOOLS_CDN}/charprofessionicon/icon_profession_3.png`,
   'Defender': `${TOOLS_CDN}/charprofessionicon/icon_profession_4.png`,
   'Vanguard': `${TOOLS_CDN}/charprofessionicon/icon_profession_5.png`,
 };

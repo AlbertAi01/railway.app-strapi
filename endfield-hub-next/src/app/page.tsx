@@ -38,7 +38,7 @@ const faqItems = [
   { q: 'What is Zero Sanity?', a: 'Zero Sanity is a free community toolkit for Arknights: Endfield, offering character databases, factory blueprint sharing, tier list builders, gacha trackers, and 15+ other tools.' },
   { q: 'How do I use Arknights: Endfield blueprints?', a: 'Browse our community blueprint database, find a factory layout you like, copy the EFO import code, and paste it in-game in the AIC factory build menu.' },
   { q: 'Is Zero Sanity free?', a: 'Yes, all tools on Zero Sanity are completely free. You can optionally create an account to sync your data across devices.' },
-  { q: 'What characters are in Arknights: Endfield?', a: 'Arknights: Endfield features 23 playable characters across 5 elements (Physical, Heat, Cryo, Electric, Nature) and 6 roles (Guard, Defender, Supporter, Caster, Vanguard, Striker).' },
+  { q: 'What characters are in Arknights: Endfield?', a: 'Arknights: Endfield features 23 playable characters across 5 elements (Physical, Heat, Cryo, Electric, Nature) and 6 roles (Guard, Defender, Supporter, Caster, Vanguard, Assault).' },
 ];
 
 export default function Home() {

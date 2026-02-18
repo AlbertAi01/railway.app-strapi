@@ -54,7 +54,7 @@ Build a balanced team with:
 - **Supporter**: Buffs and healing
 - **Caster**: Ranged magical damage
 - **Vanguard**: Balanced offense and defense
-- **Striker**: High-burst damage dealers
+- **Assault**: High-burst damage dealers
 
 ## Progression Path
 
@@ -121,7 +121,7 @@ Coordinate your team:
 - Defenders draw aggro while DPS attacks
 - Supporters buff before damage windows
 - Casters apply debuffs for the team
-- Strikers execute during break state
+- Assault operators execute during break state
 - Practice character swapping for combos`
   },
   {

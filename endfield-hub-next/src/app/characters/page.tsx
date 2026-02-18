@@ -11,7 +11,7 @@ import type { Element, Role, WeaponType } from '@/types/game';
 import { CHARACTER_ICONS } from '@/lib/assets';
 
 const ELEMENTS: Element[] = ['Physical', 'Heat', 'Cryo', 'Electric', 'Nature'];
-const ROLES: Role[] = ['Guard', 'Defender', 'Supporter', 'Caster', 'Vanguard', 'Striker'];
+const ROLES: Role[] = ['Guard', 'Defender', 'Supporter', 'Caster', 'Vanguard', 'Assault'];
 const WEAPON_TYPES: WeaponType[] = ['Greatsword', 'Polearm', 'Handcannon', 'Sword', 'Arts Unit'];
 
 export default function Characters() {

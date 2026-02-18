@@ -1,5 +1,5 @@
 export type Element = 'Physical' | 'Heat' | 'Cryo' | 'Electric' | 'Nature';
-export type Role = 'Guard' | 'Defender' | 'Supporter' | 'Caster' | 'Vanguard' | 'Striker';
+export type Role = 'Guard' | 'Defender' | 'Supporter' | 'Caster' | 'Vanguard' | 'Assault';
 export type WeaponType = 'Greatsword' | 'Polearm' | 'Handcannon' | 'Sword' | 'Arts Unit';
 export type Rarity = 4 | 5 | 6;
 

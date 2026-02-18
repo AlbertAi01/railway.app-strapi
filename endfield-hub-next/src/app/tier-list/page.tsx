@@ -4,57 +4,89 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { CHARACTERS } from '@/lib/data';
 import { CHARACTER_ICONS } from '@/lib/assets';
-import { Award, Save, RotateCcw, LayoutGrid, Download, Share2, Link as LinkIcon } from 'lucide-react';
+import { Save, RotateCcw, LayoutGrid, Download, Share2, Link as LinkIcon } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { DEFAULT_TIER_LIST } from '@/data/guides';
 import html2canvas from 'html2canvas';
 
-const TIERS = ['S', 'A', 'B', 'C', 'D'];
-const TIER_COLORS = {
-  S: 'bg-[#3a1515] border-l-4 border-red-500 border-y border-r border-[var(--color-border)]',
-  A: 'bg-[#3a2a15] border-l-4 border-orange-500 border-y border-r border-[var(--color-border)]',
-  B: 'bg-[#3a3515] border-l-4 border-yellow-500 border-y border-r border-[var(--color-border)]',
-  C: 'bg-[#153a20] border-l-4 border-green-500 border-y border-r border-[var(--color-border)]',
-  D: 'bg-[#152a3a] border-l-4 border-blue-500 border-y border-r border-[var(--color-border)]'
+const TIERS = ['SS', 'S', 'A', 'B', 'C', 'D'];
+const TIER_COLORS: Record<string, string> = {
+  SS: 'bg-[#3a0f1f] border-l-4 border-[#FF4444] border-y border-r border-[var(--color-border)]',
+  S: 'bg-[#3a1515] border-l-4 border-[#FF8C00] border-y border-r border-[var(--color-border)]',
+  A: 'bg-[#3a2a15] border-l-4 border-[#FFD429] border-y border-r border-[var(--color-border)]',
+  B: 'bg-[#153a20] border-l-4 border-[#27AE60] border-y border-r border-[var(--color-border)]',
+  C: 'bg-[#152a3a] border-l-4 border-[#3498DB] border-y border-r border-[var(--color-border)]',
+  D: 'bg-[#2a1a3a] border-l-4 border-[#9B59B6] border-y border-r border-[var(--color-border)]',
 };
 
-export default function TierListPage() {
-  const [tierList, setTierList] = useState<{ [key: string]: string[] }>({
+const TIER_LABEL_COLORS: Record<string, string> = {
+  SS: '#FF4444',
+  S: '#FF8C00',
+  A: '#FFD429',
+  B: '#27AE60',
+  C: '#3498DB',
+  D: '#9B59B6',
+};
+
+function getDefaultTierList(): { [key: string]: string[] } {
+  const tiers: { [key: string]: string[] } = {
+    SS: [],
     S: [],
     A: [],
     B: [],
     C: [],
     D: [],
-    Unranked: CHARACTERS.map(c => c.Name)
-  });
+    Unranked: [],
+  };
+
+  // Populate from DEFAULT_TIER_LIST
+  const rankedNames = new Set<string>();
+  for (const tier of TIERS) {
+    const entries = DEFAULT_TIER_LIST[tier as keyof typeof DEFAULT_TIER_LIST];
+    if (entries) {
+      tiers[tier] = entries.map(e => e.name);
+      entries.forEach(e => rankedNames.add(e.name));
+    }
+  }
+
+  // Any characters not in the default tier list go to Unranked
+  tiers.Unranked = CHARACTERS.filter(c => !rankedNames.has(c.Name)).map(c => c.Name);
+
+  return tiers;
+}
+
+export default function TierListPage() {
+  const [tierList, setTierList] = useState<{ [key: string]: string[] }>(getDefaultTierList);
   const [draggedCharacter, setDraggedCharacter] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const tierListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('endfield-tier-list');
+    const saved = localStorage.getItem('endfield-tier-list-v2');
     if (saved) {
-      setTierList(JSON.parse(saved));
+      try {
+        const parsed = JSON.parse(saved);
+        // Validate it has the expected structure
+        if (parsed && typeof parsed === 'object' && 'SS' in parsed) {
+          setTierList(parsed);
+        }
+      } catch {
+        // Ignore invalid saved data
+      }
     }
   }, []);
 
   const saveTierList = () => {
-    localStorage.setItem('endfield-tier-list', JSON.stringify(tierList));
+    localStorage.setItem('endfield-tier-list-v2', JSON.stringify(tierList));
     alert('Tier list saved!');
   };
 
   const resetTierList = () => {
-    if (confirm('Reset tier list to default?')) {
-      const reset = {
-        S: [],
-        A: [],
-        B: [],
-        C: [],
-        D: [],
-        Unranked: CHARACTERS.map(c => c.Name)
-      };
+    if (confirm('Reset tier list to community default rankings?')) {
+      const reset = getDefaultTierList();
       setTierList(reset);
-      localStorage.setItem('endfield-tier-list', JSON.stringify(reset));
+      localStorage.removeItem('endfield-tier-list-v2');
     }
   };
 
@@ -131,7 +163,7 @@ export default function TierListPage() {
       const url = `${window.location.origin}/tier-list?data=${base64}`;
       await navigator.clipboard.writeText(url);
       alert('Tier list link copied to clipboard!');
-    } catch (error) {
+    } catch {
       alert('Failed to copy link. Please try again.');
     }
     setShowShareMenu(false);
@@ -157,12 +189,69 @@ export default function TierListPage() {
     setShowShareMenu(false);
   };
 
+  const CharacterCard = ({ charName, currentTier }: { charName: string; currentTier: string }) => {
+    const character = CHARACTERS.find(c => c.Name === charName);
+    if (!character) return null;
+
+    const iconUrl = CHARACTER_ICONS[character.Name];
+
+    return (
+      <div
+        draggable
+        onDragStart={() => handleDragStart(charName)}
+        className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          {iconUrl && (
+            <Image
+              src={iconUrl}
+              alt={character.Name}
+              width={48}
+              height={48}
+              className="border border-[var(--color-border)]"
+            />
+          )}
+          <div>
+            <div className="text-sm font-bold text-white">{character.Name}</div>
+            <div className="text-xs text-[var(--color-text-tertiary)]">{character.Role}</div>
+          </div>
+        </div>
+
+        {/* Quick move buttons */}
+        <div className="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {TIERS.map(t => (
+            t !== currentTier && (
+              <button
+                key={t}
+                onClick={() => moveCharacter(charName, t)}
+                className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:text-black"
+                style={{ ['--hover-bg' as string]: TIER_LABEL_COLORS[t] }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = TIER_LABEL_COLORS[t])}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+              >
+                {t}
+              </button>
+            )
+          ))}
+          {currentTier !== 'Unranked' && (
+            <button
+              onClick={() => moveCharacter(charName, 'Unranked')}
+              className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-text-tertiary)] hover:text-black"
+            >
+              -
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-secondary)] p-6">
+    <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <RIOSHeader title="Combat Assessment Matrix" category="ANALYSIS" code="RIOS-TIER-001" icon={<LayoutGrid size={28} />} />
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={exportAsImage}
               disabled={isExporting}
@@ -213,136 +302,69 @@ export default function TierListPage() {
           </div>
         </div>
 
-        <div ref={tierListRef} className="space-y-4">
+        <div ref={tierListRef} className="space-y-1">
           {TIERS.map(tier => (
             <div
               key={tier}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(tier)}
-              className={`p-4 ${TIER_COLORS[tier as keyof typeof TIER_COLORS]}`}
+              className={`p-4 ${TIER_COLORS[tier]}`}
             >
               <div className="flex items-start gap-4">
-                <div className="w-16 flex-shrink-0">
-                  <div className="text-4xl font-bold text-white">{tier}</div>
+                <div className="w-16 flex-shrink-0 flex flex-col items-center">
+                  <div className="text-4xl font-bold" style={{ color: TIER_LABEL_COLORS[tier] }}>{tier}</div>
+                  <div className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                    {tierList[tier]?.length || 0}
+                  </div>
                 </div>
                 <div className="flex-1 min-h-[80px]">
                   <div className="flex flex-wrap gap-2">
-                    {tierList[tier].map(charName => {
-                      const character = CHARACTERS.find(c => c.Name === charName);
-                      if (!character) return null;
-
-                      const iconUrl = CHARACTER_ICONS[character.Name];
-
-                      return (
-                        <div
-                          key={charName}
-                          draggable
-                          onDragStart={() => handleDragStart(charName)}
-                          className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            {iconUrl && (
-                              <Image
-                                src={iconUrl}
-                                alt={character.Name}
-                                width={48}
-                                height={48}
-                                className="border border-[var(--color-border)]"
-                              />
-                            )}
-                            <div>
-                              <div className="text-sm font-bold text-white">{character.Name}</div>
-                              <div className="text-xs text-[var(--color-text-tertiary)]">{character.Role}</div>
-                            </div>
-                          </div>
-
-                          {/* Quick move buttons */}
-                          <div className="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {TIERS.map(t => (
-                              t !== tier && (
-                                <button
-                                  key={t}
-                                  onClick={() => moveCharacter(charName, t)}
-                                  className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-accent)] hover:text-black"
-                                >
-                                  {t}
-                                </button>
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {tierList[tier]?.map(charName => (
+                      <CharacterCard key={charName} charName={charName} currentTier={tier} />
+                    ))}
+                    {(!tierList[tier] || tierList[tier].length === 0) && (
+                      <div className="flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-tertiary)] text-sm border border-dashed border-[var(--color-border)] clip-corner-tl">
+                        Drop operators here
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
 
-          {/* Unranked Characters */}
+        {/* Unranked Characters */}
+        {tierList.Unranked && tierList.Unranked.length > 0 && (
           <div
             onDragOver={handleDragOver}
             onDrop={() => handleDrop('Unranked')}
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4"
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mt-6"
           >
-            <h2 className="text-xl font-bold text-white mb-4">Unranked Characters</h2>
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <span className="text-[var(--color-text-tertiary)]">UNRANKED</span>
+              <span className="text-xs text-[var(--color-text-tertiary)] font-normal">({tierList.Unranked.length})</span>
+            </h2>
             <div className="flex flex-wrap gap-2">
-              {tierList.Unranked.map(charName => {
-                const character = CHARACTERS.find(c => c.Name === charName);
-                if (!character) return null;
-
-                const iconUrl = CHARACTER_ICONS[character.Name];
-
-                return (
-                  <div
-                    key={charName}
-                    draggable
-                    onDragStart={() => handleDragStart(charName)}
-                    className="bg-[#0A0A0A] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      {iconUrl && (
-                        <Image
-                          src={iconUrl}
-                          alt={character.Name}
-                          width={48}
-                          height={48}
-                          className="border border-[var(--color-border)]"
-                        />
-                      )}
-                      <div>
-                        <div className="text-sm font-bold text-white">{character.Name}</div>
-                        <div className="text-xs text-[var(--color-text-tertiary)]">{character.Role}</div>
-                      </div>
-                    </div>
-
-                    {/* Quick move buttons */}
-                    <div className="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {TIERS.map(tier => (
-                        <button
-                          key={tier}
-                          onClick={() => moveCharacter(charName, tier)}
-                          className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-accent)] hover:text-black"
-                        >
-                          {tier}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+              {tierList.Unranked.map(charName => (
+                <CharacterCard key={charName} charName={charName} currentTier="Unranked" />
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
         <div className="mt-6 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-sm">
           <h3 className="font-bold text-white mb-2">How to use:</h3>
-          <ul className="space-y-1">
-            <li>• Drag and drop characters between tiers</li>
-            <li>• Or hover over a character and click tier buttons for quick assignment</li>
-            <li>• Your tier list is automatically saved to local storage</li>
-            <li>• Click Save to manually save your current progress</li>
+          <ul className="space-y-1 text-[var(--color-text-secondary)]">
+            <li>-- Drag and drop operators between tiers to customize rankings</li>
+            <li>-- Hover over an operator and click tier buttons for quick assignment</li>
+            <li>-- Click Save to store your customized tier list in local storage</li>
+            <li>-- Click Reset to restore community consensus default rankings</li>
+            <li>-- Export as image or share your tier list via link</li>
           </ul>
+          <p className="mt-3 text-[var(--color-text-tertiary)] text-xs">
+            Default rankings based on community consensus from Mobalytics, Prydwen, Game8, and community discussion.
+          </p>
         </div>
       </div>
 
