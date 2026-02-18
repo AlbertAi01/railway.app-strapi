@@ -7,12 +7,19 @@ import { GEAR_SETS, STANDALONE_GEAR, type GearPiece, type GearSet } from '@/data
 
 // ──────────── Artificing Solver Logic ────────────
 
-// Slot type derived from DEF value: Body=56, Hand=42, EDC=21
+// Slot type: Body (Armor/Poncho/Suit/Overalls/Plating), Hand (Gloves/Gauntlets/Fists/Wrists), EDC (other smaller accessories)
 type SlotType = 'Body' | 'Hand' | 'EDC';
 
+const HAND_KEYWORDS = ['gloves', 'gauntlets', 'fists', 'wrists', 'hands'];
+const BODY_KEYWORDS = ['armor', 'poncho', 'overalls', 'plating', 'suit', 'plate', 'vest', 'cleansuit', 'heavy ar'];
+
 function getSlotType(piece: GearPiece): SlotType {
+  const name = piece.name.toLowerCase();
+  if (HAND_KEYWORDS.some(k => name.includes(k))) return 'Hand';
+  if (BODY_KEYWORDS.some(k => name.includes(k))) return 'Body';
+  // Fallback to DEF-based heuristic for items that don't match name patterns
   if (piece.def >= 50) return 'Body';
-  if (piece.def >= 35) return 'Hand';
+  if (piece.def >= 30) return 'Hand';
   return 'EDC';
 }
 
@@ -117,16 +124,15 @@ function computeFodderResults(
   return results;
 }
 
-// ──────────── Collect all T4 gear ────────────
+// ──────────── Collect gear ────────────
 
-function getAllT4Gear(): { pieces: GearPiece[]; sets: GearSet[] } {
+function getAllGear(): { allPieces: GearPiece[]; t4Sets: GearSet[]; allSets: GearSet[] } {
   const t4Sets = GEAR_SETS.filter(s => s.phase === 'Late Game (Lv70)');
-  const t4Pieces: GearPiece[] = [];
-  t4Sets.forEach(s => t4Pieces.push(...s.pieces));
-  // Standalone gear is a flat array — filter to T4 only
-  const t4Standalone = STANDALONE_GEAR.filter(p => p.tier === 'T4');
-  t4Pieces.push(...t4Standalone);
-  return { pieces: t4Pieces, sets: t4Sets };
+  // Collect ALL gear for fodder matching (all tiers can be used as fodder)
+  const allPieces: GearPiece[] = [];
+  GEAR_SETS.forEach(s => allPieces.push(...s.pieces));
+  allPieces.push(...STANDALONE_GEAR);
+  return { allPieces, t4Sets, allSets: GEAR_SETS };
 }
 
 // ──────────── Tier Badge Colors ────────────
@@ -305,8 +311,8 @@ function GearPickerModal({
 // ──────────── Main Page ────────────
 
 export default function GearArtificingPage() {
-  const { pieces: allT4, sets: t4Sets } = useMemo(() => getAllT4Gear(), []);
-  const maxStatMap = useMemo(() => buildMaxStatMap(allT4), [allT4]);
+  const { allPieces, t4Sets } = useMemo(() => getAllGear(), []);
+  const maxStatMap = useMemo(() => buildMaxStatMap(allPieces), [allPieces]);
 
   const [selectedPiece, setSelectedPiece] = useState<GearPiece | null>(null);
   const [selectedStat, setSelectedStat] = useState<string | null>(null);
@@ -315,8 +321,8 @@ export default function GearArtificingPage() {
 
   const fodderResults = useMemo(() => {
     if (!selectedPiece || !selectedStat) return [];
-    return computeFodderResults(selectedPiece, selectedStat, currentLevel, allT4, maxStatMap);
-  }, [selectedPiece, selectedStat, currentLevel, allT4, maxStatMap]);
+    return computeFodderResults(selectedPiece, selectedStat, currentLevel, allPieces, maxStatMap);
+  }, [selectedPiece, selectedStat, currentLevel, allPieces, maxStatMap]);
 
   const handleSelectGear = (piece: GearPiece) => {
     setSelectedPiece(piece);
@@ -402,67 +408,75 @@ export default function GearArtificingPage() {
         </div>
 
         {/* ─── Results ─── */}
-        {selectedPiece && selectedStat && fodderResults.length > 0 ? (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 overflow-hidden mb-6">
-            <div className="px-5 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="text-[var(--color-accent)]">&#9675;</span>
-                Best gears to artifice into
-              </h2>
-            </div>
-            <div className="p-4 space-y-3">
-              {fodderResults.map((result, idx) => {
-                const isBestOverall = idx === 0 && result.overallTier === 'Best Pick';
-                return (
-                  <div
-                    key={`${result.piece.name}-${result.piece.id}-${idx}`}
-                    className={`relative p-3.5 border-2 transition-colors ${
-                      isBestOverall
-                        ? 'border-[#22c55e] bg-[#22c55e]/5'
-                        : result.overallTier === 'Best Pick'
-                        ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
-                        : result.overallTier === 'Good'
-                        ? 'border-[var(--color-accent)]/50 bg-[var(--color-surface-2)]'
-                        : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'
-                    }`}
-                  >
-                    {/* Best Pick ribbon */}
-                    {isBestOverall && (
-                      <div className="absolute -top-0 left-3">
-                        <span className="text-[10px] font-bold bg-[#22c55e] text-black px-2 py-0.5">
-                          Best Pick
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3">
-                      {/* Icon */}
-                      {result.piece.icon ? (
-                        <img src={result.piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
-                      ) : (
-                        <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
-                          <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+        {selectedPiece && selectedStat ? (
+          fodderResults.length > 0 ? (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 overflow-hidden mb-6">
+              <div className="px-5 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span className="text-[var(--color-accent)]">&#9675;</span>
+                  Best gears to artifice into
+                </h2>
+              </div>
+              <div className="p-4 space-y-3">
+                {fodderResults.map((result, idx) => {
+                  const isBestOverall = idx === 0 && result.overallTier === 'Best Pick';
+                  return (
+                    <div
+                      key={`${result.piece.name}-${result.piece.id}-${idx}`}
+                      className={`relative p-3.5 border-2 transition-colors ${
+                        isBestOverall
+                          ? 'border-[#22c55e] bg-[#22c55e]/5'
+                          : result.overallTier === 'Best Pick'
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
+                          : result.overallTier === 'Good'
+                          ? 'border-[var(--color-accent)]/50 bg-[var(--color-surface-2)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'
+                      }`}
+                    >
+                      {/* Best Pick ribbon */}
+                      {isBestOverall && (
+                        <div className="absolute -top-0 left-3">
+                          <span className="text-[10px] font-bold bg-[#22c55e] text-black px-2 py-0.5">
+                            Best Pick
+                          </span>
                         </div>
                       )}
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-bold text-sm">{result.piece.name}</p>
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          <LevelTierTag level="Level 0→1" tier={result.tiers[0]} />
-                          <LevelTierTag level="Level 1→2" tier={result.tiers[1]} />
-                          <LevelTierTag level="Level 2→3" tier={result.tiers[2]} />
-                        </div>
-                      </div>
+                      <div className="flex items-center gap-3">
+                        {/* Icon */}
+                        {result.piece.icon ? (
+                          <img src={result.piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
+                        ) : (
+                          <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                            <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+                          </div>
+                        )}
 
-                      {/* Overall badge */}
-                      <TierBadge tier={result.overallTier} className="shrink-0" />
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-bold text-sm">{result.piece.name}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            <LevelTierTag level="Level 0→1" tier={result.tiers[0]} />
+                            <LevelTierTag level="Level 1→2" tier={result.tiers[1]} />
+                            <LevelTierTag level="Level 2→3" tier={result.tiers[2]} />
+                          </div>
+                        </div>
+
+                        {/* Overall badge */}
+                        <TierBadge tier={result.overallTier} className="shrink-0" />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 mb-6">
+              <p className="text-sm text-[var(--color-text-tertiary)]">
+                No matching fodder gear found for <span className="text-[var(--color-accent)] font-bold">{selectedStat}</span> in the same equipment slot. Try selecting a different stat.
+              </p>
+            </div>
+          )
         ) : selectedPiece && !selectedStat ? (
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 mb-6">
             <p className="text-sm text-[var(--color-text-tertiary)]">
@@ -475,7 +489,7 @@ export default function GearArtificingPage() {
         {showPicker && (
           <GearPickerModal
             sets={t4Sets}
-            allPieces={allT4}
+            allPieces={allPieces}
             onSelect={handleSelectGear}
             onClose={() => setShowPicker(false)}
           />
