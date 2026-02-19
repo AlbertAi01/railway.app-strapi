@@ -6,9 +6,11 @@ import { CHARACTERS, WEAPONS } from '@/lib/data';
 import { CHARACTER_ICONS, CHARACTER_SPLASH, CHARACTER_GACHA, CHARACTER_BANNERS, PROFESSION_ICONS, WEAPON_ICONS, STAT_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Element, Role, WeaponType, Character, Weapon } from '@/types/game';
-import { Download, Search, X, Star, Sparkles, Share2, ChevronDown, Sword, Shield, Zap, Heart, Crosshair, Flame } from 'lucide-react';
+import { Download, Search, X, Star, Sparkles, Share2, ChevronDown, Sword, Shield, Zap, Heart, Crosshair, Flame, Save, FolderOpen, FilePlus2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { WEAPON_DATA } from '@/data/weapons';
+import { WEAPON_ESSENCES } from '@/data/essences';
 
 // ──────────── Theme Colors ────────────
 
@@ -80,6 +82,78 @@ const SKILL_TYPES = [
   { key: 'combo', label: 'Combo Skill', short: 'CMB', icon: Crosshair },
   { key: 'ultimate', label: 'Ultimate Skill', short: 'ULT', icon: Flame },
 ];
+
+// ──────────── Breakthrough Data ────────────
+
+const CHAR_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3', 'B4'];
+const WEAPON_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3'];
+
+// ──────────── Character Talents ────────────
+// Each character has 2 talents. We use generic names since we don't have per-character talent data.
+const CHARACTER_TALENTS: Record<string, { name: string; type: string }[]> = {
+  Laevatain: [{ name: 'Blazing Will', type: 'Character' }, { name: 'Flame Resonance', type: 'Character' }],
+  Endministrator: [{ name: 'Essence Disintegration', type: 'Character' }, { name: 'Realspace Stasis', type: 'Character' }],
+  'Chen Qianyu': [{ name: 'Cryo Convergence', type: 'Character' }, { name: 'Frozen Dominion', type: 'Character' }],
+  Ember: [{ name: 'Ember Ignition', type: 'Character' }, { name: 'Thermal Cascade', type: 'Character' }],
+  Perlica: [{ name: 'Crystal Resonance', type: 'Character' }, { name: 'Prismatic Aegis', type: 'Character' }],
+  Lifeguard: [{ name: 'Tidal Recovery', type: 'Character' }, { name: 'Ocean Barrier', type: 'Character' }],
+  Akekuri: [{ name: 'Shadow Step', type: 'Character' }, { name: 'Void Strike', type: 'Character' }],
+  Wulfgard: [{ name: 'Pack Hunter', type: 'Character' }, { name: 'Savage Instinct', type: 'Character' }],
+  Ardelia: [{ name: 'Nature Binding', type: 'Character' }, { name: 'Verdant Shield', type: 'Character' }],
+};
+const DEFAULT_TALENTS = [{ name: 'Talent 1', type: 'Character' }, { name: 'Talent 2', type: 'Character' }];
+
+type TalentState = 'locked' | 'base' | 'upgrade';
+
+// ──────────── Equipment Substat Data ────────────
+
+const EQUIPMENT_SUBSTATS: Record<string, { stat: string; base: number }[]> = {
+  Swordmancer: [{ stat: 'Agility', base: 87 }, { stat: 'Strength', base: 58 }, { stat: 'Arts Intensity', base: 21 }],
+  'Æthertech': [{ stat: 'Agility', base: 65 }, { stat: 'Strength', base: 43 }, { stat: 'Arts Intensity', base: 35 }],
+  'Type 50 Yinglung': [{ stat: 'Strength', base: 78 }, { stat: 'Will', base: 52 }, { stat: 'Physical DMG', base: 18 }],
+  LYNX: [{ stat: 'Agility', base: 72 }, { stat: 'Intellect', base: 48 }, { stat: 'Electric DMG', base: 23 }],
+  'Eternal Xiranite': [{ stat: 'Intellect', base: 82 }, { stat: 'Will', base: 55 }, { stat: 'Cryo DMG', base: 20 }],
+  'Tide Surge': [{ stat: 'Will', base: 76 }, { stat: 'Strength', base: 51 }, { stat: 'Nature DMG', base: 22 }],
+  'Hot Work': [{ stat: 'Strength', base: 84 }, { stat: 'Agility', base: 56 }, { stat: 'Heat DMG', base: 19 }],
+  Catastrophe: [{ stat: 'Agility', base: 52 }, { stat: 'Strength', base: 35 }, { stat: 'Physical DMG', base: 15 }],
+  'Mordvolt Insulation': [{ stat: 'Will', base: 42 }, { stat: 'Intellect', base: 28 }, { stat: 'Electric DMG', base: 12 }],
+  'Mordvolt Resistant': [{ stat: 'Strength', base: 45 }, { stat: 'Will', base: 30 }, { stat: 'Physical DMG', base: 13 }],
+  'Armored MSGR': [{ stat: 'Agility', base: 38 }, { stat: 'Strength', base: 25 }, { stat: 'Arts Intensity', base: 10 }],
+  'AIC Heavy': [{ stat: 'Strength', base: 28 }, { stat: 'Will', base: 19 }, { stat: 'Physical DMG', base: 8 }],
+};
+
+function getSubstatValue(base: number, artificeLevel: number): string {
+  const multiplier = 1 + artificeLevel * 0.15;
+  const val = Math.round(base * multiplier);
+  const stat = base > 50 ? `+${val}` : `+${(val / 10).toFixed(1)}%`;
+  return stat;
+}
+
+// ──────────── Showcase State Type ────────────
+
+interface ShowcaseState {
+  name: string;
+  charName: string;
+  level: number;
+  potential: number;
+  affinity: number;
+  charBreakthrough: number;
+  weaponName: string;
+  weaponLevel: number;
+  weaponBreakthrough: number;
+  weaponPotential: number;
+  essenceLevels: number[];
+  username: string;
+  userCode: string;
+  server: string;
+  skillLevels: { basic: number; normal: number; combo: number; ultimate: number };
+  equipBody: EquipmentSlotState;
+  equipHand: EquipmentSlotState;
+  equipEdc1: EquipmentSlotState;
+  equipEdc2: EquipmentSlotState;
+  talentStates: TalentState[];
+  colorTheme: string;
+}
 
 // ──────────── Character Picker Modal ────────────
 
@@ -274,11 +348,15 @@ export default function CharacterCardPage() {
   const [level, setLevel] = useState(80);
   const [potential, setPotential] = useState(0);
   const [affinity, setAffinity] = useState(5);
+  const [charBreakthrough, setCharBreakthrough] = useState(3);
 
   // Weapon - Pre-load Forgeborn Scathe
   const [selectedWeaponName, setSelectedWeaponName] = useState('Forgeborn Scathe');
   const [weaponPickerOpen, setWeaponPickerOpen] = useState(false);
   const [weaponLevel, setWeaponLevel] = useState(80);
+  const [weaponBreakthrough, setWeaponBreakthrough] = useState(3);
+  const [weaponPotential, setWeaponPotential] = useState(0);
+  const [essenceLevels, setEssenceLevels] = useState([3, 2, 1]);
 
   // User Info
   const [showcaseName, setShowcaseName] = useState('');
@@ -288,6 +366,9 @@ export default function CharacterCardPage() {
 
   // Skills - Pre-loaded values
   const [skillLevels, setSkillLevels] = useState({ basic: 10, normal: 10, combo: 8, ultimate: 10 });
+
+  // Talents
+  const [talentStates, setTalentStates] = useState<TalentState[]>(['locked', 'locked']);
 
   // Equipment - Pre-load Swordmancer set
   const defaultEquip: EquipmentSlotState = { setName: '', artifice: 0, substat1: '', substat2: '', substat3: '' };
@@ -304,6 +385,9 @@ export default function CharacterCardPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Save/Load
+  const [saveMessage, setSaveMessage] = useState('');
 
   // Preview scaling
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -332,6 +416,87 @@ export default function CharacterCardPage() {
   const weaponIconUrl = weapon ? WEAPON_ICONS[weapon.Name] : null;
 
   const stats = character ? computeStats(character, level, potential) : null;
+
+  // Weapon data from detailed weapons database
+  const weaponData = weapon ? WEAPON_DATA.find(w => w.Name === weapon.Name) : null;
+  const weaponEssence = weapon ? WEAPON_ESSENCES.find(e => e.name === weapon.Name) : null;
+
+  // Talents for current character
+  const talents = CHARACTER_TALENTS[selectedCharName] || DEFAULT_TALENTS;
+
+  // Save showcase to localStorage
+  const saveShowcase = useCallback(() => {
+    const state: ShowcaseState = {
+      name: showcaseName || `${selectedCharName} Build`,
+      charName: selectedCharName, level, potential, affinity, charBreakthrough,
+      weaponName: selectedWeaponName, weaponLevel, weaponBreakthrough, weaponPotential, essenceLevels,
+      username, userCode, server, skillLevels,
+      equipBody, equipHand, equipEdc1, equipEdc2,
+      talentStates, colorTheme,
+    };
+    const saves = JSON.parse(localStorage.getItem('zs-showcases') || '[]');
+    saves.push({ ...state, savedAt: new Date().toISOString() });
+    localStorage.setItem('zs-showcases', JSON.stringify(saves));
+    setSaveMessage('Saved!');
+    setTimeout(() => setSaveMessage(''), 2000);
+  }, [showcaseName, selectedCharName, level, potential, affinity, charBreakthrough, selectedWeaponName, weaponLevel, weaponBreakthrough, weaponPotential, essenceLevels, username, userCode, server, skillLevels, equipBody, equipHand, equipEdc1, equipEdc2, talentStates, colorTheme]);
+
+  // Load showcase from localStorage
+  const loadShowcase = useCallback((state: ShowcaseState) => {
+    setSelectedCharName(state.charName);
+    setLevel(state.level);
+    setPotential(state.potential);
+    setAffinity(state.affinity);
+    setCharBreakthrough(state.charBreakthrough || 0);
+    setSelectedWeaponName(state.weaponName);
+    setWeaponLevel(state.weaponLevel);
+    setWeaponBreakthrough(state.weaponBreakthrough || 0);
+    setWeaponPotential(state.weaponPotential || 0);
+    setEssenceLevels(state.essenceLevels || [1, 1, 1]);
+    setShowcaseName(state.name);
+    setUsername(state.username);
+    setUserCode(state.userCode);
+    setServer(state.server);
+    setSkillLevels(state.skillLevels);
+    setEquipBody(state.equipBody);
+    setEquipHand(state.equipHand);
+    setEquipEdc1(state.equipEdc1);
+    setEquipEdc2(state.equipEdc2);
+    setTalentStates(state.talentStates || ['locked', 'locked']);
+    setColorTheme(state.colorTheme);
+  }, []);
+
+  // Reset to new
+  const resetShowcase = useCallback(() => {
+    setSelectedCharName('Laevatain');
+    setLevel(80);
+    setPotential(0);
+    setAffinity(5);
+    setCharBreakthrough(3);
+    setSelectedWeaponName('Forgeborn Scathe');
+    setWeaponLevel(80);
+    setWeaponBreakthrough(3);
+    setWeaponPotential(0);
+    setEssenceLevels([3, 2, 1]);
+    setShowcaseName('');
+    setUsername('');
+    setUserCode('');
+    setServer('');
+    setSkillLevels({ basic: 10, normal: 10, combo: 8, ultimate: 10 });
+    setEquipBody({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
+    setEquipHand({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
+    setEquipEdc1({ setName: 'Swordmancer', artifice: 2, substat1: '', substat2: '', substat3: '' });
+    setEquipEdc2({ setName: '', artifice: 0, substat1: '', substat2: '', substat3: '' });
+    setTalentStates(['locked', 'locked']);
+    setColorTheme('auto');
+  }, []);
+
+  // Load saved showcases list
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const savedShowcases: (ShowcaseState & { savedAt: string })[] = useMemo(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('zs-showcases') || '[]'); } catch { return []; }
+  }, [showLoadModal]); // re-read when modal opens
 
   const equipSlots = [
     { label: 'Body', state: equipBody, setter: setEquipBody },
@@ -586,8 +751,8 @@ export default function CharacterCardPage() {
                         </div>
                       </div>
 
-                      {/* Level display */}
-                      <div style={{ marginBottom: '20px' }}>
+                      {/* Level + Breakthrough display */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                         <div style={{
                           display: 'inline-block',
                           padding: '8px 16px',
@@ -607,6 +772,16 @@ export default function CharacterCardPage() {
                             color: '#ffffff',
                           }}>{level}</span>
                         </div>
+                        {charBreakthrough > 0 && (
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {Array.from({ length: charBreakthrough }).map((_, i) => (
+                              <span key={i} style={{ color: theme.primary, fontSize: '14px' }}>✦</span>
+                            ))}
+                          </div>
+                        )}
+                        {potential > 0 && (
+                          <span style={{ fontFamily: 'Share Tech Mono, monospace', fontSize: '11px', color: theme.accent }}>P{potential}</span>
+                        )}
                       </div>
 
                       {/* Core attributes: 2x2 grid */}
@@ -722,11 +897,17 @@ export default function CharacterCardPage() {
                           )}
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 700 }}>{weapon.Name}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               {Array.from({ length: weapon.Rarity }).map((_, i) => (
                                 <span key={i} style={{ color: RARITY_COLORS[weapon.Rarity] || '#888', fontSize: '9px' }}>★</span>
                               ))}
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>Lv.{weaponLevel}</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>Lv.{weaponLevel}</span>
+                              {weaponBreakthrough > 0 && (
+                                <span style={{ fontSize: '8px', color: theme.accent }}>B{weaponBreakthrough}</span>
+                              )}
+                              {weaponPotential > 0 && (
+                                <span style={{ fontSize: '8px', color: theme.primary }}>P{weaponPotential}</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -742,7 +923,7 @@ export default function CharacterCardPage() {
                             letterSpacing: '1px',
                           }}>EQUIPMENT SET</div>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            {equippedSets.slice(0, 3).map((eq, idx) => {
+                            {equippedSets.slice(0, 4).map((eq, idx) => {
                               const eqIcon = EQUIPMENT_ICONS[eq.setName];
                               return (
                                 <div key={idx} style={{
@@ -760,6 +941,37 @@ export default function CharacterCardPage() {
                                 </div>
                               );
                             })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Talents display */}
+                      {talentStates.some(t => t !== 'locked') && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <div style={{
+                            fontSize: '9px',
+                            color: theme.accent,
+                            marginBottom: '4px',
+                            letterSpacing: '1px',
+                          }}>TALENTS</div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {talents.map((talent, idx) => (
+                              talentStates[idx] !== 'locked' && (
+                                <div key={idx} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '3px 6px',
+                                  background: 'rgba(0,0,0,0.4)',
+                                  border: `1px solid ${theme.primary}20`,
+                                  fontSize: '8px',
+                                  color: 'rgba(255,255,255,0.7)',
+                                }}>
+                                  <span style={{ color: theme.primary, fontWeight: 700 }}>{talentStates[idx] === 'base' ? 'α' : 'β'}</span>
+                                  <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{talent.name}</span>
+                                </div>
+                              )
+                            ))}
                           </div>
                         </div>
                       )}
@@ -918,28 +1130,43 @@ export default function CharacterCardPage() {
               )}
               <ChevronDown size={18} className="text-[var(--color-text-muted)]" />
             </button>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Character Level</label>
-                <select value={level} onChange={e => setLevel(Number(e.target.value))} className={inputClass}>
-                  {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
-                    <option key={lv} value={lv}>Lv. {lv}</option>
-                  ))}
-                </select>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Character Level</label>
+              <select value={level} onChange={e => setLevel(Number(e.target.value))} className={inputClass}>
+                {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
+                  <option key={lv} value={lv}>Lv. {lv}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Breakthrough - {CHAR_BREAKTHROUGH_LABELS[charBreakthrough]}/{CHAR_BREAKTHROUGH_LABELS.length - 1}</label>
+              <div className="flex gap-1">
+                {CHAR_BREAKTHROUGH_LABELS.map((label, i) => (
+                  <button key={i} onClick={() => setCharBreakthrough(i)}
+                    className={`flex-1 py-1.5 text-xs font-bold border transition-all ${charBreakthrough === i ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : charBreakthrough > i ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]/60' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                  >{'★'.repeat(i + 1).substring(0, 3)}{i > 2 ? '+' : ''}</button>
+                ))}
               </div>
-              <div>
-                <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Potential (Dupes)</label>
-                <select value={potential} onChange={e => setPotential(Number(e.target.value))} className={inputClass}>
-                  {[0, 1, 2, 3, 4, 5, 6].map(p => (
-                    <option key={p} value={p}>P{p}</option>
-                  ))}
-                </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Potential (Dupes)</label>
+              <div className="flex gap-1">
+                {[0, 1, 2, 3, 4, 5, 6].map(p => (
+                  <button key={p} onClick={() => setPotential(p)}
+                    className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${potential === p ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                  >{p}</button>
+                ))}
               </div>
             </div>
             <div>
               <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Affinity Lv.{affinity}</label>
-              <input type="range" min={0} max={10} value={affinity} onChange={e => setAffinity(Number(e.target.value))}
-                className="w-full accent-[var(--color-accent)]" />
+              <div className="flex gap-1">
+                {[0, 1, 2, 3, 4].map(a => (
+                  <button key={a} onClick={() => setAffinity(a)}
+                    className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${affinity === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                  >{a}</button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -970,14 +1197,60 @@ export default function CharacterCardPage() {
                 <ChevronDown size={18} className="text-[var(--color-text-muted)]" />
               </button>
               {weapon && (
-                <div>
-                  <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Weapon Level</label>
-                  <select value={weaponLevel} onChange={e => setWeaponLevel(Number(e.target.value))} className={inputClass}>
-                    {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
-                      <option key={lv} value={lv}>Lv. {lv}</option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div>
+                    <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Weapon Level</label>
+                    <select value={weaponLevel} onChange={e => setWeaponLevel(Number(e.target.value))} className={inputClass}>
+                      {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
+                        <option key={lv} value={lv}>Lv. {lv}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Breakthrough - {WEAPON_BREAKTHROUGH_LABELS[weaponBreakthrough]}/{WEAPON_BREAKTHROUGH_LABELS.length - 1}</label>
+                    <div className="flex gap-1">
+                      {WEAPON_BREAKTHROUGH_LABELS.map((_, i) => (
+                        <button key={i} onClick={() => setWeaponBreakthrough(i)}
+                          className={`flex-1 py-1.5 text-xs font-bold border transition-all flex items-center justify-center gap-0.5 ${weaponBreakthrough >= i ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                        >{Array.from({ length: i + 1 }).map((__, j) => <span key={j} style={{ fontSize: '8px' }}>{'>'}</span>)}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Weapon Potential - P{weaponPotential}/5</label>
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3, 4, 5].map(p => (
+                        <button key={p} onClick={() => setWeaponPotential(p)}
+                          className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${weaponPotential === p ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                        >{p}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {weaponEssence && (
+                    <div className="space-y-2 pt-1 border-t border-[var(--color-border)]">
+                      <label className="block text-xs font-bold text-[var(--color-text-muted)]">Weapon Skill Levels (Essence Bonuses)</label>
+                      {[
+                        { label: `${weaponEssence.primaryAttr} [L]`, maxLv: 9 },
+                        { label: `${weaponEssence.secondaryStat || 'Secondary'} [L]`, maxLv: 9 },
+                        { label: `${weaponData?.SkillName?.split(':')[0] || weaponEssence.skillStat}: ${weaponData?.SkillName?.split(':')[1]?.trim() || ''}`, maxLv: 9 },
+                      ].map((ess, idx) => (
+                        <div key={idx}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[200px]">{ess.label}</span>
+                            <span className="text-[10px] text-[var(--color-accent)]">Lv. {essenceLevels[idx]}/{ess.maxLv}</span>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: ess.maxLv }).map((_, i) => (
+                              <button key={i} onClick={() => setEssenceLevels(prev => { const n = [...prev]; n[idx] = i + 1; return n; })}
+                                className={`flex-1 h-3 border transition-colors ${i < essenceLevels[idx] ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -1011,13 +1284,31 @@ export default function CharacterCardPage() {
                     )}
                   </button>
                   {state.setName && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-[var(--color-text-muted)] w-12">Artifice</span>
-                      {[0, 1, 2, 3].map(a => (
-                        <button key={a} onClick={() => setter({ ...state, artifice: a })}
-                          className={`px-2 py-0.5 text-xs font-bold border transition-colors ${state.artifice === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                        >+{a}</button>
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-bold text-[var(--color-text-muted)]">Artifice</div>
+                      {(EQUIPMENT_SUBSTATS[state.setName] || []).map((sub, si) => (
+                        <div key={si}>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] text-[var(--color-text-secondary)]">{sub.stat} +{sub.base}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[0, 1, 2, 3].map(a => (
+                              <button key={a} onClick={() => setter({ ...state, artifice: a })}
+                                className={`flex-1 py-0.5 text-[10px] font-bold border transition-colors ${state.artifice >= a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                              >+{a}</button>
+                            ))}
+                          </div>
+                        </div>
                       ))}
+                      {!EQUIPMENT_SUBSTATS[state.setName] && (
+                        <div className="flex items-center gap-1">
+                          {[0, 1, 2, 3].map(a => (
+                            <button key={a} onClick={() => setter({ ...state, artifice: a })}
+                              className={`flex-1 py-0.5 text-xs font-bold border transition-colors ${state.artifice === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                            >+{a}</button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1029,16 +1320,47 @@ export default function CharacterCardPage() {
           {character && (
             <div className={sectionClass}>
               <h3 className="text-sm font-bold text-white">Skill Levels</h3>
-              {SKILL_TYPES.map(skill => (
-                <div key={skill.key}>
-                  <label className="flex items-center justify-between text-xs font-bold text-[var(--color-text-muted)] mb-1">
-                    <span>{skill.label}</span>
-                    <span className="text-[var(--color-accent)]">Lv. {skillLevels[skill.key as keyof typeof skillLevels]}</span>
-                  </label>
-                  <input type="range" min={1} max={12}
-                    value={skillLevels[skill.key as keyof typeof skillLevels]}
-                    onChange={e => setSkillLevels(prev => ({ ...prev, [skill.key]: Number(e.target.value) }))}
-                    className="w-full accent-[var(--color-accent)]" />
+              {SKILL_TYPES.map(skill => {
+                const currentLv = skillLevels[skill.key as keyof typeof skillLevels];
+                return (
+                  <div key={skill.key} className="border border-[var(--color-border)] p-2">
+                    <label className="flex items-center justify-between text-xs font-bold text-[var(--color-text-muted)] mb-1.5">
+                      <span>{skill.label}</span>
+                      <span className="text-[var(--color-accent)]">Lv. {currentLv}</span>
+                    </label>
+                    <div className="grid grid-cols-6 gap-0.5">
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(lv => (
+                        <button key={lv} onClick={() => setSkillLevels(prev => ({ ...prev, [skill.key]: lv }))}
+                          className={`py-1 text-[10px] font-bold border transition-colors ${currentLv === lv ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/15' : currentLv > lv ? 'border-[var(--color-accent)]/30 text-[var(--color-accent)]/50 bg-[var(--color-accent)]/5' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                        >{lv <= 9 ? lv : lv === 10 ? <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" /> : lv === 11 ? <span className="flex items-center justify-center gap-px"><span className="w-1 h-1 rounded-full bg-current" /><span className="w-1 h-1 rounded-full bg-current" /></span> : <span className="flex items-center justify-center gap-px"><span className="w-1 h-1 rounded-full bg-current" /><span className="w-1 h-1 rounded-full bg-current" /><span className="w-1 h-1 rounded-full bg-current" /></span>}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Talent Levels */}
+          {character && (
+            <div className={sectionClass}>
+              <h3 className="text-sm font-bold text-[var(--color-accent)]">Talent Levels</h3>
+              {talents.map((talent, idx) => (
+                <div key={idx} className="border border-[var(--color-border)] border-dashed p-2">
+                  <label className="block text-xs font-bold text-[var(--color-text-muted)] mb-1.5">{talent.name}<span className="text-[10px] text-[var(--color-text-muted)]/60 ml-1">({talent.type})</span></label>
+                  <div className="flex gap-1">
+                    {([
+                      { key: 'locked' as TalentState, label: 'Locked', icon: '🔒' },
+                      { key: 'base' as TalentState, label: 'Base (α)' },
+                      { key: 'upgrade' as TalentState, label: 'Upgrade (β)' },
+                    ]).map(opt => (
+                      <button key={opt.key} onClick={() => setTalentStates(prev => { const n = [...prev]; n[idx] = opt.key; return n; })}
+                        className={`flex-1 py-1.5 text-[10px] font-bold border transition-colors ${talentStates[idx] === opt.key ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                      >
+                        <span className="border-l-2 pl-1.5" style={{ borderColor: talentStates[idx] === opt.key ? 'var(--color-accent)' : 'transparent' }}>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1057,6 +1379,24 @@ export default function CharacterCardPage() {
                   style={colorTheme === name ? { borderColor: t.primary, color: t.primary, backgroundColor: t.primary + '15' } : { color: t.primary + '99' }}
                 >{name}</button>
               ))}
+            </div>
+          </div>
+
+          {/* Save / Load / New */}
+          <div className={sectionClass}>
+            <button onClick={saveShowcase}
+              className="w-full py-2.5 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
+            >
+              <Save className="w-4 h-4" />
+              {saveMessage || 'Save Showcase'}
+            </button>
+            <div className="flex gap-2">
+              <button onClick={() => setShowLoadModal(true)}
+                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] flex items-center justify-center gap-2"
+              ><FolderOpen className="w-4 h-4" /> Load</button>
+              <button onClick={resetShowcase}
+                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] flex items-center justify-center gap-2"
+              ><FilePlus2 className="w-4 h-4" /> New</button>
             </div>
           </div>
 
@@ -1107,6 +1447,36 @@ export default function CharacterCardPage() {
           onSelect={name => { currentEquipPickerState.setter({ ...currentEquipPickerState.state, setName: name }); }} />
       )}
       {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
+
+      {/* Load Modal */}
+      {showLoadModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowLoadModal(false)}>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-md max-h-[70vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
+              <h3 className="text-white font-bold text-base">Load Showcase</h3>
+              <button onClick={() => setShowLoadModal(false)} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 space-y-2">
+              {savedShowcases.length === 0 ? (
+                <div className="text-center py-8 text-[var(--color-text-muted)] text-sm">No saved showcases yet. Create one and click Save!</div>
+              ) : (
+                savedShowcases.map((save, idx) => (
+                  <button key={idx} onClick={() => { loadShowcase(save); setShowLoadModal(false); }}
+                    className="w-full flex items-center gap-3 p-3 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white font-semibold truncate">{save.name}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">{save.charName} Lv.{save.level} - {new Date(save.savedAt).toLocaleDateString()}</div>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); const saves = [...savedShowcases]; saves.splice(idx, 1); localStorage.setItem('zs-showcases', JSON.stringify(saves)); setShowLoadModal(false); setTimeout(() => setShowLoadModal(true), 50); }}
+                      className="text-[var(--color-text-muted)] hover:text-red-400 p-1"><X size={14} /></button>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
