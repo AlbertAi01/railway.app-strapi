@@ -23,6 +23,9 @@ interface MapData {
   tileZones: TileZone[]; pois: POI[];
 }
 
+// Exact tile definition with correct coordinates
+interface TileDef { src: string; x: number; y: number; key: string; }
+
 // ──── Sub-type configuration ────
 interface SubType { label: string; icon: string; types: string[]; }
 interface CategoryDef {
@@ -127,6 +130,28 @@ function getEntityIcon(type: string): string {
   return ENTITY_ICON[type] || 'item_diamond';
 }
 
+// Generate all tile definitions from tileZone data
+// Wuling uses Y-INCREASING per row (row 1 at startY, subsequent rows below)
+function generateAllTiles(tileZones: TileZone[]): TileDef[] {
+  const tiles: TileDef[] = [];
+  for (const tz of tileZones) {
+    for (let col = 1; col <= tz.cols; col++) {
+      for (let row = 1; row <= tz.rows; row++) {
+        const x = tz.startX + (col - 1) * TILE_SIZE;
+        const y = tz.startY + (row - 1) * TILE_SIZE;
+        const fname = `${tz.id}_${col}_${row}.png`;
+        tiles.push({
+          src: `${TILE_BASE}/${tz.folder}/${fname}`,
+          x,
+          y,
+          key: `${tz.id}_${col}_${row}`
+        });
+      }
+    }
+  }
+  return tiles;
+}
+
 const STORAGE_KEY = 'zerosanity-map-wuling';
 
 export default function WulingMapPage() {
@@ -170,17 +195,18 @@ export default function WulingMapPage() {
   const lastTouchDist = useRef(0);
   const lastTouchCenter = useRef({ x: 0, y: 0 });
 
-  // Tile loading system
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tileCache = useRef<Map<string, HTMLImageElement>>(new Map());
-  const loadingTiles = useRef<Set<string>>(new Set());
+  // Tile loading state
+  const [loadedTiles, setLoadedTiles] = useState<Set<string>>(new Set());
   const [tilesLoaded, setTilesLoaded] = useState(0);
-  const [tilesTotal, setTilesTotal] = useState(0);
-  const loadQueueRef = useRef<{ src: string; x: number; y: number; key: string }[]>([]);
-  const activeLoads = useRef(0);
-  const MAX_CONCURRENT = 8;
-  const rafRef = useRef<number>(0);
 
+  // Generate all tiles from tileZone data
+  const allTiles = useMemo(() => {
+    if (!mapData) return [];
+    return generateAllTiles(mapData.tileZones);
+  }, [mapData]);
+  const tilesTotal = allTiles.length;
+
+  // Load map data
   useEffect(() => {
     fetch('/data/map02-pois.json')
       .then(r => {
@@ -197,7 +223,7 @@ export default function WulingMapPage() {
       });
   }, []);
 
-  // Calculate initial viewport after data loads AND container mounts
+  // Calculate initial viewport
   const viewportInitialized = useRef(false);
   useEffect(() => {
     if (!mapData || !containerRef.current || viewportInitialized.current) return;
@@ -212,7 +238,7 @@ export default function WulingMapPage() {
     });
   }, [mapData]);
 
-  // Load cloud data on mount
+  // Load cloud data
   useEffect(() => {
     if (cloudLoaded.current || !token) return;
     cloudLoaded.current = true;
@@ -226,7 +252,7 @@ export default function WulingMapPage() {
     })();
   }, [token]);
 
-  // Save completed to localStorage + debounced cloud sync
+  // Save completed
   const saveCompleted = useCallback((next: Set<string>) => {
     const arr = [...next];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
@@ -285,7 +311,7 @@ export default function WulingMapPage() {
     });
   }, [saveCompleted]);
 
-  // Visible POIs - filters by category, disabled sub-types, completion, search
+  // Visible POIs
   const visiblePois = useMemo(() => {
     if (!mapData) return [];
     return mapData.pois.filter(p => {
@@ -300,7 +326,7 @@ export default function WulingMapPage() {
     });
   }, [mapData, activeCategories, disabledSubTypes, hideCompleted, completed, searchQuery]);
 
-  // Cluster nearby POIs
+  // Cluster POIs
   const clusters = useMemo(() => {
     const clusterRadius = 30 / zoom;
     const result: { x: number; y: number; pois: POI[]; key: string }[] = [];
@@ -330,150 +356,6 @@ export default function WulingMapPage() {
     return result;
   }, [visiblePois, zoom]);
 
-  // Generate all tile definitions
-  const allTiles = useMemo(() => {
-    if (!mapData) return [];
-    const result: { src: string; x: number; y: number; key: string }[] = [];
-    for (const tz of mapData.tileZones) {
-      for (let col = 1; col <= tz.cols; col++) {
-        for (let row = 1; row <= tz.rows; row++) {
-          const x = tz.startX + (col - 1) * TILE_SIZE;
-          const y = tz.startY + (row - 1) * TILE_SIZE;
-          const fname = `${tz.id}_${col}_${row}.png`;
-          result.push({ src: `${TILE_BASE}/${tz.folder}/${fname}`, x, y, key: `${tz.id}_${col}_${row}` });
-        }
-      }
-    }
-    return result;
-  }, [mapData]);
-
-  // Draw tiles onto canvas
-  const drawTiles = useCallback(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || !mapData) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const vw = container.clientWidth;
-    const vh = container.clientHeight;
-
-    // Resize canvas to container
-    if (canvas.width !== vw * dpr || canvas.height !== vh * dpr) {
-      canvas.width = vw * dpr;
-      canvas.height = vh * dpr;
-      canvas.style.width = vw + 'px';
-      canvas.style.height = vh + 'px';
-    }
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, vw, vh);
-
-    // Apply transform
-    ctx.save();
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(zoom, zoom);
-
-    // Draw cached tiles
-    for (const tile of allTiles) {
-      const img = tileCache.current.get(tile.key);
-      if (img) {
-        ctx.drawImage(img, tile.x, tile.y, TILE_SIZE, TILE_SIZE);
-      }
-    }
-
-    // Draw zone labels
-    if (showZoneLabels && mapData.zoneLabels) {
-      ctx.save();
-      for (const z of mapData.zoneLabels) {
-        ctx.save();
-        ctx.translate(z.x, z.y);
-        ctx.scale(1 / zoom, 1 / zoom);
-        ctx.font = 'bold 14px system-ui';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = 'rgba(0,0,0,0.95)';
-        ctx.shadowBlur = 4;
-        ctx.fillText(z.name.toUpperCase(), 0, 0);
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.fillText(z.name.toUpperCase(), 0, 0);
-        ctx.restore();
-      }
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }, [allTiles, offset, zoom, mapData, showZoneLabels]);
-
-  // Process tile loading queue
-  const processQueue = useCallback(() => {
-    while (activeLoads.current < MAX_CONCURRENT && loadQueueRef.current.length > 0) {
-      const tile = loadQueueRef.current.shift()!;
-      if (tileCache.current.has(tile.key) || loadingTiles.current.has(tile.key)) continue;
-
-      loadingTiles.current.add(tile.key);
-      activeLoads.current++;
-
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        tileCache.current.set(tile.key, img);
-        loadingTiles.current.delete(tile.key);
-        activeLoads.current--;
-        setTilesLoaded(prev => prev + 1);
-        drawTiles();
-        processQueue();
-      };
-      img.onerror = () => {
-        loadingTiles.current.delete(tile.key);
-        activeLoads.current--;
-        processQueue();
-      };
-      img.src = tile.src;
-    }
-  }, [drawTiles]);
-
-  // Queue tiles for loading with center-first priority
-  useEffect(() => {
-    if (!mapData || !containerRef.current || allTiles.length === 0) return;
-
-    const vw = containerRef.current.clientWidth;
-    const vh = containerRef.current.clientHeight;
-    const centerX = (-offset.x / zoom) + (vw / zoom / 2);
-    const centerY = (-offset.y / zoom) + (vh / zoom / 2);
-
-    const sorted = [...allTiles]
-      .filter(t => !tileCache.current.has(t.key) && !loadingTiles.current.has(t.key))
-      .map(t => ({
-        ...t,
-        dist: Math.hypot(t.x + TILE_SIZE / 2 - centerX, t.y + TILE_SIZE / 2 - centerY),
-      }))
-      .sort((a, b) => a.dist - b.dist);
-
-    const margin = TILE_SIZE * 3;
-    const left = (-offset.x / zoom) - margin;
-    const top = (-offset.y / zoom) - margin;
-    const right = left + (vw / zoom) + margin * 2;
-    const bottom = top + (vh / zoom) + margin * 2;
-
-    const visible = sorted.filter(t =>
-      t.x + TILE_SIZE > left && t.x < right && t.y + TILE_SIZE > top && t.y < bottom
-    );
-
-    setTilesTotal(allTiles.length);
-    loadQueueRef.current = visible;
-    processQueue();
-  }, [allTiles, offset, zoom, mapData, processQueue]);
-
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(() => drawTiles());
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [drawTiles]);
-
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -495,7 +377,7 @@ export default function WulingMapPage() {
     isDragging.current = false;
   }, []);
 
-  // Zoom handler - zoom towards cursor
+  // Zoom handler
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
@@ -511,7 +393,7 @@ export default function WulingMapPage() {
     setZoom(newZoom);
   }, [zoom]);
 
-  // Touch handlers for mobile
+  // Touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       isDragging.current = true;
@@ -599,7 +481,18 @@ export default function WulingMapPage() {
     setSelectedPoi(poi);
   }, [zoom]);
 
-  // Completion stats (category level)
+  // Track tile loading
+  const handleTileLoad = useCallback((key: string) => {
+    setLoadedTiles(prev => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      setTilesLoaded(next.size);
+      return next;
+    });
+  }, []);
+
+  // Completion stats
   const stats = useMemo(() => {
     if (!mapData) return {};
     const s: Record<string, { total: number; done: number }> = {};
@@ -611,7 +504,6 @@ export default function WulingMapPage() {
     return s;
   }, [mapData, completed]);
 
-  // Sub-type stats: count per entity type
   const subTypeStats = useMemo(() => {
     if (!mapData) return {};
     const s: Record<string, { total: number; done: number }> = {};
@@ -623,7 +515,6 @@ export default function WulingMapPage() {
     return s;
   }, [mapData, completed]);
 
-  // Get stats for a sub-type group
   const getSubTypeGroupStats = useCallback((types: string[]) => {
     let total = 0, done = 0;
     for (const t of types) {
@@ -633,7 +524,6 @@ export default function WulingMapPage() {
     return { total, done };
   }, [subTypeStats]);
 
-  // Reset all completion data
   const resetProgress = useCallback(() => {
     if (confirm('Reset all completion progress for Wuling? This cannot be undone.')) {
       setCompleted(new Set());
@@ -744,7 +634,7 @@ export default function WulingMapPage() {
               >Clear</button>
             </div>
 
-            {/* Category list with expandable sub-types */}
+            {/* Category list */}
             <div className="flex-1 overflow-y-auto">
               {Object.entries(CATEGORY_CONFIG).map(([cat, cfg]) => {
                 const s = stats[cat] || { total: 0, done: 0 };
@@ -754,9 +644,7 @@ export default function WulingMapPage() {
 
                 return (
                   <div key={cat} className="border-b border-[var(--color-border)]/30">
-                    {/* Category row */}
                     <div className="flex items-center">
-                      {/* Checkbox */}
                       <button
                         onClick={() => toggleCategory(cat)}
                         className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors ${
@@ -770,7 +658,6 @@ export default function WulingMapPage() {
                         </div>
                       </button>
 
-                      {/* Category label + icon */}
                       <button
                         onClick={() => hasSubTypes ? toggleExpanded(cat) : toggleCategory(cat)}
                         className={`flex-1 flex items-center gap-2 py-2.5 pr-3 text-left transition-colors ${
@@ -791,21 +678,18 @@ export default function WulingMapPage() {
                       </button>
                     </div>
 
-                    {/* Expanded sub-types */}
                     {hasSubTypes && isExpanded && isActive && (
                       <div className="pb-2 px-2">
-                        {/* Total row */}
                         <div className="flex items-center gap-2 px-2 py-1 mb-1" style={{ borderLeft: `2px solid ${cfg.color}` }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={`${ICON_BASE}/${cfg.icon}.png`} alt="" className="w-4 h-4" />
                           <span className="text-[10px] font-bold uppercase" style={{ color: cfg.color }}>Total: {s.done} / {s.total}</span>
                         </div>
 
-                        {/* Individual sub-types */}
                         <div className="grid grid-cols-2 gap-1">
                           {cfg.subTypes!.map((st) => {
                             const stStats = getSubTypeGroupStats(st.types);
-                            if (stStats.total === 0) return null; // Hide sub-types with no POIs in this map
+                            if (stStats.total === 0) return null;
                             const isSubEnabled = !st.types.every(t => disabledSubTypes.has(t));
                             return (
                               <button
@@ -859,7 +743,7 @@ export default function WulingMapPage() {
           </div>
         )}
 
-        {/* ─── Map Canvas ─── */}
+        {/* ─── Map SVG ─── */}
         <div
           ref={containerRef}
           className="flex-1 relative overflow-hidden bg-black cursor-grab active:cursor-grabbing"
@@ -873,15 +757,56 @@ export default function WulingMapPage() {
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'none' }}
         >
-          {/* Canvas tile layer */}
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0"
+          {/* SVG tile layer */}
+          <svg
+            className="absolute inset-0 w-full h-full"
             style={{ pointerEvents: 'none' }}
-          />
+          >
+            <g
+              transform={`translate(${offset.x}, ${offset.y}) scale(${zoom})`}
+              style={{ willChange: 'transform' }}
+            >
+              {allTiles.map(tile => (
+                <image
+                  key={tile.key}
+                  href={tile.src}
+                  x={tile.x}
+                  y={tile.y}
+                  width={TILE_SIZE}
+                  height={TILE_SIZE}
+                  onLoad={() => handleTileLoad(tile.key)}
+                  onError={() => handleTileLoad(tile.key)}
+                />
+              ))}
+
+              {/* Zone labels */}
+              {showZoneLabels && mapData.zoneLabels && mapData.zoneLabels.map(z => (
+                <text
+                  key={z.id}
+                  x={z.x}
+                  y={z.y}
+                  fontSize={14 / zoom}
+                  fontWeight="bold"
+                  fill="white"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    textShadow: '0 0 8px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.8)',
+                    letterSpacing: '0.05em',
+                    fontFamily: 'system-ui',
+                    paintOrder: 'stroke fill',
+                    stroke: 'rgba(0,0,0,0.95)',
+                    strokeWidth: 3 / zoom,
+                  }}
+                >
+                  {z.name.toUpperCase()}
+                </text>
+              ))}
+            </g>
+          </svg>
 
           {/* Tile loading progress */}
-          {tilesLoaded < tilesTotal && tilesTotal > 0 && (
+          {tilesLoaded < tilesTotal && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-[var(--color-surface)]/95 border border-[var(--color-border)] px-4 py-2 backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <Loader2 size={14} className="text-[var(--color-accent)] animate-spin" />
@@ -949,13 +874,13 @@ export default function WulingMapPage() {
             })}
           </div>
 
-          {/* ─── POI Count Badge (top-right) ─── */}
+          {/* POI Count Badge */}
           <div className="absolute top-3 right-3 z-30 bg-[var(--color-surface)]/90 border border-[var(--color-border)] px-3 py-1.5 backdrop-blur-sm">
             <span className="text-xs font-mono text-[var(--color-accent)]">{visiblePois.length}</span>
             <span className="text-xs font-mono text-[var(--color-text-tertiary)]"> POIs visible</span>
           </div>
 
-          {/* ─── Right Side Controls ─── */}
+          {/* Right Side Controls */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5">
             <button
               onClick={() => setShowZoneLabels(!showZoneLabels)}
@@ -1010,7 +935,7 @@ export default function WulingMapPage() {
             </div>
           </div>
 
-          {/* ─── Sidebar toggle (when closed) ─── */}
+          {/* Sidebar toggle (when closed) */}
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
