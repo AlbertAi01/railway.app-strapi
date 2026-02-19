@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useReducer, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useReducer, useCallback, useMemo } from 'react';
 import {
   FileText,
   Database,
@@ -24,6 +24,11 @@ import {
   RotateCw,
   Copy,
   MousePointer2,
+  Share2,
+  Download,
+  Upload,
+  Clipboard,
+  BarChart3,
 } from 'lucide-react';
 
 // ──── Building Data Types ────
@@ -1008,6 +1013,130 @@ export default function FactoryPlannerPage() {
     } catch { /* silently fail */ }
   }, []);
 
+  // ── Export/Import/Share ──
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getLayoutData = useCallback(() => ({
+    buildings: state.grid.buildings,
+    outpostConfig: state.outpostConfig,
+    version: 1,
+    createdAt: new Date().toISOString(),
+    buildingCount: state.grid.buildings.length,
+  }), [state.grid.buildings, state.outpostConfig]);
+
+  const exportJSON = useCallback(() => {
+    const data = getLayoutData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `factory-layout-${state.outpostConfig}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [getLayoutData, state.outpostConfig]);
+
+  const copyJSON = useCallback(async () => {
+    const data = getLayoutData();
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data));
+      alert('Layout JSON copied to clipboard!');
+    } catch {
+      alert('Copy failed. Use Export JSON instead.');
+    }
+  }, [getLayoutData]);
+
+  const importJSONClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (data.buildings && Array.isArray(data.buildings)) {
+          dispatch({ type: 'CLEAR_GRID' });
+          data.buildings.forEach((b: PlacedBuilding) => {
+            dispatch({ type: 'PLACE_BUILDING', building: b });
+          });
+          if (data.outpostConfig) {
+            dispatch({ type: 'SET_OUTPOST_CONFIG', config: data.outpostConfig });
+          }
+        }
+      } catch {
+        alert('Invalid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }, []);
+
+  const shareBlueprint = useCallback(() => {
+    try {
+      const data = getLayoutData();
+      const encoded = btoa(JSON.stringify(data));
+      const url = `${window.location.origin}/factory-planner/planner?bp=${encoded}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Share link copied to clipboard!');
+      }).catch(() => {
+        prompt('Copy this share link:', url);
+      });
+    } catch {
+      alert('Failed to generate share link.');
+    }
+  }, [getLayoutData]);
+
+  // Load blueprint from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bp = params.get('bp');
+    if (bp) {
+      try {
+        const data = JSON.parse(atob(bp));
+        if (data.buildings && Array.isArray(data.buildings)) {
+          dispatch({ type: 'CLEAR_GRID' });
+          data.buildings.forEach((b: PlacedBuilding) => {
+            dispatch({ type: 'PLACE_BUILDING', building: b });
+          });
+          if (data.outpostConfig) {
+            dispatch({ type: 'SET_OUTPOST_CONFIG', config: data.outpostConfig });
+          }
+        }
+      } catch { /* ignore invalid bp param */ }
+    }
+  }, []);
+
+  // ── Stats calculations ──
+
+  const statsData = useMemo(() => {
+    const buildings = state.grid.buildings;
+    const categoryCounts: Record<string, number> = {};
+    let totalPower = 0;
+    let totalInputs = 0;
+    let totalOutputs = 0;
+
+    buildings.forEach(pb => {
+      const b = BUILDINGS.find(bld => bld.id === pb.buildingId);
+      if (b) {
+        categoryCounts[b.category] = (categoryCounts[b.category] || 0) + 1;
+        totalPower += b.power;
+        totalInputs += b.inputs;
+        totalOutputs += b.outputs;
+      }
+    });
+
+    return {
+      total: buildings.length,
+      categoryCounts,
+      totalPower,
+      totalInputs,
+      totalOutputs,
+    };
+  }, [state.grid.buildings]);
+
   // ── Keyboard Shortcuts ──
 
   useEffect(() => {
@@ -1325,12 +1454,12 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={11} className="opacity-50" />
           </ToolbarButton>
           {state.showFileMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
-              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">New</button>
-              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Load <span className="text-gray-500 text-[10px]">Ctrl+L</span></button>
-              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Save <span className="text-gray-500 text-[10px]">Ctrl+S</span></button>
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[180px] z-50">
+              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><FileText size={12} />New Grid <span className="text-gray-500 text-[10px] ml-auto">Ctrl+N</span></button>
+              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Upload size={12} />Load <span className="text-gray-500 text-[10px] ml-auto">Ctrl+O</span></button>
+              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Download size={12} />Save <span className="text-gray-500 text-[10px] ml-auto">Ctrl+S</span></button>
               <div className="border-t border-[var(--color-border)] my-1" />
-              <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed">Export Image (coming soon)</button>
+              <button onClick={() => { shareBlueprint(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Share2 size={12} />Share Blueprint</button>
             </div>
           )}
         </div>
@@ -1343,9 +1472,11 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={11} className="opacity-50" />
           </ToolbarButton>
           {state.showDataMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
-              <button className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Import JSON</button>
-              <button className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors">Export JSON</button>
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[180px] z-50">
+              <button onClick={() => { exportJSON(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Download size={12} />Export JSON</button>
+              <button onClick={() => { importJSONClick(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Upload size={12} />Import JSON</button>
+              <div className="border-t border-[var(--color-border)] my-1" />
+              <button onClick={() => { copyJSON(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Clipboard size={12} />Copy to Clipboard</button>
             </div>
           )}
         </div>
@@ -1488,7 +1619,7 @@ export default function FactoryPlannerPage() {
 
         {/* Speed */}
         <div className="flex items-center gap-0.5">
-          {[1, 2, 5, 10].map((speed) => (
+          {[1, 2, 5, 10, 20].map((speed) => (
             <ToolbarButton
               key={speed}
               active={state.speed === speed}
@@ -1500,6 +1631,9 @@ export default function FactoryPlannerPage() {
           ))}
         </div>
       </div>
+
+      {/* Hidden file input for JSON import */}
+      <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
 
       {/* ─── Canvas Area (fills all remaining space) ─── */}
       <div ref={containerRef} className="flex-1 relative overflow-hidden min-h-0">
@@ -1545,6 +1679,55 @@ export default function FactoryPlannerPage() {
             <ZoomOut size={16} />
           </button>
         </div>
+
+        {/* Stats Panel (top-right overlay) */}
+        {state.showStats && (
+          <div className="absolute top-4 right-4 z-10 w-56 bg-[var(--color-surface)]/95 backdrop-blur-sm border border-[var(--color-border)] shadow-xl">
+            <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
+              <h3 className="text-xs font-bold text-[var(--color-accent)] flex items-center gap-1.5"><BarChart3 size={12} />FACTORY STATS</h3>
+              <button onClick={() => dispatch({ type: 'TOGGLE_STATS' })} className="text-gray-400 hover:text-white"><X size={14} /></button>
+            </div>
+            <div className="p-3 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Total Buildings</span>
+                <span className="text-white font-bold">{statsData.total}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Power Usage</span>
+                <span className="text-white font-bold">{statsData.totalPower} <span className="text-[10px] text-gray-500">kW</span></span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Total Inputs</span>
+                <span className="text-white font-bold">{statsData.totalInputs}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Total Outputs</span>
+                <span className="text-white font-bold">{statsData.totalOutputs}</span>
+              </div>
+              {statsData.total > 0 && (
+                <>
+                  <div className="border-t border-[var(--color-border)] pt-2 mt-2">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">By Category</div>
+                    {Object.entries(statsData.categoryCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+                      <div key={cat} className="flex justify-between py-0.5">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 inline-block" style={{ backgroundColor: CATEGORY_COLORS[cat as Building['category']] || '#888' }} />
+                          <span className="text-gray-300">{cat}</span>
+                        </span>
+                        <span className="text-white">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {statsData.total === 0 && (
+                <div className="text-center py-4 text-gray-500 text-[10px]">
+                  No buildings placed.<br />Place buildings to see stats.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Current tool mode indicator (bottom-left) */}
         <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
