@@ -109,19 +109,19 @@ function CharacterPickerModal({
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h3 className="text-white font-bold text-sm">Select Operator</h3>
-          <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
+          <h3 className="text-white font-bold text-base">Select Operator</h3>
+          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
         </div>
         <div className="p-4 space-y-3 border-b border-[var(--color-border)]">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search operators..."
-              className="w-full pl-9 pr-3 py-2 bg-[#0A0A0A] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
+              className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
           </div>
           <div className="flex flex-wrap gap-1.5">
             {([6, 5, 4] as number[]).map(r => (
               <button key={r} onClick={() => setRarityFilter(rarityFilter === r ? null : r)}
-                className={`px-2.5 py-1 text-xs font-bold border transition-colors ${rarityFilter === r ? '' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-text-secondary)]'}`}
+                className={`px-2.5 py-1 text-sm font-bold border transition-colors ${rarityFilter === r ? '' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-text-secondary)]'}`}
                 style={rarityFilter === r ? { borderColor: RARITY_COLORS[r], color: RARITY_COLORS[r], backgroundColor: RARITY_COLORS[r] + '15' } : undefined}
               >{'★'.repeat(r)}</button>
             ))}
@@ -129,7 +129,7 @@ function CharacterPickerModal({
           <div className="flex flex-wrap gap-1.5">
             {(['Physical', 'Heat', 'Cryo', 'Electric', 'Nature'] as Element[]).map(el => (
               <button key={el} onClick={() => setElementFilter(elementFilter === el ? null : el)}
-                className={`px-2.5 py-1 text-xs font-bold border transition-colors ${elementFilter === el ? '' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-text-secondary)]'}`}
+                className={`px-2.5 py-1 text-sm font-bold border transition-colors ${elementFilter === el ? '' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-text-secondary)]'}`}
                 style={elementFilter === el ? { borderColor: ELEMENT_COLORS[el], color: ELEMENT_COLORS[el], backgroundColor: ELEMENT_COLORS[el] + '15' } : undefined}
               >{el}</button>
             ))}
@@ -137,7 +137,7 @@ function CharacterPickerModal({
           <div className="flex flex-wrap gap-1.5">
             {(['Guard', 'Assault', 'Defender', 'Vanguard', 'Supporter', 'Caster'] as Role[]).map(r => (
               <button key={r} onClick={() => setRoleFilter(roleFilter === r ? null : r)}
-                className={`px-2.5 py-1 text-xs font-bold border transition-colors ${roleFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-text-secondary)]'}`}
+                className={`px-2.5 py-1 text-sm font-bold border transition-colors ${roleFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-text-secondary)]'}`}
               >{r}</button>
             ))}
           </div>
@@ -159,8 +159,8 @@ function CharacterPickerModal({
                       ))}
                     </div>
                   </div>
-                  <span className="text-[10px] text-white mt-1 text-center leading-tight truncate w-full">{c.Name}</span>
-                  <span className="text-[9px] mt-0.5" style={{ color: ELEMENT_COLORS[c.Element] }}>{c.Element}</span>
+                  <span className="text-[11px] text-white mt-1 text-center leading-tight truncate w-full">{c.Name}</span>
+                  <span className="text-[10px] mt-0.5" style={{ color: ELEMENT_COLORS[c.Element] }}>{c.Element}</span>
                 </button>
               );
             })}
@@ -184,8 +184,8 @@ function WeaponPickerModal({
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-md max-h-[70vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h3 className="text-white font-bold text-sm">Select {weaponType}</h3>
-          <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
+          <h3 className="text-white font-bold text-base">Select {weaponType}</h3>
+          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
         </div>
         <div className="p-4 overflow-y-auto flex-1 space-y-1">
           {compatible.map(w => {
@@ -195,14 +195,14 @@ function WeaponPickerModal({
               <button key={w.Name} onClick={() => { onSelect(w); onClose(); }}
                 className={`w-full flex items-center gap-3 p-2 border transition-colors ${isSelected ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-text-secondary)]'}`}
               >
-                <div className="w-10 h-10 bg-[#0A0A0A] flex-shrink-0 relative">
-                  {icon && <Image src={icon} alt={w.Name} fill className="object-contain p-0.5" sizes="40px" unoptimized />}
+                <div className="w-12 h-12 bg-[var(--color-surface-2)] flex-shrink-0 relative">
+                  {icon && <Image src={icon} alt={w.Name} fill className="object-contain p-0.5" sizes="48px" unoptimized />}
                 </div>
                 <div className="text-left">
                   <div className="text-sm text-white">{w.Name}</div>
-                  <div className="text-xs flex items-center gap-0.5">
+                  <div className="text-sm flex items-center gap-0.5">
                     {Array.from({ length: w.Rarity }).map((_, i) => (
-                      <Star key={i} size={8} className="fill-current" style={{ color: RARITY_COLORS[w.Rarity] || '#888' }} />
+                      <Star key={i} size={10} className="fill-current" style={{ color: RARITY_COLORS[w.Rarity] || '#888' }} />
                     ))}
                   </div>
                 </div>
@@ -227,17 +227,17 @@ function EquipmentPickerModal({
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-sm max-h-[70vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h3 className="text-white font-bold text-sm">Select {slot} Equipment</h3>
-          <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
+          <h3 className="text-white font-bold text-base">Select {slot} Equipment</h3>
+          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
         </div>
         <div className="p-4 overflow-y-auto flex-1 space-y-1">
           <button onClick={() => { onSelect(''); onClose(); }}
             className={`w-full flex items-center gap-3 p-2 border transition-colors ${!currentSet ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-text-secondary)]'}`}
           >
-            <div className="w-10 h-10 bg-[#0A0A0A] flex-shrink-0 flex items-center justify-center">
-              <X size={16} className="text-[var(--color-text-tertiary)]" />
+            <div className="w-12 h-12 bg-[var(--color-surface-2)] flex-shrink-0 flex items-center justify-center">
+              <X size={18} className="text-[var(--color-text-muted)]" />
             </div>
-            <span className="text-sm text-[var(--color-text-tertiary)]">None</span>
+            <span className="text-sm text-[var(--color-text-muted)]">None</span>
           </button>
           {EQUIPMENT_SETS.map(eq => {
             const icon = EQUIPMENT_ICONS[eq.name];
@@ -246,12 +246,12 @@ function EquipmentPickerModal({
               <button key={eq.name} onClick={() => { onSelect(eq.name); onClose(); }}
                 className={`w-full flex items-center gap-3 p-2 border transition-colors ${isSelected ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-text-secondary)]'}`}
               >
-                <div className="w-10 h-10 bg-[#0A0A0A] flex-shrink-0 relative">
-                  {icon && <Image src={icon} alt={eq.name} fill className="object-contain p-0.5" sizes="40px" unoptimized />}
+                <div className="w-12 h-12 bg-[var(--color-surface-2)] flex-shrink-0 relative">
+                  {icon && <Image src={icon} alt={eq.name} fill className="object-contain p-0.5" sizes="48px" unoptimized />}
                 </div>
                 <div className="text-left">
                   <div className="text-sm text-white">{eq.name}</div>
-                  <div className="text-[10px] text-[var(--color-text-tertiary)]">{eq.tier}</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">{eq.tier}</div>
                 </div>
               </button>
             );
@@ -264,8 +264,8 @@ function EquipmentPickerModal({
 
 // ──────────── Main Page ────────────
 
-const inputClass = "w-full px-3 py-2 bg-[#0A0A0A] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]";
-const sectionClass = "bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 space-y-3";
+const inputClass = "w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]";
+const sectionClass = "bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 space-y-3 shadow-[var(--shadow-card)]";
 
 export default function CharacterCardPage() {
   // Character - Pre-load Laevatain
@@ -405,8 +405,8 @@ export default function CharacterCardPage() {
       <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
         {/* ═══════ LEFT: Card Preview ═══════ */}
         <div className="order-2 lg:order-1">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
-            <h2 className="text-xs font-bold text-white mb-3">Card Preview</h2>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 shadow-[var(--shadow-card)]">
+            <h2 className="text-sm font-bold text-white mb-4">Card Preview</h2>
 
             {character && stats ? (
               <div ref={previewContainerRef} style={{ width: '100%', overflow: 'hidden' }}>
@@ -849,10 +849,10 @@ export default function CharacterCardPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-24 text-[var(--color-text-tertiary)]" style={{ aspectRatio: '16 / 9', maxWidth: '100%', margin: '0 auto' }}>
+              <div className="text-center py-24 text-[var(--color-text-muted)]" style={{ aspectRatio: '16 / 9', maxWidth: '100%', margin: '0 auto' }}>
                 <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p className="text-sm">Select a character to create a showcase card</p>
-                <p className="text-xs mt-2 text-[var(--color-text-tertiary)]/60">Configure stats, equipment, skills, and export as image</p>
+                <p className="text-sm mt-2 text-[var(--color-text-muted)]/60">Configure stats, equipment, skills, and export as image</p>
               </div>
             )}
           </div>
@@ -870,19 +870,19 @@ export default function CharacterCardPage() {
 
           {/* User Info */}
           <div className={sectionClass}>
-            <h3 className="text-xs font-bold text-white">User Information</h3>
+            <h3 className="text-sm font-bold text-white">User Information</h3>
             <div>
-              <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">Username</label>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Username</label>
               <input type="text" value={username} onChange={e => setUsername(e.target.value)}
                 placeholder="Enter your username" className={inputClass} />
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">User Code</label>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">User Code</label>
               <input type="text" value={userCode} onChange={e => setUserCode(e.target.value)}
                 placeholder="Enter your in-game user ID" className={inputClass} />
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">Server</label>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Server</label>
               <select value={server} onChange={e => setServer(e.target.value)} className={inputClass}>
                 <option value="">Select server region</option>
                 <option value="Americas/Europe">Americas/Europe</option>
@@ -894,33 +894,33 @@ export default function CharacterCardPage() {
 
           {/* Character */}
           <div className={sectionClass}>
-            <h3 className="text-xs font-bold text-white">Character</h3>
+            <h3 className="text-sm font-bold text-white">Character</h3>
             <button onClick={() => setCharPickerOpen(true)}
-              className="w-full flex items-center gap-3 p-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
+              className="w-full flex items-center gap-3 p-3 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
             >
               {character ? (
                 <>
-                  <div className="w-12 h-12 bg-[#0A0A0A] relative flex-shrink-0">
+                  <div className="w-14 h-14 bg-[var(--color-surface-2)] relative flex-shrink-0">
                     {iconUrl && <Image src={iconUrl} alt={character.Name} fill className="object-cover" sizes="48px" unoptimized />}
                   </div>
                   <div className="text-left flex-1">
                     <div className="flex items-center gap-0.5">
                       {Array.from({ length: character.Rarity }).map((_, i) => (
-                        <Star key={i} size={10} className="fill-current" style={{ color: RARITY_COLORS[character.Rarity] }} />
+                        <Star key={i} size={12} className="fill-current" style={{ color: RARITY_COLORS[character.Rarity] }} />
                       ))}
                     </div>
                     <div className="text-sm text-white font-semibold">{character.Name}</div>
-                    <div className="text-[10px] text-[var(--color-text-tertiary)]">Click to change</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">Click to change</div>
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-[var(--color-text-tertiary)] py-2">Click to select a character...</div>
+                <div className="text-sm text-[var(--color-text-muted)] py-2">Click to select a character...</div>
               )}
-              <ChevronDown size={16} className="text-[var(--color-text-tertiary)]" />
+              <ChevronDown size={18} className="text-[var(--color-text-muted)]" />
             </button>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">Character Level</label>
+                <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Character Level</label>
                 <select value={level} onChange={e => setLevel(Number(e.target.value))} className={inputClass}>
                   {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
                     <option key={lv} value={lv}>Lv. {lv}</option>
@@ -928,7 +928,7 @@ export default function CharacterCardPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">Potential (Dupes)</label>
+                <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Potential (Dupes)</label>
                 <select value={potential} onChange={e => setPotential(Number(e.target.value))} className={inputClass}>
                   {[0, 1, 2, 3, 4, 5, 6].map(p => (
                     <option key={p} value={p}>P{p}</option>
@@ -937,7 +937,7 @@ export default function CharacterCardPage() {
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">Affinity Lv.{affinity}</label>
+              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Affinity Lv.{affinity}</label>
               <input type="range" min={0} max={10} value={affinity} onChange={e => setAffinity(Number(e.target.value))}
                 className="w-full accent-[var(--color-accent)]" />
             </div>
@@ -946,13 +946,13 @@ export default function CharacterCardPage() {
           {/* Weapon */}
           {character && (
             <div className={sectionClass}>
-              <h3 className="text-xs font-bold text-white">Weapon</h3>
+              <h3 className="text-sm font-bold text-white">Weapon</h3>
               <button onClick={() => setWeaponPickerOpen(true)}
-                className="w-full flex items-center gap-3 p-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
+                className="w-full flex items-center gap-3 p-3 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
               >
                 {weapon ? (
                   <>
-                    <div className="w-10 h-10 bg-[#0A0A0A] relative flex-shrink-0">
+                    <div className="w-12 h-12 bg-[var(--color-surface-2)] relative flex-shrink-0">
                       {weaponIconUrl && <Image src={weaponIconUrl} alt={weapon.Name} fill className="object-contain p-0.5" sizes="40px" unoptimized />}
                     </div>
                     <div className="text-left flex-1">
@@ -965,13 +965,13 @@ export default function CharacterCardPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="text-sm text-[var(--color-text-tertiary)] py-1">Click to select weapon...</div>
+                  <div className="text-sm text-[var(--color-text-muted)] py-1">Click to select weapon...</div>
                 )}
-                <ChevronDown size={16} className="text-[var(--color-text-tertiary)]" />
+                <ChevronDown size={18} className="text-[var(--color-text-muted)]" />
               </button>
               {weapon && (
                 <div>
-                  <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-tertiary)]">Weapon Level</label>
+                  <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Weapon Level</label>
                   <select value={weaponLevel} onChange={e => setWeaponLevel(Number(e.target.value))} className={inputClass}>
                     {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
                       <option key={lv} value={lv}>Lv. {lv}</option>
@@ -985,37 +985,37 @@ export default function CharacterCardPage() {
           {/* Equipment */}
           {character && (
             <div className={sectionClass}>
-              <h3 className="text-xs font-bold text-white">Equipment</h3>
+              <h3 className="text-sm font-bold text-white">Equipment</h3>
               {equipSlots.map(({ label, state, setter }) => (
                 <div key={label} className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase">{label}</span>
+                    <span className="text-xs font-bold text-[var(--color-text-muted)] uppercase">{label}</span>
                   </div>
                   <button onClick={() => setEquipPickerSlot(label)}
-                    className="w-full flex items-center gap-2 p-1.5 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
+                    className="w-full flex items-center gap-2 p-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
                   >
                     {state.setName ? (
                       <>
-                        <div className="w-8 h-8 bg-[#0A0A0A] relative flex-shrink-0">
+                        <div className="w-10 h-10 bg-[var(--color-surface-2)] relative flex-shrink-0">
                           {EQUIPMENT_ICONS[state.setName] && (
                             <Image src={EQUIPMENT_ICONS[state.setName]} alt={state.setName} fill className="object-contain p-0.5" sizes="32px" unoptimized />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs text-white truncate">{state.setName} {SLOT_SUFFIXES[label] || ''}</div>
-                          <div className="text-[9px] text-[var(--color-text-tertiary)]">Click to change</div>
+                          <div className="text-xs text-[var(--color-text-muted)]">Click to change</div>
                         </div>
                       </>
                     ) : (
-                      <span className="text-xs text-[var(--color-text-tertiary)] py-1">Select {label.toLowerCase()} equipment...</span>
+                      <span className="text-xs text-[var(--color-text-muted)] py-1">Select {label.toLowerCase()} equipment...</span>
                     )}
                   </button>
                   {state.setName && (
                     <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-[var(--color-text-tertiary)] w-12">Artifice</span>
+                      <span className="text-xs text-[var(--color-text-muted)] w-12">Artifice</span>
                       {[0, 1, 2, 3].map(a => (
                         <button key={a} onClick={() => setter({ ...state, artifice: a })}
-                          className={`px-2 py-0.5 text-[10px] font-bold border transition-colors ${state.artifice === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}
+                          className={`px-2 py-0.5 text-xs font-bold border transition-colors ${state.artifice === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
                         >+{a}</button>
                       ))}
                     </div>
@@ -1028,10 +1028,10 @@ export default function CharacterCardPage() {
           {/* Skill Levels */}
           {character && (
             <div className={sectionClass}>
-              <h3 className="text-xs font-bold text-white">Skill Levels</h3>
+              <h3 className="text-sm font-bold text-white">Skill Levels</h3>
               {SKILL_TYPES.map(skill => (
                 <div key={skill.key}>
-                  <label className="flex items-center justify-between text-[10px] font-bold text-[var(--color-text-tertiary)] mb-1">
+                  <label className="flex items-center justify-between text-xs font-bold text-[var(--color-text-muted)] mb-1">
                     <span>{skill.label}</span>
                     <span className="text-[var(--color-accent)]">Lv. {skillLevels[skill.key as keyof typeof skillLevels]}</span>
                   </label>
@@ -1046,14 +1046,14 @@ export default function CharacterCardPage() {
 
           {/* Color Theme */}
           <div className={sectionClass}>
-            <h3 className="text-xs font-bold text-white">Color Theme</h3>
+            <h3 className="text-sm font-bold text-white">Color Theme</h3>
             <div className="flex flex-wrap gap-1.5">
               <button onClick={() => setColorTheme('auto')}
-                className={`px-2.5 py-1.5 text-xs font-bold border transition-colors ${colorTheme === 'auto' ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}
+                className={`px-2.5 py-1.5 text-sm font-bold border transition-colors ${colorTheme === 'auto' ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
               >Auto</button>
               {Object.entries(THEME_COLORS).map(([name, t]) => (
                 <button key={name} onClick={() => setColorTheme(name)}
-                  className={`px-2.5 py-1.5 text-xs font-bold border transition-colors ${colorTheme === name ? '' : 'border-[var(--color-border)]'}`}
+                  className={`px-2.5 py-1.5 text-sm font-bold border transition-colors ${colorTheme === name ? '' : 'border-[var(--color-border)]'}`}
                   style={colorTheme === name ? { borderColor: t.primary, color: t.primary, backgroundColor: t.primary + '15' } : { color: t.primary + '99' }}
                 >{name}</button>
               ))}
@@ -1075,17 +1075,17 @@ export default function CharacterCardPage() {
             </div>
             <div className="flex gap-2">
               <button onClick={copyToClipboard} disabled={!character || isExporting}
-                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-xs hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center justify-center gap-2"
               >Copy to Clipboard</button>
               <div className="relative">
                 <button onClick={() => setShowShareMenu(!showShareMenu)} disabled={!character}
-                  className="py-2 px-3 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-xs hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center gap-2"
-                ><Share2 size={14} /> Share</button>
+                  className="py-2 px-3 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center gap-2"
+                ><Share2 size={16} /> Share</button>
                 {showShareMenu && character && (
-                  <div className="absolute right-0 bottom-full mb-2 w-44 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl shadow-xl z-50">
-                    <button onClick={shareToTwitter} className="w-full px-4 py-2.5 text-left text-xs hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">Post on X</button>
-                    <button onClick={shareToReddit} className="w-full px-4 py-2.5 text-left text-xs hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">Post on Reddit</button>
-                    <button onClick={copyToClipboard} className="w-full px-4 py-2.5 text-left text-xs hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] border-t border-[var(--color-border)]">Copy for Discord</button>
+                  <div className="absolute right-0 bottom-full mb-2 w-44 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl shadow-[var(--shadow-card-hover)] z-50">
+                    <button onClick={shareToTwitter} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">Post on X</button>
+                    <button onClick={shareToReddit} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">Post on Reddit</button>
+                    <button onClick={copyToClipboard} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] border-t border-[var(--color-border)]">Copy for Discord</button>
                   </div>
                 )}
               </div>

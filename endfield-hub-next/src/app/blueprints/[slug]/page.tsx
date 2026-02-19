@@ -177,10 +177,10 @@ export default function BlueprintDetail() {
       </div>
 
       {/* Production Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         {/* Output Cards */}
         {blueprint.outputsPerMin.map((output, idx) => (
-          <div key={idx} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all">
+          <div key={idx} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 hover:border-[var(--color-accent)] transition-all shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5">
             <div className="flex items-start justify-between mb-3">
               {blueprint.productIcon && idx === 0 && (
                 <div className="w-12 h-12 bg-[#0a0a0a] border border-[var(--color-border)] p-1.5">
@@ -194,10 +194,10 @@ export default function BlueprintDetail() {
                   />
                 </div>
               )}
-              <TrendingUp size={16} className="text-[var(--color-accent)] opacity-60" />
+              <TrendingUp size={18} className="text-[var(--color-accent)] opacity-60" />
             </div>
-            <h3 className="text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wider">Production</h3>
-            <p className="text-white font-semibold mb-1 truncate">{output.name}</p>
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">Production</h3>
+            <p className="text-white font-semibold text-base mb-1 truncate">{output.name}</p>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-bold text-[var(--color-accent)] font-mono">
                 {(countUp[output.name] || 0).toFixed(1)}
@@ -209,17 +209,17 @@ export default function BlueprintDetail() {
 
         {/* Net Power Card */}
         {blueprint.netPower !== undefined && (
-          <div className={`bg-[var(--color-surface)] border clip-corner-tl p-5 hover:border-opacity-100 transition-all ${
+          <div className={`bg-[var(--color-surface)] border clip-corner-tl p-6 hover:border-opacity-100 transition-all shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 ${
             blueprint.netPower > 0 ? 'border-green-500/30' : 'border-red-500/30'
           }`}>
             <div className="flex items-start justify-between mb-3">
-              <Zap size={24} className={blueprint.netPower > 0 ? 'text-green-400' : 'text-red-400'} />
-              <div className={`text-xs px-2 py-0.5 ${blueprint.netPower > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+              <Zap size={28} className={blueprint.netPower > 0 ? 'text-green-400' : 'text-red-400'} />
+              <div className={`text-sm px-2 py-0.5 ${blueprint.netPower > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                 {blueprint.netPower > 0 ? 'GENERATING' : 'CONSUMING'}
               </div>
             </div>
-            <h3 className="text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wider">Net Power</h3>
-            <p className="text-white font-semibold mb-1">Power Grid</p>
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">Net Power</h3>
+            <p className="text-white font-semibold text-base mb-1">Power Grid</p>
             <div className="flex items-baseline gap-1">
               <span className={`text-2xl font-bold font-mono ${blueprint.netPower > 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {blueprint.netPower > 0 ? '+' : ''}{Math.abs(blueprint.netPower)}
@@ -231,12 +231,12 @@ export default function BlueprintDetail() {
 
         {/* Building Count Card */}
         {blueprint.buildingCount && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 hover:border-[var(--color-accent)] transition-all shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5">
             <div className="flex items-start justify-between mb-3">
-              <Package size={24} className="text-[var(--color-accent)]" />
+              <Package size={28} className="text-[var(--color-accent)]" />
             </div>
-            <h3 className="text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wider">Buildings</h3>
-            <p className="text-white font-semibold mb-1">Total Count</p>
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">Buildings</h3>
+            <p className="text-white font-semibold text-base mb-1">Total Count</p>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-bold text-white font-mono">{blueprint.buildingCount}</span>
               <span className="text-xs text-[var(--color-text-secondary)]">units</span>
@@ -246,12 +246,12 @@ export default function BlueprintDetail() {
 
         {/* Grid Size Card */}
         {blueprint.gridSize && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 hover:border-[var(--color-accent)] transition-all shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5">
             <div className="flex items-start justify-between mb-3">
-              <Grid3X3 size={24} className="text-[var(--color-accent)]" />
+              <Grid3X3 size={28} className="text-[var(--color-accent)]" />
             </div>
-            <h3 className="text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wider">Grid Size</h3>
-            <p className="text-white font-semibold mb-1">Footprint</p>
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">Grid Size</h3>
+            <p className="text-white font-semibold text-base mb-1">Footprint</p>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-bold text-white font-mono">{blueprint.gridSize}</span>
             </div>
@@ -264,7 +264,7 @@ export default function BlueprintDetail() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
           {/* Description Section */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
             <h2 className="text-2xl font-bold text-white font-tactical mb-4 flex items-center gap-3">
               <span className="diamond diamond-sm" />
               FACTORY ANALYSIS
@@ -276,31 +276,31 @@ export default function BlueprintDetail() {
 
           {/* Import Codes Section */}
           {blueprint.importCodes.length > 0 && (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
               <h2 className="text-2xl font-bold text-white font-tactical mb-4 flex items-center gap-3">
                 <span className="diamond diamond-sm" />
                 IMPORT CODES
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {blueprint.importCodes.map((ic, idx) => (
-                  <div key={idx} className="bg-[var(--color-surface-2)] border border-[#333] clip-corner-tl p-4">
+                  <div key={idx} className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-5">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs text-[var(--color-accent)] mb-1 uppercase tracking-wider">{ic.region}</div>
-                        <code className="text-white font-mono text-sm break-all">{ic.code}</code>
+                        <div className="text-sm text-[var(--color-accent)] mb-1 uppercase tracking-wider">{ic.region}</div>
+                        <code className="text-white font-mono text-base break-all">{ic.code}</code>
                       </div>
                       <button
                         onClick={() => copyCode(ic.region, ic.code)}
-                        className="ml-4 flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] border border-[#333] clip-corner-tl text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
+                        className="ml-4 flex items-center gap-2 px-5 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
                       >
                         {copiedCode === ic.region ? (
                           <>
-                            <Check size={14} />
+                            <Check size={16} />
                             Copied!
                           </>
                         ) : (
                           <>
-                            <Copy size={14} />
+                            <Copy size={16} />
                             Copy
                           </>
                         )}
@@ -316,17 +316,17 @@ export default function BlueprintDetail() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Category & Tags */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
-            <h3 className="text-sm text-[var(--color-text-tertiary)] mb-3 uppercase tracking-wider">Category</h3>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 shadow-[var(--shadow-card)]">
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-3 uppercase tracking-wider">Category</h3>
             <div className="flex items-center gap-2 mb-5 text-[var(--color-accent)] bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 px-3 py-2 clip-corner-tl">
               <CategoryIcon size={16} />
               <span className="text-sm font-semibold">{blueprint.category}</span>
             </div>
 
-            <h3 className="text-sm text-[var(--color-text-tertiary)] mb-3 uppercase tracking-wider">Tags</h3>
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-3 uppercase tracking-wider">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {blueprint.Tags.map(tag => (
-                <span key={tag} className="text-xs bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-1 border border-[#333]">
+                <span key={tag} className="text-sm bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-3 py-1.5 border border-[var(--color-border)]">
                   {tag}
                 </span>
               ))}
@@ -337,16 +337,16 @@ export default function BlueprintDetail() {
           {blueprint.ImportString && blueprint.ImportString.startsWith('EFO') && (
             <button
               onClick={() => copyCode('default', blueprint.ImportString)}
-              className="w-full flex items-center justify-center gap-2 bg-[var(--color-accent)] text-black px-6 py-4 clip-corner-tl text-sm font-bold hover:bg-[var(--color-accent)]/90 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-[var(--color-accent)] text-black px-6 py-4 clip-corner-tl text-base font-bold hover:bg-[var(--color-accent)]/90 transition-colors shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]"
             >
               {copiedCode === 'default' ? (
                 <>
-                  <Check size={18} />
+                  <Check size={20} />
                   Code Copied!
                 </>
               ) : (
                 <>
-                  <Download size={18} />
+                  <Download size={20} />
                   Copy Primary Import Code
                 </>
               )}
@@ -362,12 +362,12 @@ export default function BlueprintDetail() {
             <span className="diamond diamond-sm" />
             RELATED BLUEPRINTS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {relatedBlueprints.map(rb => (
               <Link
                 key={rb.id}
                 href={`/blueprints/${rb.slug}`}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-all group"
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-all group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5"
               >
                 {rb.previewImage && (
                   <div className="relative h-32 w-full bg-[#0a0a0a]">
@@ -385,7 +385,7 @@ export default function BlueprintDetail() {
                   <h3 className="text-white font-semibold mb-1 line-clamp-2 group-hover:text-[var(--color-accent)] transition-colors">
                     {rb.Title}
                   </h3>
-                  <p className="text-xs text-[var(--color-text-tertiary)] mb-2">by {rb.Author}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">by {rb.Author}</p>
                   {rb.outputsPerMin.length > 0 && (
                     <div className="text-xs text-[var(--color-accent)] font-mono">
                       {rb.outputsPerMin[0].rate}/min

@@ -63,7 +63,7 @@ function FilterPill({
       className={`px-3 py-1.5 text-xs font-bold border transition-colors ${
         active
           ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-white hover:border-[var(--color-text-tertiary)]'
+          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-white hover:border-[var(--color-text-tertiary)]'
       }`}
       style={active && color ? { borderColor: color, color, backgroundColor: `${color}15` } : undefined}
     >
@@ -266,7 +266,7 @@ export default function TierListPage() {
       <div
         draggable
         onDragStart={() => handleDragStart(charName)}
-        className={`bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 cursor-move hover:border-[var(--color-accent)] transition-all group ${
+        className={`bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 cursor-move hover:border-[var(--color-accent)] transition-all group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] ${
           isFiltered ? 'opacity-20' : ''
         }`}
       >
@@ -281,15 +281,15 @@ export default function TierListPage() {
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-white truncate">{character.Name}</div>
+            <div className="text-base font-bold text-white truncate">{character.Name}</div>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px] font-bold px-1 py-0.5" style={{ color: elemColor, borderColor: elemColor, border: '1px solid' }}>
+              <span className="text-[11px] font-bold px-1 py-0.5" style={{ color: elemColor, borderColor: elemColor, border: '1px solid' }}>
                 {character.Element}
               </span>
-              <span className="text-[10px] text-[var(--color-text-tertiary)]">{character.Role}</span>
+              <span className="text-[11px] text-[var(--color-text-muted)]">{character.Role}</span>
             </div>
           </div>
-          <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono">
+          <div className="text-[11px] text-[var(--color-text-muted)] font-mono">
             {character.Rarity}★
           </div>
         </div>
@@ -325,15 +325,15 @@ export default function TierListPage() {
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <RIOSHeader title="Combat Assessment Matrix" category="ANALYSIS" code="RIOS-TIER-001" icon={<LayoutGrid size={28} />} />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+          <RIOSHeader title="Combat Assessment Matrix" category="ANALYSIS" code="RIOS-TIER-001" icon={<LayoutGrid size={32} />} />
           <div className="flex flex-wrap gap-3">
             <button
               onClick={exportAsImage}
               disabled={isExporting}
-              className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors flex items-center gap-2 disabled:opacity-50 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-5 h-5" />
               {isExporting ? 'Exporting...' : 'Export Image'}
             </button>
             <div className="relative">
@@ -379,10 +379,10 @@ export default function TierListPage() {
         </div>
 
         {/* ─── Filters ─── */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mb-4 space-y-3">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 mb-6 space-y-4 shadow-[var(--shadow-card)]">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
             <input
               type="text"
               placeholder="Search characters..."
@@ -393,7 +393,7 @@ export default function TierListPage() {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white"
               >
                 <X size={14} />
               </button>
@@ -402,7 +402,7 @@ export default function TierListPage() {
 
           {/* Rarity */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Rarity</span>
+            <span className="text-sm text-[var(--color-text-muted)] w-16 shrink-0 uppercase tracking-wider">Rarity</span>
             <FilterPill label="All" active={!filterRarity} onClick={() => setFilterRarity(null)} />
             {RARITIES.map(r => (
               <FilterPill
@@ -417,7 +417,7 @@ export default function TierListPage() {
 
           {/* Element */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Element</span>
+            <span className="text-sm text-[var(--color-text-muted)] w-16 shrink-0 uppercase tracking-wider">Element</span>
             <FilterPill label="All" active={!filterElement} onClick={() => setFilterElement(null)} />
             {ELEMENTS.map(e => (
               <FilterPill
@@ -432,7 +432,7 @@ export default function TierListPage() {
 
           {/* Role */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Role</span>
+            <span className="text-sm text-[var(--color-text-muted)] w-16 shrink-0 uppercase tracking-wider">Role</span>
             <FilterPill label="All" active={!filterRole} onClick={() => setFilterRole(null)} />
             {ROLES.map(r => (
               <FilterPill
@@ -446,7 +446,7 @@ export default function TierListPage() {
 
           {/* Weapon */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-[var(--color-text-tertiary)] w-16 shrink-0 uppercase tracking-wider">Weapon</span>
+            <span className="text-sm text-[var(--color-text-muted)] w-16 shrink-0 uppercase tracking-wider">Weapon</span>
             <FilterPill label="All" active={!filterWeapon} onClick={() => setFilterWeapon(null)} />
             {WEAPON_TYPES.map(w => (
               <FilterPill
@@ -468,7 +468,7 @@ export default function TierListPage() {
           </div>
 
           {hasActiveFilters && (
-            <p className="text-xs text-[var(--color-text-tertiary)]">
+            <p className="text-sm text-[var(--color-text-muted)]">
               Showing <span className="text-[var(--color-accent)] font-bold">{visibleCharacters.size}</span> of {CHARACTERS.length} characters
               {' '}-- non-matching characters are dimmed
             </p>
@@ -487,7 +487,7 @@ export default function TierListPage() {
               <div className="flex items-start gap-4">
                 <div className="w-16 flex-shrink-0 flex flex-col items-center">
                   <div className="text-4xl font-bold" style={{ color: TIER_LABEL_COLORS[tier] }}>{tier}</div>
-                  <div className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                  <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
                     {tierList[tier]?.length || 0}
                   </div>
                 </div>
@@ -497,7 +497,7 @@ export default function TierListPage() {
                       <CharacterCard key={charName} charName={charName} currentTier={tier} />
                     ))}
                     {(!tierList[tier] || tierList[tier].length === 0) && (
-                      <div className="flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-tertiary)] text-sm border border-dashed border-[var(--color-border)] clip-corner-tl">
+                      <div className="flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-muted)] text-sm border border-dashed border-[var(--color-border)] clip-corner-tl">
                         Drop operators here
                       </div>
                     )}
@@ -516,8 +516,8 @@ export default function TierListPage() {
             className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mt-6"
           >
             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <span className="text-[var(--color-text-tertiary)]">UNRANKED</span>
-              <span className="text-xs text-[var(--color-text-tertiary)] font-normal">({tierList.Unranked.length})</span>
+              <span className="text-[var(--color-text-muted)]">UNRANKED</span>
+              <span className="text-xs text-[var(--color-text-muted)] font-normal">({tierList.Unranked.length})</span>
             </h2>
             <div className="flex flex-wrap gap-2">
               {tierList.Unranked.map(charName => (
@@ -537,7 +537,7 @@ export default function TierListPage() {
             <li>-- Click Reset to restore community consensus default rankings</li>
             <li>-- Export as image or share your tier list via link</li>
           </ul>
-          <p className="mt-3 text-[var(--color-text-tertiary)] text-xs">
+          <p className="mt-3 text-[var(--color-text-muted)] text-xs">
             Default rankings based on community consensus from Mobalytics, Prydwen, Game8, and community discussion.
           </p>
         </div>

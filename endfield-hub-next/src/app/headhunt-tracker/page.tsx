@@ -471,15 +471,15 @@ export default function HeadhuntTrackerPage() {
             title="Headhunt Operations Log"
             category="RECRUITMENT"
             code="RIOS-HH-001"
-            icon={<Target size={28} />}
+            icon={<Target size={32} />}
           />
           {/* Sync status */}
           {user && (
             <div className="flex items-center gap-2 text-xs">
-              {syncStatus === 'syncing' && <><Loader2 size={14} className="animate-spin text-[var(--color-accent)]" /><span className="text-[var(--color-text-tertiary)]">Syncing...</span></>}
-              {syncStatus === 'synced' && <><Cloud size={14} className="text-green-400" /><span className="text-green-400">Synced</span></>}
-              {syncStatus === 'error' && <><CloudOff size={14} className="text-red-400" /><span className="text-red-400">Sync failed</span></>}
-              {syncStatus === 'idle' && <><Cloud size={14} className="text-[var(--color-text-tertiary)]" /><span className="text-[var(--color-text-tertiary)]">Cloud ready</span></>}
+              {syncStatus === 'syncing' && <><Loader2 size={16} className="animate-spin text-[var(--color-accent)]" /><span className="text-[var(--color-text-muted)]">Syncing...</span></>}
+              {syncStatus === 'synced' && <><Cloud size={16} className="text-green-400" /><span className="text-green-400">Synced</span></>}
+              {syncStatus === 'error' && <><CloudOff size={16} className="text-red-400" /><span className="text-red-400">Sync failed</span></>}
+              {syncStatus === 'idle' && <><Cloud size={16} className="text-[var(--color-text-muted)]" /><span className="text-[var(--color-text-muted)]">Cloud ready</span></>}
             </div>
           )}
         </div>
@@ -490,10 +490,10 @@ export default function HeadhuntTrackerPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-bold transition-colors border-b-2 ${
+              className={`flex items-center gap-2 px-5 py-3 text-[15px] font-bold transition-colors border-b-2 ${
                 activeTab === tab.id
                   ? 'text-[var(--color-accent)] border-[var(--color-accent)]'
-                  : 'text-[var(--color-text-tertiary)] border-transparent hover:text-white hover:border-[var(--color-border)]'
+                  : 'text-[var(--color-text-muted)] border-transparent hover:text-white hover:border-[var(--color-border)]'
               }`}
             >
               {tab.icon}
@@ -503,14 +503,14 @@ export default function HeadhuntTrackerPage() {
           <div className="flex-1" />
           {/* Action buttons */}
           <div className="flex gap-2 pb-1">
-            <button onClick={importHistoryJSON} className="p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors" title="Import JSON">
-              <Upload size={16} />
+            <button onClick={importHistoryJSON} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors" title="Import JSON">
+              <Upload size={18} />
             </button>
-            <button onClick={exportHistoryJSON} disabled={pulls.length === 0} className="p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-30" title="Export JSON">
-              <Download size={16} />
+            <button onClick={exportHistoryJSON} disabled={pulls.length === 0} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-30" title="Export JSON">
+              <Download size={18} />
             </button>
-            <button onClick={shareStats} disabled={pulls.length === 0} className="p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-30" title="Share Stats">
-              <Share2 size={16} />
+            <button onClick={shareStats} disabled={pulls.length === 0} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-30" title="Share Stats">
+              <Share2 size={18} />
             </button>
           </div>
         </div>
@@ -525,7 +525,7 @@ export default function HeadhuntTrackerPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold mb-2 text-[var(--color-text-tertiary)] uppercase tracking-wider">Banner</label>
+                    <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Banner</label>
                     <div className="space-y-1">
                       {BANNERS.map(banner => (
                         <button
@@ -540,14 +540,14 @@ export default function HeadhuntTrackerPage() {
                         >
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: banner.color }} />
                           <span className="truncate">{banner.name}</span>
-                          {banner.featured && <span className="text-[10px] text-[var(--color-text-tertiary)] ml-auto">{banner.featured}</span>}
+                          {banner.featured && <span className="text-[12px] text-[var(--color-text-muted)] ml-auto">{banner.featured}</span>}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold mb-2 text-[var(--color-text-tertiary)] uppercase tracking-wider">Rarity</label>
+                    <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Rarity</label>
                     <div className="grid grid-cols-4 gap-2">
                       {RARITIES.map(rarity => (
                         <button
@@ -569,7 +569,7 @@ export default function HeadhuntTrackerPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold mb-2 text-[var(--color-text-tertiary)] uppercase tracking-wider">Type</label>
+                    <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Type</label>
                     <div className="grid grid-cols-2 gap-2">
                       {(['character', 'weapon'] as const).map(t => (
                         <button
@@ -588,7 +588,7 @@ export default function HeadhuntTrackerPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold mb-2 text-[var(--color-text-tertiary)] uppercase tracking-wider">Item Name</label>
+                    <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Item Name</label>
                     <input
                       type="text"
                       value={customItemName}
@@ -655,7 +655,7 @@ export default function HeadhuntTrackerPage() {
             {/* Pity Counter & Quick Stats */}
             <div className="lg:col-span-2 space-y-6">
               {/* Pity Counters */}
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
                 <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-[var(--color-accent)]" />
                   Pity Counter
@@ -676,7 +676,7 @@ export default function HeadhuntTrackerPage() {
                             {pity}
                           </span>
                         </div>
-                        <div className="w-full bg-[var(--color-border)] h-1.5 overflow-hidden">
+                        <div className="w-full bg-[var(--color-surface-2)] h-1.5 overflow-hidden">
                           <div
                             className={`h-full transition-all ${isSoftPity ? 'bg-red-500' : ''}`}
                             style={{
@@ -685,7 +685,7 @@ export default function HeadhuntTrackerPage() {
                             }}
                           />
                         </div>
-                        <p className="text-[10px] mt-1 text-[var(--color-text-tertiary)]">
+                        <p className="text-[12px] mt-1 text-[var(--color-text-muted)]">
                           {isSoftPity ? 'Soft pity active!' : `${100 - pity} to guarantee`}
                         </p>
                       </div>
@@ -695,31 +695,31 @@ export default function HeadhuntTrackerPage() {
               </div>
 
               {/* Quick stats */}
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
                 <h2 className="text-lg font-bold text-white mb-4">Quick Stats (All Banners)</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
                     <p className="text-2xl font-bold text-white">{allStats.total}</p>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase">Total Pulls</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">Total Pulls</p>
                   </div>
                   <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
                     <p className="text-2xl font-bold text-orange-400">{allStats.sixStar}</p>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase">6★ Pulls</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">6★ Pulls</p>
                   </div>
                   <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
                     <p className="text-2xl font-bold text-[var(--color-accent)]">{allStats.sixStarRate}%</p>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase">6★ Rate</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">6★ Rate</p>
                   </div>
                   <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
                     <p className="text-2xl font-bold text-purple-400">{allStats.fiveStarRate}%</p>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase">5★ Rate</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">5★ Rate</p>
                   </div>
                 </div>
               </div>
 
               {/* Recent 6-stars */}
               {pulls.filter(p => p.rarity === 6).length > 0 && (
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
                   <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Trophy size={18} className="text-orange-400" />
                     Recent 6★ Pulls
@@ -731,7 +731,7 @@ export default function HeadhuntTrackerPage() {
                           <Image src={pull.icon} alt={pull.item} width={24} height={24} className="w-6 h-6 object-contain" unoptimized />
                         )}
                         <span className="text-sm text-orange-300 font-medium">{pull.item}</span>
-                        <span className="text-[10px] text-[var(--color-text-tertiary)]">{getBannerName(pull.banner)}</span>
+                        <span className="text-[12px] text-[var(--color-text-muted)]">{getBannerName(pull.banner)}</span>
                       </div>
                     ))}
                   </div>
@@ -787,7 +787,7 @@ export default function HeadhuntTrackerPage() {
               </button>
 
               <div className="flex-1" />
-              <span className="text-xs text-[var(--color-text-tertiary)]">{historyPulls.length} pulls</span>
+              <span className="text-sm text-[var(--color-text-muted)]">{historyPulls.length} pulls</span>
               {pulls.length > 0 && (
                 <button onClick={clearAllPulls} className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
                   Clear All
@@ -810,7 +810,7 @@ export default function HeadhuntTrackerPage() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="text-xs text-[var(--color-text-tertiary)] w-8 text-right">#{historyPulls.length - index}</div>
+                      <div className="text-sm text-[var(--color-text-muted)] w-8 text-right">#{historyPulls.length - index}</div>
                       {pull.icon ? (
                         <div className="w-10 h-10 flex items-center justify-center clip-corner-tl overflow-hidden flex-shrink-0" style={{
                           backgroundColor: pull.rarity === 6 ? 'rgba(249, 115, 22, 0.1)' :
@@ -820,7 +820,7 @@ export default function HeadhuntTrackerPage() {
                           <Image src={pull.icon} alt={pull.item} width={40} height={40} className="w-full h-full object-contain" unoptimized />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 bg-[var(--color-surface-2)] flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">
+                        <div className="w-10 h-10 bg-[var(--color-surface-2)] flex items-center justify-center text-sm text-[var(--color-text-muted)]">
                           {pull.rarity}★
                         </div>
                       )}
@@ -838,7 +838,7 @@ export default function HeadhuntTrackerPage() {
                             <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-surface-2)] clip-corner-tl capitalize">{pull.type}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
+                        <div className="flex items-center gap-2 text-[12px] text-[var(--color-text-muted)] mt-0.5">
                           <span className="flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getBannerColor(pull.banner) }} />
                             {getBannerName(pull.banner)}
@@ -861,10 +861,10 @@ export default function HeadhuntTrackerPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 text-[var(--color-text-tertiary)]">
+              <div className="text-center py-16 text-[var(--color-text-muted)]">
                 <Target size={48} className="mx-auto mb-4 opacity-30" />
                 <p>No pull history yet</p>
-                <p className="text-xs mt-1">Record your pulls in the Record tab to see them here</p>
+                <p className="text-sm mt-1">Record your pulls in the Record tab to see them here</p>
               </div>
             )}
           </div>
@@ -913,21 +913,21 @@ export default function HeadhuntTrackerPage() {
                 <>
                   {/* Main stats cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
                       <p className="text-3xl font-bold text-white">{stats.total}</p>
-                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase mt-1">Total Pulls</p>
+                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">Total Pulls</p>
                     </div>
-                    <div className="bg-[var(--color-surface)] border border-orange-500/30 clip-corner-tl p-4 text-center">
+                    <div className="bg-[var(--color-surface)] border border-orange-500/30 clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
                       <p className="text-3xl font-bold text-orange-400">{stats.sixStarRate}%</p>
-                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase mt-1">6★ Rate ({stats.sixStar})</p>
+                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">6★ Rate ({stats.sixStar})</p>
                     </div>
-                    <div className="bg-[var(--color-surface)] border border-purple-500/30 clip-corner-tl p-4 text-center">
+                    <div className="bg-[var(--color-surface)] border border-purple-500/30 clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
                       <p className="text-3xl font-bold text-purple-400">{stats.fiveStarRate}%</p>
-                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase mt-1">5★ Rate ({stats.fiveStar})</p>
+                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">5★ Rate ({stats.fiveStar})</p>
                     </div>
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
                       <p className="text-3xl font-bold text-[var(--color-accent)]">{stats.avgPity || '--'}</p>
-                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase mt-1">Avg Pulls/6★</p>
+                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">Avg Pulls/6★</p>
                     </div>
                   </div>
 
@@ -1013,10 +1013,10 @@ export default function HeadhuntTrackerPage() {
                   </div>
 
                   {stats.total === 0 && (
-                    <div className="text-center py-16 text-[var(--color-text-tertiary)]">
+                    <div className="text-center py-16 text-[var(--color-text-muted)]">
                       <BarChart3 size={48} className="mx-auto mb-4 opacity-30" />
                       <p>No data to display</p>
-                      <p className="text-xs mt-1">Record some pulls first to see your statistics</p>
+                      <p className="text-sm mt-1">Record some pulls first to see your statistics</p>
                     </div>
                   )}
                 </>

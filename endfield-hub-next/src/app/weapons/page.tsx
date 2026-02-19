@@ -17,11 +17,11 @@ function StatBar({ label, value, max, color }: { label: string; value: number; m
   const pct = Math.min((value / max) * 100, 100);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[var(--color-text-tertiary)] text-xs w-20 shrink-0">{label}</span>
+      <span className="text-[var(--color-text-muted)] text-sm w-20 shrink-0">{label}</span>
       <div className="flex-1 h-1.5 bg-[var(--color-surface-2)]">
         <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="text-white text-xs font-mono w-10 text-right">{value}</span>
+      <span className="text-white text-sm font-mono w-10 text-right">{value}</span>
     </div>
   );
 }
@@ -35,8 +35,8 @@ function AtkCurveChart({ baseAtk, maxAtk, rarity }: { baseAtk: number; maxAtk: n
   return (
     <div className="mt-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[var(--color-text-tertiary)] text-xs uppercase tracking-wider">ATK Growth Curve</span>
-        <span className="text-[var(--color-text-tertiary)] text-[10px]">Lv.1 → Lv.90</span>
+        <span className="text-[var(--color-text-muted)] text-sm uppercase tracking-wider">ATK Growth Curve</span>
+        <span className="text-[var(--color-text-muted)] text-[11px]">Lv.1 → Lv.90</span>
       </div>
       <div className="flex items-end gap-[2px] h-12">
         {values.map((val, i) => {
@@ -54,8 +54,8 @@ function AtkCurveChart({ baseAtk, maxAtk, rarity }: { baseAtk: number; maxAtk: n
         })}
       </div>
       <div className="flex justify-between mt-1">
-        <span className="text-[10px] text-[var(--color-text-tertiary)]">1</span>
-        <span className="text-[10px] text-[var(--color-text-tertiary)]">90</span>
+        <span className="text-[11px] text-[var(--color-text-muted)]">1</span>
+        <span className="text-[11px] text-[var(--color-text-muted)]">90</span>
       </div>
     </div>
   );
@@ -74,11 +74,11 @@ function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isEx
 
   return (
     <div
-      className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all ${
+      className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 ${
         isExpanded ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
       }`}
     >
-      <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={onToggle}>
+      <div className="flex items-center gap-4 p-5 cursor-pointer" onClick={onToggle}>
         <div
           className="w-14 h-14 clip-corner-tl flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${rarityColor}15`, border: `1px solid ${rarityColor}30` }}
@@ -92,65 +92,65 @@ function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isEx
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-white font-semibold text-sm truncate">{weapon.Name}</h3>
-            <span className="text-[11px] shrink-0" style={{ color: rarityColor }}>
+            <h3 className="text-white font-semibold text-base truncate">{weapon.Name}</h3>
+            <span className="text-[12px] shrink-0" style={{ color: rarityColor }}>
               {'★'.repeat(weapon.Rarity)}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-[var(--color-text-tertiary)] text-xs">{weapon.WeaponType}</span>
-            <span className="text-[var(--color-accent)] text-xs font-mono">ATK {weapon.MaxAtk}</span>
+            <span className="text-[var(--color-text-muted)] text-sm">{weapon.WeaponType}</span>
+            <span className="text-[var(--color-accent)] text-sm font-mono">ATK {weapon.MaxAtk}</span>
             {weapon.PassiveAttribute && (
-              <span className="text-[var(--color-text-secondary)] text-xs">
+              <span className="text-[var(--color-text-secondary)] text-sm">
                 {weapon.PassiveAttribute.label} +{weapon.PassiveAttribute.value}
               </span>
             )}
           </div>
         </div>
 
-        <div className="shrink-0 text-[var(--color-text-tertiary)]">
-          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        <div className="shrink-0 text-[var(--color-text-muted)]">
+          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3 space-y-4">
+        <div className="px-5 pb-5 border-t border-[var(--color-border)] pt-4 space-y-5">
           {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* ATK Stats */}
-            <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
-              <div className="flex items-center gap-2 mb-2">
-                <Crosshair size={14} className="text-[var(--color-accent)]" />
-                <span className="text-white text-xs font-semibold uppercase tracking-wider">Attack</span>
+            <div className="p-4 bg-[var(--color-surface-2)] clip-corner-tl">
+              <div className="flex items-center gap-2 mb-3">
+                <Crosshair size={18} className="text-[var(--color-accent)]" />
+                <span className="text-white text-sm font-semibold uppercase tracking-wider">Attack</span>
               </div>
               <div className="flex justify-between items-baseline mb-1">
-                <span className="text-[var(--color-text-tertiary)] text-xs">Base (Lv.1)</span>
-                <span className="text-white font-mono text-sm">{weapon.BaseAtk}</span>
+                <span className="text-[var(--color-text-muted)] text-sm">Base (Lv.1)</span>
+                <span className="text-white font-mono text-base">{weapon.BaseAtk}</span>
               </div>
               <div className="flex justify-between items-baseline mb-1">
-                <span className="text-[var(--color-text-tertiary)] text-xs">Max (Lv.90)</span>
-                <span className="text-[var(--color-accent)] font-mono text-sm font-bold">{weapon.MaxAtk}</span>
+                <span className="text-[var(--color-text-muted)] text-sm">Max (Lv.90)</span>
+                <span className="text-[var(--color-accent)] font-mono text-base font-bold">{weapon.MaxAtk}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[var(--color-text-tertiary)] text-xs">Growth</span>
-                <span className="text-green-400 font-mono text-xs">+{weapon.MaxAtk - weapon.BaseAtk}</span>
+                <span className="text-[var(--color-text-muted)] text-sm">Growth</span>
+                <span className="text-green-400 font-mono text-sm">+{weapon.MaxAtk - weapon.BaseAtk}</span>
               </div>
               <AtkCurveChart baseAtk={weapon.BaseAtk} maxAtk={weapon.MaxAtk} rarity={weapon.Rarity} />
             </div>
 
             {/* Attributes */}
-            <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+            <div className="p-4 bg-[var(--color-surface-2)] clip-corner-tl">
               <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={14} className="text-[var(--color-accent)]" />
-                <span className="text-white text-xs font-semibold uppercase tracking-wider">Attributes</span>
+                <TrendingUp size={18} className="text-[var(--color-accent)]" />
+                <span className="text-white text-sm font-semibold uppercase tracking-wider">Attributes</span>
               </div>
 
               {weapon.PassiveAttribute && (
                 <div className="mb-3">
-                  <div className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Passive</div>
+                  <div className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Passive</div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[var(--color-text-secondary)] text-sm">{weapon.PassiveAttribute.label}</span>
-                    <span className="text-[var(--color-accent)] font-mono text-sm">
+                    <span className="text-[var(--color-text-secondary)] text-base">{weapon.PassiveAttribute.label}</span>
+                    <span className="text-[var(--color-accent)] font-mono text-base">
                       {formatStatValue(weapon.PassiveAttribute.value, weapon.PassiveAttribute.isPercentage)}
                     </span>
                   </div>
@@ -159,10 +159,10 @@ function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isEx
 
               {weapon.SpecialAttribute && (
                 <div>
-                  <div className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">Special</div>
+                  <div className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Special</div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[var(--color-text-secondary)] text-sm">{weapon.SpecialAttribute.label}</span>
-                    <span className="text-[var(--color-accent)] font-mono text-sm">
+                    <span className="text-[var(--color-text-secondary)] text-base">{weapon.SpecialAttribute.label}</span>
+                    <span className="text-[var(--color-accent)] font-mono text-base">
                       {weapon.SpecialAttribute.isPercentage
                         ? `+${weapon.SpecialAttribute.value.toFixed(1)}%`
                         : `+${weapon.SpecialAttribute.value}`}
@@ -172,21 +172,21 @@ function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isEx
               )}
 
               {!weapon.SpecialAttribute && (
-                <div className="text-[var(--color-text-tertiary)] text-xs italic">No special attribute</div>
+                <div className="text-[var(--color-text-muted)] text-sm italic">No special attribute</div>
               )}
             </div>
           </div>
 
           {/* Potential Skill */}
           {weapon.SkillName && (
-            <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
+            <div className="p-4 bg-[var(--color-surface-2)] clip-corner-tl">
               <div className="flex items-center gap-2 mb-2">
-                <Zap size={14} className="text-[var(--color-accent)]" />
-                <span className="text-white text-xs font-semibold uppercase tracking-wider">Potential Skill</span>
+                <Zap size={18} className="text-[var(--color-accent)]" />
+                <span className="text-white text-sm font-semibold uppercase tracking-wider">Potential Skill</span>
               </div>
-              <h4 className="text-[var(--color-accent)] text-sm font-semibold mb-1">{weapon.SkillName}</h4>
+              <h4 className="text-[var(--color-accent)] text-base font-semibold mb-1">{weapon.SkillName}</h4>
               {weapon.SkillDescription && (
-                <p className="text-[var(--color-text-secondary)] text-xs leading-relaxed">{weapon.SkillDescription}</p>
+                <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">{weapon.SkillDescription}</p>
               )}
             </div>
           )}
@@ -223,11 +223,11 @@ export default function Weapons() {
         title="Weapons Arsenal"
         category="ARMORY"
         code="RIOS-WPN-001"
-        icon={<Sword size={28} />}
+        icon={<Sword size={32} />}
       />
 
       {/* Summary bar */}
-      <div className="flex items-center gap-4 mb-4 text-xs text-[var(--color-text-tertiary)]">
+      <div className="flex items-center gap-4 mb-6 text-sm text-[var(--color-text-muted)]">
         <span>{stats.shown} / {stats.total} weapons</span>
         <span className="text-[var(--color-border)]">|</span>
         {stats.byStar.map(s => (
@@ -236,8 +236,8 @@ export default function Weapons() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-4">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+      <div className="relative mb-5">
+        <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
         <input
           type="text"
           placeholder="Search weapons..."
@@ -248,12 +248,12 @@ export default function Weapons() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="flex flex-wrap gap-2 mb-4">
         {WEAPON_TYPES.map(t => (
           <button
             key={t}
             onClick={() => setTypeFilter(typeFilter === t ? null : t)}
-            className={`px-3 py-1 text-xs font-medium transition-all border ${
+            className={`px-4 py-2 text-sm font-medium transition-all border ${
               typeFilter === t
                 ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
                 : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
@@ -264,12 +264,12 @@ export default function Weapons() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-8">
         {RARITY_FILTERS.map(r => (
           <button
             key={r}
             onClick={() => setRarityFilter(rarityFilter === r ? null : r)}
-            className={`px-3 py-1 text-xs font-medium transition-all border ${
+            className={`px-4 py-2 text-sm font-medium transition-all border ${
               rarityFilter === r
                 ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
                 : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
@@ -283,7 +283,7 @@ export default function Weapons() {
       </div>
 
       {/* Weapon list */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {filtered.map(weapon => (
           <WeaponCard
             key={weapon.id}
@@ -295,9 +295,9 @@ export default function Weapons() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-[var(--color-text-tertiary)]">
+        <div className="text-center py-12 text-[var(--color-text-muted)]">
           <Sword size={48} className="mx-auto mb-3 opacity-30" />
-          <p>No weapons match your filters</p>
+          <p className="text-base">No weapons match your filters</p>
         </div>
       )}
     </div>

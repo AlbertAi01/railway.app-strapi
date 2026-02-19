@@ -1,37 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  /* Primary Colors - Endfield Yellow */
+  /* Primary Colors - Endfield Tactical */
   --color-accent: #FFD429;
   --color-accent-hover: #FFE066;
-  --color-accent-secondary: #3B82F6;
+  --color-accent-secondary: #00B0FF;
   --color-originium: #FF6B35;
+  --color-accent-glow: rgba(255, 212, 41, 0.15);
 
-  /* Surfaces - Neutral slate blacks */
-  --color-surface: #141414;
-  --color-surface-2: #1A1A1A;
-  --color-surface-3: #222222;
-  --color-border: #2A2A2A;
+  /* Surfaces - Blue-tinted tactical dark */
+  --color-surface: #0F1923;
+  --color-surface-2: #152232;
+  --color-surface-3: #1C2D3F;
+  --color-border: #263850;
   --color-border-accent: #FFD429;
+  --color-surface-card: #121E2B;
 
-  /* Text */
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #999999;
-  --color-text-tertiary: #555555;
+  /* Text - WCAG AA compliant on dark surfaces */
+  --color-text-primary: #F0F4F8;
+  --color-text-secondary: #B0BEC5;
+  --color-text-tertiary: #78909C;
+  --color-text-muted: #546E7A;
 
   /* Element Colors */
-  --color-physical: #CCCCCC;
+  --color-physical: #CFD8DC;
   --color-heat: #FF6B35;
   --color-cryo: #00BFFF;
-  --color-electric: #9B59B6;
-  --color-nature: #27AE60;
+  --color-electric: #B388FF;
+  --color-nature: #69F0AE;
 
   /* Rarity Colors */
   --color-rarity-6: #FF8C00;
   --color-rarity-5: #FFD700;
-  --color-rarity-4: #9B59B6;
-  --color-rarity-3: #3498DB;
+  --color-rarity-4: #B388FF;
+  --color-rarity-3: #64B5F6;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 212, 41, 0.05);
+  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 212, 41, 0.15);
+  --shadow-glow: 0 0 20px rgba(255, 212, 41, 0.1);
 }
 
 * {
@@ -40,14 +48,18 @@
 
 body {
   margin: 0;
-  background-color: #0A0A0A;
+  background-color: #0A1018;
   color: var(--color-text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Exo 2', 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   position: relative;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scanline overlay */
+/* Scanline overlay - subtle tactical feel */
 body::before {
   content: '';
   position: fixed;
@@ -57,10 +69,10 @@ body::before {
   bottom: 0;
   background-image: repeating-linear-gradient(
     0deg,
-    rgba(255, 212, 41, 0.008) 0px,
+    rgba(0, 176, 255, 0.012) 0px,
     transparent 1px,
-    transparent 3px,
-    rgba(255, 212, 41, 0.008) 4px
+    transparent 4px,
+    rgba(0, 176, 255, 0.012) 5px
   );
   pointer-events: none;
   z-index: 9999;
@@ -71,32 +83,87 @@ body::before {
    ========================================= */
 
 .diamond {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   background: var(--color-originium);
   transform: rotate(45deg);
   display: inline-block;
   flex-shrink: 0;
 }
 
-.diamond-sm { width: 6px; height: 6px; }
-.diamond-md { width: 10px; height: 10px; }
-.diamond-lg { width: 14px; height: 14px; }
+.diamond-sm { width: 8px; height: 8px; }
+.diamond-md { width: 12px; height: 12px; }
+.diamond-lg { width: 16px; height: 16px; }
 
 .diamond-accent {
   background: var(--color-accent);
 }
 
+/* Arknights-coded loading spinner - rotating Originium crystal */
 .diamond-spinner {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  display: inline-block;
+}
+
+.diamond-spinner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-originium);
+  transform: rotate(45deg);
+  animation: originium-rotate 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 16px rgba(255, 107, 53, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+.diamond-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  background: rgba(255, 107, 53, 0.3);
+  transform: rotate(45deg);
+  animation: originium-rotate 2s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+  animation-delay: 0.15s;
+}
+
+@keyframes originium-rotate {
+  0% {
+    transform: rotate(45deg) scale(1);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(255, 107, 53, 0.5);
+  }
+  25% {
+    transform: rotate(135deg) scale(0.85);
+    opacity: 0.7;
+  }
+  50% {
+    transform: rotate(225deg) scale(0.7);
+    opacity: 0.5;
+    box-shadow: 0 0 32px rgba(255, 107, 53, 0.8);
+  }
+  75% {
+    transform: rotate(315deg) scale(0.85);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(405deg) scale(1);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(255, 107, 53, 0.5);
+  }
+}
+
+/* Static diamond pulse for smaller inline loading indicators */
+.diamond-pulse {
   width: 16px;
   height: 16px;
   background: var(--color-originium);
   transform: rotate(45deg);
   display: inline-block;
-  animation: diamond-pulse 1.5s ease-in-out infinite;
+  animation: diamond-pulse-anim 1.5s ease-in-out infinite;
 }
 
-@keyframes diamond-pulse {
+@keyframes diamond-pulse-anim {
   0%, 100% {
     opacity: 1;
     transform: rotate(45deg) scale(1);
@@ -136,14 +203,34 @@ body::before {
 
 .terminal-text {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--color-accent);
+}
+
+.terminal-text-sm {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   font-size: 11px;
   color: var(--color-accent);
 }
 
+.terminal-text-lg {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: var(--color-accent);
+}
+
 .font-tactical {
-  font-family: 'Rajdhani', 'Inter', sans-serif;
+  font-family: 'Rajdhani', 'Exo 2', sans-serif;
+}
+
+.font-body {
+  font-family: 'Exo 2', 'Rajdhani', sans-serif;
 }
 
 /* =========================================
@@ -173,11 +260,11 @@ body::before {
    ========================================= */
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: #0A1018;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -257,15 +344,88 @@ body::before {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-card);
 }
 
 .rios-card:hover {
   border-color: var(--color-accent);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
 }
 
 .rios-card-accent {
   border-left: 3px solid var(--color-accent);
+}
+
+/* =========================================
+   TACTICAL INPUT STYLES
+   ========================================= */
+
+.rios-input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 14px;
+  padding: 10px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rios-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(255, 212, 41, 0.2), 0 0 12px rgba(255, 212, 41, 0.05);
+}
+
+.rios-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* =========================================
+   TACTICAL BUTTON
+   ========================================= */
+
+.rios-btn {
+  font-family: 'Rajdhani', 'Exo 2', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 14px;
+  padding: 10px 20px;
+  border: 1px solid var(--color-accent);
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.rios-btn:hover {
+  background: var(--color-accent);
+  color: #0A1018;
+  box-shadow: 0 0 16px rgba(255, 212, 41, 0.25);
+}
+
+.rios-btn-primary {
+  background: var(--color-accent);
+  color: #0A1018;
+  border-color: var(--color-accent);
+}
+
+.rios-btn-primary:hover {
+  background: var(--color-accent-hover);
+  box-shadow: 0 0 20px rgba(255, 212, 41, 0.35);
+}
+
+/* =========================================
+   SECTION DIVIDER
+   ========================================= */
+
+.rios-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-border) 30%, transparent 100%);
+  margin: 24px 0;
 }
 
 /* =========================================
@@ -274,4 +434,32 @@ body::before {
 
 a {
   text-decoration: none;
+}
+
+/* =========================================
+   SELECTION
+   ========================================= */
+
+::selection {
+  background: rgba(255, 212, 41, 0.25);
+  color: #FFFFFF;
+}
+
+/* =========================================
+   FADE-IN ANIMATION
+   ========================================= */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.3s ease-out forwards;
 }

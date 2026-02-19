@@ -48,14 +48,14 @@ function AutoDeployOverlay() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 h-7 bg-gradient-to-b from-[#0A0A0A] via-[#0A0A0Aee] to-transparent z-[100] pointer-events-none overflow-hidden flex items-center">
-        <div className="terminal-text opacity-40 whitespace-nowrap animate-scroll-left text-[10px]">
+      <div className="fixed top-0 left-0 right-0 h-7 bg-gradient-to-b from-[#0A1018] via-[#0A1018ee] to-transparent z-[100] pointer-events-none overflow-hidden flex items-center">
+        <div className="terminal-text-sm opacity-40 whitespace-nowrap animate-scroll-left">
           {topText}
           {topText}
         </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 h-7 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0Aee] to-transparent z-[100] pointer-events-none overflow-hidden flex items-end">
-        <div className="terminal-text opacity-40 whitespace-nowrap animate-scroll-right text-[10px] pb-1">
+      <div className="fixed bottom-0 left-0 right-0 h-7 bg-gradient-to-t from-[#0A1018] via-[#0A1018ee] to-transparent z-[100] pointer-events-none overflow-hidden flex items-end">
+        <div className="terminal-text-sm opacity-40 whitespace-nowrap animate-scroll-right pb-1">
           {bottomText}
           {bottomText}
         </div>
@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AutoDeployOverlay />
-        <div className="min-h-screen bg-[#0A0A0A]">
+        <div className="min-h-screen bg-[#0A1018]">
           <Sidebar />
           <main className="lg:ml-64 min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 lg:pt-8">

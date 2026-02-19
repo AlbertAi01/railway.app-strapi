@@ -16,7 +16,7 @@ export default function FactoryPlannerLandingPage() {
           <div className="flex items-center gap-3 mb-4">
             <h1 className="text-5xl font-bold text-white font-rajdhani">Factory Planner</h1>
             <span className="px-3 py-1 bg-[var(--color-accent)] text-black text-sm font-bold font-rajdhani flex items-center gap-1">
-              <Zap size={14} />
+              <Zap size={18} />
               BETA
             </span>
           </div>
@@ -68,7 +68,7 @@ export default function FactoryPlannerLandingPage() {
         </div>
 
         {/* Work In Progress Notice */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 mb-8">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 mb-8 shadow-[var(--shadow-card)]">
           <div className="flex items-start gap-4">
             <AlertCircle size={24} className="text-[var(--color-accent)] shrink-0 mt-1" />
             <div>
@@ -102,34 +102,34 @@ export default function FactoryPlannerLandingPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Interactive Grid Feature */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 transition-all">
               <div className="mb-4">
                 <Grid3x3 size={36} className="text-[var(--color-accent)]" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3 font-rajdhani">Interactive Grid</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-base text-[var(--color-text-secondary)]">
                 Place buildings and conveyors on a customizable grid with zoom support
               </p>
             </div>
 
             {/* Building Library Feature */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 transition-all">
               <div className="mb-4">
                 <TrendingUp size={36} className="text-[var(--color-accent)]" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3 font-rajdhani">Building Library</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-base text-[var(--color-text-secondary)]">
                 Access all factory buildings with detailed stats and recipes
               </p>
             </div>
 
             {/* Smart Conveyors Feature */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 transition-all">
               <div className="mb-4">
                 <Zap size={36} className="text-[var(--color-accent)]" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3 font-rajdhani">Smart Conveyors</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-base text-[var(--color-text-secondary)]">
                 Connect buildings with intelligent conveyor routing that detects errors and suggests fixes
               </p>
             </div>

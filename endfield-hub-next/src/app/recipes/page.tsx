@@ -132,13 +132,13 @@ export default function RecipesPage() {
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-7xl mx-auto">
-        <RIOSHeader title="Crafting Protocols" category="LOGISTICS" code="RIOS-REC-001" icon={<BookOpen size={28} />} />
-        <div className="mb-6" />
+        <RIOSHeader title="Crafting Protocols" category="LOGISTICS" code="RIOS-REC-001" icon={<BookOpen size={32} />} />
+        <div className="mb-8" />
 
         {/* Search */}
-        <div className="mb-4">
+        <div className="mb-5">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-muted)] w-5 h-5" />
             <input
               type="text"
               placeholder="Search items..."
@@ -150,25 +150,25 @@ export default function RecipesPage() {
         </div>
 
         {/* Building Filters */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setBuildingFilter('all')}
-            className={`px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors ${
+            className={`px-4 py-2 text-sm flex items-center gap-2 transition-colors ${
               buildingFilter === 'all'
                 ? 'bg-[var(--color-accent)] text-black font-bold'
-                : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)]'
+                : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-muted)]'
             }`}
           >
-            <Filter size={10} /> All
+            <Filter size={14} /> All
           </button>
           {buildings.map(b => (
             <button
               key={b.id}
               onClick={() => setBuildingFilter(b.name)}
-              className={`px-3 py-1.5 text-xs transition-colors ${
+              className={`px-4 py-2 text-sm transition-colors ${
                 buildingFilter === b.name
                   ? 'bg-[var(--color-accent)] text-black font-bold'
-                  : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-tertiary)]'
+                  : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-muted)]'
               }`}
             >
               {b.name}
@@ -177,15 +177,15 @@ export default function RecipesPage() {
         </div>
 
         {/* Item Count */}
-        <p className="text-sm text-[var(--color-text-tertiary)] mb-4">{filteredItems.length} Items</p>
+        <p className="text-base text-[var(--color-text-muted)] mb-6">{filteredItems.length} Items</p>
 
         {/* Item Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {filteredItems.map(item => (
             <Link
               key={item.id}
               href={`/factory-planner/recipes/${item.slug}`}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 flex items-center gap-3 hover:border-[var(--color-accent)] transition-colors"
+              className="group bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 flex items-center gap-3 hover:border-[var(--color-accent)] transition-colors shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5"
             >
               <div className="w-12 h-12 shrink-0 relative bg-[#0a0a0a] border border-[var(--color-border)] flex items-center justify-center overflow-hidden">
                 <Image
@@ -198,11 +198,11 @@ export default function RecipesPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-white font-bold truncate group-hover:text-[var(--color-accent)] transition-colors">
+                <p className="text-sm text-white font-bold truncate group-hover:text-[var(--color-accent)] transition-colors">
                   {item.name}
                 </p>
                 {item.recipeCount > 1 && (
-                  <p className="text-[10px] text-[var(--color-accent)] mt-0.5">
+                  <p className="text-[11px] text-[var(--color-accent)] mt-0.5">
                     {item.recipeCount} recipes
                   </p>
                 )}
@@ -212,8 +212,8 @@ export default function RecipesPage() {
         </div>
 
         {filteredItems.length === 0 && (
-          <div className="text-center py-12 text-[var(--color-text-tertiary)]">
-            No items found matching your search.
+          <div className="text-center py-12 text-[var(--color-text-muted)]">
+            <p className="text-base">No items found matching your search.</p>
           </div>
         )}
       </div>

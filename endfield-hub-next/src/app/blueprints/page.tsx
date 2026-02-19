@@ -127,33 +127,33 @@ export default function Blueprints() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <RIOSHeader title="Blueprint Registry" category="LOGISTICS" code="RIOS-BP-001" icon={<LayoutGrid size={28} />} />
-          <p className="text-[var(--color-text-tertiary)] text-sm mt-2">Community factory blueprints for Arknights: Endfield</p>
+          <RIOSHeader title="Blueprint Registry" category="LOGISTICS" code="RIOS-BP-001" icon={<LayoutGrid size={32} />} />
+          <p className="text-[var(--color-text-muted)] text-base mt-2">Community factory blueprints for Arknights: Endfield</p>
         </div>
         {isAuthenticated ? (
           <button
             onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-2 bg-[var(--color-accent)] text-black px-4 py-2 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-accent)]/90 transition-colors"
+            className="flex items-center gap-2 bg-[var(--color-accent)] text-black px-5 py-2.5 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-accent)]/90 transition-colors shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]"
           >
-            <Plus size={16} /> Submit Blueprint
+            <Plus size={18} /> Submit Blueprint
           </button>
         ) : (
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-[#333] text-[var(--color-text-secondary)] px-4 py-2 clip-corner-tl text-sm font-semibold hover:bg-[#444] transition-colors no-underline"
+            className="flex items-center gap-2 bg-[var(--color-surface)] text-[var(--color-text-secondary)] px-5 py-2.5 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-surface-2)] transition-colors no-underline border border-[var(--color-border)]"
           >
-            <LogIn size={16} /> Login to Submit
+            <LogIn size={18} /> Login to Submit
           </Link>
         )}
       </div>
 
       {showCreate && isAuthenticated && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-accent)] clip-corner-tl p-5 mb-6 space-y-4">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-accent)] clip-corner-tl p-6 mb-8 space-y-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
             <h3 className="text-white font-bold font-mono text-sm uppercase tracking-wider">Submit a Blueprint</h3>
-            <span className="text-[9px] font-mono text-[var(--color-text-tertiary)]">Submitting as {user?.username}</span>
+            <span className="text-[9px] font-mono text-[var(--color-text-muted)]">Submitting as {user?.username}</span>
           </div>
           <div className="space-y-3">
             <div>
@@ -229,7 +229,7 @@ export default function Blueprints() {
               </button>
               <button
                 onClick={() => setShowCreate(false)}
-                className="text-xs font-mono text-[var(--color-text-tertiary)] hover:text-white transition-colors"
+                className="text-xs font-mono text-[var(--color-text-muted)] hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -242,10 +242,10 @@ export default function Blueprints() {
       )}
 
       {/* Search and Filters */}
-      <div className="space-y-3 mb-6">
+      <div className="space-y-4 mb-8">
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+            <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
             <input
               type="text"
               placeholder="Search blueprints by name or tags..."
@@ -256,13 +256,13 @@ export default function Blueprints() {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border clip-corner-tl ${
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium border clip-corner-tl shadow-[var(--shadow-card)] ${
               showFilters || categoryFilter || complexityFilter
                 ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
-                : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555] bg-[var(--color-surface)]'
+                : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] bg-[var(--color-surface)]'
             }`}
           >
-            <Filter size={16} />
+            <Filter size={18} />
             Filters
             {(categoryFilter || complexityFilter) && (
               <span className="bg-[var(--color-accent)] text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
@@ -275,8 +275,8 @@ export default function Blueprints() {
               <button
                 key={r}
                 onClick={() => setRegionFilter(regionFilter === r ? null : r)}
-                className={`px-3 py-1 text-xs font-medium border ${
-                  regionFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
+                className={`px-4 py-2 text-sm font-medium border ${
+                  regionFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
                 }`}
               >
                 {r}
@@ -287,20 +287,20 @@ export default function Blueprints() {
 
         {/* Advanced Filters */}
         {showFilters && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 clip-corner-tl p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 clip-corner-tl p-5 shadow-[var(--shadow-card)]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Category Filter */}
               <div>
-                <label className="text-xs text-[var(--color-text-tertiary)] mb-2 block uppercase tracking-wider">Category</label>
+                <label className="text-sm text-[var(--color-text-muted)] mb-2 block uppercase tracking-wider">Category</label>
                 <div className="flex flex-wrap gap-2">
                   {categories.map(cat => (
                     <button
                       key={cat}
                       onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
-                      className={`px-3 py-1.5 text-xs font-medium border clip-corner-tl ${
+                      className={`px-4 py-2 text-sm font-medium border clip-corner-tl ${
                         categoryFilter === cat
                           ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
-                          : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
+                          : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
                       }`}
                     >
                       {cat}
@@ -311,16 +311,16 @@ export default function Blueprints() {
 
               {/* Complexity Filter */}
               <div>
-                <label className="text-xs text-[var(--color-text-tertiary)] mb-2 block uppercase tracking-wider">Complexity</label>
+                <label className="text-sm text-[var(--color-text-muted)] mb-2 block uppercase tracking-wider">Complexity</label>
                 <div className="flex flex-wrap gap-2">
                   {complexities.map(comp => (
                     <button
                       key={comp}
                       onClick={() => setComplexityFilter(complexityFilter === comp ? null : comp)}
-                      className={`px-3 py-1.5 text-xs font-medium border clip-corner-tl ${
+                      className={`px-4 py-2 text-sm font-medium border clip-corner-tl ${
                         complexityFilter === comp
                           ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
-                          : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
+                          : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
                       }`}
                     >
                       {comp}
@@ -346,18 +346,18 @@ export default function Blueprints() {
         )}
 
         {/* Results Count */}
-        <div className="text-sm text-[var(--color-text-tertiary)]">
+        <div className="text-sm text-[var(--color-text-muted)]">
           Showing <span className="text-[var(--color-accent)] font-semibold">{filtered.length}</span> of{' '}
           <span className="text-white font-semibold">{blueprints.length}</span> blueprints
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filtered.map(bp => (
           <Link
             key={bp.id}
             href={`/blueprints/${bp.slug}`}
-            className="block bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-all overflow-hidden group"
+            className="block bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-all overflow-hidden group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5"
           >
             <div className="flex">
               {/* Preview Image */}
@@ -372,7 +372,7 @@ export default function Blueprints() {
                     unoptimized
                   />
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--color-text-tertiary)]">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--color-text-muted)]">
                     <ImageOff size={28} className="mb-1 opacity-40" />
                     <span className="text-[10px] uppercase tracking-wider opacity-40">No Preview</span>
                   </div>
@@ -393,38 +393,38 @@ export default function Blueprints() {
               </div>
 
               {/* Content */}
-              <div className="flex-1 p-5 min-w-0">
-                <div className="flex items-start justify-between mb-2">
+              <div className="flex-1 p-6 min-w-0">
+                <div className="flex items-start justify-between mb-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-white font-semibold truncate group-hover:text-[var(--color-accent)] transition-colors">{bp.Title}</h3>
+                      <h3 className="text-white font-semibold text-base truncate group-hover:text-[var(--color-accent)] transition-colors">{bp.Title}</h3>
                       {bp.productName && (
-                        <span className="flex-shrink-0 text-[10px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 clip-corner-tl border border-[var(--color-accent)]/30 font-mono uppercase">
+                        <span className="flex-shrink-0 text-[11px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 clip-corner-tl border border-[var(--color-accent)]/30 font-mono uppercase">
                           {bp.productName}
                         </span>
                       )}
                     </div>
-                    <p className="text-[var(--color-text-tertiary)] text-xs mt-0.5">by {bp.Author} &middot; {bp.Region}</p>
+                    <p className="text-[var(--color-text-muted)] text-sm mt-0.5">by {bp.Author} &middot; {bp.Region}</p>
                   </div>
                   <div className="flex items-center gap-1 text-[#FFE500] flex-shrink-0 ml-3">
-                    <ThumbsUp size={14} />
-                    <span className="text-sm font-semibold">{bp.Upvotes}</span>
+                    <ThumbsUp size={16} />
+                    <span className="text-base font-semibold">{bp.Upvotes}</span>
                   </div>
                 </div>
 
                 {/* Production Rates */}
                 {bp.outputsPerMin.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {bp.outputsPerMin.slice(0, 3).map((output, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[#333] px-2 py-1 clip-corner-tl">
-                        <Package size={12} className="text-[var(--color-accent)]" />
-                        <span className="text-xs text-white font-mono">{output.rate}</span>
-                        <span className="text-xs text-[var(--color-text-tertiary)]">/min</span>
-                        <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[100px]">{output.name}</span>
+                      <div key={idx} className="flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] px-3 py-1.5 clip-corner-tl">
+                        <Package size={14} className="text-[var(--color-accent)]" />
+                        <span className="text-sm text-white font-mono">{output.rate}</span>
+                        <span className="text-sm text-[var(--color-text-muted)]">/min</span>
+                        <span className="text-sm text-[var(--color-text-secondary)] truncate max-w-[100px]">{output.name}</span>
                       </div>
                     ))}
                     {bp.outputsPerMin.length > 3 && (
-                      <div className="flex items-center px-2 py-1 text-xs text-[var(--color-text-tertiary)]">
+                      <div className="flex items-center px-3 py-1.5 text-sm text-[var(--color-text-muted)]">
                         +{bp.outputsPerMin.length - 3} more
                       </div>
                     )}
@@ -432,25 +432,25 @@ export default function Blueprints() {
                 )}
 
                 {/* Stats Row */}
-                <div className="flex items-center gap-4 mb-3">
+                <div className="flex items-center gap-4 mb-4">
                   {bp.netPower !== undefined && (
-                    <div className={`flex items-center gap-1.5 text-xs ${
+                    <div className={`flex items-center gap-1.5 text-sm ${
                       bp.netPower > 0 ? 'text-green-400' : 'text-red-400'
                     }`}>
-                      <Zap size={14} />
+                      <Zap size={16} />
                       <span className="font-mono font-semibold">
                         {bp.netPower > 0 ? '+' : ''}{bp.netPower} kW
                       </span>
                     </div>
                   )}
                   {bp.buildingCount && (
-                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                      <Package size={14} />
+                    <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]">
+                      <Package size={16} />
                       <span>{bp.buildingCount} buildings</span>
                     </div>
                   )}
                   {bp.complexity && (
-                    <span className={`text-[10px] px-2 py-0.5 font-mono border ${
+                    <span className={`text-[11px] px-2 py-0.5 font-mono border ${
                       bp.complexity === 'Beginner' ? 'text-green-400 border-green-400/30 bg-green-400/10' :
                       bp.complexity === 'Intermediate' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10' :
                       bp.complexity === 'Advanced' ? 'text-purple-400 border-purple-400/30 bg-purple-400/10' :
@@ -462,9 +462,9 @@ export default function Blueprints() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {bp.Tags.slice(0, 4).map(tag => (
-                      <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 border border-[#333]">{tag}</span>
+                      <span key={tag} className="text-[11px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-1 border border-[var(--color-border)]">{tag}</span>
                     ))}
                   </div>
                   {bp.ImportString.startsWith('EFO') && (
@@ -474,9 +474,9 @@ export default function Blueprints() {
                         e.stopPropagation();
                         copyImportString(bp.id, bp.ImportString);
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface-2)] border border-[#333] clip-corner-tl text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
+                      className="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
                     >
-                      {copiedId === bp.id ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy Import</>}
+                      {copiedId === bp.id ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy Import</>}
                     </button>
                   )}
                 </div>

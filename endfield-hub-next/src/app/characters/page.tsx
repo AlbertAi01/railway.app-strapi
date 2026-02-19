@@ -35,8 +35,8 @@ export default function Characters() {
   const FilterChip = ({ label, active, onClick, color }: { label: string; active: boolean; onClick: () => void; color?: string }) => (
     <button
       onClick={onClick}
-      className={`px-3 py-1 text-xs font-medium transition-all border ${
-        active ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+      className={`px-3 py-1.5 text-[13px] font-semibold transition-all border clip-corner-tl ${
+        active ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-text-primary)]'
       }`}
       style={active && color ? { borderColor: color, color: color, backgroundColor: `${color}15` } : {}}
     >
@@ -50,23 +50,23 @@ export default function Characters() {
         title="Operator Database"
         category="PERSONNEL"
         code="RIOS-OPS-DB"
-        icon={<Users size={28} />}
+        icon={<Users size={32} />}
         subtitle={`${filtered.length} operators indexed`}
       />
 
-      <div className="relative mb-4">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+      <div className="relative mb-5">
+        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
         <input
           type="text"
-          placeholder="Search characters..."
+          placeholder="Search operators..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
+          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl pl-12 pr-4 py-3 text-[var(--color-text-primary)] text-[15px] focus:outline-none focus:border-[var(--color-accent)] shadow-[var(--shadow-card)] transition-colors"
         />
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        <Filter size={14} className="text-[var(--color-text-tertiary)] self-center" />
+      <div className="flex flex-wrap gap-2 mb-8">
+        <Filter size={16} className="text-[var(--color-text-muted)] self-center" />
         {[6, 5, 4].map(r => (
           <FilterChip key={r} label={`${r}★`} active={rarityFilter === r} onClick={() => setRarityFilter(rarityFilter === r ? null : r)} color={RARITY_COLORS[r]} />
         ))}
@@ -81,16 +81,16 @@ export default function Characters() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {filtered.map(char => (
           <Link
             key={char.Slug}
             href={`/characters/${char.Slug}`}
-            className="group bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-all no-underline"
+            className="group bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-all no-underline shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5"
           >
             <div
               className="aspect-[3/4] relative flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${ELEMENT_COLORS[char.Element]}20, #111)` }}
+              style={{ background: `linear-gradient(135deg, ${ELEMENT_COLORS[char.Element]}20, var(--color-surface-2))` }}
             >
               {CHARACTER_ICONS[char.Name] ? (
                 <Image
@@ -106,7 +106,7 @@ export default function Characters() {
               )}
               <div className="absolute top-2 left-2 flex gap-1">
                 {Array.from({ length: char.Rarity }, (_, i) => (
-                  <span key={i} className="text-[10px]" style={{ color: RARITY_COLORS[char.Rarity] }}>★</span>
+                  <span key={i} className="text-[11px]" style={{ color: RARITY_COLORS[char.Rarity] }}>★</span>
                 ))}
               </div>
               <div
@@ -114,11 +114,11 @@ export default function Characters() {
                 style={{ backgroundColor: ELEMENT_COLORS[char.Element] }}
               />
             </div>
-            <div className="p-2.5">
-              <p className="text-white text-sm font-semibold group-hover:text-[var(--color-accent)] transition-colors truncate">{char.Name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[11px]" style={{ color: ELEMENT_COLORS[char.Element] }}>{char.Element}</span>
-                <span className="text-[var(--color-text-tertiary)] text-[11px]">{char.Role}</span>
+            <div className="p-3">
+              <p className="text-[var(--color-text-primary)] text-[14px] font-semibold group-hover:text-[var(--color-accent)] transition-colors truncate">{char.Name}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-[12px] font-medium" style={{ color: ELEMENT_COLORS[char.Element] }}>{char.Element}</span>
+                <span className="text-[var(--color-text-muted)] text-[12px]">{char.Role}</span>
               </div>
             </div>
           </Link>

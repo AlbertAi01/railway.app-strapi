@@ -630,19 +630,19 @@ export default function ValleyIVMapPage() {
           <div className="diamond-sm bg-[var(--color-accent)]" />
           <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-wider font-bold">Valley IV</span>
         </div>
-        <span className="text-[var(--color-text-tertiary)] text-xs font-mono hidden sm:inline">|</span>
+        <span className="text-[var(--color-text-muted)] text-xs font-mono hidden sm:inline">|</span>
         <span className="text-[var(--color-text-secondary)] text-xs font-mono hidden sm:inline">{totalDone} / {totalPois} completed</span>
         <div className="ml-auto flex items-center gap-2">
           {token && syncStatus !== 'idle' && (
             <div className="flex items-center gap-1">
-              {syncStatus === 'syncing' && <Loader2 size={12} className="text-[var(--color-accent)] animate-spin" />}
-              {syncStatus === 'synced' && <Cloud size={12} className="text-green-400" />}
-              {syncStatus === 'error' && <CloudOff size={12} className="text-red-400" />}
+              {syncStatus === 'syncing' && <Loader2 size={16} className="text-[var(--color-accent)] animate-spin" />}
+              {syncStatus === 'synced' && <Cloud size={16} className="text-green-400" />}
+              {syncStatus === 'error' && <CloudOff size={16} className="text-red-400" />}
             </div>
           )}
-          <span className="text-[var(--color-text-tertiary)] text-xs font-mono">{Math.round(zoom * 100)}%</span>
+          <span className="text-[var(--color-text-muted)] text-xs font-mono">{Math.round(zoom * 100)}%</span>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:text-[var(--color-accent)] text-[var(--color-text-secondary)] transition-colors">
-            <Filter size={16} />
+            <Filter size={18} />
           </button>
         </div>
       </div>
@@ -650,36 +650,36 @@ export default function ValleyIVMapPage() {
       <div className="flex-1 flex relative overflow-hidden">
         {/* ─── Sidebar: Filters ─── */}
         {sidebarOpen && (
-          <div className="w-80 max-w-[85vw] bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col z-40 shrink-0">
+          <div className="w-80 max-w-[85vw] bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col z-40 shrink-0 shadow-[var(--shadow-card)]">
             {/* Sidebar Header */}
             <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Filter size={14} className="text-[var(--color-accent)]" />
-                <span className="text-sm font-bold text-white">Filters</span>
+                <Filter size={16} className="text-[var(--color-accent)]" />
+                <span className="text-base font-bold text-white">Filters</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={resetProgress} className="p-1 text-[var(--color-text-tertiary)] hover:text-red-400 transition-colors" title="Reset progress">
-                  <RotateCcw size={14} />
+                <button onClick={resetProgress} className="p-1 text-[var(--color-text-muted)] hover:text-red-400 transition-colors" title="Reset progress">
+                  <RotateCcw size={16} />
                 </button>
-                <button onClick={() => setSidebarOpen(false)} className="p-1 text-[var(--color-text-tertiary)] hover:text-white transition-colors">
-                  <ChevronLeft size={14} />
+                <button onClick={() => setSidebarOpen(false)} className="p-1 text-[var(--color-text-muted)] hover:text-white transition-colors">
+                  <ChevronLeft size={16} />
                 </button>
               </div>
             </div>
 
             {/* Search */}
             <div className="p-3 border-b border-[var(--color-border)]">
-              <div className="text-[10px] text-[var(--color-text-tertiary)] mb-1.5 font-mono uppercase">Search points of interest...</div>
+              <div className="text-[11px] text-[var(--color-text-muted)] mb-1.5 font-mono uppercase">Search points of interest...</div>
               <div className="relative">
-                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+                <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
                 <input
                   type="text" placeholder="Search POIs..." value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#0A0A0A] border border-[var(--color-border)] text-sm text-white px-8 py-1.5 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-white px-8 py-1.5 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] hover:text-white">
-                    <X size={14} />
+                  <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white">
+                    <X size={16} />
                   </button>
                 )}
               </div>
@@ -729,14 +729,14 @@ export default function ValleyIVMapPage() {
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`${ICON_BASE}/${cfg.icon}.png`} alt="" className="w-5 h-5 shrink-0" />
-                        <span className="flex-1 text-white text-xs font-semibold">{cfg.label}</span>
-                        <span className="text-[10px] font-mono" style={{ color: cfg.color }}>
+                        <span className="flex-1 text-white text-sm font-semibold">{cfg.label}</span>
+                        <span className="text-[11px] font-mono" style={{ color: cfg.color }}>
                           {s.done}/{s.total}
                         </span>
                         {hasSubTypes && (
                           isExpanded
-                            ? <ChevronDown size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
-                            : <ChevronRight size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+                            ? <ChevronDown size={16} className="text-[var(--color-text-muted)] shrink-0" />
+                            : <ChevronRight size={16} className="text-[var(--color-text-muted)] shrink-0" />
                         )}
                       </button>
                     </div>
@@ -746,7 +746,7 @@ export default function ValleyIVMapPage() {
                         <div className="flex items-center gap-2 px-2 py-1 mb-1" style={{ borderLeft: `2px solid ${cfg.color}` }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={`${ICON_BASE}/${cfg.icon}.png`} alt="" className="w-4 h-4" />
-                          <span className="text-[10px] font-bold uppercase" style={{ color: cfg.color }}>Total: {s.done} / {s.total}</span>
+                          <span className="text-[11px] font-bold uppercase" style={{ color: cfg.color }}>Total: {s.done} / {s.total}</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-1">
@@ -759,7 +759,7 @@ export default function ValleyIVMapPage() {
                                 onClick={() => toggleSubType(st.types)}
                                 className={`flex items-center gap-1.5 p-1.5 border text-left transition-all ${
                                   isSubEnabled
-                                    ? 'border-[var(--color-border)] bg-[#111] hover:border-[var(--color-accent)]'
+                                    ? 'border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)]'
                                     : 'border-transparent bg-transparent opacity-30'
                                 }`}
                               >
@@ -771,8 +771,8 @@ export default function ValleyIVMapPage() {
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={`${ICON_BASE}/${st.icon}.png`} alt="" className="w-4 h-4 shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-[10px] text-white font-medium truncate">{st.label}</div>
-                                  <div className="text-[9px] font-mono" style={{ color: cfg.color }}>{stStats.done}/{stStats.total}</div>
+                                  <div className="text-[11px] text-white font-medium truncate">{st.label}</div>
+                                  <div className="text-[11px] font-mono" style={{ color: cfg.color }}>{stStats.done}/{stStats.total}</div>
                                 </div>
                               </button>
                             );
@@ -789,16 +789,16 @@ export default function ValleyIVMapPage() {
             <div className="p-3 border-t border-[var(--color-border)] space-y-1">
               <button
                 onClick={() => setHideCompleted(!hideCompleted)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-[var(--color-text-secondary)] hover:text-white transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors"
               >
-                {hideCompleted ? <EyeOff size={14} /> : <Eye size={14} />}
+                {hideCompleted ? <EyeOff size={16} /> : <Eye size={16} />}
                 <span>{hideCompleted ? 'Show Completed' : 'Hide Completed'}</span>
               </button>
               <button
                 onClick={() => setShowZoneLabels(!showZoneLabels)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-[var(--color-text-secondary)] hover:text-white transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors"
               >
-                <Layers size={14} />
+                <Layers size={16} />
                 <span>{showZoneLabels ? 'Hide Zone Labels' : 'Show Zone Labels'}</span>
               </button>
             </div>
@@ -869,10 +869,10 @@ export default function ValleyIVMapPage() {
 
           {/* Tile loading progress */}
           {tilesLoaded < tilesTotal && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-[var(--color-surface)]/95 border border-[var(--color-border)] px-4 py-2 backdrop-blur-sm">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-[var(--color-surface)]/95 border border-[var(--color-border)] px-4 py-2 backdrop-blur-sm shadow-[var(--shadow-card)]">
               <div className="flex items-center gap-3">
-                <Loader2 size={14} className="text-[var(--color-accent)] animate-spin" />
-                <span className="text-xs font-mono text-[var(--color-accent)]">
+                <Loader2 size={16} className="text-[var(--color-accent)] animate-spin" />
+                <span className="text-sm font-mono text-[var(--color-accent)]">
                   LOADING TILES {tilesLoaded}/{tilesTotal}
                 </span>
               </div>
@@ -937,13 +937,13 @@ export default function ValleyIVMapPage() {
           </div>
 
           {/* POI Count Badge */}
-          <div className="absolute top-3 right-3 z-30 bg-[var(--color-surface)]/90 border border-[var(--color-border)] px-3 py-1.5 backdrop-blur-sm">
-            <span className="text-xs font-mono text-[var(--color-accent)]">{visiblePois.length}</span>
-            <span className="text-xs font-mono text-[var(--color-text-tertiary)]"> POIs visible</span>
+          <div className="absolute top-3 right-3 z-30 bg-[var(--color-surface)]/90 border border-[var(--color-border)] px-3 py-1.5 backdrop-blur-sm shadow-[var(--shadow-card)]">
+            <span className="text-sm font-mono text-[var(--color-accent)]">{visiblePois.length}</span>
+            <span className="text-sm font-mono text-[var(--color-text-muted)]"> POIs visible</span>
           </div>
 
           {/* Right Side Controls */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5 shadow-[var(--shadow-card)]">
             <button
               onClick={() => setShowZoneLabels(!showZoneLabels)}
               className={`w-9 h-9 border flex items-center justify-center transition-colors ${
@@ -953,7 +953,7 @@ export default function ValleyIVMapPage() {
               }`}
               title="Toggle zone labels"
             >
-              <Layers size={16} />
+              <Layers size={18} />
             </button>
             <button
               onClick={() => setHideCompleted(!hideCompleted)}
@@ -964,7 +964,7 @@ export default function ValleyIVMapPage() {
               }`}
               title={hideCompleted ? 'Show completed POIs' : 'Hide completed POIs'}
             >
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={18} />
             </button>
 
             <div className="h-1" />
@@ -974,25 +974,25 @@ export default function ValleyIVMapPage() {
               className="w-9 h-9 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-white hover:border-[var(--color-accent)] transition-colors"
               title="Zoom in"
             >
-              <ZoomIn size={16} />
+              <ZoomIn size={18} />
             </button>
             <button
               onClick={() => zoomTo(zoom / 1.3)}
               className="w-9 h-9 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-white hover:border-[var(--color-accent)] transition-colors"
               title="Zoom out"
             >
-              <ZoomOut size={16} />
+              <ZoomOut size={18} />
             </button>
             <button
               onClick={fitMap}
               className="w-9 h-9 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-white hover:border-[var(--color-accent)] transition-colors"
               title="Fit map to view"
             >
-              <Maximize2 size={16} />
+              <Maximize2 size={18} />
             </button>
 
             <div className="w-9 h-6 bg-[var(--color-surface)]/80 border border-[var(--color-border)] flex items-center justify-center">
-              <span className="text-[9px] font-mono text-[var(--color-text-tertiary)]">{Math.round(zoom * 100)}%</span>
+              <span className="text-[11px] font-mono text-[var(--color-text-muted)]">{Math.round(zoom * 100)}%</span>
             </div>
           </div>
 
@@ -1000,36 +1000,36 @@ export default function ValleyIVMapPage() {
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="absolute top-3 left-3 z-30 w-9 h-9 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
+              className="absolute top-3 left-3 z-30 w-9 h-9 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors shadow-[var(--shadow-card)]"
               title="Open filters"
             >
-              <Filter size={16} />
+              <Filter size={18} />
             </button>
           )}
         </div>
 
         {/* POI Detail Panel */}
         {selectedPoi && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 max-w-sm w-full mx-4 clip-corner-tl shadow-2xl">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 max-w-sm w-full mx-4 clip-corner-tl shadow-[var(--shadow-card)]">
             <div className="flex items-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`${ICON_BASE}/${getEntityIcon(selectedPoi.type)}.png`} alt="" className="w-10 h-10 shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-white font-bold text-sm">{selectedPoi.name || selectedPoi.sub || selectedPoi.type}</div>
-                <div className="text-[10px] font-mono text-[var(--color-text-tertiary)] uppercase mt-0.5">
+                <div className="text-white font-bold text-base">{selectedPoi.name || selectedPoi.sub || selectedPoi.type}</div>
+                <div className="text-[11px] font-mono text-[var(--color-text-muted)] uppercase mt-0.5">
                   {selectedPoi.cat} {selectedPoi.sub ? `/ ${selectedPoi.sub}` : ''}
                 </div>
-                <div className="text-[10px] font-mono text-[var(--color-text-tertiary)]">
+                <div className="text-[11px] font-mono text-[var(--color-text-muted)]">
                   {mapData.zones[selectedPoi.zone] || selectedPoi.zone}
                 </div>
               </div>
-              <button onClick={() => setSelectedPoi(null)} className="text-[var(--color-text-tertiary)] hover:text-white shrink-0 transition-colors">
-                <X size={16} />
+              <button onClick={() => setSelectedPoi(null)} className="text-[var(--color-text-muted)] hover:text-white shrink-0 transition-colors">
+                <X size={18} />
               </button>
             </div>
             <button
               onClick={() => toggleComplete(selectedPoi.id)}
-              className={`mt-3 w-full py-2 text-xs font-bold uppercase tracking-wider border transition-all ${
+              className={`mt-3 w-full py-2 text-sm font-bold uppercase tracking-wider border transition-all ${
                 completed.has(selectedPoi.id)
                   ? 'bg-green-900/30 border-green-600 text-green-400 hover:bg-green-900/50'
                   : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'

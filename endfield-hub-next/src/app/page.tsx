@@ -17,17 +17,17 @@ const tools = [
   { name: 'Weapons Arsenal', desc: 'Complete weapon database with stats and passive effects', path: '/weapons', icon: 'Sword', color: '#FF6B35' },
   { name: 'Equipment Systems', desc: 'Equipment sets with bonuses and tactical recommendations', path: '/equipment', icon: 'Shield', color: '#00BFFF' },
   { name: 'Operator Development', desc: 'Plan ascension materials and track progress', path: '/ascension-planner', icon: 'Star', color: '#FFD700' },
-  { name: 'Essence Optimization', desc: 'Optimize weapon essence usage with zero waste', path: '/essence-solver', icon: 'FlaskConical', color: '#9B59B6' },
-  { name: 'Gear Analysis', desc: 'Calculate optimal equipment substats and probabilities', path: '/gear-artificing', icon: 'Wrench', color: '#27AE60' },
+  { name: 'Essence Optimization', desc: 'Optimize weapon essence usage with zero waste', path: '/essence-solver', icon: 'FlaskConical', color: '#B388FF' },
+  { name: 'Gear Analysis', desc: 'Calculate optimal equipment substats and probabilities', path: '/gear-artificing', icon: 'Wrench', color: '#69F0AE' },
   { name: 'AIC Factory Planner', desc: 'Design production chains for manufacturing', path: '/factory-planner', icon: 'Factory', color: '#FF6B35' },
   { name: 'Blueprint Registry', desc: 'Browse and share community factory blueprints', path: '/blueprints', icon: 'LayoutGrid', color: '#00BFFF' },
   { name: 'Combat Assessment', desc: 'Create and share operator tier rankings', path: '/tier-list', icon: 'LayoutGrid', color: '#00B0FF' },
   { name: 'Operator Card', desc: 'Generate tactical operator showcase cards', path: '/character-card', icon: 'Sparkles', color: '#F5A623', isNew: true },
-  { name: 'Tactical Map', desc: 'Explore Valley IV and Wuling with markers', path: '/map', icon: 'Map', color: '#27AE60' },
+  { name: 'Tactical Map', desc: 'Explore Valley IV and Wuling with markers', path: '/map', icon: 'Map', color: '#69F0AE' },
   { name: 'Headhunt Operations', desc: 'Track recruitment attempts and pity counter', path: '/headhunt-tracker', icon: 'Target', color: '#FF6B35', isNew: true },
   { name: 'Achievement Registry', desc: 'Track mission completion and rewards', path: '/achievements', icon: 'Trophy', color: '#FFD700' },
   { name: 'Recruitment Simulator', desc: 'Simulate headhunt operations with verified rates', path: '/summon-simulator', icon: 'Dice6', color: '#00BFFF' },
-  { name: 'Intel Briefings', desc: 'In-depth verified guides for all operations', path: '/guides', icon: 'BookOpen', color: '#27AE60' },
+  { name: 'Intel Briefings', desc: 'In-depth verified guides for all operations', path: '/guides', icon: 'BookOpen', color: '#69F0AE' },
 ];
 
 const iconMap: Record<string, React.FC<{ size?: number }>> = {
@@ -77,35 +77,35 @@ export default function Home() {
           category="MAIN_TERMINAL"
           classification="PUBLIC"
           code="RIOS-HOME"
-          icon={<Crosshair size={28} />}
+          icon={<Crosshair size={32} />}
         />
 
-        <div className="flex gap-3 mb-8">
-          <span className="terminal-text text-[var(--color-originium)] px-3 py-1 border border-[var(--color-border)] bg-[var(--color-surface)] clip-corner-tl">v2.0.0</span>
-          <span className="terminal-text text-[var(--color-text-tertiary)] px-3 py-1 border border-[var(--color-border)] bg-[var(--color-surface)]">23 OPERATORS</span>
-          <span className="terminal-text text-[var(--color-text-tertiary)] px-3 py-1 border border-[var(--color-border)] bg-[var(--color-surface)]">15+ MODULES</span>
+        <div className="flex flex-wrap gap-3 mb-10">
+          <span className="terminal-text text-[var(--color-originium)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] clip-corner-tl">v2.0.0</span>
+          <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">23 OPERATORS</span>
+          <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">15+ MODULES</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {tools.map((tool) => {
             const Icon = iconMap[tool.icon];
             return (
               <Link
                 key={tool.name}
                 href={tool.path}
-                className="group relative rios-card clip-corner-tl p-5 border-l-3 hover:border-l-[var(--color-accent)]"
+                className="group relative rios-card clip-corner-tl p-6 border-l-3 hover:border-l-[var(--color-accent)]"
                 style={{ borderLeftColor: tool.color, borderLeftWidth: '3px' }}
               >
                 {tool.isNew && (
-                  <span className="absolute top-3 right-3 text-[10px] bg-[#FFE500] text-black px-2 py-0.5 font-bold clip-corner-tl">NEW</span>
+                  <span className="absolute top-3 right-3 text-[11px] bg-[#FFE500] text-black px-2 py-0.5 font-bold clip-corner-tl">NEW</span>
                 )}
                 <div className="flex items-start gap-4">
-                  <div className="p-2.5 clip-corner-tl bg-[var(--color-surface-2)] border border-[var(--color-border)]" style={{ color: tool.color }}>
-                    {Icon && <Icon size={24} />}
+                  <div className="p-3 clip-corner-tl bg-[var(--color-surface-2)] border border-[var(--color-border)]" style={{ color: tool.color }}>
+                    {Icon && <Icon size={28} />}
                   </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-sm group-hover:text-[var(--color-accent)] transition-colors font-tactical uppercase tracking-wide">{tool.name}</h3>
-                    <p className="text-[var(--color-text-tertiary)] text-xs mt-1 leading-relaxed">{tool.desc}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[var(--color-text-primary)] font-semibold text-base group-hover:text-[var(--color-accent)] transition-colors font-tactical uppercase tracking-wide">{tool.name}</h3>
+                    <p className="text-[var(--color-text-secondary)] text-sm mt-1.5 leading-relaxed">{tool.desc}</p>
                   </div>
                 </div>
               </Link>
@@ -114,35 +114,35 @@ export default function Home() {
         </div>
 
         {/* FAQ */}
-        <section className="mt-12 space-y-4">
-          <div className="flex items-center gap-3 mb-3">
+        <section className="mt-14 space-y-4">
+          <div className="flex items-center gap-3 mb-4">
             <span className="diamond diamond-sm" />
-            <h2 className="text-lg font-bold text-white font-tactical uppercase tracking-wide">Intelligence Briefing</h2>
+            <h2 className="text-xl font-bold text-white font-tactical uppercase tracking-wide">Intelligence Briefing</h2>
           </div>
           {faqItems.map((item, i) => (
-            <details key={i} className="rios-card clip-corner-tl p-5 group border-l-3 border-l-[var(--color-border)]">
-              <summary className="text-white font-semibold text-sm cursor-pointer list-none flex items-center justify-between">
+            <details key={i} className="rios-card clip-corner-tl p-6 group border-l-3 border-l-[var(--color-border)]">
+              <summary className="text-white font-semibold text-base cursor-pointer list-none flex items-center justify-between">
                 <span className="flex items-center gap-3">
                   <span className="diamond diamond-sm diamond-accent" />
                   {item.q}
                 </span>
                 <ChevronIcon />
               </summary>
-              <p className="text-[var(--color-text-secondary)] text-sm mt-3 leading-relaxed ml-6">{item.a}</p>
+              <p className="text-[var(--color-text-secondary)] text-[15px] mt-4 leading-relaxed ml-8">{item.a}</p>
             </details>
           ))}
         </section>
 
-        <div className="mt-12 rios-card rios-card-accent clip-corner-tl p-6">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="mt-14 rios-card rios-card-accent clip-corner-tl p-8">
+          <div className="flex items-center gap-3 mb-4">
             <span className="diamond diamond-sm" />
-            <h2 className="text-lg font-bold text-white font-tactical uppercase tracking-wide">System Information</h2>
+            <h2 className="text-xl font-bold text-white font-tactical uppercase tracking-wide">System Information</h2>
           </div>
-          <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">
+          <p className="text-[var(--color-text-secondary)] text-[15px] leading-relaxed">
             Zero Sanity is a comprehensive community toolkit for Arknights: Endfield. We provide accurate, verified data
             and powerful planning tools to help you optimize your operations. All content is fact-checked and regularly updated.
           </p>
-          <p className="terminal-text text-[var(--color-text-tertiary)] mt-4">GAME ASSETS &copy; GRYPHLINE // NOT AFFILIATED WITH GRYPHLINE</p>
+          <p className="terminal-text text-[var(--color-text-muted)] mt-5">GAME ASSETS &copy; GRYPHLINE // NOT AFFILIATED WITH GRYPHLINE</p>
         </div>
       </div>
     </>
@@ -151,7 +151,7 @@ export default function Home() {
 
 function ChevronIcon() {
   return (
-    <svg className="w-4 h-4 text-[var(--color-text-tertiary)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="w-5 h-5 text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   );

@@ -21,11 +21,11 @@ export default function Equipment() {
         title="Equipment Systems"
         category="EQUIPMENT"
         code="RIOS-EQ-001"
-        icon={<Shield size={28} />}
+        icon={<Shield size={32} />}
       />
 
-      <div className="relative mb-6">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+      <div className="relative mb-8">
+        <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
         <input
           type="text"
           placeholder="Search equipment sets..."
@@ -35,18 +35,18 @@ export default function Equipment() {
         />
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filtered.map(set => {
           const tierColor = TIER_COLORS[set.pieces[0]?.tier] || TIER_COLORS.T0;
           return (
             <div
               key={set.name}
-              className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all cursor-pointer ${
+              className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all cursor-pointer shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 ${
                 expanded === set.name ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
               }`}
               onClick={() => setExpanded(expanded === set.name ? null : set.name)}
             >
-              <div className="flex items-center gap-4 p-4">
+              <div className="flex items-center gap-4 p-5">
                 <div className="w-14 h-14 clip-corner-tl flex items-center justify-center" style={{ backgroundColor: `${tierColor}20` }}>
                   {set.icon ? (
                     <Image src={set.icon} alt={set.name} width={56} height={56} className="object-contain" loading="lazy" />
@@ -58,29 +58,29 @@ export default function Equipment() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-white font-semibold">{set.name}</h3>
-                    <span className="text-[11px] px-2 py-0.5 clip-corner-tl" style={{ backgroundColor: `${tierColor}30`, color: tierColor }}>
+                    <h3 className="text-white font-semibold text-base">{set.name}</h3>
+                    <span className="text-[12px] px-2 py-0.5 clip-corner-tl" style={{ backgroundColor: `${tierColor}30`, color: tierColor }}>
                       {set.pieces[0]?.tier}
                     </span>
-                    <span className="text-[11px] text-[var(--color-text-tertiary)]">{set.phase}</span>
+                    <span className="text-[12px] text-[var(--color-text-muted)]">{set.phase}</span>
                   </div>
-                  <p className="text-[var(--color-text-tertiary)] text-xs mt-1 line-clamp-1">3-Piece: {set.setBonus}</p>
+                  <p className="text-[var(--color-text-muted)] text-sm mt-1 line-clamp-1">3-Piece: {set.setBonus}</p>
                 </div>
               </div>
               {expanded === set.name && (
-                <div className="px-4 pb-4 border-t border-[var(--color-border)] pt-3 space-y-3">
-                  <div className="p-3 bg-[var(--color-surface-2)] clip-corner-tl">
-                    <p className="text-[var(--color-accent)] text-xs font-semibold mb-1">3-Piece Set Bonus</p>
-                    <p className="text-[var(--color-text-secondary)] text-sm">{set.setBonus}</p>
+                <div className="px-5 pb-5 border-t border-[var(--color-border)] pt-4 space-y-4">
+                  <div className="p-4 bg-[var(--color-surface-2)] clip-corner-tl">
+                    <p className="text-[var(--color-accent)] text-sm font-semibold mb-1">3-Piece Set Bonus</p>
+                    <p className="text-[var(--color-text-secondary)] text-base">{set.setBonus}</p>
                   </div>
                   <div>
-                    <p className="text-[var(--color-text-tertiary)] text-xs font-semibold mb-2">Set Pieces ({set.pieces.length})</p>
-                    <div className="grid grid-cols-1 gap-2">
+                    <p className="text-[var(--color-text-muted)] text-sm font-semibold mb-3">Set Pieces ({set.pieces.length})</p>
+                    <div className="grid grid-cols-1 gap-3">
                       {set.pieces.map(piece => (
-                        <div key={piece.id} className="p-2 bg-[var(--color-surface-2)] clip-corner-tl text-xs">
+                        <div key={piece.id} className="p-3 bg-[var(--color-surface-2)] clip-corner-tl text-sm">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-white font-medium">{piece.name}</span>
-                            <span className="text-[var(--color-text-tertiary)]">DEF {piece.def}</span>
+                            <span className="text-[var(--color-text-muted)]">DEF {piece.def}</span>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {piece.stats.map((stat, idx) => (
