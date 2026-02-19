@@ -402,9 +402,9 @@ export default function CharacterCardPage() {
       <RIOSHeader title="Operator Showcase Creator" category="MEDIA" code="RIOS-CARD-001" icon={<Sparkles size={28} />}
         subtitle="Create and share beautiful character showcase cards" />
 
-      <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* ═══════ LEFT: Card Preview ═══════ */}
-        <div className="order-2 lg:order-1">
+        <div className="order-2 xl:order-1 flex-1 min-w-0">
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 shadow-[var(--shadow-card)]">
             <h2 className="text-sm font-bold text-white mb-4">Card Preview</h2>
 
@@ -859,7 +859,7 @@ export default function CharacterCardPage() {
         </div>
 
         {/* ═══════ RIGHT: Controls ═══════ */}
-        <div className="order-1 lg:order-2 space-y-3 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:pr-2">
+        <div className="order-1 xl:order-2 w-full xl:w-[360px] xl:shrink-0 space-y-3 xl:max-h-[calc(100vh-120px)] xl:overflow-y-auto xl:pr-1 xl:sticky xl:top-4">
 
           {/* Showcase Name */}
           <div className={sectionClass}>
