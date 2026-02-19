@@ -1068,24 +1068,29 @@ export default function FactoryPlannerPage() {
 
   // ── Mouse handlers ──
 
+  const [dragDistance, setDragDistance] = useState(0);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const PAN_DRAG_THRESHOLD = 5; // pixels before we consider it a drag (not a click)
+
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Allow panning in select mode when not over a building, or when no building is being moved
-    const isMovingOrPlacing = state.movingBuildingIndex !== null || (state.toolMode === 'build' && state.selectedBuilding);
-    if (e.button === 0 && !isMovingOrPlacing && (state.toolMode === 'select' || state.toolMode === 'move' || (state.toolMode === 'build' && !state.selectedBuilding))) {
-      // In select/move mode, only pan if we didn't click on a building
-      if (state.toolMode === 'select' || state.toolMode === 'move') {
-        const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
-        const idx = findBuildingAt(gridX, gridY);
-        if (idx >= 0) return; // Don't pan, let click handler pick up the building
-      }
+    // Left-click drag pans in ALL modes
+    if (e.button === 0) {
       setIsDragging(true);
+      setDragDistance(0);
+      dragStartPos.current = { x: e.clientX, y: e.clientY };
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (isDragging) {
-      setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+      const dx = e.clientX - dragStartPos.current.x;
+      const dy = e.clientY - dragStartPos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      setDragDistance(dist);
+      if (dist >= PAN_DRAG_THRESHOLD) {
+        setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+      }
     }
     // Track grid position for ghost preview
     const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
@@ -1103,8 +1108,8 @@ export default function FactoryPlannerPage() {
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Ignore click if we were dragging (panning)
-    if (isDragging) return;
+    // Ignore click if we were dragging (panning) - use distance threshold
+    if (dragDistance >= PAN_DRAG_THRESHOLD) return;
 
     const { gridX, gridY } = screenToGrid(e.clientX, e.clientY);
 
@@ -1501,11 +1506,11 @@ export default function FactoryPlannerPage() {
         <canvas
           ref={canvasRef}
           className={`w-full h-full ${
+            isDragging && dragDistance >= PAN_DRAG_THRESHOLD ? 'cursor-grabbing' :
             state.movingBuildingIndex !== null ? 'cursor-crosshair' :
-            state.toolMode === 'select' ? 'cursor-grab active:cursor-grabbing' :
-            state.toolMode === 'move' ? 'cursor-pointer' :
+            state.toolMode === 'build' && state.selectedBuilding ? 'cursor-crosshair' :
             state.toolMode === 'delete' ? 'cursor-pointer' :
-            'cursor-crosshair'
+            'cursor-grab'
           }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -1542,25 +1547,43 @@ export default function FactoryPlannerPage() {
         </div>
 
         {/* Current tool mode indicator (bottom-left) */}
-        <div className="absolute bottom-4 left-4 z-10">
-          <div className={`bg-[var(--color-surface)] border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+        <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
+          <div className={`bg-[var(--color-surface)]/95 backdrop-blur-sm border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
             state.toolMode === 'delete' ? 'border-red-600 text-red-400' :
             state.movingBuildingIndex !== null ? 'border-[#00b0ff] text-[#00b0ff]' :
             state.toolMode === 'move' ? 'border-cyan-700 text-cyan-400' :
+            state.toolMode === 'build' && state.selectedBuilding ? 'border-[var(--color-accent)] text-[var(--color-accent)]' :
             'border-[var(--color-border)] text-gray-400'
           }`}>
             {state.movingBuildingIndex !== null
-              ? `Moving: ${BUILDINGS.find(b => b.id === state.movingBuildingData?.buildingId)?.name || 'Building'} — Click to drop | R to rotate | Esc to cancel`
+              ? `Moving: ${BUILDINGS.find(b => b.id === state.movingBuildingData?.buildingId)?.name || 'Building'} — Click to drop | R rotate`
               : state.toolMode === 'build' && state.selectedBuilding
-              ? `Placing: ${BUILDINGS.find(b => b.id === state.selectedBuilding)?.name || 'Unknown'}${state.placementRotation ? ` (${state.placementRotation}°)` : ''} — R to rotate`
+              ? `Placing: ${BUILDINGS.find(b => b.id === state.selectedBuilding)?.name || 'Unknown'}${state.placementRotation ? ` (${state.placementRotation}°)` : ''} — Click to place | R rotate`
               : state.toolMode === 'select'
-              ? 'Click building to move — Right-click to delete'
+              ? 'Drag to pan — Click building to move — Right-click to delete'
               : state.toolMode === 'move'
-              ? 'Click a building to pick up — R to rotate — Esc to cancel'
+              ? 'Click a building to pick up — Drag to pan'
               : state.toolMode === 'delete'
-              ? 'Click building to delete — Esc to cancel'
+              ? 'Click building to delete — Drag to pan'
               : state.toolMode}
           </div>
+          {/* Esc Cancel Button - shown when in any non-default state */}
+          {(state.toolMode !== 'select' || state.movingBuildingIndex !== null || state.selectedBuilding) && (
+            <button
+              onClick={() => {
+                if (state.movingBuildingIndex !== null) dispatch({ type: 'CANCEL_MOVE' });
+                dispatch({ type: 'SET_TOOL_MODE', mode: 'select' });
+                dispatch({ type: 'SET_SELECTED_BUILDING', buildingId: null });
+                dispatch({ type: 'SET_PLACEMENT_ROTATION', rotation: 0 });
+                if (state.showBuildingPicker) dispatch({ type: 'TOGGLE_BUILDING_PICKER' });
+              }}
+              className="bg-red-600/90 backdrop-blur-sm hover:bg-red-500 text-white px-3 py-1.5 border border-red-500 transition-colors flex items-center gap-1.5 text-xs font-bold animate-pulse"
+              title="Cancel current action (Esc)"
+            >
+              <kbd className="bg-red-800 px-1 py-0.5 text-[10px] rounded-sm">ESC</kbd>
+              Cancel
+            </button>
+          )}
         </div>
 
         {/* ─── Building Picker Panel (overlay left) ─── */}
