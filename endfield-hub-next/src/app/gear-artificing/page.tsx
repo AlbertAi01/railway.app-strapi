@@ -154,6 +154,21 @@ function TierBadge({ tier, className = '' }: { tier: MatchTier; className?: stri
   );
 }
 
+function GearIcon({ src, className = 'w-12 h-12' }: { src?: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div className={`${className} shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center`}>
+        <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className={`${className} shrink-0 object-contain`} onError={() => setFailed(true)} />
+  );
+}
+
 function LevelTierTag({ level, tier }: { level: string; tier: MatchTier }) {
   const isBest = tier === 'Best Pick';
   return (
@@ -196,11 +211,10 @@ function GearPickerModal({
   }, [allPieces, search]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-4">
-      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[var(--color-surface)] border border-[var(--color-accent)] w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col z-10">
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className="rios-modal-panel rios-modal-xl" style={{ borderColor: 'var(--color-accent)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
+        <div className="rios-modal-header">
           <h2 className="text-lg font-bold text-white font-tactical">Pick a Gear</h2>
           <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white">
             <X size={20} />
@@ -223,7 +237,7 @@ function GearPickerModal({
         </div>
 
         {/* Gear List */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+        <div className="rios-modal-body px-5 py-4 space-y-6">
           <div className="text-center text-sm text-[var(--color-text-tertiary)] border-b border-[var(--color-border)] pb-2">
             Late Game (Lv70)
           </div>
@@ -241,13 +255,7 @@ function GearPickerModal({
                     onClick={() => { onSelect(piece); onClose(); }}
                     className="flex items-center gap-2.5 p-2 border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)] transition-colors text-left rounded-sm"
                   >
-                    {piece.icon ? (
-                      <img src={piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
-                    ) : (
-                      <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
-                        <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
-                      </div>
-                    )}
+                    <GearIcon src={piece.icon} />
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">T4</span>
@@ -277,13 +285,7 @@ function GearPickerModal({
                     onClick={() => { onSelect(piece); onClose(); }}
                     className="flex items-center gap-2.5 p-2 border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)] transition-colors text-left rounded-sm"
                   >
-                    {piece.icon ? (
-                      <img src={piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
-                    ) : (
-                      <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
-                        <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
-                      </div>
-                    )}
+                    <GearIcon src={piece.icon} />
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">T4</span>
@@ -444,13 +446,7 @@ export default function GearArtificingPage() {
 
                       <div className="flex items-center gap-3">
                         {/* Icon */}
-                        {result.piece.icon ? (
-                          <img src={result.piece.icon} alt="" className="w-12 h-12 shrink-0 object-contain" />
-                        ) : (
-                          <div className="w-12 h-12 shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
-                            <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
-                          </div>
-                        )}
+                        <GearIcon src={result.piece.icon} />
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">

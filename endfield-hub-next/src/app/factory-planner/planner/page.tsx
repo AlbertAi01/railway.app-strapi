@@ -1053,18 +1053,54 @@ export default function FactoryPlannerPage() {
   const handleFileImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Security: reject files over 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File too large. Maximum allowed size is 2MB.');
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (data.buildings && Array.isArray(data.buildings)) {
-          dispatch({ type: 'CLEAR_GRID' });
-          data.buildings.forEach((b: PlacedBuilding) => {
-            dispatch({ type: 'PLACE_BUILDING', building: b });
-          });
-          if (data.outpostConfig) {
-            dispatch({ type: 'SET_OUTPOST_CONFIG', config: data.outpostConfig });
-          }
+        const raw = JSON.parse(ev.target?.result as string);
+        // Sanitize: deep-clone to strip prototype pollution
+        const data = JSON.parse(JSON.stringify(raw));
+
+        if (!data || typeof data !== 'object' || !Array.isArray(data.buildings)) {
+          alert('Invalid layout file. Expected a JSON object with a buildings array.');
+          return;
+        }
+
+        // Validate each building entry has required fields with correct types
+        const validBuildings = data.buildings.filter((b: unknown): b is PlacedBuilding => {
+          if (!b || typeof b !== 'object') return false;
+          const obj = b as Record<string, unknown>;
+          return (
+            typeof obj.buildingId === 'string' && obj.buildingId.length < 100 &&
+            typeof obj.x === 'number' && Number.isFinite(obj.x) && obj.x >= 0 && obj.x < 100 &&
+            typeof obj.y === 'number' && Number.isFinite(obj.y) && obj.y >= 0 && obj.y < 100 &&
+            typeof obj.rotation === 'number' && [0, 90, 180, 270].includes(obj.rotation)
+          );
+        });
+
+        // Limit number of buildings to prevent DoS via massive arrays
+        if (validBuildings.length > 200) {
+          alert('Layout contains too many buildings (max 200).');
+          return;
+        }
+
+        // Validate outpost config if present
+        const VALID_CONFIGS = ['pac-base', 'pac-expansion-1', 'pac-expansion-2', 'sub-pac-base', 'sub-pac-expansion-1', 'sub-pac-expansion-2'];
+        const outpostConfig = typeof data.outpostConfig === 'string' && VALID_CONFIGS.includes(data.outpostConfig) ? data.outpostConfig : undefined;
+
+        dispatch({ type: 'CLEAR_GRID' });
+        validBuildings.forEach((b: PlacedBuilding) => {
+          dispatch({ type: 'PLACE_BUILDING', building: { buildingId: b.buildingId, x: b.x, y: b.y, rotation: b.rotation } });
+        });
+        if (outpostConfig) {
+          dispatch({ type: 'SET_OUTPOST_CONFIG', config: outpostConfig });
         }
       } catch {
         alert('Invalid JSON file.');
@@ -1095,13 +1131,31 @@ export default function FactoryPlannerPage() {
     const bp = params.get('bp');
     if (bp) {
       try {
-        const data = JSON.parse(atob(bp));
-        if (data.buildings && Array.isArray(data.buildings)) {
-          dispatch({ type: 'CLEAR_GRID' });
-          data.buildings.forEach((b: PlacedBuilding) => {
-            dispatch({ type: 'PLACE_BUILDING', building: b });
+        // Security: limit URL param size to prevent DoS
+        if (bp.length > 50000) return;
+        const raw = JSON.parse(atob(bp));
+        // Sanitize: deep-clone to strip prototype pollution
+        const data = JSON.parse(JSON.stringify(raw));
+        if (data && typeof data === 'object' && Array.isArray(data.buildings)) {
+          // Validate each building
+          const validBuildings = data.buildings.filter((b: unknown): b is PlacedBuilding => {
+            if (!b || typeof b !== 'object') return false;
+            const obj = b as Record<string, unknown>;
+            return (
+              typeof obj.buildingId === 'string' && obj.buildingId.length < 100 &&
+              typeof obj.x === 'number' && Number.isFinite(obj.x) && obj.x >= 0 && obj.x < 100 &&
+              typeof obj.y === 'number' && Number.isFinite(obj.y) && obj.y >= 0 && obj.y < 100 &&
+              typeof obj.rotation === 'number' && [0, 90, 180, 270].includes(obj.rotation)
+            );
           });
-          if (data.outpostConfig) {
+          if (validBuildings.length > 200) return;
+
+          dispatch({ type: 'CLEAR_GRID' });
+          validBuildings.forEach((b: PlacedBuilding) => {
+            dispatch({ type: 'PLACE_BUILDING', building: { buildingId: b.buildingId, x: b.x, y: b.y, rotation: b.rotation } });
+          });
+          const VALID_CONFIGS = ['pac-base', 'pac-expansion-1', 'pac-expansion-2', 'sub-pac-base', 'sub-pac-expansion-1', 'sub-pac-expansion-2'];
+          if (typeof data.outpostConfig === 'string' && VALID_CONFIGS.includes(data.outpostConfig)) {
             dispatch({ type: 'SET_OUTPOST_CONFIG', config: data.outpostConfig });
           }
         }

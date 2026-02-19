@@ -6,8 +6,9 @@ import {
   Home, Users, Sword, Shield, BookOpen, Factory, Map,
   Trophy, Target, Dice6, LayoutGrid, Star,
   FlaskConical, Wrench, Sparkles, ChevronDown, ChevronRight,
-  Menu, X, LogIn, User, Hammer
+  Menu, X, LogIn, User, Hammer, Puzzle
 } from 'lucide-react';
+import ZeroSanityLogo from '@/components/ui/ZeroSanityLogo';
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -52,6 +53,10 @@ const navigation: NavItem[] = [
   },
   { label: 'Achievements', path: '/achievements', icon: <Trophy size={20} /> },
   { label: 'Recruitment Sim', path: '/summon-simulator', icon: <Dice6 size={20} /> },
+  {
+    label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={20} />,
+    isNew: true,
+  },
   {
     label: 'Community Builds', path: '/builds', icon: <Hammer size={20} />,
     isNew: true,
@@ -153,13 +158,13 @@ export default function Sidebar() {
       <aside className={`fixed top-0 left-0 h-full w-64 bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] z-40 flex flex-col overflow-y-auto transition-transform ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        {/* RIOS Logo Header */}
-        <div className="p-5 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="diamond diamond-md" />
+        {/* Zero Sanity Logo Header */}
+        <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+          <Link href="/" className="flex items-center gap-3 no-underline">
+            <ZeroSanityLogo size={36} variant="icon" />
             <div>
-              <span className="text-lg font-bold text-white tracking-wider font-tactical uppercase">
-                RHODES ISLAND OS
+              <span className="text-base font-bold text-white tracking-wider font-tactical uppercase">
+                ZERO SANITY
               </span>
               <p className="terminal-text-sm text-[var(--color-text-muted)] mt-0.5">
                 ENDFIELD.TOOLKIT.v2.0
@@ -185,8 +190,12 @@ export default function Sidebar() {
             </Link>
           ) : (
             <Link
-              href="/login"
-              onClick={() => setMobileOpen(false)}
+              href={`/login?returnTo=${encodeURIComponent(pathname)}`}
+              onClick={() => {
+                setMobileOpen(false);
+                // Also store in sessionStorage for OAuth flows
+                sessionStorage.setItem('endfield-return-to', pathname);
+              }}
               className="flex items-center gap-3 px-3 py-2.5 clip-corner-tl text-[14px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-surface-2)] transition-colors border-l-2 border-transparent"
             >
               <LogIn size={20} />
@@ -202,7 +211,7 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div className="p-4 border-t border-[var(--color-border)]">
-          <p className="terminal-text-sm text-[var(--color-text-muted)]">RIOS.v2.0.0 &middot; zerosanity.app</p>
+          <p className="terminal-text-sm text-[var(--color-text-muted)]">ZS.v2.0.0 &middot; zerosanity.app</p>
           <p className="terminal-text-sm text-[var(--color-text-muted)] mt-1">GAME ASSETS &copy; GRYPHLINE</p>
         </div>
       </aside>

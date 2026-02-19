@@ -3,441 +3,64 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Users, Plus, Search, X, Heart, Eye, Trash2, Edit3, Copy, ChevronDown, Shield, Sword as SwordIcon, Star } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Users, Plus, Search, X, Heart, Eye, Trash2, Edit3, Copy,
+  Shield, Sword as SwordIcon, Star, BookOpen, ChevronRight,
+  Bookmark, BookmarkCheck, Play, Filter, ArrowUpDown, Clock,
+  Flame, Video, UserPlus, AlertCircle, Globe, Lock
+} from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import { CHARACTERS, WEAPONS, ELEMENTS, ROLES, WEAPON_TYPES } from '@/lib/data';
 import { CHARACTER_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS, PROFESSION_ICONS } from '@/lib/assets';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Character, Element, Role, WeaponType } from '@/types/game';
-
-// Equipment sets data (inline since no separate file)
-const EQUIPMENT_SETS = [
-  { name: 'Eternal Xiranite', tier: 'T4', bonus: 'Ultimate damage +25%' },
-  { name: 'Type 50 Yinglung', tier: 'T4', bonus: 'ATK +18%, Crit Rate +12%' },
-  { name: 'Tide Surge', tier: 'T4', bonus: 'Elemental Burst DMG +30%' },
-  { name: 'Swordmancer', tier: 'T4', bonus: 'Normal/Charged ATK +20%' },
-  { name: 'Hot Work', tier: 'T4', bonus: 'Elemental Skill DMG +25%' },
-  { name: 'Æthertech', tier: 'T4', bonus: 'Poise +15%, DEF +20%' },
-  { name: 'LYNX', tier: 'T4', bonus: 'Healing effectiveness +25%' },
-  { name: 'Catastrophe', tier: 'T3', bonus: 'Elemental RES +25%' },
-  { name: 'Mordvolt Insulation', tier: 'T2', bonus: 'INT +15%' },
-  { name: 'Mordvolt Resistant', tier: 'T2', bonus: 'Will +15%' },
-  { name: 'Armored MSGR', tier: 'T2', bonus: 'STR +15%' },
-  { name: 'AIC Heavy', tier: 'T1', bonus: 'HP +10%' },
-];
-
-// Types
-interface BuildCharacter {
-  name: string;
-  weapon?: string;
-  equipment?: string;
-  notes?: string;
-  skillLevels?: number[];
-}
-
-interface Build {
-  id: string;
-  name: string;
-  type: 'single' | 'team';
-  characters: BuildCharacter[];
-  tags: string[];
-  notes: string;
-  isPublic: boolean;
-  likes: number;
-  views: number;
-  createdAt: number;
-  updatedAt: number;
-  author?: string;
-}
+import {
+  GEAR_SETS, STANDALONE_GEAR, EQUIPMENT_SET_NAMES,
+  BUILD_TAGS, STRATEGY_TAGS, ALL_TAGS, MAX_TEAM_SIZE, MAX_TAGS,
+  MAX_PARTNERS, MAX_SHORT_DESC, SAMPLE_BUILDS, getYouTubeThumbnail,
+  getFavoriteBuildIds, toggleFavoriteBuild, isBuildFavorited,
+  getMyBuilds, saveMyBuilds,
+} from '@/data/builds';
+import { TIER_COLORS } from '@/data/gear';
+import type { Build, BuildCharacter, BuildGuide, RecommendedPartner, BrowseFilter, BuildEquipmentSlot } from '@/data/builds';
+import type { GearPiece } from '@/data/gear';
+import { useAuthStore } from '@/store/authStore';
 
 type ViewMode = 'browse' | 'create' | 'my-builds';
-type BrowseFilter = 'popular' | 'latest' | 'teams' | 'single';
-type CreateTab = 'single' | 'team';
-
-const TAGS = ['Meta', 'F2P', 'Speedrun', 'Boss Kill', 'Exploration', 'DPS', 'Support', 'Tank', 'Healer', 'Off-Meta', 'Fun'];
-const MAX_TEAM_SIZE = 4;
-
-// Sample community builds for demonstration
-const SAMPLE_BUILDS: Build[] = [
-  {
-    id: 'laevatain-hypercarry',
-    name: 'Laevatain Hypercarry',
-    type: 'single',
-    characters: [{
-      name: 'Laevatain',
-      weapon: 'Umbral Torch',
-      equipment: 'Type 50 Yinglung',
-      skillLevels: [10, 10, 10, 10],
-      notes: 'Main DPS - prioritize Heat DMG and Arts Intensity. Umbral Torch stacks perfectly with her kit.'
-    }],
-    tags: ['Meta', 'DPS'],
-    notes: 'Best-in-slot setup for Laevatain. Umbral Torch provides the highest damage ceiling with Type 50 Yinglung for crit stacking. Focus on building Intellect and Heat DMG. Use combo skills to maintain Yinglung\'s Edge stacks, then unleash ultimate for massive burst.',
-    isPublic: true,
-    likes: 47,
-    views: 312,
-    createdAt: Date.now() - 86400000 * 3,
-    updatedAt: Date.now() - 86400000 * 3,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'cryo-freeze-team',
-    name: 'Cryo Freeze Team',
-    type: 'team',
-    characters: [
-      {
-        name: 'Last Rite',
-        weapon: 'Exemplar',
-        equipment: 'Tide Surge',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Main DPS - stack Physical DMG and maximize greatsword combo chains.'
-      },
-      {
-        name: 'Yvonne',
-        weapon: 'Navigator',
-        equipment: 'Type 50 Yinglung',
-        skillLevels: [8, 10, 10, 8],
-        notes: 'Sub-DPS - provides Cryo burst damage and ranged support.'
-      },
-      {
-        name: 'Xaihi',
-        weapon: 'Wild Wanderer',
-        equipment: 'LYNX',
-        skillLevels: [6, 8, 10, 6],
-        notes: 'Healer - keeps team alive with consistent healing and shields.'
-      },
-      {
-        name: 'Snowshine',
-        weapon: 'Seeker of Dark Lung',
-        equipment: 'Æthertech',
-        skillLevels: [8, 8, 8, 10],
-        notes: 'Tank - absorbs damage and applies Cryo Infliction for team synergy.'
-      },
-    ],
-    tags: ['Meta', 'Boss Kill'],
-    notes: 'Full cryo team that chains freeze reactions. Last Rite as main DPS, Yvonne for sub-DPS burst, Xaihi healing, Snowshine tanking. Rotation: Snowshine applies Cryo Infliction → Yvonne burst → Last Rite combo chains. Keep enemies frozen for maximum damage uptime.',
-    isPublic: true,
-    likes: 83,
-    views: 621,
-    createdAt: Date.now() - 86400000 * 7,
-    updatedAt: Date.now() - 86400000 * 5,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'f2p-endministrator',
-    name: 'F2P Endministrator',
-    type: 'single',
-    characters: [{
-      name: 'Endministrator',
-      weapon: 'Fortmaker',
-      equipment: 'Swordmancer',
-      skillLevels: [10, 10, 8, 10],
-      notes: 'Versatile protagonist build - balanced stats make it work in any content.'
-    }],
-    tags: ['F2P', 'DPS'],
-    notes: 'Budget-friendly build using the free protagonist. Fortmaker is a solid 5-star option that scales well. Swordmancer set provides Physical Status synergy. Great for new players - all materials are farmable. Stack Agility and Physical DMG for best results.',
-    isPublic: true,
-    likes: 124,
-    views: 891,
-    createdAt: Date.now() - 86400000 * 14,
-    updatedAt: Date.now() - 86400000 * 10,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'physical-quickswap',
-    name: 'Physical Quickswap',
-    type: 'team',
-    characters: [
-      {
-        name: 'Endministrator',
-        weapon: 'Forgeborn Scathe',
-        equipment: 'Swordmancer',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Primary swap target - builds combo gauge quickly with sword attacks.'
-      },
-      {
-        name: 'Lifeng',
-        weapon: 'Valiant',
-        equipment: 'Type 50 Yinglung',
-        skillLevels: [8, 10, 10, 8],
-        notes: 'Polearm specialist - high burst after combo gauge is filled.'
-      },
-      {
-        name: 'Chen Qianyu',
-        weapon: 'Sundering Steel',
-        equipment: 'Hot Work',
-        skillLevels: [10, 10, 8, 8],
-        notes: 'Counter-focused Guard - exceptional Agility enables precise dodges and counters.'
-      },
-      {
-        name: 'Gilberta',
-        weapon: 'Opus: Etch Figure',
-        equipment: 'LYNX',
-        skillLevels: [6, 8, 10, 6],
-        notes: 'Healer/Support - Nature buffs and sustained team healing.'
-      },
-    ],
-    tags: ['Meta', 'Speedrun'],
-    notes: 'Rapid character swapping for continuous combo chains. Each character builds combo gauge for the next. Focus on maintaining combo stacks across all operators. Swap when combo skill is ready to maximize Yinglung\'s Edge stacks. Gilberta provides safety net healing.',
-    isPublic: true,
-    likes: 56,
-    views: 445,
-    createdAt: Date.now() - 86400000 * 5,
-    updatedAt: Date.now() - 86400000 * 2,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'ember-solo-tank',
-    name: 'Ember Solo Tank',
-    type: 'single',
-    characters: [{
-      name: 'Ember',
-      weapon: 'Thunderberge',
-      equipment: 'Æthertech',
-      skillLevels: [8, 8, 10, 10],
-      notes: 'Unkillable tank - combo skill provides massive shields and self-healing.'
-    }],
-    tags: ['Tank', 'Off-Meta'],
-    notes: 'Ember can solo-tank most content with Æthertech poise stacking. Thunderberge adds self-healing on hit. Build Strength and HP for maximum survivability. Use combo skill on cooldown for shield uptime. Great for solo challenges and exploration.',
-    isPublic: true,
-    likes: 31,
-    views: 198,
-    createdAt: Date.now() - 86400000 * 2,
-    updatedAt: Date.now() - 86400000,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'electric-overload',
-    name: 'Electric Overload',
-    type: 'team',
-    characters: [
-      {
-        name: 'Arclight',
-        weapon: 'Rapid Ascent',
-        equipment: 'Hot Work',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Primary Electric DPS - fast sword attacks apply Electrification rapidly.'
-      },
-      {
-        name: 'Perlica',
-        weapon: 'Detonation Unit',
-        equipment: 'Eternal Xiranite',
-        skillLevels: [8, 10, 10, 8],
-        notes: 'Arts Caster - detonates Electric Infliction for massive AoE damage.'
-      },
-      {
-        name: 'Avywenna',
-        weapon: 'Chimeric Justice',
-        equipment: 'Type 50 Yinglung',
-        skillLevels: [8, 8, 10, 8],
-        notes: 'Polearm DPS - extends Electric chains with combo skills.'
-      },
-      {
-        name: 'Antal',
-        weapon: 'Hypernova Auto',
-        equipment: 'Mordvolt Insulation',
-        skillLevels: [6, 8, 10, 6],
-        notes: 'Electric Support - buffs team\'s Arts DMG and provides sustained Electric application.'
-      },
-    ],
-    tags: ['Fun', 'DPS'],
-    notes: 'All-electric team for maximum elemental reaction chains. Very satisfying to play even if not perfectly meta. Chain Electrification across all enemies for screen-wide damage. Perlica detonates for huge burst. Antal provides consistent buffs. Great for AoE encounters.',
-    isPublic: true,
-    likes: 42,
-    views: 267,
-    createdAt: Date.now() - 86400000 * 6,
-    updatedAt: Date.now() - 86400000 * 4,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'nature-corruption-core',
-    name: 'Nature Corruption Core',
-    type: 'team',
-    characters: [
-      {
-        name: 'Ardelia',
-        weapon: 'Chivalric Virtues',
-        equipment: 'LYNX',
-        skillLevels: [6, 8, 10, 8],
-        notes: 'Main healer - high Will provides massive healing output.'
-      },
-      {
-        name: 'Gilberta',
-        weapon: 'Opus: Etch Figure',
-        equipment: 'Eternal Xiranite',
-        skillLevels: [6, 8, 10, 6],
-        notes: 'Sub-healer/Support - Nature buffs and Lifted application.'
-      },
-      {
-        name: 'Fluorite',
-        weapon: 'Fluorescent Roc',
-        equipment: 'Hot Work',
-        skillLevels: [8, 10, 8, 8],
-        notes: 'Nature Caster DPS - handcannon ranged attacks with high Agility.'
-      },
-      {
-        name: 'Ember',
-        weapon: 'Former Finery',
-        equipment: 'Æthertech',
-        skillLevels: [8, 8, 10, 10],
-        notes: 'Off-role tank - provides frontline protection while healers work.'
-      },
-    ],
-    tags: ['Support', 'Healer', 'Off-Meta'],
-    notes: 'Double healer comp focused on Nature element synergy and Corrosion application. Incredibly safe for difficult content. Ardelia and Gilberta provide overlapping heals and buffs. Fluorite adds Nature DPS from backline. Ember tanks. Can outlast nearly any encounter.',
-    isPublic: true,
-    likes: 29,
-    views: 183,
-    createdAt: Date.now() - 86400000 * 4,
-    updatedAt: Date.now() - 86400000 * 2,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'heat-combustion-burst',
-    name: 'Heat Combustion Burst',
-    type: 'team',
-    characters: [
-      {
-        name: 'Laevatain',
-        weapon: 'Umbral Torch',
-        equipment: 'Type 50 Yinglung',
-        skillLevels: [10, 10, 10, 10],
-        notes: 'Main DPS - ultimate nuke with Heat DMG stacking.'
-      },
-      {
-        name: 'Wulfgard',
-        weapon: 'Rational Farewell',
-        equipment: 'Hot Work',
-        skillLevels: [8, 10, 8, 8],
-        notes: 'Heat Caster - applies Combustion and provides ranged DPS.'
-      },
-      {
-        name: 'Akekuri',
-        weapon: 'Thermite Cutter',
-        equipment: 'Frontiers',
-        skillLevels: [8, 8, 10, 8],
-        notes: 'Heat Vanguard - fast sword attacks maintain Combustion uptime.'
-      },
-      {
-        name: 'Gilberta',
-        weapon: 'Delivery Guaranteed',
-        equipment: 'LYNX',
-        skillLevels: [6, 8, 10, 6],
-        notes: 'Healer - off-element support for survivability.'
-      },
-    ],
-    tags: ['DPS', 'Speedrun'],
-    notes: 'Triple Heat DPS focused on Combustion stacking and burst windows. Apply Combustion with Wulfgard → stack with Akekuri → detonate with Laevatain ultimate. Gilberta heals when needed. Extremely high damage but requires careful resource management. Best for short fights.',
-    isPublic: true,
-    likes: 38,
-    views: 241,
-    createdAt: Date.now() - 86400000 * 8,
-    updatedAt: Date.now() - 86400000 * 6,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'balanced-rainbow',
-    name: 'Balanced Rainbow',
-    type: 'team',
-    characters: [
-      {
-        name: 'Endministrator',
-        weapon: 'Forgeborn Scathe',
-        equipment: 'Swordmancer',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Physical DPS - well-rounded stats fit any situation.'
-      },
-      {
-        name: 'Laevatain',
-        weapon: 'Umbral Torch',
-        equipment: 'Hot Work',
-        skillLevels: [10, 10, 10, 10],
-        notes: 'Heat DPS - burst damage dealer.'
-      },
-      {
-        name: 'Last Rite',
-        weapon: 'Khravengger',
-        equipment: 'Tide Surge',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Cryo DPS - greatsword chains with freeze application.'
-      },
-      {
-        name: 'Arclight',
-        weapon: 'Rapid Ascent',
-        equipment: 'Frontiers',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Electric DPS - high Agility enables rapid elemental application.'
-      },
-    ],
-    tags: ['DPS', 'Fun'],
-    notes: 'Rainbow team with 4 different elements for maximum elemental coverage. Can adapt to any enemy weakness. No healer means high risk/high reward gameplay. Relies on dodging and killing enemies before they kill you. Great for players who know enemy patterns well.',
-    isPublic: true,
-    likes: 51,
-    views: 329,
-    createdAt: Date.now() - 86400000 * 9,
-    updatedAt: Date.now() - 86400000 * 7,
-    author: 'ZeroSanity Staff',
-  },
-  {
-    id: 'vanguard-rush',
-    name: 'Vanguard Rush',
-    type: 'team',
-    characters: [
-      {
-        name: 'Pogranichnik',
-        weapon: 'Never Rest',
-        equipment: 'Swordmancer',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Physical Vanguard - high Will provides sustain through SP recovery.'
-      },
-      {
-        name: 'Arclight',
-        weapon: 'Rapid Ascent',
-        equipment: 'MI Security',
-        skillLevels: [10, 10, 8, 10],
-        notes: 'Electric Vanguard - lightning-fast attacks and high mobility.'
-      },
-      {
-        name: 'Akekuri',
-        weapon: 'Aspirant',
-        equipment: 'Frontiers',
-        skillLevels: [8, 8, 10, 8],
-        notes: 'Heat Vanguard - swift burn application and combo chains.'
-      },
-      {
-        name: 'Alesh',
-        weapon: 'Finchaser 3.0',
-        equipment: 'Tide Surge',
-        skillLevels: [10, 8, 8, 10],
-        notes: 'Cryo Vanguard - high Strength provides frontline pressure.'
-      },
-    ],
-    tags: ['Speedrun', 'Fun'],
-    notes: 'All-Vanguard team focused on aggressive field control and rapid skill rotations. High mobility and constant pressure. Each operator has fast cooldowns - keep swapping to maintain buffs. Requires good mechanical skill. No dedicated healer means you must dodge well.',
-    isPublic: true,
-    likes: 27,
-    views: 156,
-    createdAt: Date.now() - 86400000 * 11,
-    updatedAt: Date.now() - 86400000 * 9,
-    author: 'ZeroSanity Staff',
-  },
-];
 
 export default function BuildsPage() {
+  const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>('browse');
   const [browseFilter, setBrowseFilter] = useState<BrowseFilter>('popular');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('char') || '');
+  const [filterTag, setFilterTag] = useState('');
   const [myBuilds, setMyBuilds] = useState<Build[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [myBuildsTab, setMyBuildsTab] = useState<'created' | 'favorited'>('created');
 
   // Create form state
-  const [createTab, setCreateTab] = useState<CreateTab>('single');
+  const [createTab, setCreateTab] = useState<'single' | 'team'>('single');
   const [buildName, setBuildName] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
   const [buildNotes, setBuildNotes] = useState('');
   const [buildTags, setBuildTags] = useState<string[]>([]);
   const [buildCharacters, setBuildCharacters] = useState<BuildCharacter[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [editingBuildId, setEditingBuildId] = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [recommendedPartners, setRecommendedPartners] = useState<RecommendedPartner[]>([]);
+  const [partnerReason, setPartnerReason] = useState('');
 
-  // Character picker modal
+  // Guide form state
+  const [guideOverview, setGuideOverview] = useState('');
+  const [guideRotation, setGuideRotation] = useState<string[]>([]);
+  const [guideTips, setGuideTips] = useState<string[]>([]);
+  const [guideInvestment, setGuideInvestment] = useState<'Low' | 'Medium' | 'High' | ''>('');
+  const [guideDifficulty, setGuideDifficulty] = useState<'Easy' | 'Medium' | 'Hard' | ''>('');
+
+  // Pickers
   const [showCharPicker, setShowCharPicker] = useState(false);
   const [charPickerSlot, setCharPickerSlot] = useState(0);
   const [charSearch, setCharSearch] = useState('');
@@ -445,27 +68,29 @@ export default function BuildsPage() {
   const [charFilterRole, setCharFilterRole] = useState<Role | ''>('');
   const [charFilterRarity, setCharFilterRarity] = useState<number | ''>('');
 
-  // Weapon picker modal
   const [showWeaponPicker, setShowWeaponPicker] = useState(false);
   const [weaponPickerSlot, setWeaponPickerSlot] = useState(0);
   const [weaponSearch, setWeaponSearch] = useState('');
   const [weaponFilterType, setWeaponFilterType] = useState<WeaponType | ''>('');
 
-  // Equipment picker modal
   const [showEquipPicker, setShowEquipPicker] = useState(false);
   const [equipPickerSlot, setEquipPickerSlot] = useState(0);
 
-  // Load saved builds
+  const [showPartnerPicker, setShowPartnerPicker] = useState(false);
+  const [partnerSearch, setPartnerSearch] = useState('');
+
+  // Create form section toggle
+  const [showGuideSection, setShowGuideSection] = useState(false);
+
+  // Load saved data
   useEffect(() => {
-    const saved = localStorage.getItem('endfield-my-builds');
-    if (saved) {
-      try { setMyBuilds(JSON.parse(saved)); } catch { /* ignore */ }
-    }
+    setMyBuilds(getMyBuilds());
+    setFavoriteIds(getFavoriteBuildIds());
   }, []);
 
-  const saveBuilds = useCallback((builds: Build[]) => {
+  const saveBuildsAndUpdate = useCallback((builds: Build[]) => {
     setMyBuilds(builds);
-    localStorage.setItem('endfield-my-builds', JSON.stringify(builds));
+    saveMyBuilds(builds);
   }, []);
 
   // All builds = sample + my public builds
@@ -479,45 +104,66 @@ export default function BuildsPage() {
     let builds = allBuilds;
     if (browseFilter === 'teams') builds = builds.filter(b => b.type === 'team');
     if (browseFilter === 'single') builds = builds.filter(b => b.type === 'single');
+    if (browseFilter === 'has-video') builds = builds.filter(b => !!b.youtubeUrl);
+    if (filterTag) {
+      builds = builds.filter(b => b.tags.includes(filterTag));
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       builds = builds.filter(b =>
         b.name.toLowerCase().includes(q) ||
         b.characters.some(c => c.name.toLowerCase().includes(q)) ||
-        b.tags.some(t => t.toLowerCase().includes(q))
+        b.tags.some(t => t.toLowerCase().includes(q)) ||
+        b.author?.toLowerCase().includes(q) ||
+        b.shortDescription?.toLowerCase().includes(q)
       );
     }
     if (browseFilter === 'popular') builds = [...builds].sort((a, b) => b.likes - a.likes);
     if (browseFilter === 'latest') builds = [...builds].sort((a, b) => b.createdAt - a.createdAt);
     return builds;
-  }, [allBuilds, browseFilter, searchQuery]);
+  }, [allBuilds, browseFilter, searchQuery, filterTag]);
 
-  // Character picker filtered list
+  // Favorited builds for My Builds tab
+  const favoritedBuilds = useMemo(() => {
+    return allBuilds.filter(b => favoriteIds.includes(b.id));
+  }, [allBuilds, favoriteIds]);
+
+  // Character picker
   const filteredChars = useMemo(() => {
     return CHARACTERS.filter(c => {
       if (charSearch && !c.Name.toLowerCase().includes(charSearch.toLowerCase())) return false;
       if (charFilterElement && c.Element !== charFilterElement) return false;
       if (charFilterRole && c.Role !== charFilterRole) return false;
       if (charFilterRarity && c.Rarity !== charFilterRarity) return false;
-      // Don't show already-selected characters (except the current slot)
       const alreadySelected = buildCharacters.filter((_, i) => i !== charPickerSlot).map(bc => bc.name);
       if (alreadySelected.includes(c.Name)) return false;
       return true;
     }).sort((a, b) => b.Rarity - a.Rarity || a.Name.localeCompare(b.Name));
   }, [charSearch, charFilterElement, charFilterRole, charFilterRarity, buildCharacters, charPickerSlot]);
 
-  // Weapon picker filtered list
+  // Weapon picker
   const filteredWeapons = useMemo(() => {
     const selectedChar = buildCharacters[weaponPickerSlot];
     const charData = selectedChar ? CHARACTERS.find(c => c.Name === selectedChar.name) : null;
     return WEAPONS.filter(w => {
       if (weaponSearch && !w.Name.toLowerCase().includes(weaponSearch.toLowerCase())) return false;
       if (weaponFilterType && w.WeaponType !== weaponFilterType) return false;
-      // If we know the character's weapon type, filter to matching
       if (charData && w.WeaponType !== charData.WeaponType) return false;
       return true;
     }).sort((a, b) => b.Rarity - a.Rarity || a.Name.localeCompare(b.Name));
   }, [weaponSearch, weaponFilterType, buildCharacters, weaponPickerSlot]);
+
+  // Partner picker
+  const filteredPartnerChars = useMemo(() => {
+    const alreadyInBuild = buildCharacters.map(bc => bc.name);
+    const alreadyPartner = recommendedPartners.map(p => p.name);
+    return CHARACTERS.filter(c => {
+      if (partnerSearch && !c.Name.toLowerCase().includes(partnerSearch.toLowerCase())) return false;
+      if (alreadyInBuild.includes(c.Name)) return false;
+      if (alreadyPartner.includes(c.Name)) return false;
+      return true;
+    }).sort((a, b) => b.Rarity - a.Rarity || a.Name.localeCompare(b.Name));
+  }, [partnerSearch, buildCharacters, recommendedPartners]);
 
   const maxSlots = createTab === 'team' ? MAX_TEAM_SIZE : 1;
 
@@ -534,7 +180,6 @@ export default function BuildsPage() {
     const newChars = [...buildCharacters];
     const charData = CHARACTERS.find(c => c.Name === charName);
     if (charPickerSlot < newChars.length) {
-      // If weapon type changed, clear weapon
       const oldChar = CHARACTERS.find(c => c.Name === newChars[charPickerSlot].name);
       if (oldChar && charData && oldChar.WeaponType !== charData.WeaponType) {
         newChars[charPickerSlot] = { name: charName, equipment: newChars[charPickerSlot].equipment };
@@ -569,13 +214,54 @@ export default function BuildsPage() {
     setShowEquipPicker(true);
   };
 
-  const selectEquipment = (setName: string) => {
+  const selectEquipment = (piece: GearPiece, setName: string) => {
     const newChars = [...buildCharacters];
     if (newChars[equipPickerSlot]) {
-      newChars[equipPickerSlot] = { ...newChars[equipPickerSlot], equipment: setName };
+      const char = { ...newChars[equipPickerSlot] };
+      // Add piece to equipmentPieces array (max 3)
+      const pieces = [...(char.equipmentPieces || [])];
+      if (pieces.length < 3) {
+        pieces.push({ pieceName: piece.name, setName: setName || undefined, artificeLevel: 0 });
+      }
+      char.equipmentPieces = pieces;
+      // Also set legacy field to the primary set name for backward compat
+      const primarySet = pieces.find(p => p.setName)?.setName;
+      if (primarySet) char.equipment = primarySet;
+      newChars[equipPickerSlot] = char;
       setBuildCharacters(newChars);
     }
     setShowEquipPicker(false);
+  };
+
+  const removeEquipmentPiece = (charIdx: number, pieceIdx: number) => {
+    const newChars = [...buildCharacters];
+    if (newChars[charIdx]) {
+      const char = { ...newChars[charIdx] };
+      const pieces = [...(char.equipmentPieces || [])];
+      pieces.splice(pieceIdx, 1);
+      char.equipmentPieces = pieces;
+      const primarySet = pieces.find(p => p.setName)?.setName;
+      char.equipment = primarySet || '';
+      newChars[charIdx] = char;
+      setBuildCharacters(newChars);
+    }
+  };
+
+  const addPartner = (name: string) => {
+    if (recommendedPartners.length >= MAX_PARTNERS) return;
+    setRecommendedPartners([...recommendedPartners, { name, reason: '' }]);
+    setShowPartnerPicker(false);
+    setPartnerSearch('');
+  };
+
+  const updatePartnerReason = (idx: number, reason: string) => {
+    const updated = [...recommendedPartners];
+    updated[idx] = { ...updated[idx], reason };
+    setRecommendedPartners(updated);
+  };
+
+  const removePartner = (idx: number) => {
+    setRecommendedPartners(recommendedPartners.filter((_, i) => i !== idx));
   };
 
   const removeCharacter = (slot: number) => {
@@ -583,34 +269,100 @@ export default function BuildsPage() {
   };
 
   const toggleTag = (tag: string) => {
-    setBuildTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+    if (buildTags.includes(tag)) {
+      setBuildTags(buildTags.filter(t => t !== tag));
+    } else if (buildTags.length < MAX_TAGS) {
+      setBuildTags([...buildTags, tag]);
+    }
   };
+
+  const addRotationStep = () => setGuideRotation([...guideRotation, '']);
+  const updateRotationStep = (idx: number, val: string) => {
+    const updated = [...guideRotation];
+    updated[idx] = val;
+    setGuideRotation(updated);
+  };
+  const removeRotationStep = (idx: number) => setGuideRotation(guideRotation.filter((_, i) => i !== idx));
+
+  const addTip = () => setGuideTips([...guideTips, '']);
+  const updateTip = (idx: number, val: string) => {
+    const updated = [...guideTips];
+    updated[idx] = val;
+    setGuideTips(updated);
+  };
+  const removeTip = (idx: number) => setGuideTips(guideTips.filter((_, i) => i !== idx));
 
   const resetForm = () => {
     setBuildName('');
+    setShortDescription('');
     setBuildNotes('');
     setBuildTags([]);
     setBuildCharacters([]);
     setIsPublic(true);
     setEditingBuildId(null);
+    setYoutubeUrl('');
+    setRecommendedPartners([]);
+    setPartnerReason('');
+    setGuideOverview('');
+    setGuideRotation([]);
+    setGuideTips([]);
+    setGuideInvestment('');
+    setGuideDifficulty('');
+    setShowGuideSection(false);
   };
 
   const saveBuild = () => {
     if (!buildName.trim() || buildCharacters.length === 0) return;
     const now = Date.now();
+    const guide: BuildGuide | undefined = (guideOverview || guideRotation.length > 0 || guideTips.length > 0)
+      ? {
+          overview: guideOverview || undefined,
+          rotation: guideRotation.filter(s => s.trim()) || undefined,
+          tips: guideTips.filter(s => s.trim()) || undefined,
+          investment: guideInvestment || undefined,
+          difficulty: guideDifficulty || undefined,
+        }
+      : undefined;
+
     if (editingBuildId) {
       const updated = myBuilds.map(b => b.id === editingBuildId ? {
-        ...b, name: buildName, type: createTab, characters: buildCharacters,
-        tags: buildTags, notes: buildNotes, isPublic, updatedAt: now,
+        ...b,
+        name: buildName,
+        type: createTab,
+        characters: buildCharacters,
+        tags: buildTags,
+        notes: buildNotes,
+        shortDescription,
+        isPublic,
+        updatedAt: now,
+        youtubeUrl: youtubeUrl || undefined,
+        recommendedPartners: recommendedPartners.length > 0 ? recommendedPartners : undefined,
+        partnerReason: partnerReason || undefined,
+        guide,
       } : b);
-      saveBuilds(updated);
+      saveBuildsAndUpdate(updated);
     } else {
       const newBuild: Build = {
-        id: `build-${now}`, name: buildName, type: createTab,
-        characters: buildCharacters, tags: buildTags, notes: buildNotes,
-        isPublic, likes: 0, views: 0, createdAt: now, updatedAt: now,
+        id: `build-${now}`,
+        name: buildName,
+        type: createTab,
+        characters: buildCharacters,
+        tags: buildTags,
+        notes: buildNotes,
+        shortDescription,
+        isPublic,
+        likes: 0,
+        views: 0,
+        createdAt: now,
+        updatedAt: now,
+        author: user?.username || 'Anonymous',
+        authorId: user?.id,
+        youtubeUrl: youtubeUrl || undefined,
+        recommendedPartners: recommendedPartners.length > 0 ? recommendedPartners : undefined,
+        partnerReason: partnerReason || undefined,
+        guide,
       };
-      saveBuilds([...myBuilds, newBuild]);
+      saveBuildsAndUpdate([...myBuilds, newBuild]);
     }
     resetForm();
     setViewMode('my-builds');
@@ -623,22 +375,48 @@ export default function BuildsPage() {
     setBuildCharacters(build.characters);
     setBuildTags(build.tags);
     setBuildNotes(build.notes);
+    setShortDescription(build.shortDescription || '');
     setIsPublic(build.isPublic);
+    setYoutubeUrl(build.youtubeUrl || '');
+    setRecommendedPartners(build.recommendedPartners || []);
+    setPartnerReason(build.partnerReason || '');
+    if (build.guide) {
+      setGuideOverview(build.guide.overview || '');
+      setGuideRotation(build.guide.rotation || []);
+      setGuideTips(build.guide.tips || []);
+      setGuideInvestment(build.guide.investment || '');
+      setGuideDifficulty(build.guide.difficulty || '');
+      setShowGuideSection(true);
+    }
     setViewMode('create');
   };
 
   const deleteBuild = (id: string) => {
     if (confirm('Delete this build?')) {
-      saveBuilds(myBuilds.filter(b => b.id !== id));
+      saveBuildsAndUpdate(myBuilds.filter(b => b.id !== id));
     }
   };
 
   const duplicateBuild = (build: Build) => {
     const dup: Build = {
-      ...build, id: `build-${Date.now()}`, name: `${build.name} (Copy)`,
-      likes: 0, views: 0, createdAt: Date.now(), updatedAt: Date.now(),
+      ...build,
+      id: `build-${Date.now()}`,
+      name: `${build.name} (Copy)`,
+      likes: 0,
+      views: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      author: user?.username || 'Anonymous',
+      authorId: user?.id,
+      isPublic: false,
     };
-    saveBuilds([...myBuilds, dup]);
+    saveBuildsAndUpdate([...myBuilds, dup]);
+  };
+
+  const handleToggleFavorite = (buildId: string) => {
+    const isFav = toggleFavoriteBuild(buildId);
+    setFavoriteIds(getFavoriteBuildIds());
+    return isFav;
   };
 
   const formatDate = (ts: number) => {
@@ -646,76 +424,116 @@ export default function BuildsPage() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const formatTimeAgo = (ts: number) => {
+    const diff = Date.now() - ts;
+    const days = Math.floor(diff / 86400000);
+    if (days > 30) return formatDate(ts);
+    if (days > 0) return `${days}d ago`;
+    const hours = Math.floor(diff / 3600000);
+    if (hours > 0) return `${hours}h ago`;
+    return 'Just now';
+  };
+
   const getCharElement = (name: string) => CHARACTERS.find(c => c.Name === name)?.Element;
   const getCharRarity = (name: string) => CHARACTERS.find(c => c.Name === name)?.Rarity || 4;
-  const getCharRole = (name: string) => CHARACTERS.find(c => c.Name === name)?.Role;
 
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
       <div className="max-w-6xl mx-auto">
         <RIOSHeader title="Community Builds" category="COMMUNITY" code="RIOS-BLD-001" icon={<Users size={28} />}
-          subtitle="Create, share, and browse operator builds and team compositions" />
+          subtitle="Create, share, and discover operator builds and team compositions" />
 
-        {/* View mode buttons */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button onClick={() => { setViewMode('create'); setCreateTab('single'); resetForm(); }}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold flex items-center gap-2 clip-corner-tl transition-colors">
-            <Plus size={14} /> Create Single Build
-          </button>
-          <button onClick={() => { setViewMode('create'); setCreateTab('team'); resetForm(); }}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center gap-2 clip-corner-tl transition-colors">
-            <Users size={14} /> Create Team Build
-          </button>
-          <button onClick={() => setViewMode('my-builds')}
-            className={`px-4 py-2 text-sm font-bold flex items-center gap-2 clip-corner-tl transition-colors border ${
-              viewMode === 'my-builds' ? 'bg-[var(--color-accent)]/20 border-[var(--color-accent)] text-[var(--color-accent)]'
-                : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
-            }`}>
-            <Star size={14} /> My Builds ({myBuilds.length})
-          </button>
-          <button onClick={() => setViewMode('browse')}
-            className={`px-4 py-2 text-sm font-bold flex items-center gap-2 clip-corner-tl transition-colors border ${
-              viewMode === 'browse' ? 'bg-[var(--color-accent)]/20 border-[var(--color-accent)] text-[var(--color-accent)]'
-                : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
-            }`}>
-            <Search size={14} /> Browse All
-          </button>
+        {/* Navigation tabs */}
+        <div className="flex items-center gap-1 mb-6 border-b border-[var(--color-border)] pb-0">
+          {[
+            { key: 'browse' as ViewMode, label: 'Browse Builds', icon: <Search size={14} />, count: allBuilds.length },
+            { key: 'my-builds' as ViewMode, label: 'My Builds', icon: <Bookmark size={14} />, count: myBuilds.length + favoritedBuilds.length },
+            { key: 'create' as ViewMode, label: editingBuildId ? 'Edit Build' : 'Create Build', icon: <Plus size={14} /> },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => { if (tab.key === 'create') resetForm(); setViewMode(tab.key); }}
+              className={`px-4 py-2.5 text-sm font-bold flex items-center gap-2 transition-colors border-b-2 -mb-[1px] ${
+                viewMode === tab.key
+                  ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                  : 'border-transparent text-[var(--color-text-tertiary)] hover:text-white'
+              }`}
+            >
+              {tab.icon} {tab.label}
+              {tab.count !== undefined && (
+                <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-surface-2)] font-mono">{tab.count}</span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* ===== BROWSE VIEW ===== */}
         {viewMode === 'browse' && (
           <div>
-            {/* Filter tabs + search */}
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {(['popular', 'latest', 'teams', 'single'] as BrowseFilter[]).map(f => (
-                <button key={f} onClick={() => setBrowseFilter(f)}
-                  className={`px-3 py-1.5 text-sm font-bold clip-corner-tl transition-colors ${
-                    browseFilter === f ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
-                  }`}>
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
-              <div className="flex-1 min-w-[200px]">
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
-                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search builds, operators, tags..."
-                    className="w-full pl-9 pr-3 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-white placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
-                </div>
+            {/* Filter bar */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {(['popular', 'latest', 'teams', 'single', 'has-video'] as BrowseFilter[]).map(f => (
+                  <button key={f} onClick={() => setBrowseFilter(f)}
+                    className={`px-3 py-1.5 text-xs font-bold clip-corner-tl transition-colors flex items-center gap-1.5 ${
+                      browseFilter === f ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-white'
+                    }`}>
+                    {f === 'popular' && <Flame size={12} />}
+                    {f === 'latest' && <Clock size={12} />}
+                    {f === 'teams' && <Users size={12} />}
+                    {f === 'single' && <Star size={12} />}
+                    {f === 'has-video' && <Video size={12} />}
+                    {f === 'has-video' ? 'Has Video' : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
               </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                      placeholder="Search builds, operators, authors..."
+                      className="w-full pl-9 pr-3 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm text-white placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+                  </div>
+                </div>
+                <select value={filterTag} onChange={e => setFilterTag(e.target.value)}
+                  className="px-2 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none cursor-pointer">
+                  <option value="">All Tags</option>
+                  <optgroup label="Game Stage">
+                    {BUILD_TAGS.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                  </optgroup>
+                  <optgroup label="Strategy">
+                    {STRATEGY_TAGS.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            {/* Results count */}
+            <div className="text-xs text-[var(--color-text-tertiary)] mb-3">
+              {filteredBuilds.length} build{filteredBuilds.length !== 1 ? 's' : ''} found
             </div>
 
             {/* Build cards grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredBuilds.map(build => (
-                <BuildCard key={build.id} build={build} onDuplicate={() => duplicateBuild(build)}
-                  getCharElement={getCharElement} getCharRarity={getCharRarity} getCharRole={getCharRole} formatDate={formatDate} />
+                <BuildCard
+                  key={build.id}
+                  build={build}
+                  isFavorited={favoriteIds.includes(build.id)}
+                  onToggleFavorite={() => handleToggleFavorite(build.id)}
+                  onDuplicate={() => duplicateBuild(build)}
+                  formatTimeAgo={formatTimeAgo}
+                />
               ))}
             </div>
             {filteredBuilds.length === 0 && (
               <div className="text-center py-16 text-[var(--color-text-tertiary)]">
                 <Users size={48} className="mx-auto mb-4 opacity-30" />
-                <p>No builds found matching your search.</p>
+                <p className="mb-2">No builds found matching your search.</p>
+                <button onClick={() => { setSearchQuery(''); setFilterTag(''); setBrowseFilter('popular'); }}
+                  className="text-xs text-[var(--color-accent)] hover:underline">Clear filters</button>
               </div>
             )}
           </div>
@@ -724,108 +542,181 @@ export default function BuildsPage() {
         {/* ===== MY BUILDS VIEW ===== */}
         {viewMode === 'my-builds' && (
           <div>
-            {myBuilds.length === 0 ? (
-              <div className="text-center py-16">
-                <Star size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
-                <p className="text-[var(--color-text-tertiary)] mb-4">You haven&apos;t created any builds yet.</p>
-                <button onClick={() => { setViewMode('create'); resetForm(); }}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold clip-corner-tl">
-                  Create Your First Build
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {myBuilds.map(build => (
-                  <div key={build.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-                    {/* Character portraits row */}
-                    <div className="flex bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
-                      {build.characters.map((bc, i) => {
-                        const icon = CHARACTER_ICONS[bc.name];
-                        const rarity = getCharRarity(bc.name);
-                        return (
-                          <div key={i} className="w-16 h-16 relative flex-shrink-0"
-                            style={{ borderBottom: `3px solid ${RARITY_COLORS[rarity] || '#666'}` }}>
-                            {icon ? (
-                              <Image src={icon} alt={bc.name} fill className="object-cover" unoptimized sizes="64px" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-[var(--color-text-tertiary)]">{bc.name}</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      <div className="flex-1" />
-                    </div>
-                    <div className="p-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div>
-                          <h3 className="text-white font-bold text-sm">{build.name}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
-                              {build.type === 'team' ? 'TEAM' : 'SINGLE'}
-                            </span>
-                            {build.isPublic && <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-bold">PUBLIC</span>}
-                            <span className="text-[10px] text-[var(--color-text-tertiary)]">{formatDate(build.updatedAt)}</span>
-                          </div>
+            {/* Sub-tabs: Created / Favorited */}
+            <div className="flex gap-1 mb-4">
+              <button onClick={() => setMyBuildsTab('created')}
+                className={`px-4 py-2 text-sm font-bold clip-corner-tl flex items-center gap-2 ${
+                  myBuildsTab === 'created' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                }`}>
+                <Edit3 size={14} /> Created ({myBuilds.length})
+              </button>
+              <button onClick={() => setMyBuildsTab('favorited')}
+                className={`px-4 py-2 text-sm font-bold clip-corner-tl flex items-center gap-2 ${
+                  myBuildsTab === 'favorited' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                }`}>
+                <BookmarkCheck size={14} /> Favorited ({favoritedBuilds.length})
+              </button>
+            </div>
+
+            {myBuildsTab === 'created' && (
+              <>
+                {myBuilds.length === 0 ? (
+                  <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+                    <Plus size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
+                    <p className="text-[var(--color-text-tertiary)] mb-4">You haven&apos;t created any builds yet.</p>
+                    <button onClick={() => { setViewMode('create'); resetForm(); }}
+                      className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold clip-corner-tl">
+                      Create Your First Build
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {myBuilds.map(build => (
+                      <div key={build.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+                        {/* Character portraits row */}
+                        <div className="flex bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
+                          {build.characters.map((bc, i) => {
+                            const icon = CHARACTER_ICONS[bc.name];
+                            const rarity = getCharRarity(bc.name);
+                            return (
+                              <div key={i} className="w-16 h-16 relative flex-shrink-0"
+                                style={{ borderBottom: `3px solid ${RARITY_COLORS[rarity] || '#666'}` }}>
+                                {icon ? (
+                                  <Image src={icon} alt={bc.name} fill className="object-cover" unoptimized sizes="64px" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[10px] text-[var(--color-text-tertiary)]">{bc.name}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div className="flex-1" />
                         </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => editBuild(build)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]">
-                            <Edit3 size={14} />
-                          </button>
-                          <button onClick={() => duplicateBuild(build)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-blue-400">
-                            <Copy size={14} />
-                          </button>
-                          <button onClick={() => deleteBuild(build.id)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-red-400">
-                            <Trash2 size={14} />
-                          </button>
+                        <div className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                                  {build.type === 'team' ? 'TEAM' : 'SINGLE'}
+                                </span>
+                                {build.isPublic ? (
+                                  <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-bold flex items-center gap-0.5"><Globe size={8} /> PUBLIC</span>
+                                ) : (
+                                  <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] font-bold flex items-center gap-0.5"><Lock size={8} /> PRIVATE</span>
+                                )}
+                                {build.youtubeUrl && <span className="text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-400 font-bold flex items-center gap-0.5"><Play size={8} /> VIDEO</span>}
+                                <span className="text-[10px] text-[var(--color-text-tertiary)]">{formatTimeAgo(build.updatedAt)}</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Link href={`/builds/${build.id}`} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]">
+                                <Eye size={14} />
+                              </Link>
+                              <button onClick={() => editBuild(build)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]">
+                                <Edit3 size={14} />
+                              </button>
+                              <button onClick={() => duplicateBuild(build)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-blue-400">
+                                <Copy size={14} />
+                              </button>
+                              <button onClick={() => deleteBuild(build.id)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-red-400">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                          {build.shortDescription && (
+                            <p className="text-[11px] text-[var(--color-text-tertiary)] mb-2 line-clamp-2">{build.shortDescription}</p>
+                          )}
+                          {build.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {build.tags.map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]">{t}</span>)}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {build.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {build.tags.map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]">{t}</span>)}
-                        </div>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
+            )}
+
+            {myBuildsTab === 'favorited' && (
+              <>
+                {favoritedBuilds.length === 0 ? (
+                  <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+                    <Bookmark size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
+                    <p className="text-[var(--color-text-tertiary)] mb-4">No favorited builds yet. Browse builds and bookmark ones you like.</p>
+                    <button onClick={() => setViewMode('browse')}
+                      className="px-6 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl">
+                      Browse Builds
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {favoritedBuilds.map(build => (
+                      <BuildCard
+                        key={build.id}
+                        build={build}
+                        isFavorited={true}
+                        onToggleFavorite={() => handleToggleFavorite(build.id)}
+                        onDuplicate={() => duplicateBuild(build)}
+                        formatTimeAgo={formatTimeAgo}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
 
         {/* ===== CREATE/EDIT VIEW ===== */}
         {viewMode === 'create' && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-            <h2 className="text-lg font-bold text-white mb-4">
-              {editingBuildId ? 'Edit Build' : 'Create New Build'}
-            </h2>
+          <div className="space-y-4">
+            {/* Single / Team toggle */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white">
+                  {editingBuildId ? 'Edit Build' : 'Create New Build'}
+                </h2>
+                <div className="flex gap-1">
+                  <button onClick={() => { setCreateTab('single'); setBuildCharacters(buildCharacters.slice(0, 1)); }}
+                    className={`px-4 py-2 text-sm font-bold clip-corner-tl ${createTab === 'single' ? 'bg-green-600 text-white' : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'}`}>
+                    Single Character
+                  </button>
+                  <button onClick={() => setCreateTab('team')}
+                    className={`px-4 py-2 text-sm font-bold clip-corner-tl ${createTab === 'team' ? 'bg-blue-600 text-white' : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'}`}>
+                    Team (up to {MAX_TEAM_SIZE})
+                  </button>
+                </div>
+              </div>
 
-            {/* Single / Team tabs */}
-            <div className="flex gap-1 mb-6">
-              <button onClick={() => { setCreateTab('single'); setBuildCharacters(buildCharacters.slice(0, 1)); }}
-                className={`px-4 py-2 text-sm font-bold clip-corner-tl ${createTab === 'single' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'}`}>
-                Single Character
-              </button>
-              <button onClick={() => setCreateTab('team')}
-                className={`px-4 py-2 text-sm font-bold clip-corner-tl ${createTab === 'team' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'}`}>
-                Team ({MAX_TEAM_SIZE} max)
-              </button>
-            </div>
+              {/* Build name */}
+              <div className="mb-4">
+                <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wide">Build Name *</label>
+                <input type="text" value={buildName} onChange={e => setBuildName(e.target.value)} maxLength={60}
+                  placeholder="e.g., Laevatain Hypercarry, Cryo Freeze Team"
+                  className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+              </div>
 
-            {/* Build name */}
-            <div className="mb-4">
-              <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase">Build Name</label>
-              <input type="text" value={buildName} onChange={e => setBuildName(e.target.value)} maxLength={60}
-                placeholder="e.g., Laevatain Hypercarry, Cryo Freeze Team"
-                className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+              {/* Public toggle */}
+              <div className="flex items-center gap-3">
+                <button onClick={() => setIsPublic(!isPublic)}
+                  className={`w-10 h-5 rounded-full relative transition-colors ${isPublic ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'}`}>
+                  <div className="w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all"
+                    style={{ left: isPublic ? '22px' : '2px' }} />
+                </button>
+                <span className="text-sm text-[var(--color-text-secondary)] flex items-center gap-1.5">
+                  {isPublic ? <><Globe size={14} /> Make Public</> : <><Lock size={14} /> Private</>}
+                </span>
+              </div>
             </div>
 
             {/* Character slots */}
-            <div className="mb-4">
-              <label className="block text-xs text-[var(--color-text-tertiary)] mb-2 uppercase">
-                Characters ({buildCharacters.length}/{maxSlots})
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
+              <label className="block text-xs text-[var(--color-text-tertiary)] mb-3 uppercase tracking-wide">
+                {createTab === 'team' ? `Team Characters (${buildCharacters.length}/${maxSlots})` : 'Character *'}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Existing characters */}
                 {buildCharacters.map((bc, i) => {
                   const charData = CHARACTERS.find(c => c.Name === bc.name);
                   const icon = CHARACTER_ICONS[bc.name];
@@ -837,7 +728,6 @@ export default function BuildsPage() {
                   return (
                     <div key={i} className="bg-[var(--color-surface-2)] border border-[var(--color-border)] overflow-hidden"
                       style={{ borderLeft: `4px solid ${elem ? ELEMENT_COLORS[elem] : '#666'}` }}>
-                      {/* Character header */}
                       <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-[var(--color-surface)]" onClick={() => openCharPicker(i)}>
                         <div className="w-14 h-14 relative flex-shrink-0 bg-black/30"
                           style={{ borderBottom: `3px solid ${RARITY_COLORS[rarity] || '#666'}` }}>
@@ -864,8 +754,6 @@ export default function BuildsPage() {
                           <X size={14} />
                         </button>
                       </div>
-
-                      {/* Weapon + Equipment row */}
                       <div className="flex border-t border-[var(--color-border)]">
                         <button onClick={() => openWeaponPicker(i)}
                           className="flex-1 flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-surface)] border-r border-[var(--color-border)] text-left">
@@ -878,19 +766,27 @@ export default function BuildsPage() {
                         </button>
                         <button onClick={() => openEquipPicker(i)}
                           className="flex-1 flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-surface)] text-left">
-                          {equipIcon ? (
-                            <Image src={equipIcon} alt={bc.equipment || ''} width={24} height={24} className="w-6 h-6 object-contain" unoptimized />
-                          ) : (
-                            <Shield size={14} className="text-[var(--color-text-tertiary)]" />
-                          )}
-                          <span className="text-[10px] text-[var(--color-text-tertiary)] truncate">{bc.equipment || 'Select Equipment'}</span>
+                          <Shield size={14} className="text-[var(--color-text-tertiary)]" />
+                          <span className="text-[10px] text-[var(--color-text-tertiary)] truncate">
+                            {(bc.equipmentPieces?.length || 0) > 0 ? `${bc.equipmentPieces!.length}/3 gear` : 'Add Gear'}
+                          </span>
                         </button>
                       </div>
+                      {/* Individual gear pieces display */}
+                      {bc.equipmentPieces && bc.equipmentPieces.length > 0 && (
+                        <div className="border-t border-[var(--color-border)] px-2 py-1.5 flex flex-wrap gap-1">
+                          {bc.equipmentPieces.map((ep, pi) => (
+                            <div key={pi} className="flex items-center gap-1 px-1.5 py-0.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[9px]">
+                              <span className="text-white truncate max-w-[100px]">{ep.pieceName}</span>
+                              <button onClick={e => { e.stopPropagation(); removeEquipmentPiece(i, pi); }}
+                                className="text-[var(--color-text-tertiary)] hover:text-red-400 ml-0.5"><X size={10} /></button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-
-                {/* Add character button */}
                 {buildCharacters.length < maxSlots && (
                   <button onClick={() => openCharPicker(buildCharacters.length)}
                     className="h-[106px] border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-accent)] flex flex-col items-center justify-center gap-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors">
@@ -901,48 +797,228 @@ export default function BuildsPage() {
               </div>
             </div>
 
-            {/* Tags */}
-            <div className="mb-4">
-              <label className="block text-xs text-[var(--color-text-tertiary)] mb-2 uppercase">Tags</label>
-              <div className="flex flex-wrap gap-1.5">
-                {TAGS.map(tag => (
-                  <button key={tag} onClick={() => toggleTag(tag)}
-                    className={`px-2 py-1 text-xs font-bold transition-colors ${
-                      buildTags.includes(tag) ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-white'
-                    }`}>
-                    {tag}
-                  </button>
-                ))}
+            {/* Recommended Partners */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
+              <label className="block text-xs text-[var(--color-text-tertiary)] mb-3 uppercase tracking-wide flex items-center gap-2">
+                <UserPlus size={14} /> Other Recommended Partners ({recommendedPartners.length}/{MAX_PARTNERS})
+              </label>
+              <div className="space-y-2 mb-3">
+                {recommendedPartners.map((partner, i) => {
+                  const icon = CHARACTER_ICONS[partner.name];
+                  const charData = CHARACTERS.find(c => c.Name === partner.name);
+                  return (
+                    <div key={i} className="flex items-center gap-2 bg-[var(--color-surface-2)] p-2 border border-[var(--color-border)]">
+                      <div className="w-8 h-8 relative flex-shrink-0 bg-black/30">
+                        {icon ? (
+                          <Image src={icon} alt={partner.name} fill className="object-cover" unoptimized sizes="32px" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[8px] text-[var(--color-text-tertiary)]">{partner.name}</div>
+                        )}
+                      </div>
+                      <span className="text-xs text-white font-bold min-w-[80px]">{partner.name}</span>
+                      {charData && <span className="text-[10px] px-1 py-0.5 bg-black/30" style={{ color: ELEMENT_COLORS[charData.Element] }}>{charData.Element}</span>}
+                      <input
+                        type="text"
+                        value={partner.reason || ''}
+                        onChange={e => updatePartnerReason(i, e.target.value)}
+                        placeholder="Why this partner?"
+                        className="flex-1 px-2 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] text-white placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none"
+                      />
+                      <button onClick={() => removePartner(i)} className="p-1 text-[var(--color-text-tertiary)] hover:text-red-400">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              {recommendedPartners.length < MAX_PARTNERS && (
+                <button onClick={() => { setPartnerSearch(''); setShowPartnerPicker(true); }}
+                  className="w-full py-2 border border-dashed border-[var(--color-border)] hover:border-[var(--color-accent)] text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] flex items-center justify-center gap-1.5 transition-colors">
+                  <Plus size={12} /> Add Recommended Partner
+                </button>
+              )}
+              {recommendedPartners.length > 0 && (
+                <div className="mt-3">
+                  <label className="block text-[10px] text-[var(--color-text-tertiary)] mb-1 uppercase">Why these partners?</label>
+                  <textarea value={partnerReason} onChange={e => setPartnerReason(e.target.value)} rows={2}
+                    placeholder="Explain why these partners work well with this build..."
+                    className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-[11px] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none resize-none" />
+                </div>
+              )}
+            </div>
+
+            {/* Short Description + Tags + YouTube */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
+              <div className="mb-4">
+                <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wide">Short Description ({shortDescription.length}/{MAX_SHORT_DESC})</label>
+                <textarea value={shortDescription} onChange={e => setShortDescription(e.target.value.slice(0, MAX_SHORT_DESC))} rows={2}
+                  placeholder="Brief description shown on build cards in browse view..."
+                  className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none resize-none" />
+              </div>
+
+              {/* Tags */}
+              <div className="mb-4">
+                <label className="block text-xs text-[var(--color-text-tertiary)] mb-2 uppercase tracking-wide">Tags (max {MAX_TAGS})</label>
+                <div className="mb-2">
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] mb-1.5">Game Stage</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BUILD_TAGS.map(tag => (
+                      <button key={tag} onClick={() => toggleTag(tag)}
+                        className={`px-2 py-1 text-xs font-bold transition-colors ${
+                          buildTags.includes(tag) ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-white'
+                        } ${buildTags.length >= MAX_TAGS && !buildTags.includes(tag) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                        disabled={buildTags.length >= MAX_TAGS && !buildTags.includes(tag)}>
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] mb-1.5">Strategy</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {STRATEGY_TAGS.map(tag => (
+                      <button key={tag} onClick={() => toggleTag(tag)}
+                        className={`px-2 py-1 text-xs font-bold transition-colors ${
+                          buildTags.includes(tag) ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-white'
+                        } ${buildTags.length >= MAX_TAGS && !buildTags.includes(tag) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                        disabled={buildTags.length >= MAX_TAGS && !buildTags.includes(tag)}>
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* YouTube */}
+              <div>
+                <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wide flex items-center gap-1.5">
+                  <Play size={12} /> YouTube Video (optional)
+                </label>
+                <input type="text" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+                {youtubeUrl && getYouTubeThumbnail(youtubeUrl) && (
+                  <div className="mt-2 relative w-40 h-24 bg-black/30 border border-[var(--color-border)]">
+                    <Image src={getYouTubeThumbnail(youtubeUrl)!} alt="Video thumbnail" fill className="object-cover" unoptimized sizes="160px" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                        <Play size={14} className="text-white ml-0.5" fill="white" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Notes */}
-            <div className="mb-4">
-              <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase">Notes / Description</label>
-              <textarea value={buildNotes} onChange={e => setBuildNotes(e.target.value)} rows={3} maxLength={500}
-                placeholder="Describe your build strategy, rotation tips, etc."
-                className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none resize-none" />
+            {/* Build Guide (collapsible) */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+              <button onClick={() => setShowGuideSection(!showGuideSection)}
+                className="w-full p-5 flex items-center justify-between text-left hover:bg-[var(--color-surface-2)] transition-colors">
+                <span className="text-sm font-bold text-white flex items-center gap-2">
+                  <BookOpen size={16} className="text-[var(--color-accent)]" />
+                  Build Guide (optional)
+                </span>
+                <ChevronRight size={16} className={`text-[var(--color-text-tertiary)] transition-transform ${showGuideSection ? 'rotate-90' : ''}`} />
+              </button>
+
+              {showGuideSection && (
+                <div className="p-5 pt-0 space-y-4 border-t border-[var(--color-border)]">
+                  {/* Overview */}
+                  <div>
+                    <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wide">Overview / Build Guide</label>
+                    <textarea value={guideOverview} onChange={e => setGuideOverview(e.target.value)} rows={6}
+                      placeholder="Write a detailed guide for this build. Explain the strategy, why this equipment works, and how to play it..."
+                      className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none resize-y" />
+                  </div>
+
+                  {/* Investment / Difficulty */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase">Investment Level</label>
+                      <select value={guideInvestment} onChange={e => setGuideInvestment(e.target.value as typeof guideInvestment)}
+                        className="w-full px-2 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
+                        <option value="">Not specified</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase">Difficulty</label>
+                      <select value={guideDifficulty} onChange={e => setGuideDifficulty(e.target.value as typeof guideDifficulty)}
+                        className="w-full px-2 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
+                        <option value="">Not specified</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Rotation steps */}
+                  <div>
+                    <label className="block text-xs text-[var(--color-text-tertiary)] mb-2 uppercase tracking-wide">Combat Rotation</label>
+                    <div className="space-y-2">
+                      {guideRotation.map((step, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-[10px] text-[var(--color-accent)] font-bold mt-2 w-5 text-center">{i + 1}</span>
+                          <input type="text" value={step} onChange={e => updateRotationStep(i, e.target.value)}
+                            placeholder={`Step ${i + 1}...`}
+                            className="flex-1 px-2 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+                          <button onClick={() => removeRotationStep(i)} className="p-1 text-[var(--color-text-tertiary)] hover:text-red-400 mt-0.5">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={addRotationStep}
+                      className="mt-2 text-[10px] text-[var(--color-accent)] hover:underline flex items-center gap-1">
+                      <Plus size={10} /> Add rotation step
+                    </button>
+                  </div>
+
+                  {/* Tips */}
+                  <div>
+                    <label className="block text-xs text-[var(--color-text-tertiary)] mb-2 uppercase tracking-wide">Tips</label>
+                    <div className="space-y-2">
+                      {guideTips.map((tip, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-[10px] text-[var(--color-text-tertiary)] mt-2">&#8226;</span>
+                          <input type="text" value={tip} onChange={e => updateTip(i, e.target.value)}
+                            placeholder="Add a tip..."
+                            className="flex-1 px-2 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+                          <button onClick={() => removeTip(i)} className="p-1 text-[var(--color-text-tertiary)] hover:text-red-400 mt-0.5">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={addTip}
+                      className="mt-2 text-[10px] text-[var(--color-accent)] hover:underline flex items-center gap-1">
+                      <Plus size={10} /> Add tip
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Public toggle */}
-            <div className="mb-6 flex items-center gap-3">
-              <button onClick={() => setIsPublic(!isPublic)}
-                className={`w-10 h-5 rounded-full relative transition-colors ${isPublic ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform ${isPublic ? 'translate-x-5.5' : 'translate-x-0.5'}`}
-                  style={{ transform: `translateX(${isPublic ? '22px' : '2px'})` }} />
-              </button>
-              <span className="text-sm text-[var(--color-text-secondary)]">Make Public</span>
+            {/* Notes */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5">
+              <label className="block text-xs text-[var(--color-text-tertiary)] mb-1 uppercase tracking-wide">Additional Notes</label>
+              <textarea value={buildNotes} onChange={e => setBuildNotes(e.target.value)} rows={3} maxLength={500}
+                placeholder="Any additional context, disclaimers, or notes..."
+                className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none resize-none" />
             </div>
 
             {/* Save / Cancel */}
             <div className="flex gap-3">
               <button onClick={saveBuild}
                 disabled={!buildName.trim() || buildCharacters.length === 0}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/30 disabled:cursor-not-allowed text-white font-bold text-sm clip-corner-tl transition-colors">
-                {editingBuildId ? 'Save Changes' : 'Create Build'}
+                className="px-8 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-green-600/30 disabled:cursor-not-allowed text-white font-bold text-sm clip-corner-tl transition-colors flex items-center gap-2">
+                {editingBuildId ? <><Edit3 size={14} /> Save Changes</> : <><Plus size={14} /> Create Build</>}
               </button>
               <button onClick={() => { resetForm(); setViewMode('browse'); }}
-                className="px-6 py-2 bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-white text-sm clip-corner-tl transition-colors">
+                className="px-6 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-white text-sm clip-corner-tl transition-colors">
                 Cancel
               </button>
             </div>
@@ -952,209 +1028,300 @@ export default function BuildsPage() {
 
       {/* ===== CHARACTER PICKER MODAL ===== */}
       {showCharPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowCharPicker(false)}>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-2xl max-h-[80vh] flex flex-col"
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
-              <h3 className="text-white font-bold">Select Operator</h3>
-              <button onClick={() => setShowCharPicker(false)} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
+        <PickerModal title="Select Operator" onClose={() => setShowCharPicker(false)}>
+          <div className="p-4 border-b border-[var(--color-border)] space-y-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+              <input type="text" value={charSearch} onChange={e => setCharSearch(e.target.value)}
+                placeholder="Search operators..."
+                className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
             </div>
-
-            {/* Search + Filters */}
-            <div className="p-4 border-b border-[var(--color-border)] space-y-2">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
-                <input type="text" value={charSearch} onChange={e => setCharSearch(e.target.value)}
-                  placeholder="Search operators..."
-                  className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <select value={charFilterRarity} onChange={e => setCharFilterRarity(e.target.value ? Number(e.target.value) : '')}
-                  className="px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
-                  <option value="">All Rarities</option>
-                  <option value="6">6-Star</option>
-                  <option value="5">5-Star</option>
-                  <option value="4">4-Star</option>
-                </select>
-                <select value={charFilterElement} onChange={e => setCharFilterElement(e.target.value as Element | '')}
-                  className="px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
-                  <option value="">All Elements</option>
-                  {ELEMENTS.map(el => <option key={el} value={el}>{el}</option>)}
-                </select>
-                <select value={charFilterRole} onChange={e => setCharFilterRole(e.target.value as Role | '')}
-                  className="px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
-                  <option value="">All Roles</option>
-                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Character grid */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                {filteredChars.map(char => {
-                  const icon = CHARACTER_ICONS[char.Name];
-                  const profIcon = PROFESSION_ICONS[char.Role];
-                  return (
-                    <button key={char.Name} onClick={() => selectCharacter(char.Name)}
-                      className="bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] overflow-hidden transition-colors group">
-                      <div className="aspect-square relative">
-                        {icon ? (
-                          <Image src={icon} alt={char.Name} fill className="object-cover group-hover:scale-105 transition-transform" unoptimized sizes="120px" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">{char.Name}</div>
-                        )}
-                        {/* Role icon */}
-                        {profIcon && (
-                          <div className="absolute top-1 left-1 w-5 h-5 bg-black/60">
-                            <Image src={profIcon} alt={char.Role} fill className="object-contain p-0.5" unoptimized sizes="20px" />
-                          </div>
-                        )}
-                        {/* Element dot */}
-                        <div className="absolute top-1 right-1 w-3 h-3 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[char.Element] }} />
-                      </div>
-                      <div className="px-1 py-1" style={{ borderTop: `2px solid ${RARITY_COLORS[char.Rarity] || '#666'}` }}>
-                        <p className="text-[10px] text-white text-center truncate">{char.Name}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {filteredChars.length === 0 && (
-                <p className="text-center text-sm text-[var(--color-text-tertiary)] py-8">No operators match your filters.</p>
-              )}
+            <div className="flex flex-wrap gap-2">
+              <select value={charFilterRarity} onChange={e => setCharFilterRarity(e.target.value ? Number(e.target.value) : '')}
+                className="px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
+                <option value="">All Rarities</option>
+                <option value="6">6-Star</option><option value="5">5-Star</option><option value="4">4-Star</option>
+              </select>
+              <select value={charFilterElement} onChange={e => setCharFilterElement(e.target.value as Element | '')}
+                className="px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
+                <option value="">All Elements</option>
+                {ELEMENTS.map(el => <option key={el} value={el}>{el}</option>)}
+              </select>
+              <select value={charFilterRole} onChange={e => setCharFilterRole(e.target.value as Role | '')}
+                className="px-2 py-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white outline-none">
+                <option value="">All Roles</option>
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
             </div>
           </div>
-        </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {filteredChars.map(char => {
+                const icon = CHARACTER_ICONS[char.Name];
+                const profIcon = PROFESSION_ICONS[char.Role];
+                return (
+                  <button key={char.Name} onClick={() => selectCharacter(char.Name)}
+                    className="bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] overflow-hidden transition-colors group">
+                    <div className="aspect-square relative">
+                      {icon ? (
+                        <Image src={icon} alt={char.Name} fill className="object-cover group-hover:scale-105 transition-transform" unoptimized sizes="120px" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">{char.Name}</div>
+                      )}
+                      {profIcon && (
+                        <div className="absolute top-1 left-1 w-5 h-5 bg-black/60">
+                          <Image src={profIcon} alt={char.Role} fill className="object-contain p-0.5" unoptimized sizes="20px" />
+                        </div>
+                      )}
+                      <div className="absolute top-1 right-1 w-3 h-3 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[char.Element] }} />
+                    </div>
+                    <div className="px-1 py-1" style={{ borderTop: `2px solid ${RARITY_COLORS[char.Rarity] || '#666'}` }}>
+                      <p className="text-[10px] text-white text-center truncate">{char.Name}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {filteredChars.length === 0 && (
+              <p className="text-center text-sm text-[var(--color-text-tertiary)] py-8">No operators match your filters.</p>
+            )}
+          </div>
+        </PickerModal>
       )}
 
       {/* ===== WEAPON PICKER MODAL ===== */}
       {showWeaponPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowWeaponPicker(false)}>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-2xl max-h-[80vh] flex flex-col"
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
-              <h3 className="text-white font-bold">Select Weapon</h3>
-              <button onClick={() => setShowWeaponPicker(false)} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
+        <PickerModal title="Select Weapon" onClose={() => setShowWeaponPicker(false)}>
+          <div className="p-4 border-b border-[var(--color-border)] space-y-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+              <input type="text" value={weaponSearch} onChange={e => setWeaponSearch(e.target.value)}
+                placeholder="Search weapons..."
+                className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
             </div>
-
-            <div className="p-4 border-b border-[var(--color-border)] space-y-2">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
-                <input type="text" value={weaponSearch} onChange={e => setWeaponSearch(e.target.value)}
-                  placeholder="Search weapons..."
-                  className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+            {!buildCharacters[weaponPickerSlot] || !CHARACTERS.find(c => c.Name === buildCharacters[weaponPickerSlot]?.name) ? (
+              <div className="flex flex-wrap gap-1">
+                {WEAPON_TYPES.map(wt => (
+                  <button key={wt} onClick={() => setWeaponFilterType(weaponFilterType === wt ? '' : wt)}
+                    className={`px-2 py-1 text-xs ${weaponFilterType === wt ? 'bg-[var(--color-accent)] text-black font-bold' : 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]'}`}>
+                    {wt}
+                  </button>
+                ))}
               </div>
-              {!buildCharacters[weaponPickerSlot] || !CHARACTERS.find(c => c.Name === buildCharacters[weaponPickerSlot]?.name) ? (
-                <div className="flex flex-wrap gap-1">
-                  {WEAPON_TYPES.map(wt => (
-                    <button key={wt} onClick={() => setWeaponFilterType(weaponFilterType === wt ? '' : wt)}
-                      className={`px-2 py-1 text-xs ${weaponFilterType === wt ? 'bg-[var(--color-accent)] text-black font-bold' : 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]'}`}>
-                      {wt}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[10px] text-[var(--color-text-tertiary)]">
-                  Showing {CHARACTERS.find(c => c.Name === buildCharacters[weaponPickerSlot]?.name)?.WeaponType} weapons (matches operator)
-                </p>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                {filteredWeapons.map(wpn => {
-                  const icon = WEAPON_ICONS[wpn.Name];
-                  return (
-                    <button key={wpn.Name} onClick={() => selectWeapon(wpn.Name)}
-                      className="bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] overflow-hidden transition-colors group">
-                      <div className="aspect-square relative bg-black/20">
-                        {icon ? (
-                          <Image src={icon} alt={wpn.Name} fill className="object-contain p-2 group-hover:scale-105 transition-transform" unoptimized sizes="120px" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">{wpn.Name}</div>
-                        )}
-                      </div>
-                      <div className="px-1 py-1" style={{ borderTop: `2px solid ${RARITY_COLORS[wpn.Rarity] || '#666'}` }}>
-                        <p className="text-[10px] text-white text-center truncate">{wpn.Name}</p>
-                        <p className="text-[8px] text-center text-[var(--color-text-tertiary)]">{wpn.WeaponType}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {filteredWeapons.length === 0 && (
-                <p className="text-center text-sm text-[var(--color-text-tertiary)] py-8">No weapons match your filters.</p>
-              )}
-            </div>
+            ) : (
+              <p className="text-[10px] text-[var(--color-text-tertiary)]">
+                Showing {CHARACTERS.find(c => c.Name === buildCharacters[weaponPickerSlot]?.name)?.WeaponType} weapons (matches operator)
+              </p>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* ===== EQUIPMENT PICKER MODAL ===== */}
-      {showEquipPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowEquipPicker(false)}>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-lg max-h-[70vh] flex flex-col"
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
-              <h3 className="text-white font-bold">Select Equipment Set</h3>
-              <button onClick={() => setShowEquipPicker(false)} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {EQUIPMENT_SETS.map(eq => {
-                const icon = EQUIPMENT_ICONS[eq.name];
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {filteredWeapons.map(wpn => {
+                const icon = WEAPON_ICONS[wpn.Name];
                 return (
-                  <button key={eq.name} onClick={() => selectEquipment(eq.name)}
-                    className="w-full flex items-center gap-3 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left">
-                    <div className="w-10 h-10 relative flex-shrink-0">
+                  <button key={wpn.Name} onClick={() => selectWeapon(wpn.Name)}
+                    className="bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] overflow-hidden transition-colors group">
+                    <div className="aspect-square relative bg-black/20">
                       {icon ? (
-                        <Image src={icon} alt={eq.name} fill className="object-contain" unoptimized sizes="40px" />
+                        <Image src={icon} alt={wpn.Name} fill className="object-contain p-2 group-hover:scale-105 transition-transform" unoptimized sizes="120px" />
                       ) : (
-                        <Shield size={20} className="text-[var(--color-text-tertiary)]" />
+                        <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">{wpn.Name}</div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-white font-bold truncate">{eq.name}</p>
-                        <span className="text-[9px] px-1 bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-bold">{eq.tier}</span>
-                      </div>
-                      <p className="text-[10px] text-[var(--color-text-tertiary)]">{eq.bonus}</p>
+                    <div className="px-1 py-1" style={{ borderTop: `2px solid ${RARITY_COLORS[wpn.Rarity] || '#666'}` }}>
+                      <p className="text-[10px] text-white text-center truncate">{wpn.Name}</p>
+                      <p className="text-[8px] text-center text-[var(--color-text-tertiary)]">{wpn.WeaponType}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {filteredWeapons.length === 0 && (
+              <p className="text-center text-sm text-[var(--color-text-tertiary)] py-8">No weapons match your filters.</p>
+            )}
+          </div>
+        </PickerModal>
+      )}
+
+      {/* ===== EQUIPMENT PICKER MODAL (Individual Pieces) ===== */}
+      {showEquipPicker && (
+        <PickerModal title="Select Equipment Piece" onClose={() => setShowEquipPicker(false)} maxWidth="max-w-2xl">
+          <div className="p-3 border-b border-[var(--color-border)]">
+            <p className="text-[10px] text-[var(--color-text-tertiary)]">
+              Select individual gear pieces. Each set has multiple armor, glove, and accessory options with different stats.
+            </p>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {GEAR_SETS.map(set => (
+              <div key={set.name} className="border border-[var(--color-border)] bg-[var(--color-surface-2)]/30">
+                {/* Set header */}
+                <div className="flex items-center gap-3 p-3 border-b border-[var(--color-border)]/50">
+                  <div className="w-10 h-10 relative flex-shrink-0">
+                    {set.icon ? (
+                      <Image src={set.icon} alt={set.name} fill className="object-contain" unoptimized sizes="40px" />
+                    ) : (
+                      <Shield size={20} className="text-[var(--color-text-tertiary)]" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-white font-bold">{set.name}</p>
+                      <span className="text-[9px] px-1 font-bold" style={{ backgroundColor: TIER_COLORS[set.pieces[0]?.tier || 'T4'] + '20', color: TIER_COLORS[set.pieces[0]?.tier || 'T4'] }}>{set.pieces[0]?.tier}</span>
+                      <span className="text-[9px] text-[var(--color-text-tertiary)]">{set.pieces.length} pieces</span>
+                    </div>
+                    <p className="text-[9px] text-[var(--color-text-tertiary)] line-clamp-1">{set.setBonus.slice(0, 100)}...</p>
+                  </div>
+                </div>
+                {/* Individual pieces */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
+                  {set.pieces.map(piece => {
+                    const existingPieces = buildCharacters[equipPickerSlot]?.equipmentPieces || [];
+                    const alreadySelected = existingPieces.some(ep => ep.pieceName === piece.name);
+                    return (
+                      <button key={piece.id} onClick={() => !alreadySelected && selectEquipment(piece, set.name)}
+                        disabled={alreadySelected}
+                        className={`flex items-center gap-2 p-2 border transition-colors text-left ${alreadySelected ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 opacity-60 cursor-not-allowed' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'}`}
+                      >
+                        <div className="w-8 h-8 relative flex-shrink-0 bg-[var(--color-surface)]" style={{ borderLeft: `2px solid ${TIER_COLORS[piece.tier]}` }}>
+                          {piece.icon && <Image src={piece.icon} alt={piece.name} fill className="object-contain p-0.5" unoptimized sizes="32px" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] text-white truncate">{piece.name}</p>
+                          <div className="text-[9px] text-[var(--color-text-tertiary)] flex flex-wrap gap-x-1.5">
+                            <span>DEF {piece.def}</span>
+                            {piece.stats.map((s, i) => (
+                              <span key={i}>{s.name} <span className="text-[var(--color-accent)]">{s.value}</span></span>
+                            ))}
+                          </div>
+                        </div>
+                        {alreadySelected && <span className="text-[8px] text-[var(--color-accent)] font-bold">EQUIPPED</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {/* Standalone pieces */}
+            {STANDALONE_GEAR.length > 0 && (
+              <div className="border border-[var(--color-border)] bg-[var(--color-surface-2)]/30">
+                <div className="flex items-center gap-3 p-3 border-b border-[var(--color-border)]/50">
+                  <Star size={20} className="text-[var(--color-text-tertiary)]" />
+                  <div>
+                    <p className="text-sm text-white font-bold">Standalone Pieces</p>
+                    <p className="text-[9px] text-[var(--color-text-tertiary)]">{STANDALONE_GEAR.length} pieces (no set bonus)</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
+                  {STANDALONE_GEAR.filter(p => p.tier === 'T4' || p.tier === 'T3').map(piece => {
+                    const existingPieces = buildCharacters[equipPickerSlot]?.equipmentPieces || [];
+                    const alreadySelected = existingPieces.some(ep => ep.pieceName === piece.name);
+                    return (
+                      <button key={piece.id} onClick={() => !alreadySelected && selectEquipment(piece, '')}
+                        disabled={alreadySelected}
+                        className={`flex items-center gap-2 p-2 border transition-colors text-left ${alreadySelected ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 opacity-60 cursor-not-allowed' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'}`}
+                      >
+                        <div className="w-8 h-8 relative flex-shrink-0 bg-[var(--color-surface)]" style={{ borderLeft: `2px solid ${TIER_COLORS[piece.tier]}` }}>
+                          {piece.icon && <Image src={piece.icon} alt={piece.name} fill className="object-contain p-0.5" unoptimized sizes="32px" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] text-white truncate">{piece.name}</p>
+                          <div className="text-[9px] text-[var(--color-text-tertiary)] flex flex-wrap gap-x-1.5">
+                            <span style={{ color: TIER_COLORS[piece.tier] }}>{piece.tier}</span>
+                            <span>DEF {piece.def}</span>
+                            {piece.stats.map((s, i) => (
+                              <span key={i}>{s.name} <span className="text-[var(--color-accent)]">{s.value}</span></span>
+                            ))}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </PickerModal>
+      )}
+
+      {/* ===== PARTNER PICKER MODAL ===== */}
+      {showPartnerPicker && (
+        <PickerModal title="Add Recommended Partner" onClose={() => setShowPartnerPicker(false)}>
+          <div className="p-4 border-b border-[var(--color-border)]">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+              <input type="text" value={partnerSearch} onChange={e => setPartnerSearch(e.target.value)}
+                placeholder="Search operators..."
+                className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] outline-none" />
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {filteredPartnerChars.map(char => {
+                const icon = CHARACTER_ICONS[char.Name];
+                return (
+                  <button key={char.Name} onClick={() => addPartner(char.Name)}
+                    className="bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] overflow-hidden transition-colors group">
+                    <div className="aspect-square relative">
+                      {icon ? (
+                        <Image src={icon} alt={char.Name} fill className="object-cover group-hover:scale-105 transition-transform" unoptimized sizes="120px" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">{char.Name}</div>
+                      )}
+                      <div className="absolute top-1 right-1 w-3 h-3 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[char.Element] }} />
+                    </div>
+                    <div className="px-1 py-1" style={{ borderTop: `2px solid ${RARITY_COLORS[char.Rarity] || '#666'}` }}>
+                      <p className="text-[10px] text-white text-center truncate">{char.Name}</p>
                     </div>
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
+        </PickerModal>
       )}
     </div>
   );
 }
 
-// Build card component for browse/community view
-function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharRole, formatDate }: {
-  build: Build;
-  onDuplicate: () => void;
-  getCharElement: (n: string) => Element | undefined;
-  getCharRarity: (n: string) => number;
-  getCharRole: (n: string) => string | undefined;
-  formatDate: (ts: number) => string;
+// ===== Reusable Picker Modal =====
+function PickerModal({ title, onClose, maxWidth, children }: {
+  title: string;
+  onClose: () => void;
+  maxWidth?: string;
+  children: React.ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className={`rios-modal-panel ${maxWidth === 'max-w-lg' ? 'rios-modal-md' : maxWidth === 'max-w-xl' ? 'rios-modal-lg' : 'rios-modal-lg'}`}
+        onClick={e => e.stopPropagation()}>
+        <div className="rios-modal-header">
+          <h3 className="text-white font-bold">{title}</h3>
+          <button onClick={onClose} className="text-[var(--color-text-tertiary)] hover:text-white"><X size={18} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ===== Build Card Component =====
+function BuildCard({ build, isFavorited, onToggleFavorite, onDuplicate, formatTimeAgo }: {
+  build: Build;
+  isFavorited: boolean;
+  onToggleFavorite: () => void;
+  onDuplicate: () => void;
+  formatTimeAgo: (ts: number) => string;
+}) {
+  const ytThumb = build.youtubeUrl ? getYouTubeThumbnail(build.youtubeUrl) : null;
 
   return (
-    <Link
-      href={`/builds/${build.id}`}
-      className={`block bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all ${
-        expanded ? 'border-[var(--color-accent)]/60 ring-1 ring-[var(--color-accent)]/20' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
-      }`}
-    >
+    <div className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all border-[var(--color-border)] hover:border-[var(--color-accent)]/50`}>
       {/* Character portraits row */}
-      <div className="flex bg-[var(--color-surface-2)]">
+      <div className="flex bg-[var(--color-surface-2)] relative">
         {build.characters.map((bc, i) => {
           const icon = CHARACTER_ICONS[bc.name];
-          const rarity = getCharRarity(bc.name);
-          const elem = getCharElement(bc.name);
+          const rarity = CHARACTERS.find(c => c.Name === bc.name)?.Rarity || 4;
+          const elem = CHARACTERS.find(c => c.Name === bc.name)?.Element;
           return (
             <div key={i} className="relative" style={{ width: `${100 / Math.max(build.characters.length, 1)}%`, maxWidth: '25%' }}>
               <div className="aspect-square relative">
@@ -1163,7 +1330,7 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)] bg-[var(--color-surface)]">{bc.name}</div>
                 )}
-                {elem && <div className="absolute top-1 right-1 w-3 h-3 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[elem] }} />}
+                {elem && <div className="absolute top-1 right-1 w-3 h-3 rounded-full border border-black/30" style={{ backgroundColor: ELEMENT_COLORS[elem] }} />}
               </div>
               <div className="h-0.5" style={{ backgroundColor: RARITY_COLORS[rarity] || '#666' }} />
             </div>
@@ -1172,45 +1339,59 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
         {build.characters.length < 4 && build.type === 'team' && (
           <div className="flex-1 bg-[var(--color-surface)] opacity-30" />
         )}
+
+        {/* Video indicator */}
+        {ytThumb && (
+          <div className="absolute top-1 left-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 flex items-center gap-0.5">
+            <Play size={8} fill="white" /> VIDEO
+          </div>
+        )}
+
+        {/* Favorite button */}
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(); }}
+          className={`absolute top-1 right-1 p-1.5 transition-colors ${
+            isFavorited ? 'text-[var(--color-accent)]' : 'text-white/50 hover:text-[var(--color-accent)]'
+          }`}
+        >
+          {isFavorited ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+        </button>
       </div>
 
       {/* Build info */}
-      <div className="p-3">
+      <Link href={`/builds/${build.id}`} className="block p-3 hover:bg-[var(--color-surface-2)] transition-colors">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
-              <span className="text-xs text-[var(--color-accent)] hover:underline flex-shrink-0">View Details →</span>
-            </div>
+            <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
                 {build.type === 'team' ? 'TEAM' : 'SINGLE'}
               </span>
-              {build.tags.map(t => (
+              {build.tags.slice(0, 3).map(t => (
                 <span key={t} className="text-[9px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]">{t}</span>
               ))}
+              {build.tags.length > 3 && (
+                <span className="text-[9px] text-[var(--color-text-tertiary)]">+{build.tags.length - 3}</span>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)] shrink-0">
-            <span className="flex items-center gap-1"><Heart size={10} className="text-red-400" /> {build.likes}</span>
-            <span className="flex items-center gap-1"><Eye size={10} /> {build.views}</span>
+          <div className="flex flex-col items-end gap-0.5 text-[10px] text-[var(--color-text-tertiary)] shrink-0">
+            <span className="flex items-center gap-1"><Heart size={10} className="text-red-400" /> {build.likes.toLocaleString()}</span>
+            <span className="flex items-center gap-1"><Eye size={10} /> {build.views.toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Character gear summary */}
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-[var(--color-text-tertiary)]">
-          {build.characters.map((bc, i) => {
-            const elem = getCharElement(bc.name);
-            return (
-              <span key={i} className="flex items-center gap-1">
-                {elem && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[elem] }} />}
-                <span className="text-white">{bc.name}</span>
-                {bc.weapon && <span> + {bc.weapon}</span>}
-              </span>
-            );
-          })}
+        {/* Short description */}
+        {build.shortDescription && (
+          <p className="text-[11px] text-[var(--color-text-tertiary)] mt-2 line-clamp-2 leading-relaxed">{build.shortDescription}</p>
+        )}
+
+        {/* Footer meta */}
+        <div className="flex items-center justify-between mt-2 text-[10px] text-[var(--color-text-tertiary)]">
+          <span>by {build.author || 'Community'}</span>
+          <span>{formatTimeAgo(build.updatedAt)}</span>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

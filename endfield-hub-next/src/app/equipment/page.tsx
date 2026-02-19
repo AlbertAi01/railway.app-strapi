@@ -7,6 +7,12 @@ import RIOSHeader from '@/components/ui/RIOSHeader';
 import { GEAR_SETS, TIER_COLORS } from '@/data/gear';
 import { EQUIPMENT_ICONS } from '@/lib/assets';
 
+function SetIcon({ src, name, tierColor }: { src: string; name: string; tierColor: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <span className="text-lg font-bold" style={{ color: tierColor }}>{name[0]}</span>;
+  return <Image src={src} alt={name} width={56} height={56} className="object-contain" loading="lazy" onError={() => setFailed(true)} />;
+}
+
 export default function Equipment() {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -48,10 +54,8 @@ export default function Equipment() {
             >
               <div className="flex items-center gap-4 p-5">
                 <div className="w-14 h-14 clip-corner-tl flex items-center justify-center" style={{ backgroundColor: `${tierColor}20` }}>
-                  {set.icon ? (
-                    <Image src={set.icon} alt={set.name} width={56} height={56} className="object-contain" loading="lazy" />
-                  ) : EQUIPMENT_ICONS[set.name] ? (
-                    <Image src={EQUIPMENT_ICONS[set.name]} alt={set.name} width={56} height={56} className="object-contain" loading="lazy" />
+                  {set.icon || EQUIPMENT_ICONS[set.name] ? (
+                    <SetIcon src={(set.icon || EQUIPMENT_ICONS[set.name])!} name={set.name} tierColor={tierColor} />
                   ) : (
                     <span className="text-lg font-bold" style={{ color: tierColor }}>{set.name[0]}</span>
                   )}

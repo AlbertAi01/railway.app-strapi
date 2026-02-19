@@ -95,8 +95,8 @@ function MaterialInventoryModal({ id, count, owned, onSave, onClose }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[var(--color-surface)] border-2 border-[var(--color-accent)] clip-corner-tl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className="rios-modal-panel rios-modal-md" style={{ borderColor: 'var(--color-accent)', borderWidth: '2px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] flex items-center justify-between">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Set Inventory</h3>
@@ -468,8 +468,8 @@ function CharacterPicker({ onSelect, existingSlugs, onClose }: {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className="rios-modal-panel rios-modal-md" onClick={(e) => e.stopPropagation()}>
         <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Add Operator to Plan</h2>
         </div>
@@ -494,7 +494,7 @@ function CharacterPicker({ onSelect, existingSlugs, onClose }: {
             ))}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-1">
+        <div className="rios-modal-body p-4 pt-0 space-y-1">
           {filtered.length === 0 ? (
             <p className="text-center text-[var(--color-text-tertiary)] text-sm py-8">No operators available</p>
           ) : filtered.map(char => (

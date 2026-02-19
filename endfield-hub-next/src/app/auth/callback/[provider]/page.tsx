@@ -31,9 +31,13 @@ export default function AuthCallbackPage({
 
         setStatus('success');
 
-        // Redirect to profile after a short delay
+        // Redirect to the page the user was on before login, or profile as fallback
+        const returnTo = sessionStorage.getItem('endfield-return-to') || '/profile';
+        sessionStorage.removeItem('endfield-return-to');
+        // Security: only allow relative paths
+        const safeReturnTo = returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/profile';
         setTimeout(() => {
-          router.push('/profile');
+          router.push(safeReturnTo);
         }, 2000);
       } catch (err) {
         console.error('OAuth callback error:', err);
@@ -72,7 +76,7 @@ export default function AuthCallbackPage({
                 You have been successfully authenticated.
               </p>
               <p className="text-sm text-[var(--color-text-muted)]">
-                Redirecting to your profile...
+                Redirecting...
               </p>
             </>
           )}
@@ -93,7 +97,16 @@ export default function AuthCallbackPage({
           <p className="text-[var(--color-text-muted)]">
             If you are not redirected automatically,{' '}
             <button
-              onClick={() => router.push(status === 'success' ? '/profile' : '/login')}
+              onClick={() => {
+                if (status === 'success') {
+                  const returnTo = sessionStorage.getItem('endfield-return-to') || '/profile';
+                  sessionStorage.removeItem('endfield-return-to');
+                  const safeReturnTo = returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/profile';
+                  router.push(safeReturnTo);
+                } else {
+                  router.push('/login');
+                }
+              }}
               className="text-[var(--color-accent)] hover:underline"
             >
               click here

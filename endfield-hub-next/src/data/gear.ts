@@ -108,7 +108,6 @@ export const GEAR_SETS: GearSet[] = [
     name: 'Frontiers',
     phase: 'Late Game (Lv70)',
     setBonus: "3-piece set effect: Wearer's Combo Skill Cooldown Reduction +15%. After the wearer's skill recovers SP, the team gains DMG +16% for 15s. This effect cannot stack.",
-    icon: `${CDN}/itemicon/item_equip_t4_suit_frontier01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'Frontiers Armor T2', setName: 'Frontiers', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Agility', value: '+87' }, { name: 'Intellect', value: '+58' }, { name: 'Normal Skill DMG', value: '+20.7%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_frontier01_body_01.png` },
       { id: nextId(), name: 'Frontiers Comm', setName: 'Frontiers', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Strength', value: '+32' }, { name: 'Agility', value: '+21' }, { name: 'Combo Skill DMG', value: '+41.4%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_frontier01_edc_01.png` },
@@ -154,7 +153,6 @@ export const GEAR_SETS: GearSet[] = [
     name: 'MI Security',
     phase: 'Late Game (Lv70)',
     setBonus: "3-piece set effect: Wearer's Critical Rate +5%. After the wearer scores a critical hit, the wearer gains ATK +??? for 5s. This effect can reach 5 stacks. At max stacks, grant an additional Critical Rate +5%. This effect cannot stack.",
-    icon: `${CDN}/itemicon/item_equip_t4_suit_misec01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'MI Security Overalls', setName: 'MI Security', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Intellect', value: '+87' }, { name: 'Agility', value: '+58' }, { name: 'Normal ATK DMG', value: '+13.8%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_misec01_body_01.png` },
       { id: nextId(), name: 'MI Security Armor', setName: 'MI Security', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Agility', value: '+87' }, { name: 'Strength', value: '+58' }, { name: 'Arts Intensity', value: '+21' }], icon: `${CDN}/itemicon/item_equip_t4_suit_misec01_body_02.png` },
@@ -174,7 +172,6 @@ export const GEAR_SETS: GearSet[] = [
     name: 'Pulser Labs',
     phase: 'Late Game (Lv70)',
     setBonus: "3-piece set effect: Wearer's Arts Intensity +30. After the wearer applies Electrification, the wearer gains Electric DMG +50% for 10s. After the wearer applies Solidification, the wearer gains Cryo DMG +50% for 10s. The aforementioned effects cannot stack.",
-    icon: `${CDN}/itemicon/item_equip_t4_suit_pulser01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'Pulser Labs Disruptor Suit', setName: 'Pulser Labs', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Intellect', value: '+87' }, { name: 'Will', value: '+58' }, { name: 'Arts Intensity', value: '+21' }], icon: `${CDN}/itemicon/item_equip_t4_suit_pulser01_body_01.png` },
       { id: nextId(), name: 'Pulser Labs Calibrator', setName: 'Pulser Labs', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Intellect', value: '+41' }, { name: 'Arts Intensity', value: '+41' }], icon: `${CDN}/itemicon/item_equip_t4_suit_pulser01_edc_01.png` },
@@ -345,7 +342,6 @@ export const GEAR_SETS: GearSet[] = [
     name: 'AIC Light',
     phase: 'Early Game (Lv10-28)',
     setBonus: "3-piece set effect: Wearer's HP +500. After the wearer defeats an enemy, the wearer gains ATK +??? for 5s.",
-    icon: `${CDN}/itemicon/item_equip_t1_suit_intagi01_body_01.png`,
     pieces: [
       { id: nextId(), name: 'AIC Ceramic Plate', setName: 'AIC Light', tier: 'T1', level: 28, def: 8, stats: [{ name: 'Will', value: '+16' }, { name: 'Normal Skill DMG', value: '+16.2%' }], icon: `${CDN}/itemicon/item_equip_t1_suit_intagi01_edc_01.png` },
       { id: nextId(), name: 'AIC Light Plate', setName: 'AIC Light', tier: 'T1', level: 28, def: 8, stats: [{ name: 'Intellect', value: '+16' }, { name: 'Combo Skill DMG', value: '+16.2%' }], icon: `${CDN}/itemicon/item_equip_t1_suit_intagi01_edc_02.png` },
@@ -404,6 +400,28 @@ export const STANDALONE_GEAR: GearPiece[] = [
   { id: nextId(), name: 'Basic Gauntlets', setName: null, tier: 'T0', level: 10, def: 6, stats: [{ name: 'Strength', value: '+11' }, { name: 'Agility', value: '+7' }, { name: 'HP', value: '+77.2%' }] },
   { id: nextId(), name: 'Basic Gloves', setName: null, tier: 'T0', level: 10, def: 6, stats: [{ name: 'Intellect', value: '+11' }, { name: 'Will', value: '+7' }, { name: 'HP', value: '+77.2%' }] },
 ];
+
+// CDN file patterns known to be missing (CDN returns HTML 200 instead of image)
+// These will be stripped so components fall back to placeholder icons
+const BROKEN_CDN_PREFIXES = [
+  'frontier01_', 'misec01_', 'pulser01_', 'intagi01_',
+];
+const BROKEN_CDN_FILES = [
+  'attri01_edc_01', 'attri01_edc_02', 'usp02_hand_02',
+];
+
+function isIconBroken(icon?: string): boolean {
+  if (!icon) return false;
+  const file = icon.split('/').pop() || '';
+  return BROKEN_CDN_PREFIXES.some(p => file.includes(p)) ||
+    BROKEN_CDN_FILES.some(f => file.includes(f));
+}
+
+// Strip broken icons so consumers get clean data
+GEAR_SETS.forEach(set => {
+  if (set.icon && isIconBroken(set.icon)) set.icon = undefined;
+  set.pieces.forEach(p => { if (isIconBroken(p.icon)) p.icon = undefined; });
+});
 
 // Helper: Get all gear pieces (from sets + standalone)
 export function getAllGearPieces(): GearPiece[] {

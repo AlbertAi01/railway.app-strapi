@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronDown, ChevronRight, Filter, ZoomIn, ZoomOut, Maximi
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
+import MapDetailPanel from '@/components/ui/MapDetailPanel';
 
 const TOOLS_CDN = 'https://endfieldtools.dev/assets/images/endfield';
 const TILE_BASE = `${TOOLS_CDN}/levelmap/levelmapgrids`;
@@ -130,25 +131,50 @@ function getEntityIcon(type: string): string {
   return ENTITY_ICON[type] || 'item_diamond';
 }
 
-// Generate all tile definitions from tileZone data
-// Wuling uses Y-INCREASING per row (row 1 at startY, subsequent rows below)
-function generateAllTiles(tileZones: TileZone[]): TileDef[] {
+// Generate all tiles with EXACT coordinates — sparse lists of validated CDN tiles only
+// Y DECREASES per row (row 1 at startY, subsequent rows above), matching Valley IV
+function generateAllTiles(): TileDef[] {
   const tiles: TileDef[] = [];
-  for (const tz of tileZones) {
-    for (let col = 1; col <= tz.cols; col++) {
-      for (let row = 1; row <= tz.rows; row++) {
-        const x = tz.startX + (col - 1) * TILE_SIZE;
-        const y = tz.startY + (row - 1) * TILE_SIZE;
-        const fname = `${tz.id}_${col}_${row}.png`;
-        tiles.push({
-          src: `${TILE_BASE}/${tz.folder}/${fname}`,
-          x,
-          y,
-          key: `${tz.id}_${col}_${row}`
-        });
-      }
+
+  const addTiles = (id: string, folder: string, startX: number, startY: number, tileList: Array<[number, number]>) => {
+    for (const [col, row] of tileList) {
+      const x = startX + (col - 1) * TILE_SIZE;
+      const y = startY - (row - 1) * TILE_SIZE; // Y DECREASES per row
+      const fname = `${id}_${col}_${row}.png`;
+      tiles.push({
+        src: `${TILE_BASE}/${folder}/${fname}`,
+        x,
+        y,
+        key: `${id}_${col}_${row}`
+      });
     }
-  }
+  };
+
+  // map02_lv001 (Jingyu Valley) — 33 valid tiles out of 54, startX=1800, startY=6000
+  const lv001Tiles: Array<[number, number]> = [
+    [1, 9],
+    [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 9],
+    [3, 2], [3, 3], [3, 4], [3, 7], [3, 9],
+    [4, 1], [4, 4], [4, 7], [4, 8],
+    [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9],
+    [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9],
+  ];
+  addTiles('map02_lv001', 'map02lv001', 1800, 6000, lv001Tiles);
+
+  // map02_lv002 (Wuling City) — 78 valid tiles out of 90, startX=600, startY=600
+  const lv002Tiles: Array<[number, number]> = [
+    [1, 2], [1, 4], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10],
+    [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 9], [2, 10],
+    [3, 1], [3, 2], [3, 4], [3, 7], [3, 8], [3, 9],
+    [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 8], [4, 9], [4, 10],
+    [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10],
+    [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9], [6, 10],
+    [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7], [7, 9], [7, 10],
+    [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [8, 7], [8, 8], [8, 9], [8, 10],
+    [9, 1], [9, 2], [9, 3], [9, 4], [9, 5], [9, 6], [9, 7], [9, 8], [9, 9], [9, 10],
+  ];
+  addTiles('map02_lv002', 'map02lv002', 600, 600, lv002Tiles);
+
   return tiles;
 }
 
@@ -199,11 +225,8 @@ export default function WulingMapPage() {
   const [loadedTiles, setLoadedTiles] = useState<Set<string>>(new Set());
   const [tilesLoaded, setTilesLoaded] = useState(0);
 
-  // Generate all tiles from tileZone data
-  const allTiles = useMemo(() => {
-    if (!mapData) return [];
-    return generateAllTiles(mapData.tileZones);
-  }, [mapData]);
+  // Generate all tiles once (sparse validated lists, no dependency on mapData)
+  const allTiles = useMemo(() => generateAllTiles(), []);
   const tilesTotal = allTiles.length;
 
   // Load map data
@@ -949,34 +972,17 @@ export default function WulingMapPage() {
 
         {/* ─── POI Detail Panel ─── */}
         {selectedPoi && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 max-w-sm w-full mx-4 clip-corner-tl shadow-[var(--shadow-card)]">
-            <div className="flex items-start gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`${ICON_BASE}/${getEntityIcon(selectedPoi.type)}.png`} alt="" className="w-10 h-10 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-white font-bold text-base">{selectedPoi.name || selectedPoi.sub || selectedPoi.type}</div>
-                <div className="text-[11px] font-mono text-[var(--color-text-muted)] uppercase mt-0.5">
-                  {selectedPoi.cat} {selectedPoi.sub ? `/ ${selectedPoi.sub}` : ''}
-                </div>
-                <div className="text-[11px] font-mono text-[var(--color-text-muted)]">
-                  {mapData.zones[selectedPoi.zone] || selectedPoi.zone}
-                </div>
-              </div>
-              <button onClick={() => setSelectedPoi(null)} className="text-[var(--color-text-muted)] hover:text-white shrink-0 transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <button
-              onClick={() => toggleComplete(selectedPoi.id)}
-              className={`mt-3 w-full py-2 text-sm font-bold uppercase tracking-wider border transition-all ${
-                completed.has(selectedPoi.id)
-                  ? 'bg-green-900/30 border-green-600 text-green-400 hover:bg-green-900/50'
-                  : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
-              }`}
-            >
-              {completed.has(selectedPoi.id) ? 'Completed' : 'Mark as Complete'}
-            </button>
-          </div>
+          <MapDetailPanel
+            poi={selectedPoi}
+            isCompleted={completed.has(selectedPoi.id)}
+            onToggleComplete={toggleComplete}
+            onClose={() => setSelectedPoi(null)}
+            categoryConfig={CATEGORY_CONFIG}
+            zoneNames={mapData.zones}
+            iconBase={ICON_BASE}
+            getEntityIcon={getEntityIcon}
+            mapRegion="wuling"
+          />
         )}
       </div>
     </div>

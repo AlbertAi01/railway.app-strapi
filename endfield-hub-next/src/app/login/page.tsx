@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { LogIn, Mail, Lock, Chrome } from 'lucide-react';
@@ -9,12 +9,32 @@ import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, loginWithProvider } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Determine where to redirect after login
+  const getReturnUrl = () => {
+    // Check URL param first, then sessionStorage
+    const fromParam = searchParams.get('returnTo');
+    const fromSession = typeof window !== 'undefined' ? sessionStorage.getItem('endfield-return-to') : null;
+    const target = fromParam || fromSession || '/profile';
+    // Security: only allow relative paths (no external redirects)
+    if (target.startsWith('/') && !target.startsWith('//')) return target;
+    return '/profile';
+  };
+
+  // Store returnTo for OAuth flows that leave the page
+  useEffect(() => {
+    const returnTo = getReturnUrl();
+    if (returnTo !== '/profile') {
+      sessionStorage.setItem('endfield-return-to', returnTo);
+    }
+  }, [searchParams]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +43,9 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/profile');
+      const returnTo = getReturnUrl();
+      sessionStorage.removeItem('endfield-return-to');
+      router.push(returnTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -36,6 +58,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // returnTo is already in sessionStorage for the callback page to use
       await loginWithProvider(provider);
       // OAuth will redirect automatically
     } catch (err) {

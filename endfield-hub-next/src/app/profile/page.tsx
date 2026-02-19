@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
-import { User, Mail, Calendar, LogOut, Settings, Shield, List, Target, CheckSquare, Factory, Download, Upload, Trash2, Clock, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { User, Mail, Calendar, LogOut, Settings, Shield, List, Target, CheckSquare, Factory, Download, Upload, Trash2, Clock, Pencil, Check, X, Loader2, Hammer, Bookmark, Eye, Heart, Plus, Play, Globe, Lock } from 'lucide-react';
+import Image from 'next/image';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { getMyBuilds, getFavoriteBuildIds, SAMPLE_BUILDS } from '@/data/builds';
+import type { Build } from '@/data/builds';
+import { CHARACTER_ICONS } from '@/lib/assets';
+import { CHARACTERS } from '@/lib/data';
+import { RARITY_COLORS, ELEMENT_COLORS } from '@/types/game';
 
 interface ToolData {
   name: string;
@@ -192,7 +198,7 @@ export default function ProfilePage() {
     const allData: { [key: string]: any } = {};
 
     // Collect all localStorage data
-    const keys = ['tierListData', 'endfield-pulls', 'endfield-pity', 'ascensionPlan', 'achievements', 'factoryPlans'];
+    const keys = ['tierListData', 'endfield-pulls', 'endfield-pity', 'ascensionPlan', 'achievements', 'factoryPlans', 'endfield-my-builds', 'endfield-build-favorites'];
     keys.forEach(key => {
       const data = localStorage.getItem(key);
       if (data) {
@@ -220,20 +226,46 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Security: reject files over 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Maximum allowed size is 5MB.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
 
-        // Restore all data to localStorage
+        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+          alert('Invalid backup file format. Expected a JSON object.');
+          return;
+        }
+
+        // Security: only allow known localStorage keys to be imported
+        // This prevents overwriting auth tokens, session data, or other sensitive keys
+        const ALLOWED_KEYS = ['tierListData', 'endfield-pulls', 'endfield-pity', 'ascensionPlan', 'achievements', 'factoryPlans', 'endfield-my-builds', 'endfield-build-favorites'];
+        let importedCount = 0;
+
         Object.keys(data).forEach(key => {
-          localStorage.setItem(key, JSON.stringify(data[key]));
+          if (ALLOWED_KEYS.includes(key)) {
+            const value = data[key];
+            // Sanitize: ensure the value can be safely serialized (strips any prototype pollution attempts)
+            const sanitized = JSON.parse(JSON.stringify(value));
+            localStorage.setItem(key, JSON.stringify(sanitized));
+            importedCount++;
+          }
         });
 
-        alert('Data imported successfully! Refresh the page to see changes.');
+        if (importedCount === 0) {
+          alert('No valid data found in the backup file. Recognized keys: ' + ALLOWED_KEYS.join(', '));
+          return;
+        }
+
+        alert(`Imported ${importedCount} data entries successfully! The page will reload.`);
         window.location.reload();
       } catch (err) {
-        alert('Failed to import data. Please check the file format.');
+        alert('Failed to import data. The file may be corrupted or not valid JSON.');
         console.error('Import error:', err);
       }
     };
@@ -242,8 +274,8 @@ export default function ProfilePage() {
 
   const clearAllData = () => {
     if (confirm('Are you sure you want to clear ALL saved data? This cannot be undone!')) {
-      if (confirm('Final confirmation: This will delete all your tier lists, pulls, plans, and achievements. Continue?')) {
-        const keys = ['tierListData', 'endfield-pulls', 'endfield-pity', 'ascensionPlan', 'achievements', 'factoryPlans'];
+      if (confirm('Final confirmation: This will delete all your tier lists, pulls, plans, achievements, and builds. Continue?')) {
+        const keys = ['tierListData', 'endfield-pulls', 'endfield-pity', 'ascensionPlan', 'achievements', 'factoryPlans', 'endfield-my-builds', 'endfield-build-favorites'];
         keys.forEach(key => localStorage.removeItem(key));
         alert('All data has been cleared.');
         window.location.reload();
@@ -251,7 +283,9 @@ export default function ProfilePage() {
     }
   };
 
-  const [stats, setStats] = useState({ totalPulls: 0, achievementPercent: 0, tierListEntries: 0 });
+  const [myBuilds, setMyBuilds] = useState<Build[]>([]);
+  const [favoritedBuilds, setFavoritedBuilds] = useState<Build[]>([]);
+  const [stats, setStats] = useState({ totalPulls: 0, achievementPercent: 0, tierListEntries: 0, buildsCount: 0, favoritesCount: 0 });
 
   useEffect(() => {
     const pulls = localStorage.getItem('endfield-pulls');
@@ -291,7 +325,15 @@ export default function ProfilePage() {
       }
     }
 
-    setStats({ totalPulls, achievementPercent, tierListEntries });
+    // Load builds data
+    const builds = getMyBuilds();
+    setMyBuilds(builds);
+    const favIds = getFavoriteBuildIds();
+    const allBuilds = [...SAMPLE_BUILDS, ...builds.filter(b => b.isPublic)];
+    const favBuilds = allBuilds.filter(b => favIds.includes(b.id));
+    setFavoritedBuilds(favBuilds);
+
+    setStats({ totalPulls, achievementPercent, tierListEntries, buildsCount: builds.length, favoritesCount: favIds.length });
   }, []);
 
   const formatLastUsed = (timestamp?: number) => {
@@ -470,16 +512,113 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Your Builds Section */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-white text-xl flex items-center gap-2">
+                  <Hammer size={20} className="text-[var(--color-accent)]" />
+                  Your Builds
+                </h3>
+                <Link href="/builds" className="text-xs text-[var(--color-accent)] hover:underline flex items-center gap-1">
+                  View All <Eye size={12} />
+                </Link>
+              </div>
+
+              {myBuilds.length === 0 && favoritedBuilds.length === 0 ? (
+                <div className="text-center py-8">
+                  <Hammer size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)] opacity-30" />
+                  <p className="text-sm text-[var(--color-text-tertiary)] mb-3">No builds created or bookmarked yet.</p>
+                  <Link href="/builds" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold clip-corner-tl transition-colors">
+                    <Plus size={14} /> Create Your First Build
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Created builds */}
+                  {myBuilds.length > 0 && (
+                    <div>
+                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide mb-2">Created ({myBuilds.length})</p>
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {myBuilds.slice(0, 4).map(build => (
+                          <Link key={build.id} href={`/builds/${build.id}`}
+                            className="flex items-center gap-3 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors no-underline">
+                            <div className="flex -space-x-2">
+                              {build.characters.slice(0, 3).map((bc, i) => {
+                                const icon = CHARACTER_ICONS[bc.name];
+                                const rarity = CHARACTERS.find(c => c.Name === bc.name)?.Rarity || 4;
+                                return (
+                                  <div key={i} className="w-8 h-8 relative bg-black/30 border border-[var(--color-surface)]" style={{ borderBottom: `2px solid ${RARITY_COLORS[rarity]}`, zIndex: 3 - i }}>
+                                    {icon ? <Image src={icon} alt={bc.name} fill className="object-cover" unoptimized sizes="32px" /> : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white font-bold truncate">{build.name}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)]">
+                                <span className={build.type === 'team' ? 'text-blue-400' : 'text-green-400'}>{build.type === 'team' ? 'TEAM' : 'SINGLE'}</span>
+                                {build.isPublic ? <Globe size={8} /> : <Lock size={8} />}
+                                {build.youtubeUrl && <Play size={8} className="text-red-400" />}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      {myBuilds.length > 4 && (
+                        <Link href="/builds" className="block text-center text-xs text-[var(--color-accent)] hover:underline mt-2">
+                          +{myBuilds.length - 4} more builds
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Favorited builds */}
+                  {favoritedBuilds.length > 0 && (
+                    <div>
+                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide mb-2 flex items-center gap-1">
+                        <Bookmark size={10} /> Bookmarked ({favoritedBuilds.length})
+                      </p>
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {favoritedBuilds.slice(0, 4).map(build => (
+                          <Link key={build.id} href={`/builds/${build.id}`}
+                            className="flex items-center gap-3 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors no-underline">
+                            <div className="flex -space-x-2">
+                              {build.characters.slice(0, 3).map((bc, i) => {
+                                const icon = CHARACTER_ICONS[bc.name];
+                                const rarity = CHARACTERS.find(c => c.Name === bc.name)?.Rarity || 4;
+                                return (
+                                  <div key={i} className="w-8 h-8 relative bg-black/30 border border-[var(--color-surface)]" style={{ borderBottom: `2px solid ${RARITY_COLORS[rarity]}`, zIndex: 3 - i }}>
+                                    {icon ? <Image src={icon} alt={bc.name} fill className="object-cover" unoptimized sizes="32px" /> : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white font-bold truncate">{build.name}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)]">
+                                <span>by {build.author || 'Community'}</span>
+                                <span className="flex items-center gap-0.5"><Heart size={8} className="text-red-400" /> {build.likes}</span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Saved Data Summary */}
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
               <h3 className="font-bold text-white text-xl mb-4">Saved Data Summary</h3>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
                 <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
                   <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
                     {stats.totalPulls}
                   </div>
-                  <div className="text-xs text-[var(--color-text-tertiary)]">Total Pulls Tracked</div>
+                  <div className="text-xs text-[var(--color-text-tertiary)]">Pulls Tracked</div>
                 </div>
 
                 <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
@@ -493,7 +632,21 @@ export default function ProfilePage() {
                   <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
                     {stats.tierListEntries}
                   </div>
-                  <div className="text-xs text-[var(--color-text-tertiary)]">Tier List Entries</div>
+                  <div className="text-xs text-[var(--color-text-tertiary)]">Tier Entries</div>
+                </div>
+
+                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+                  <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
+                    {stats.buildsCount}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-tertiary)]">Builds</div>
+                </div>
+
+                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+                  <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">
+                    {stats.favoritesCount}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-tertiary)]">Bookmarks</div>
                 </div>
               </div>
             </div>

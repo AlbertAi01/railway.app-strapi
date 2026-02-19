@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronDown, ChevronRight, Filter, ZoomIn, ZoomOut, Maximi
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
+import MapDetailPanel from '@/components/ui/MapDetailPanel';
 
 const TOOLS_CDN = 'https://endfieldtools.dev/assets/images/endfield';
 const TILE_BASE = `${TOOLS_CDN}/levelmap/levelmapgrids`;
@@ -1010,34 +1011,17 @@ export default function ValleyIVMapPage() {
 
         {/* POI Detail Panel */}
         {selectedPoi && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 max-w-sm w-full mx-4 clip-corner-tl shadow-[var(--shadow-card)]">
-            <div className="flex items-start gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`${ICON_BASE}/${getEntityIcon(selectedPoi.type)}.png`} alt="" className="w-10 h-10 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-white font-bold text-base">{selectedPoi.name || selectedPoi.sub || selectedPoi.type}</div>
-                <div className="text-[11px] font-mono text-[var(--color-text-muted)] uppercase mt-0.5">
-                  {selectedPoi.cat} {selectedPoi.sub ? `/ ${selectedPoi.sub}` : ''}
-                </div>
-                <div className="text-[11px] font-mono text-[var(--color-text-muted)]">
-                  {mapData.zones[selectedPoi.zone] || selectedPoi.zone}
-                </div>
-              </div>
-              <button onClick={() => setSelectedPoi(null)} className="text-[var(--color-text-muted)] hover:text-white shrink-0 transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <button
-              onClick={() => toggleComplete(selectedPoi.id)}
-              className={`mt-3 w-full py-2 text-sm font-bold uppercase tracking-wider border transition-all ${
-                completed.has(selectedPoi.id)
-                  ? 'bg-green-900/30 border-green-600 text-green-400 hover:bg-green-900/50'
-                  : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
-              }`}
-            >
-              {completed.has(selectedPoi.id) ? 'Completed' : 'Mark as Complete'}
-            </button>
-          </div>
+          <MapDetailPanel
+            poi={selectedPoi}
+            isCompleted={completed.has(selectedPoi.id)}
+            onToggleComplete={toggleComplete}
+            onClose={() => setSelectedPoi(null)}
+            categoryConfig={CATEGORY_CONFIG}
+            zoneNames={mapData.zones}
+            iconBase={ICON_BASE}
+            getEntityIcon={getEntityIcon}
+            mapRegion="valley-iv"
+          />
         )}
       </div>
     </div>

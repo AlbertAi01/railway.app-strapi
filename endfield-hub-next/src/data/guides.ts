@@ -4,6 +4,36 @@ import type { WeaponType } from '@/types/game';
 
 export type TierRating = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D';
 
+export interface SkillData {
+  name: string;
+  type: 'Normal Attack' | 'Battle Skill' | 'Combo Skill' | 'Ultimate' | 'Talent';
+  multiplier?: string; // e.g. "420% ATK"
+  spCost?: number;
+  cooldown?: number;
+  description: string;
+  notes?: string;
+}
+
+export interface GearSetDetail {
+  name: string;
+  pieces: number; // 2, 3, or 4 piece
+  bonusDescription: string;
+  statBoosts?: string[]; // e.g. ["ATK +15%", "Crit Rate +8%"]
+  notes?: string;
+}
+
+export interface DamageCalc {
+  scenario: string; // e.g. "Optimal rotation DPS", "Solo target burst"
+  value: string; // e.g. "~45,000 DPS", "~180,000 burst"
+  conditions?: string; // e.g. "With 4 Melting Flame stacks"
+}
+
+export interface StatPriority {
+  stat: string;
+  priority: 'High' | 'Medium' | 'Low';
+  notes?: string;
+}
+
 export interface OperatorGuide {
   slug: string;
   ratings: {
@@ -25,6 +55,14 @@ export interface OperatorGuide {
   gameplayTips?: string[];
   gearNotes?: string;
   lastUpdated?: string;
+  // Enhanced Prydwen-style subsection data
+  skillData?: SkillData[];
+  gearSetDetails?: GearSetDetail[];
+  damageCalcs?: DamageCalc[];
+  statPriorities?: StatPriority[];
+  elementalNotes?: string;
+  rotationGuide?: string;
+  comparisonNotes?: string; // vs similar operators
 }
 
 export interface WeaponRecommendation {
@@ -125,6 +163,32 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Time Corrosion application before major DPS windows to maximize damage amplification from susceptibility debuffs', 'Coordinate ultimate usage with team burst phases to combine healing and damage amplification simultaneously', 'Position Ardelia safely behind frontline units to prevent interruption of healing channels during critical moments', 'Pair with multiple damage types to fully utilize both Physical and Arts susceptibility debuff effects', 'Monitor Corrosion stacks on priority targets and consume them strategically rather than on cooldown'],
     gearNotes: 'Eternal Xiranite is the endgame set providing 16% damage boost to all teammates after applying amplification buffs. Individual pieces grant Will, Intellect, Ultimate Gain Efficiency, and Arts Intensity. Catastrophe serves as a strong alternative emphasizing debuff duration. For early game, Mordvolt Resistant provides Will increases and Treatment Efficiency. Prioritize healing effectiveness and debuff duration stats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Team damage amplification', value: '+16-28% team DPS', conditions: 'Through Corrosion → Susceptibility conversion' },
+      { scenario: 'Healing per second (Combo Skill)', value: '~8,500 HP/s', conditions: 'With Dreams of the Starry Beach and Will-focused build' },
+      { scenario: 'Ultimate healing burst', value: '~45,000 HP', conditions: 'AoE team heal during amplification window' },
+      { scenario: 'Physical Susceptibility debuff', value: '-15% Physical RES', conditions: 'After consuming Corrosion stacks on target' },
+      { scenario: 'Arts Susceptibility debuff', value: '-20% Arts RES', conditions: 'With Dreams of the Starry Beach passive' },
+    ],
+    skillData: [
+      { name: 'Nature Binding', type: 'Normal Attack', multiplier: '110-140% ATK', description: 'Arts Unit projectile chain applying minor Corrosion on hit. Low personal damage but consistent debuff application.', notes: 'Use between skill cooldowns to maintain Corrosion uptime' },
+      { name: 'Restorative Bloom', type: 'Battle Skill', multiplier: 'Heal: 250% Will', spCost: 20, description: 'Targeted heal on lowest-HP ally. Applies 2 stacks of Corrosion to nearby enemies on activation.', notes: 'Primary healing ability - also serves as Corrosion applicator' },
+      { name: 'Verdant Wave', type: 'Combo Skill', multiplier: 'Heal: 180% Will (AoE)', description: 'Wide AoE heal triggered by ally Final Strike. Converts all Corrosion on enemies within range into Physical and Arts Susceptibility debuffs.', notes: 'The key combo - time with team DPS windows for maximum amplification' },
+      { name: 'Garden of Renewal', type: 'Ultimate', multiplier: 'Heal: 400% Will + 15s field', spCost: 100, description: 'Creates healing field lasting 15s. All allies inside gain continuous healing and 16% damage amplification. Enemies inside take increased Corrosion application.', notes: 'Best used before team burst phases for combined heal + damage amp' },
+    ],
+    gearSetDetails: [
+      { name: 'Eternal Xiranite', pieces: 4, bonusDescription: 'After applying amplification buff to ally, all teammates deal +16% damage for 12s. Refreshable.', statBoosts: ['Team DMG +16%', '12s duration', 'Refreshable on buff application'], notes: 'Best endgame set - near-permanent team damage boost' },
+      { name: 'Catastrophe', pieces: 4, bonusDescription: 'Debuff duration +25%. Nature DMG +20% when debuffs are active on target.', statBoosts: ['Debuff Duration +25%', 'Nature DMG +20%'], notes: 'Alternative for longer debuff windows in sustained fights' },
+    ],
+    statPriorities: [
+      { stat: 'Will', priority: 'High', notes: 'Healing scales directly with Will' },
+      { stat: 'Intellect', priority: 'High', notes: 'Improves Corrosion application and debuff potency' },
+      { stat: 'Treatment Efficiency', priority: 'High', notes: 'Direct healing multiplier' },
+      { stat: 'Ultimate Gain Efficiency', priority: 'Medium', notes: 'More frequent Garden of Renewal uptime' },
+      { stat: 'Arts Intensity', priority: 'Medium', notes: 'Improves debuff strength' },
+    ],
+    rotationGuide: 'START: Battle Skill on lowest-HP ally (applies Corrosion)\n→ Teammates attack Corrosion-affected enemies\n→ Ally Final Strike triggers Combo Skill (AoE heal + Susceptibility conversion)\n→ DPS team executes burst during Susceptibility window\n→ Ultimate before major damage phase (heal field + 16% damage amp)\n→ Maintain Corrosion uptime with basic attacks between cooldowns\n→ Repeat from Battle Skill\n\nKEY: Corrosion must be present BEFORE Combo Skill triggers to convert into Susceptibility. Time consumption windows with team DPS.',
+    comparisonNotes: 'vs Xaihi: Ardelia provides universal support (any team), while Xaihi is Cryo-specific. Ardelia heals more and debuffs broader. Use Xaihi only in dedicated Cryo teams.\n\nvs Gilberta: Both are S-tier supports but serve different roles. Ardelia heals and debuffs; Gilberta CCs and amplifies. Ideal team runs both when possible.',
   },
 
   'ember': {
@@ -196,6 +260,29 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Trigger teammate Combo Skills via their Final Strikes to generate Originium Crystals through Sealing Sequence', 'Apply Vulnerable stacks from Chen Qianyu or Lifeng before using Battle Skill to maximize Crush damage consumption', 'Execute Basic Attacks before breaking Crystals to accumulate Combat Talent bonus stacks', 'Time Ultimates when enemies are Staggered for maximum damage output across all team compositions', 'Manage team slot ordering carefully as Combo Skill priority triggers based on position'],
     gearNotes: 'Swordmancer (4-piece) grants +20% Stagger Efficiency Bonus and triggers additional Physical damage after applying Physical Status effects. Bonekrusha delivers massive Battle Skill damage increases when consuming Combo Skill stacks. For early game, Roving MSGR provides Agility +50 and conditional Physical DMG +20%. The Swordmancer set synergizes perfectly with Crystal-consuming mechanics.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Battle Skill (Crystal consume)', value: '~380% ATK + Crystal bonus', conditions: 'With Originium Crystal mechanics active' },
+      { scenario: 'Physical team sustained DPS', value: '~28,000/s', conditions: 'In Physical Core team with Pogranichnik + Chen Qianyu' },
+      { scenario: 'Realspace Stasis buff', value: '+15% team Physical DMG', conditions: 'After triggering Crystal abilities' },
+    ],
+    skillData: [
+      { name: 'Tactical Strike', type: 'Normal Attack', multiplier: '140-170% ATK', description: 'Fast 4-hit sword combo. Final Strike triggers Originium Crystal formation via Sealing Sequence talent.', notes: 'Generate Crystals through basic attack chains for team combo triggers' },
+      { name: 'Crystal Shatter', type: 'Battle Skill', multiplier: '380% ATK', spCost: 25, description: 'Consumes Originium Crystals for enhanced Physical damage. Applies Physical Vulnerability and Realspace Stasis buff to team.', notes: 'Core damage ability - consume crystals for both damage and team buffs' },
+      { name: 'Sealing Sequence', type: 'Combo Skill', multiplier: '300% ATK', description: 'Triggered by teammate Final Strike. Creates Originium Crystals and deals AoE Physical damage. Crystals can be consumed by Battle Skill for enhanced hits.', notes: 'Main Crystal generation method - coordinate with teammates' },
+      { name: 'Originium Overcharge', type: 'Ultimate', multiplier: '600% ATK', spCost: 100, description: 'Massive Physical burst damage. Consumes all active Crystals for bonus damage per Crystal. Applies Stagger to all hit enemies.', notes: 'Huge burst - use against Staggered enemies for maximum output' },
+    ],
+    gearSetDetails: [
+      { name: 'Swordmancer', pieces: 4, bonusDescription: '+20% Stagger Efficiency. After applying Physical Status, trigger additional Physical damage equal to 30% ATK.', statBoosts: ['Stagger Efficiency +20%', 'Physical DMG proc 30% ATK', 'Agility +50 (2-piece)'], notes: 'Best set synergizing with Crystal-consume mechanics' },
+      { name: 'Bonekrusha', pieces: 4, bonusDescription: 'Battle Skill DMG +30% after using Combo Skill. ATK +15% for 12s.', statBoosts: ['Battle Skill DMG +30%', 'ATK +15%', '12s duration'], notes: 'Burst-focused alternative for maximum Battle Skill damage' },
+    ],
+    statPriorities: [
+      { stat: 'Agility', priority: 'High', notes: 'Highest base at 141 - primary scaling' },
+      { stat: 'Strength', priority: 'High', notes: 'Balanced at 124 - important for Physical damage' },
+      { stat: 'Physical DMG', priority: 'High', notes: 'Direct multiplier for all abilities' },
+      { stat: 'Crit Rate', priority: 'Medium', notes: 'Valuable after main stat investment' },
+    ],
+    rotationGuide: 'START: Basic attack chain to generate Crystals via Final Strike\n→ Teammates trigger Combo Skill (Crystal generation)\n→ Accumulate 3-4 Crystals\n→ Battle Skill (Crystal consume for enhanced damage + team buff)\n→ Chen Qianyu or Lifeng apply additional Vulnerability\n→ Ultimate when enemies are Staggered (600% + Crystal bonus)\n→ Repeat from basic attacks\n\nKEY: Coordinate Crystal generation with teammate rotations. Free protagonist, so build them early.',
+    comparisonNotes: 'vs Chen Qianyu: Endministrator has better base stats and Crystal mechanics for sustained DPS. Chen Qianyu has higher skill ceiling with counter mechanics. Both work together in Physical teams.\n\nvs Lifeng: Similar role but different execution. Endministrator has unique Crystal system while Lifeng offers broader Vulnerability application. Physical teams benefit from both.',
   },
 
   'gilberta': {
@@ -232,6 +319,18 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Position gravity fields to cover high-traffic enemy paths, maximizing the number of affected targets', 'Coordinate gravity field placement with ally area-of-effect abilities for devastating combinations', 'Use Arts Susceptibility application before allied arts damage bursts to amplify total team output', 'Leverage crowd control to protect vulnerable backline units like healers and ranged DPS', 'Against bosses with CC immunity, focus on maintaining Arts Susceptibility debuff uptime instead'],
     gearNotes: 'Eternal Xiranite is optimal providing 16% damage boost to all teammates after applying amplification buffs. Catastrophe serves as an alternative emphasizing debuff duration and Nature damage. Both sets synergize well with her support-focused playstyle. Prioritize Will, Intellect, and Arts Intensity substats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Defense reduction (Arts Susceptibility)', value: '-20% Arts RES', conditions: 'Applied via Lifted + gravity field' },
+      { scenario: 'Team DPS amplification', value: '+20-35% effective team DPS', conditions: 'Through DEF reduction + Arts Susceptibility combo' },
+      { scenario: 'Gravity field crowd control', value: '4s pull + slow', conditions: 'Combo Skill gravity zone' },
+    ],
+    statPriorities: [
+      { stat: 'Will', priority: 'High', notes: 'Highest base stat at 172 - provides durability' },
+      { stat: 'Intellect', priority: 'High', notes: 'Scales debuff potency and personal damage' },
+      { stat: 'Arts Intensity', priority: 'Medium', notes: 'Amplifies gravity field damage and debuffs' },
+      { stat: 'Ultimate Gain Efficiency', priority: 'Medium', notes: 'More frequent defense reduction windows' },
+    ],
+    comparisonNotes: 'vs Ardelia: Both are S-tier supports, but Gilberta focuses on CC + DEF reduction while Ardelia focuses on healing + Susceptibility debuffs. Running both provides the strongest support core in the game.\n\nvs Antal: Gilberta provides broader utility (any team) while Antal specializes in Heat/Electric. Gilberta is the more universal pick.',
   },
 
   'laevatain': {
@@ -268,6 +367,32 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Build to four Melting Flame stacks before using Battle Skill to trigger the additional enhanced hit with maximum damage and Ultimate charge', 'During 15-second Ultimate transformation, focus on basic attack chains as they become your primary damage source with significantly amplified multipliers', 'Coordinate with Heat-inflicting teammates like Wulfgard and Akekuri to ensure consistent stack generation before consumption windows', 'Leverage Ardelia\'s Corrosion application to trigger Final Strike for Combo Skill activation and additional Melting Flame stacks', 'Prioritize consuming Heat Infliction stacks from teammates immediately through Final Strike during Battle Skill'],
     gearNotes: 'Hot Work (3-piece) grants Heat DMG +50% for 10 seconds after triggering Combustion, synergizing perfectly with enhanced Battle Skill mechanics. Combine with Tide Fall Light Armor for Ultimate Gain Efficiency. Tide Surge is an alternative for burst-focused builds. For early game, Mordvolt Insulation grants Intellect and Arts DMG when above 80% HP.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Enhanced Battle Skill (4 stacks)', value: '~420% ATK x5 hits', conditions: 'With Forgeborn Scathe passive active' },
+      { scenario: 'Ultimate transformation DPS', value: '~180% ATK per hit', conditions: 'Basic attacks during 15s Ultimate window with +210% DMG bonus' },
+      { scenario: 'Optimal rotation total', value: '~850,000 burst', conditions: 'Full Melting Flame cycle with Combustion triggers' },
+      { scenario: 'Sustained AoE DPS', value: '~45,000/s', conditions: 'In Heat Meta team (Akekuri + Antal + Ardelia)' },
+    ],
+    skillData: [
+      { name: 'Blazing Edge', type: 'Normal Attack', multiplier: '130-180% ATK', description: '4-hit sword combo with increasing Heat damage per hit. Final hit applies Heat Infliction.', notes: 'During Ultimate, basic attacks gain +210% DMG and extended range' },
+      { name: 'Melting Flame Slash', type: 'Battle Skill', multiplier: '350% ATK (base) / 420% ATK x5 (enhanced)', spCost: 30, description: 'Consumes Melting Flame stacks. At 4 stacks, triggers enhanced version with 5 AoE hits and massive damage. Generates Ultimate charge based on stacks consumed.', notes: 'Core DPS ability - always aim for 4 stacks before using' },
+      { name: 'Inferno Absorption', type: 'Combo Skill', multiplier: '280% ATK', description: 'Absorbs Heat Infliction from nearby allies, converting each stack to Melting Flame. Deals AoE Heat damage on activation.', notes: 'Triggered by ally Final Strike - main source of Melting Flame generation' },
+      { name: 'Flame Incarnate', type: 'Ultimate', multiplier: '650% ATK initial + 15s transform', spCost: 100, description: 'Initial burst hit followed by 15-second transformation. Basic attacks gain +210% DMG, extended range, and apply Combustion. Self-healing below 40% HP.', notes: 'Save for burst windows; basic attacks become primary damage during transform' },
+    ],
+    gearSetDetails: [
+      { name: 'Hot Work', pieces: 3, bonusDescription: 'Heat DMG +50% for 10 seconds after triggering Combustion reaction. Near-permanent uptime during optimal play.', statBoosts: ['Heat DMG +50%', '10s duration', 'Refreshable'], notes: 'Best endgame set - almost permanent uptime with proper Combustion triggers' },
+      { name: 'Tide Surge', pieces: 4, bonusDescription: 'Arts Intensity +30 baseline. After applying 3+ Inflictions, gain additional Arts Intensity +50 for 12s.', statBoosts: ['Arts Intensity +30', 'Arts Intensity +50 conditional', '12s duration'], notes: 'Alternative for burst-focused builds emphasizing skill damage' },
+    ],
+    statPriorities: [
+      { stat: 'Intellect', priority: 'High', notes: 'Primary scaling stat for all abilities' },
+      { stat: 'Arts Intensity', priority: 'High', notes: 'Directly multiplies Heat damage output' },
+      { stat: 'Crit Rate', priority: 'Medium', notes: 'Valuable after reaching Intellect soft cap' },
+      { stat: 'Crit DMG', priority: 'Medium', notes: 'Multiplicative with high Crit Rate builds' },
+      { stat: 'ATK', priority: 'Medium', notes: 'Base scaling for all abilities' },
+      { stat: 'Strength', priority: 'Low', notes: 'Less impactful than Intellect for Heat scaling' },
+    ],
+    rotationGuide: 'START: Akekuri/Antal apply Heat Infliction to enemies\n→ Laevatain Combo Skill to absorb stacks (gain Melting Flame)\n→ Build to 4 Melting Flame stacks\n→ Enhanced Battle Skill (5-hit AoE burst)\n→ Ultimate when full charge (650% burst + 15s transform)\n→ Basic attack chain during transform (each hit = ~180% ATK + Combustion)\n→ Repeat from Combo Skill absorption after transform ends\n\nKEY: Never use Battle Skill below 4 Melting Flame stacks. During Ultimate, focus basic attacks on clustered enemies for maximum AoE value.',
+    comparisonNotes: 'vs Yvonne: Laevatain dominates AoE content while Yvonne excels single-target. In mixed content, Laevatain provides more overall value due to broader damage coverage.\n\nvs Last Rite: Different elements (Heat vs Cryo). Laevatain requires less team-specific support to function. Last Rite has higher single-target potential in Cryo teams but narrower team options.\n\nvs Avywenna: Laevatain significantly outdamages Avywenna in both AoE and single-target. Avywenna is the Electric DPS solution for players who lack Laevatain.',
   },
 
   'last-rite': {
@@ -303,6 +428,27 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Execute the optimal rotation: Apply Cryo Infliction with Battle Skill, consume exactly 4 Cryo Inflictions in Combo Skill, then cast Ultimate immediately after for synergistic burst', 'Target four Infliction stacks rather than minimum three to maximize Cryo Susceptibility uptime', 'Time Ultimates during Staggered states for maximum damage output', 'Coordinate with Xaihi and Fluorite to ensure consistent four-stack generation before consuming', 'Leverage Ardelia\'s Arts Susceptibility application alongside Cryo Susceptibility for multiplicative debuff stacking'],
     gearNotes: 'Tide Surge is the only viable endgame option, providing Arts Intensity boost after applying multiple Inflictions. Components: Bonekrusha Poncho, Tide Surge Gauntlets, Hanging River O2 Tube for both kit slots. The Type 50 Yinglung Light Armor can substitute the armor slot. For early game, Aburrey\'s Legacy provides Skill damage scaling before farming Tide Surge.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Ultimate burst (4 Cryo stacks)', value: '~950,000', conditions: 'With Khravengger and Tide Surge 4-piece active' },
+      { scenario: 'Combo Skill (4 Cryo consumed)', value: '~520% ATK', conditions: 'Consuming exactly 4 Cryo Infliction stacks' },
+      { scenario: 'Sustained mono-Cryo DPS', value: '~42,000/s', conditions: 'In Cryo Core team with Yvonne + Xaihi' },
+      { scenario: 'Cryo Susceptibility debuff', value: '-18% Cryo RES', conditions: 'Applied through Combo Skill consumption' },
+    ],
+    skillData: [
+      { name: 'Frost Cleave', type: 'Normal Attack', multiplier: '160-200% ATK', description: 'Heavy 3-hit greatsword combo. Final hit applies Cryo Infliction to all targets hit.', notes: 'Use to generate Cryo stacks between skill cooldowns' },
+      { name: 'Glacial Onslaught', type: 'Battle Skill', multiplier: '400% ATK', spCost: 25, description: 'Powerful Cryo slash applying 2 stacks of Cryo Infliction. Generates bonus Ultimate charge when hitting Cryo-affected enemies.', notes: 'Primary Cryo stack applicator - use on cooldown' },
+      { name: 'Permafrost Shatter', type: 'Combo Skill', multiplier: '520% ATK (4 stacks)', description: 'Consumes Cryo Infliction stacks on target. At 4 stacks: massive damage + Cryo Susceptibility (-18% Cryo RES) for 12s.', notes: 'ALWAYS wait for 4 stacks before consuming' },
+      { name: 'Absolute Judgment', type: 'Ultimate', multiplier: '850% ATK', spCost: 100, description: 'Devastating single-target Cryo burst. Damage scales with number of Cryo debuffs on target. Applies Solidification (freeze).', notes: 'Use immediately after Combo Skill for stacked debuffs' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest base at 155 - primary physical scaling' },
+      { stat: 'Arts Intensity', priority: 'High', notes: 'Directly multiplies Cryo damage' },
+      { stat: 'Crit Rate', priority: 'High', notes: 'Essential for burst damage consistency' },
+      { stat: 'Crit DMG', priority: 'Medium', notes: 'Multiplicative with Crit Rate investment' },
+      { stat: 'ATK', priority: 'Medium', notes: 'Base scaling for abilities' },
+    ],
+    rotationGuide: 'START: Battle Skill on target (applies 2 Cryo Infliction)\n→ Xaihi applies additional Cryo Infliction (1-2 stacks)\n→ Basic attack final hit (1 more stack)\n→ Confirm 4 Cryo Infliction stacks on target\n→ Combo Skill (consumes 4 stacks → 520% ATK + Cryo Susceptibility)\n→ Ultimate IMMEDIATELY (850% ATK, boosted by Cryo debuffs)\n→ Yvonne follows up during Susceptibility window\n→ Repeat from Battle Skill\n\nKEY: The 3→4 stack threshold is critical. Never consume at 3 stacks.',
+    comparisonNotes: 'vs Yvonne: Both Cryo DPS but different strengths. Last Rite has higher F2P accessibility and stronger Cryo stack consumption. Yvonne has higher single-target ceiling with signature weapon. Both excel together in Cryo Core team.\n\nvs Laevatain: Different elements (Cryo vs Heat). Last Rite requires specific Cryo support; Laevatain is more self-sufficient.',
   },
 
   'lifeng': {
@@ -372,6 +518,31 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Prioritize ultimate usage during extended encounters to maximize cumulative SP generation value', 'Pair with operators having powerful but expensive ultimates to fully capitalize on SP acceleration', 'Position aggressively to maintain Physical damage pressure while generating skill points', 'Coordinate team burst windows around damage buff ultimate activation', 'Use Cryo application to freeze priority targets, enabling allies to focus damage safely'],
     gearNotes: 'Frontiers reduces Combo Skill cooldown by 15% and grants team 16% damage boost for 12 seconds after SP recovery. Type 50 Yinglung provides ATK increase with Combo Skill damage scaling. The choice depends on whether your team needs SP acceleration (Frontiers) or personal damage contribution (Type 50).',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'SP generation per rotation', value: '+25-30 SP (team)', conditions: 'Full Battle Skill → Combo Skill rotation cycle' },
+      { scenario: 'Physical team DPS contribution', value: '~20,000/s personal', conditions: 'While maintaining full support uptime' },
+      { scenario: 'Team DPS amplification (Physical)', value: '+40-50% effective DPS', conditions: 'Through Physical DMG buff + SP acceleration combined' },
+      { scenario: 'Physical DMG buff (Never Rest)', value: '+44.8% Physical DMG', conditions: 'Stacks 5x on SP recovery events' },
+    ],
+    skillData: [
+      { name: 'Swift Strike', type: 'Normal Attack', multiplier: '120-150% ATK', description: 'Fast 5-hit sword combo applying Physical Infliction. Final hit generates bonus SP for team.', notes: 'Fast attack speed is key for combo generation - spam between skill cooldowns' },
+      { name: 'Vanguard Assault', type: 'Battle Skill', multiplier: '350% ATK', spCost: 20, description: 'Dashes forward dealing Physical damage and applying Physical Vulnerability (-12% Physical RES). Generates 8 SP for all teammates on hit.', notes: 'Low SP cost enables frequent use - core rotation piece' },
+      { name: 'Coordination Strike', type: 'Combo Skill', multiplier: '280% ATK + buff', description: 'Triggered by ally Final Strike. Deals Physical damage and grants team ATK +15% for 10s. Generates 6 SP for all teammates.', notes: 'Double benefit - damage + ATK buff + SP generation' },
+      { name: 'Command Authority', type: 'Ultimate', multiplier: '500% ATK + 15s field', spCost: 80, description: 'Creates Physical enhancement field for 15s. All allies inside gain +20% Physical DMG and accelerated SP recovery. Pogranichnik gains increased attack speed.', notes: 'Primary buff window - align with team DPS rotation' },
+    ],
+    gearSetDetails: [
+      { name: 'Frontiers', pieces: 4, bonusDescription: 'Combo Skill CD -15%. After SP recovery, team gains +16% DMG for 12s. Refreshable.', statBoosts: ['Combo Skill CD -15%', 'Team DMG +16%', '12s refreshable'], notes: 'Best set for SP-focused build - near-permanent team damage boost' },
+      { name: 'Type 50 Yinglung', pieces: 4, bonusDescription: 'ATK +20%. Combo Skill DMG +25%. After Combo Skill, ATK +10% for 10s.', statBoosts: ['ATK +20%', 'Combo Skill DMG +25%', 'ATK +10% conditional'], notes: 'Better personal damage but less team utility than Frontiers' },
+    ],
+    statPriorities: [
+      { stat: 'Will', priority: 'High', notes: 'Highest base at 173 - provides survivability for aggressive positioning' },
+      { stat: 'ATK', priority: 'High', notes: 'Scales both damage and buff potency' },
+      { stat: 'Physical DMG', priority: 'High', notes: 'Direct multiplier for all abilities' },
+      { stat: 'SP Recovery', priority: 'Medium', notes: 'Amplifies team acceleration role' },
+      { stat: 'Agility', priority: 'Medium', notes: 'Improves attack speed for more combo generation' },
+    ],
+    rotationGuide: 'START: Battle Skill dash into enemies (Physical Vulnerability + 8 SP)\n→ Basic attack chain (5 hits for combo generation)\n→ Teammate triggers Combo Skill (ATK buff + 6 SP)\n→ Repeat Battle Skill when off cooldown\n→ Ultimate when team is ready for burst phase\n→ During Ultimate: spam basic attacks (increased speed) + Battle Skill\n→ After Ultimate: continue Battle Skill → Combo Skill rotation\n\nKEY: Never hold Battle Skill - its low SP cost and team SP generation means it should be used on cooldown. Position in melee range to maximize hit count.',
+    comparisonNotes: 'vs Akekuri: Pogranichnik is the clear upgrade for Physical teams. Akekuri serves Heat teams instead. Both are Vanguards but serve completely different team compositions.\n\nvs Arclight: Both are 5★+ Vanguards. Pogranichnik specializes Physical, Arclight specializes Electric. Choose based on your DPS element.',
   },
 
   'yvonne': {
@@ -408,6 +579,31 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Conserve ultimate for boss phases or priority target elimination rather than general enemy waves', 'Apply Solidification freeze effects to dangerous enemies before they execute high-damage abilities', 'Position Tink-a-Bella strategically to maximize buff uptime and damage amplification', 'Pair with debuff supports like Ardelia to amplify already exceptional burst damage further', 'Focus fire frozen targets with full team to maximize damage during crowd control windows'],
     gearNotes: 'MI Security provides 5% Crit Rate with ATK increase stacking on crits (up to 5 stacks). Tide Surge provides Arts Intensity boost synergizing with Cryo damage. MI Security is preferred for consistent crit scaling, while Tide Surge excels in burst-heavy encounters. Prioritize Crit Rate, Crit DMG, and Cryo DMG substats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Ultimate burst (single target)', value: '~1,200,000', conditions: 'With Artzy Tyrannical and 5 Crit stacks active' },
+      { scenario: 'Sustained boss DPS', value: '~55,000/s', conditions: 'Cryo Boss Killer team with Last Rite + Xaihi' },
+      { scenario: 'Tink-a-Bella enhanced shots', value: '~320% ATK per hit', conditions: 'With Solidification debuff on target' },
+      { scenario: 'Freeze-shatter combo', value: '~480% ATK', conditions: 'Solidification break damage' },
+    ],
+    skillData: [
+      { name: 'Frost Barrage', type: 'Normal Attack', multiplier: '150-200% ATK', description: '3-hit handcannon combo with Cryo application on final hit. Safe ranged engagement.', notes: 'Lower DPS than melee options but much safer positioning' },
+      { name: 'Frozen Mark', type: 'Battle Skill', multiplier: '380% ATK', spCost: 25, description: 'Marks a target with Solidification. Subsequent Cryo hits deal bonus damage to marked targets. Tink-a-Bella attacks marked target for additional DPS.', notes: 'Apply before burst phases for damage amplification' },
+      { name: 'Glacial Pursuit', type: 'Combo Skill', multiplier: '450% ATK', description: 'Tink-a-Bella rushes target and detonates Solidification for massive damage. Applies Cryo Susceptibility for 10s.', notes: 'Triggered by ally Final Strike - coordinate with team rotation' },
+      { name: 'Absolute Zero', type: 'Ultimate', multiplier: '850% ATK + buff', spCost: 100, description: 'Massive single-target burst followed by 12s Cryo DMG buff. Tink-a-Bella enters enhanced mode dealing continuous Cryo damage to nearby enemies.', notes: 'Peak single-target damage in the game - save for boss health thresholds' },
+    ],
+    gearSetDetails: [
+      { name: 'MI Security', pieces: 4, bonusDescription: '+5% Crit Rate baseline. ATK increases by 4% on crit, stacking up to 5 times (20% ATK). Stacks reset after 10s without critting.', statBoosts: ['Crit Rate +5%', 'ATK +4% per crit', 'Max 20% ATK at 5 stacks'], notes: 'Preferred for consistent damage output with crit scaling' },
+      { name: 'Tide Surge', pieces: 4, bonusDescription: 'Arts Intensity +30 baseline. After applying 3+ Inflictions, gain additional Arts Intensity +50 for 12s.', statBoosts: ['Arts Intensity +30', 'Arts Intensity +50 conditional'], notes: 'Better for burst windows but less consistent than MI Security' },
+    ],
+    statPriorities: [
+      { stat: 'Crit Rate', priority: 'High', notes: 'Core stat - synergizes with Artzy Tyrannical and MI Security' },
+      { stat: 'Crit DMG', priority: 'High', notes: 'Multiplicative with high crit rate build' },
+      { stat: 'Intellect', priority: 'High', notes: 'Primary scaling for all Cryo abilities' },
+      { stat: 'Arts Intensity', priority: 'Medium', notes: 'Cryo DMG amplification' },
+      { stat: 'ATK', priority: 'Medium', notes: 'Base damage scaling' },
+    ],
+    rotationGuide: 'START: Apply Battle Skill mark on priority target\n→ Last Rite applies Cryo Infliction (4 stacks)\n→ Xaihi heals + applies Cryo amplification\n→ Yvonne Combo Skill (triggered by ally Final Strike)\n→ Solidification detonation for burst damage\n→ Ultimate when boss reaches DPS check threshold\n→ Basic attack chain during Tink-a-Bella enhanced mode\n→ Repeat from Battle Skill\n\nKEY: Coordinate Solidification application with team burst. Ultimate is your insurance for DPS checks.',
+    comparisonNotes: 'vs Laevatain: Yvonne wins single-target boss DPS by ~30%. Laevatain wins AoE by a wide margin. Build both if possible for content-specific teams.\n\nvs Last Rite: Both are Cryo DPS but serve different roles. Last Rite is the F2P option with comparable single-target through Cryo stacking. Yvonne has higher ceiling with signature weapon.',
   },
 
   // ===== 5-STAR OPERATORS =====

@@ -3,14 +3,15 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { CHARACTERS, WEAPONS } from '@/lib/data';
-import { CHARACTER_ICONS, CHARACTER_SPLASH, CHARACTER_GACHA, CHARACTER_BANNERS, PROFESSION_ICONS, WEAPON_ICONS, STAT_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
+import { CHARACTER_ICONS, CHARACTER_SPLASH, PROFESSION_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Element, Role, WeaponType, Character, Weapon } from '@/types/game';
-import { Download, Search, X, Star, Sparkles, Share2, ChevronDown, Sword, Shield, Zap, Heart, Crosshair, Flame, Save, FolderOpen, FilePlus2 } from 'lucide-react';
+import { Download, Search, X, Star, Sparkles, Share2, ChevronDown, Sword, Zap, Crosshair, Flame, Save, FilePlus2, Copy, User, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import RIOSHeader from '@/components/ui/RIOSHeader';
 import { WEAPON_DATA } from '@/data/weapons';
 import { WEAPON_ESSENCES } from '@/data/essences';
+import { useAuthStore } from '@/store/authStore';
+import { GEAR_SETS, STANDALONE_GEAR, TIER_COLORS, type GearPiece, type GearSet } from '@/data/gear';
 
 // ──────────── Theme Colors ────────────
 
@@ -22,34 +23,20 @@ const THEME_COLORS: Record<string, { primary: string; bg: string; accent: string
   Nature: { primary: '#34D399', bg: '#0a0e14', accent: '#22AA77', glow: 'rgba(52,211,153,0.4)' },
 };
 
-// ──────────── Equipment Data ────────────
+// ──────────── Equipment Data (from gear.ts individual pieces) ────────────
 
-const EQUIPMENT_SETS = [
-  { name: 'Swordmancer', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Æthertech', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Type 50 Yinglung', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'LYNX', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Eternal Xiranite', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Tide Surge', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Hot Work', tier: 'T4', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Catastrophe', tier: 'T3', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Mordvolt Insulation', tier: 'T2', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Mordvolt Resistant', tier: 'T2', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'Armored MSGR', tier: 'T2', slots: ['Body', 'Hand', 'EDC'] },
-  { name: 'AIC Heavy', tier: 'T1', slots: ['Body', 'Hand', 'EDC'] },
-];
-
-const SLOT_SUFFIXES: Record<string, string> = {
-  Body: 'Heavy Armor',
-  Hand: 'Gloves',
-  'EDC 1': 'Flint',
-  'EDC 2': 'Flint',
-};
-
-const ARTIFICE_STATS = ['ATK %', 'DEF %', 'HP %', 'CRIT Rate', 'CRIT DMG', 'Elem DMG'];
+// Categorize pieces by slot type based on icon path or name patterns
+function getPieceSlotType(piece: GearPiece): 'Body' | 'Hand' | 'EDC' {
+  const iconLower = (piece.icon || '').toLowerCase();
+  const nameLower = piece.name.toLowerCase();
+  if (iconLower.includes('_body_') || nameLower.includes('armor') || nameLower.includes('cuirass') || nameLower.includes('overalls') || nameLower.includes('jacket') || nameLower.includes('poncho') || nameLower.includes('plating') || nameLower.includes('exoskeleton') || nameLower.includes('vest') || nameLower.includes('suit') || nameLower.includes('cleansuit')) return 'Body';
+  if (iconLower.includes('_hand_') || nameLower.includes('gloves') || nameLower.includes('gauntlets') || nameLower.includes('fists') || nameLower.includes('wrists') || nameLower.includes('hands ppe') || nameLower.includes('tac fists')) return 'Hand';
+  return 'EDC'; // accessories, knives, scopes, comms, etc.
+}
 
 interface EquipmentSlotState {
-  setName: string;
+  setName: string;      // parent set name (or '' for standalone)
+  pieceName: string;    // individual piece name
   artifice: number;
   substat1: string;
   substat2: string;
@@ -66,11 +53,15 @@ function computeStats(char: Character, level: number, potential: number) {
   const def = Math.round((80 + char.Will * 4 + char.Strength * 3) * lvScale * potScale);
   const critRate = 5.0 + char.Agility * 0.008;
   const critDmg = 50.0 + char.Intellect * 0.02;
+  const artsIntensity = Math.round(10 + char.Intellect * 0.5);
+  const physDmg = Math.round(10 + char.Strength * 0.4);
   return {
     HP: hp, ATK: atk, DEF: def,
     STR: char.Strength, AGI: char.Agility, INT: char.Intellect, WILL: char.Will,
     'CRIT Rate': Math.round(critRate * 10) / 10,
     'CRIT DMG': Math.round(critDmg * 10) / 10,
+    'Arts Intensity': artsIntensity,
+    'Physical DMG': physDmg,
   };
 }
 
@@ -89,7 +80,7 @@ const CHAR_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3', 'B4'];
 const WEAPON_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3'];
 
 // ──────────── Character Talents ────────────
-// Each character has 2 talents. We use generic names since we don't have per-character talent data.
+
 const CHARACTER_TALENTS: Record<string, { name: string; type: string }[]> = {
   Laevatain: [{ name: 'Blazing Will', type: 'Character' }, { name: 'Flame Resonance', type: 'Character' }],
   Endministrator: [{ name: 'Essence Disintegration', type: 'Character' }, { name: 'Realspace Stasis', type: 'Character' }],
@@ -105,28 +96,26 @@ const DEFAULT_TALENTS = [{ name: 'Talent 1', type: 'Character' }, { name: 'Talen
 
 type TalentState = 'locked' | 'base' | 'upgrade';
 
-// ──────────── Equipment Substat Data ────────────
+// ──────────── Equipment Stats (derived from actual gear piece data) ────────────
 
-const EQUIPMENT_SUBSTATS: Record<string, { stat: string; base: number }[]> = {
-  Swordmancer: [{ stat: 'Agility', base: 87 }, { stat: 'Strength', base: 58 }, { stat: 'Arts Intensity', base: 21 }],
-  'Æthertech': [{ stat: 'Agility', base: 65 }, { stat: 'Strength', base: 43 }, { stat: 'Arts Intensity', base: 35 }],
-  'Type 50 Yinglung': [{ stat: 'Strength', base: 78 }, { stat: 'Will', base: 52 }, { stat: 'Physical DMG', base: 18 }],
-  LYNX: [{ stat: 'Agility', base: 72 }, { stat: 'Intellect', base: 48 }, { stat: 'Electric DMG', base: 23 }],
-  'Eternal Xiranite': [{ stat: 'Intellect', base: 82 }, { stat: 'Will', base: 55 }, { stat: 'Cryo DMG', base: 20 }],
-  'Tide Surge': [{ stat: 'Will', base: 76 }, { stat: 'Strength', base: 51 }, { stat: 'Nature DMG', base: 22 }],
-  'Hot Work': [{ stat: 'Strength', base: 84 }, { stat: 'Agility', base: 56 }, { stat: 'Heat DMG', base: 19 }],
-  Catastrophe: [{ stat: 'Agility', base: 52 }, { stat: 'Strength', base: 35 }, { stat: 'Physical DMG', base: 15 }],
-  'Mordvolt Insulation': [{ stat: 'Will', base: 42 }, { stat: 'Intellect', base: 28 }, { stat: 'Electric DMG', base: 12 }],
-  'Mordvolt Resistant': [{ stat: 'Strength', base: 45 }, { stat: 'Will', base: 30 }, { stat: 'Physical DMG', base: 13 }],
-  'Armored MSGR': [{ stat: 'Agility', base: 38 }, { stat: 'Strength', base: 25 }, { stat: 'Arts Intensity', base: 10 }],
-  'AIC Heavy': [{ stat: 'Strength', base: 28 }, { stat: 'Will', base: 19 }, { stat: 'Physical DMG', base: 8 }],
-};
+// Get stats for a specific gear piece by name
+function getGearPieceStats(pieceName: string): { stat: string; value: string }[] {
+  for (const set of GEAR_SETS) {
+    const piece = set.pieces.find(p => p.name === pieceName);
+    if (piece) return piece.stats.map(s => ({ stat: s.name, value: s.value }));
+  }
+  const standalone = STANDALONE_GEAR.find(p => p.name === pieceName);
+  if (standalone) return standalone.stats.map(s => ({ stat: s.name, value: s.value }));
+  return [];
+}
 
-function getSubstatValue(base: number, artificeLevel: number): string {
-  const multiplier = 1 + artificeLevel * 0.15;
-  const val = Math.round(base * multiplier);
-  const stat = base > 50 ? `+${val}` : `+${(val / 10).toFixed(1)}%`;
-  return stat;
+// Find gear piece object by name
+function findGearPieceByName(pieceName: string): GearPiece | null {
+  for (const set of GEAR_SETS) {
+    const piece = set.pieces.find(p => p.name === pieceName);
+    if (piece) return piece;
+  }
+  return STANDALONE_GEAR.find(p => p.name === pieceName) || null;
 }
 
 // ──────────── Showcase State Type ────────────
@@ -155,6 +144,8 @@ interface ShowcaseState {
   colorTheme: string;
 }
 
+const MAX_ACCOUNT_SAVES = 3;
+
 // ──────────── Character Picker Modal ────────────
 
 function CharacterPickerModal({
@@ -180,9 +171,9 @@ function CharacterPickerModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className="rios-modal-panel rios-modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="rios-modal-header">
           <h3 className="text-white font-bold text-base">Select Operator</h3>
           <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
         </div>
@@ -216,8 +207,8 @@ function CharacterPickerModal({
             ))}
           </div>
         </div>
-        <div className="p-4 overflow-y-auto flex-1">
-          <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-2">
+        <div className="rios-modal-body p-4">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2">
             {filtered.map(c => {
               const icon = CHARACTER_ICONS[c.Name];
               const isSelected = c.Name === currentName;
@@ -255,13 +246,13 @@ function WeaponPickerModal({
   const compatible = useMemo(() => WEAPONS.filter(w => w.WeaponType === weaponType), [weaponType]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-md max-h-[70vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className="rios-modal-panel rios-modal-md" onClick={e => e.stopPropagation()}>
+        <div className="rios-modal-header">
           <h3 className="text-white font-bold text-base">Select {weaponType}</h3>
           <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
         </div>
-        <div className="p-4 overflow-y-auto flex-1 space-y-1">
+        <div className="rios-modal-body p-4 space-y-1">
           {compatible.map(w => {
             const icon = WEAPON_ICONS[w.Name];
             const isSelected = w.Name === currentName;
@@ -289,69 +280,216 @@ function WeaponPickerModal({
   );
 }
 
-// ──────────── Equipment Picker Modal ────────────
+// ──────────── Equipment Picker Modal (Individual Pieces) ────────────
 
 function EquipmentPickerModal({
-  open, onClose, onSelect, slot, currentSet,
+  open, onClose, onSelect, slot, currentPieceName,
 }: {
-  open: boolean; onClose: () => void; onSelect: (setName: string) => void; slot: string; currentSet: string;
+  open: boolean; onClose: () => void; onSelect: (pieceName: string, setName: string) => void; slot: string; currentPieceName: string;
 }) {
+  const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState<string | null>(null);
+  const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
+
+  // Filter pieces by slot type (Body, Hand, EDC)
+  const slotType = slot.startsWith('EDC') ? 'EDC' : slot as 'Body' | 'Hand' | 'EDC';
+
+  const toggleSet = (name: string) => {
+    setExpandedSets(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
   if (!open) return null;
+
+  // Get filtered sets with their pieces matching slot type
+  const filteredSets = GEAR_SETS
+    .map(set => {
+      const matchingPieces = set.pieces.filter(piece => {
+        const pieceSlot = getPieceSlotType(piece);
+        if (pieceSlot !== slotType) return false;
+        if (search && !piece.name.toLowerCase().includes(search.toLowerCase()) && !set.name.toLowerCase().includes(search.toLowerCase())) return false;
+        if (tierFilter && piece.tier !== tierFilter) return false;
+        return true;
+      });
+      return { ...set, filteredPieces: matchingPieces };
+    })
+    .filter(set => set.filteredPieces.length > 0);
+
+  // Also get standalone pieces matching slot type
+  const filteredStandalone = STANDALONE_GEAR.filter(piece => {
+    const pieceSlot = getPieceSlotType(piece);
+    if (pieceSlot !== slotType) return false;
+    if (search && !piece.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (tierFilter && piece.tier !== tierFilter) return false;
+    return true;
+  });
+
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-sm max-h-[70vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h3 className="text-white font-bold text-base">Select {slot} Equipment</h3>
+    <div className="rios-modal-backdrop" onClick={onClose}>
+      <div className="rios-modal-panel rios-modal-md" onClick={e => e.stopPropagation()}>
+        <div className="rios-modal-header">
+          <div>
+            <h3 className="text-white font-bold text-base">Select {slot} Equipment</h3>
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Individual gear pieces with unique stats</p>
+          </div>
           <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
         </div>
-        <div className="p-4 overflow-y-auto flex-1 space-y-1">
-          <button onClick={() => { onSelect(''); onClose(); }}
-            className={`w-full flex items-center gap-3 p-2 border transition-colors ${!currentSet ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-text-secondary)]'}`}
+
+        {/* Search + Tier filter */}
+        <div className="p-3 border-b border-[var(--color-border)] space-y-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search gear pieces..."
+              className="w-full pl-8 pr-3 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
+          </div>
+          <div className="flex gap-1.5">
+            {['T4', 'T3', 'T2', 'T1'].map(t => (
+              <button key={t} onClick={() => setTierFilter(tierFilter === t ? null : t)}
+                className={`px-2.5 py-1 text-xs font-bold border transition-colors ${tierFilter === t ? '' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                style={tierFilter === t ? { borderColor: TIER_COLORS[t], color: TIER_COLORS[t], backgroundColor: TIER_COLORS[t] + '15' } : undefined}
+              >{t}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rios-modal-body p-3 space-y-1">
+          {/* None option */}
+          <button onClick={() => { onSelect('', ''); onClose(); }}
+            className={`w-full flex items-center gap-3 p-2 border transition-colors ${!currentPieceName ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-text-secondary)]'}`}
           >
-            <div className="w-12 h-12 bg-[var(--color-surface-2)] flex-shrink-0 flex items-center justify-center">
-              <X size={18} className="text-[var(--color-text-muted)]" />
+            <div className="w-10 h-10 bg-[var(--color-surface-2)] flex-shrink-0 flex items-center justify-center">
+              <X size={16} className="text-[var(--color-text-muted)]" />
             </div>
             <span className="text-sm text-[var(--color-text-muted)]">None</span>
           </button>
-          {EQUIPMENT_SETS.map(eq => {
-            const icon = EQUIPMENT_ICONS[eq.name];
-            const isSelected = eq.name === currentSet;
-            return (
-              <button key={eq.name} onClick={() => { onSelect(eq.name); onClose(); }}
-                className={`w-full flex items-center gap-3 p-2 border transition-colors ${isSelected ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-text-secondary)]'}`}
+
+          {/* Sets with individual pieces */}
+          {filteredSets.map(set => (
+            <div key={set.name} className="border border-[var(--color-border)]">
+              {/* Set header (clickable to expand/collapse) */}
+              <button onClick={() => toggleSet(set.name)}
+                className="w-full flex items-center gap-3 p-2 hover:bg-[var(--color-surface-2)] transition-colors"
               >
-                <div className="w-12 h-12 bg-[var(--color-surface-2)] flex-shrink-0 relative">
-                  {icon && <Image src={icon} alt={eq.name} fill className="object-contain p-0.5" sizes="48px" unoptimized />}
+                <div className="w-10 h-10 bg-[var(--color-surface-2)] flex-shrink-0 relative">
+                  {set.icon && <Image src={set.icon} alt={set.name} fill className="object-contain p-0.5" sizes="40px" unoptimized />}
                 </div>
-                <div className="text-left">
-                  <div className="text-sm text-white">{eq.name}</div>
-                  <div className="text-xs text-[var(--color-text-muted)]">{eq.tier}</div>
+                <div className="text-left flex-1 min-w-0">
+                  <div className="text-sm text-white font-semibold">{set.name}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] truncate" style={{ color: TIER_COLORS[set.filteredPieces[0]?.tier || 'T4'] }}>
+                    {set.filteredPieces[0]?.tier} &middot; {set.filteredPieces.length} {slotType.toLowerCase()} piece{set.filteredPieces.length !== 1 ? 's' : ''}
+                  </div>
                 </div>
+                <ChevronDown size={14} className={`text-[var(--color-text-muted)] transition-transform ${expandedSets[set.name] ? 'rotate-180' : ''}`} />
               </button>
-            );
-          })}
+
+              {/* Individual pieces */}
+              {expandedSets[set.name] && (
+                <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/30">
+                  {set.filteredPieces.map(piece => {
+                    const isSelected = piece.name === currentPieceName;
+                    return (
+                      <button key={piece.id} onClick={() => { onSelect(piece.name, set.name); onClose(); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 border-b border-[var(--color-border)]/50 last:border-b-0 transition-colors ${isSelected ? 'bg-[var(--color-accent)]/10' : 'hover:bg-[var(--color-surface-2)]'}`}
+                      >
+                        <div className="w-8 h-8 bg-[var(--color-surface)] flex-shrink-0 relative border" style={{ borderColor: isSelected ? 'var(--color-accent)' : TIER_COLORS[piece.tier] + '40' }}>
+                          {piece.icon && <Image src={piece.icon} alt={piece.name} fill className="object-contain p-0.5" sizes="32px" unoptimized />}
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="text-xs text-white truncate">{piece.name}</div>
+                          <div className="text-[9px] text-[var(--color-text-muted)] flex flex-wrap gap-x-2">
+                            {piece.stats.map((s, i) => (
+                              <span key={i}>{s.name} <span className="text-[var(--color-accent)]">{s.value}</span></span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-[9px] text-[var(--color-text-muted)] flex-shrink-0">DEF {piece.def}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Standalone pieces */}
+          {filteredStandalone.length > 0 && (
+            <div className="border border-[var(--color-border)]">
+              <button onClick={() => toggleSet('__standalone')}
+                className="w-full flex items-center gap-3 p-2 hover:bg-[var(--color-surface-2)] transition-colors"
+              >
+                <div className="w-10 h-10 bg-[var(--color-surface-2)] flex-shrink-0 flex items-center justify-center text-[var(--color-text-muted)]">
+                  <Star size={16} />
+                </div>
+                <div className="text-left flex-1">
+                  <div className="text-sm text-white font-semibold">Standalone Pieces</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)]">{filteredStandalone.length} piece{filteredStandalone.length !== 1 ? 's' : ''} (no set bonus)</div>
+                </div>
+                <ChevronDown size={14} className={`text-[var(--color-text-muted)] transition-transform ${expandedSets['__standalone'] ? 'rotate-180' : ''}`} />
+              </button>
+              {expandedSets['__standalone'] && (
+                <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/30">
+                  {filteredStandalone.map(piece => {
+                    const isSelected = piece.name === currentPieceName;
+                    return (
+                      <button key={piece.id} onClick={() => { onSelect(piece.name, ''); onClose(); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 border-b border-[var(--color-border)]/50 last:border-b-0 transition-colors ${isSelected ? 'bg-[var(--color-accent)]/10' : 'hover:bg-[var(--color-surface-2)]'}`}
+                      >
+                        <div className="w-8 h-8 bg-[var(--color-surface)] flex-shrink-0 relative border" style={{ borderColor: TIER_COLORS[piece.tier] + '40' }}>
+                          {piece.icon && <Image src={piece.icon} alt={piece.name} fill className="object-contain p-0.5" sizes="32px" unoptimized />}
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="text-xs text-white truncate">{piece.name}</div>
+                          <div className="text-[9px] text-[var(--color-text-muted)] flex flex-wrap gap-x-2">
+                            {piece.stats.map((s, i) => (
+                              <span key={i}>{s.name} <span className="text-[var(--color-accent)]">{s.value}</span></span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-[9px] flex-shrink-0" style={{ color: TIER_COLORS[piece.tier] }}>{piece.tier}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {filteredSets.length === 0 && filteredStandalone.length === 0 && (
+            <div className="text-center py-8 text-sm text-[var(--color-text-muted)]">No {slotType.toLowerCase()} pieces found</div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+// ──────────── Form Section ────────────
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-[var(--color-border)] bg-[var(--color-surface)]/80">
+      <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]/50">
+        <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider">{title}</h3>
+      </div>
+      <div className="p-3 space-y-2.5">{children}</div>
+    </div>
+  );
+}
+
 // ──────────── Main Page ────────────
 
-const inputClass = "w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]";
-const sectionClass = "bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 space-y-3 shadow-[var(--shadow-card)]";
+const inputClass = "w-full px-3 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)] transition-colors";
 
 export default function CharacterCardPage() {
-  // Character - Pre-load Laevatain
-  const [selectedCharName, setSelectedCharName] = useState('Laevatain');
+  // Character
+  const [selectedCharName, setSelectedCharName] = useState('Endministrator');
   const [charPickerOpen, setCharPickerOpen] = useState(false);
   const [level, setLevel] = useState(80);
   const [potential, setPotential] = useState(0);
-  const [affinity, setAffinity] = useState(5);
+  const [affinity, setAffinity] = useState(0);
   const [charBreakthrough, setCharBreakthrough] = useState(3);
 
-  // Weapon - Pre-load Forgeborn Scathe
-  const [selectedWeaponName, setSelectedWeaponName] = useState('Forgeborn Scathe');
+  // Weapon
+  const [selectedWeaponName, setSelectedWeaponName] = useState('');
   const [weaponPickerOpen, setWeaponPickerOpen] = useState(false);
   const [weaponLevel, setWeaponLevel] = useState(80);
   const [weaponBreakthrough, setWeaponBreakthrough] = useState(3);
@@ -364,17 +502,17 @@ export default function CharacterCardPage() {
   const [userCode, setUserCode] = useState('');
   const [server, setServer] = useState('');
 
-  // Skills - Pre-loaded values
-  const [skillLevels, setSkillLevels] = useState({ basic: 10, normal: 10, combo: 8, ultimate: 10 });
+  // Skills
+  const [skillLevels, setSkillLevels] = useState({ basic: 1, normal: 1, combo: 1, ultimate: 1 });
 
   // Talents
   const [talentStates, setTalentStates] = useState<TalentState[]>(['locked', 'locked']);
 
-  // Equipment - Pre-load Swordmancer set
-  const defaultEquip: EquipmentSlotState = { setName: '', artifice: 0, substat1: '', substat2: '', substat3: '' };
-  const [equipBody, setEquipBody] = useState<EquipmentSlotState>({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
-  const [equipHand, setEquipHand] = useState<EquipmentSlotState>({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
-  const [equipEdc1, setEquipEdc1] = useState<EquipmentSlotState>({ setName: 'Swordmancer', artifice: 2, substat1: '', substat2: '', substat3: '' });
+  // Equipment
+  const defaultEquip: EquipmentSlotState = { setName: '', pieceName: '', artifice: 0, substat1: '', substat2: '', substat3: '' };
+  const [equipBody, setEquipBody] = useState<EquipmentSlotState>({ ...defaultEquip });
+  const [equipHand, setEquipHand] = useState<EquipmentSlotState>({ ...defaultEquip });
+  const [equipEdc1, setEquipEdc1] = useState<EquipmentSlotState>({ ...defaultEquip });
   const [equipEdc2, setEquipEdc2] = useState<EquipmentSlotState>({ ...defaultEquip });
   const [equipPickerSlot, setEquipPickerSlot] = useState<string | null>(null);
 
@@ -383,10 +521,11 @@ export default function CharacterCardPage() {
 
   // Export
   const [isExporting, setIsExporting] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Save/Load
+  // Account-linked saves
+  const { user } = useAuthStore();
+  const [activeSlot, setActiveSlot] = useState(0);
   const [saveMessage, setSaveMessage] = useState('');
 
   // Preview scaling
@@ -397,7 +536,7 @@ export default function CharacterCardPage() {
     const updateScale = () => {
       if (previewContainerRef.current) {
         const containerWidth = previewContainerRef.current.offsetWidth;
-        setPreviewScale(containerWidth / 1200);
+        setPreviewScale(Math.min(containerWidth / 1200, 1));
       }
     };
     updateScale();
@@ -417,36 +556,61 @@ export default function CharacterCardPage() {
 
   const stats = character ? computeStats(character, level, potential) : null;
 
-  // Weapon data from detailed weapons database
   const weaponData = weapon ? WEAPON_DATA.find(w => w.Name === weapon.Name) : null;
   const weaponEssence = weapon ? WEAPON_ESSENCES.find(e => e.name === weapon.Name) : null;
-
-  // Talents for current character
   const talents = CHARACTER_TALENTS[selectedCharName] || DEFAULT_TALENTS;
 
-  // Save showcase to localStorage
-  const saveShowcase = useCallback(() => {
-    const state: ShowcaseState = {
-      name: showcaseName || `${selectedCharName} Build`,
-      charName: selectedCharName, level, potential, affinity, charBreakthrough,
-      weaponName: selectedWeaponName, weaponLevel, weaponBreakthrough, weaponPotential, essenceLevels,
-      username, userCode, server, skillLevels,
-      equipBody, equipHand, equipEdc1, equipEdc2,
-      talentStates, colorTheme,
-    };
-    const saves = JSON.parse(localStorage.getItem('zs-showcases') || '[]');
-    saves.push({ ...state, savedAt: new Date().toISOString() });
-    localStorage.setItem('zs-showcases', JSON.stringify(saves));
-    setSaveMessage('Saved!');
-    setTimeout(() => setSaveMessage(''), 2000);
-  }, [showcaseName, selectedCharName, level, potential, affinity, charBreakthrough, selectedWeaponName, weaponLevel, weaponBreakthrough, weaponPotential, essenceLevels, username, userCode, server, skillLevels, equipBody, equipHand, equipEdc1, equipEdc2, talentStates, colorTheme]);
+  const equippedSets = [equipBody, equipHand, equipEdc1, equipEdc2].filter(e => e.pieceName);
 
-  // Load showcase from localStorage
-  const loadShowcase = useCallback((state: ShowcaseState) => {
+  // ──────────── Save/Load (Account-linked) ────────────
+
+  const getSaveKey = useCallback(() => {
+    if (user) return `zs-showcases-${user.id}`;
+    return 'zs-showcases-local';
+  }, [user]);
+
+  const getAccountSaves = useCallback((): (ShowcaseState | null)[] => {
+    try {
+      const raw = localStorage.getItem(getSaveKey());
+      if (!raw) return [null, null, null];
+      const parsed = JSON.parse(raw);
+      while (parsed.length < MAX_ACCOUNT_SAVES) parsed.push(null);
+      return parsed.slice(0, MAX_ACCOUNT_SAVES);
+    } catch { return [null, null, null]; }
+  }, [getSaveKey]);
+
+  const [accountSaves, setAccountSaves] = useState<(ShowcaseState | null)[]>([null, null, null]);
+
+  useEffect(() => {
+    setAccountSaves(getAccountSaves());
+  }, [getAccountSaves]);
+
+  const buildState = useCallback((): ShowcaseState => ({
+    name: showcaseName || `${selectedCharName} Build`,
+    charName: selectedCharName, level, potential, affinity, charBreakthrough,
+    weaponName: selectedWeaponName, weaponLevel, weaponBreakthrough, weaponPotential, essenceLevels,
+    username, userCode, server, skillLevels,
+    equipBody, equipHand, equipEdc1, equipEdc2,
+    talentStates, colorTheme,
+  }), [showcaseName, selectedCharName, level, potential, affinity, charBreakthrough, selectedWeaponName, weaponLevel, weaponBreakthrough, weaponPotential, essenceLevels, username, userCode, server, skillLevels, equipBody, equipHand, equipEdc1, equipEdc2, talentStates, colorTheme]);
+
+  const saveToSlot = useCallback((slot: number) => {
+    const saves = getAccountSaves();
+    saves[slot] = buildState();
+    localStorage.setItem(getSaveKey(), JSON.stringify(saves));
+    setAccountSaves([...saves]);
+    setSaveMessage(`Saved to Slot ${slot + 1}`);
+    setTimeout(() => setSaveMessage(''), 2000);
+  }, [getAccountSaves, buildState, getSaveKey]);
+
+  const loadFromSlot = useCallback((slot: number) => {
+    const saves = getAccountSaves();
+    const state = saves[slot];
+    if (!state) return;
     setSelectedCharName(state.charName);
     setLevel(state.level);
     setPotential(state.potential);
-    setAffinity(state.affinity);
+    setAffinity(state.affinity ?? 0);
     setCharBreakthrough(state.charBreakthrough || 0);
     setSelectedWeaponName(state.weaponName);
     setWeaponLevel(state.weaponLevel);
@@ -464,50 +628,30 @@ export default function CharacterCardPage() {
     setEquipEdc2(state.equipEdc2);
     setTalentStates(state.talentStates || ['locked', 'locked']);
     setColorTheme(state.colorTheme);
-  }, []);
+    setActiveSlot(slot);
+  }, [getAccountSaves]);
 
-  // Reset to new
+  const deleteSlot = useCallback((slot: number) => {
+    const saves = getAccountSaves();
+    saves[slot] = null;
+    localStorage.setItem(getSaveKey(), JSON.stringify(saves));
+    setAccountSaves([...saves]);
+  }, [getAccountSaves, getSaveKey]);
+
   const resetShowcase = useCallback(() => {
-    setSelectedCharName('Laevatain');
-    setLevel(80);
-    setPotential(0);
-    setAffinity(5);
-    setCharBreakthrough(3);
-    setSelectedWeaponName('Forgeborn Scathe');
-    setWeaponLevel(80);
-    setWeaponBreakthrough(3);
-    setWeaponPotential(0);
-    setEssenceLevels([3, 2, 1]);
-    setShowcaseName('');
-    setUsername('');
-    setUserCode('');
-    setServer('');
-    setSkillLevels({ basic: 10, normal: 10, combo: 8, ultimate: 10 });
-    setEquipBody({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
-    setEquipHand({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
-    setEquipEdc1({ setName: 'Swordmancer', artifice: 2, substat1: '', substat2: '', substat3: '' });
-    setEquipEdc2({ setName: '', artifice: 0, substat1: '', substat2: '', substat3: '' });
-    setTalentStates(['locked', 'locked']);
-    setColorTheme('auto');
+    setSelectedCharName('Endministrator');
+    setLevel(80); setPotential(0); setAffinity(0); setCharBreakthrough(3);
+    setSelectedWeaponName(''); setWeaponLevel(80); setWeaponBreakthrough(3);
+    setWeaponPotential(0); setEssenceLevels([3, 2, 1]);
+    setShowcaseName(''); setUsername(''); setUserCode(''); setServer('');
+    setSkillLevels({ basic: 1, normal: 1, combo: 1, ultimate: 1 });
+    setEquipBody({ ...defaultEquip }); setEquipHand({ ...defaultEquip });
+    setEquipEdc1({ ...defaultEquip }); setEquipEdc2({ ...defaultEquip });
+    setTalentStates(['locked', 'locked']); setColorTheme('auto');
   }, []);
 
-  // Load saved showcases list
-  const [showLoadModal, setShowLoadModal] = useState(false);
-  const savedShowcases: (ShowcaseState & { savedAt: string })[] = useMemo(() => {
-    if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem('zs-showcases') || '[]'); } catch { return []; }
-  }, [showLoadModal]); // re-read when modal opens
+  // ──────────── Export with Watermark ────────────
 
-  const equipSlots = [
-    { label: 'Body', state: equipBody, setter: setEquipBody },
-    { label: 'Hand', state: equipHand, setter: setEquipHand },
-    { label: 'EDC 1', state: equipEdc1, setter: setEquipEdc1 },
-    { label: 'EDC 2', state: equipEdc2, setter: setEquipEdc2 },
-  ];
-
-  const currentEquipPickerState = equipSlots.find(s => s.label === equipPickerSlot);
-
-  // Export functions
   const downloadCard = async (format: 'png' | 'jpg' = 'png') => {
     if (!cardRef.current) return;
     setIsExporting(true);
@@ -524,420 +668,655 @@ export default function CharacterCardPage() {
     setIsExporting(false);
   };
 
-  const exportCard = useCallback(async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
+  const copyToClipboard = async () => {
+    if (!cardRef.current) return;
     setIsExporting(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null, scale: 2, useCORS: true, allowTaint: true, logging: false,
       });
-      return new Promise((resolve) => {
-        canvas.toBlob((blob) => { resolve(blob); setIsExporting(false); }, 'image/png');
-      });
-    } catch { setIsExporting(false); return null; }
-  }, []);
-
-  const copyToClipboard = async () => {
-    const blob = await exportCard();
-    if (!blob) return;
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      alert('Card copied to clipboard!');
-    } catch { alert('Clipboard copy not supported. Use download instead.'); }
-    setShowShareMenu(false);
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            setSaveMessage('Copied!');
+            setTimeout(() => setSaveMessage(''), 2000);
+          } catch { /* ignore */ }
+        }
+        setIsExporting(false);
+      }, 'image/png');
+    } catch { setIsExporting(false); }
   };
 
-  const shareToTwitter = () => {
-    const text = showcaseName
-      ? `${showcaseName} - ${character?.Name} Showcase | Made with Zero Sanity`
-      : `Check out my ${character?.Name} build! Made with Zero Sanity`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://zerosanity.app/character-card')}`, '_blank');
-    setShowShareMenu(false);
-  };
+  const equipSlots = [
+    { label: 'Body', state: equipBody, setter: setEquipBody },
+    { label: 'Hand', state: equipHand, setter: setEquipHand },
+    { label: 'EDC 1', state: equipEdc1, setter: setEquipEdc1 },
+    { label: 'EDC 2', state: equipEdc2, setter: setEquipEdc2 },
+  ];
 
-  const shareToReddit = () => {
-    window.open(`https://reddit.com/submit?title=${encodeURIComponent(`${character?.Name} Showcase - Zero Sanity`)}&url=${encodeURIComponent('https://zerosanity.app/character-card')}`, '_blank');
-    setShowShareMenu(false);
-  };
+  const currentEquipPickerState = equipSlots.find(s => s.label === equipPickerSlot);
 
-  const equippedSets = [equipBody, equipHand, equipEdc1, equipEdc2].filter(e => e.setName);
+  // ──────────── RENDER ────────────
 
   return (
-    <div className="text-[var(--color-text-secondary)]">
-      <RIOSHeader title="Operator Showcase Creator" category="MEDIA" code="RIOS-CARD-001" icon={<Sparkles size={28} />}
-        subtitle="Create and share beautiful character showcase cards" />
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 lg:-mt-8" style={{ minHeight: 'calc(100vh - 28px)' }}>
+      {/* Full-width two-column layout */}
+      <div className="flex flex-col lg:flex-row" style={{ height: 'calc(100vh - 28px)' }}>
 
-      <div className="flex flex-col xl:flex-row gap-6 items-start">
-        {/* ═══════ LEFT: Card Preview ═══════ */}
-        <div className="order-2 xl:order-1 flex-1 min-w-0">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 shadow-[var(--shadow-card)]">
-            <h2 className="text-sm font-bold text-white mb-4">Card Preview</h2>
+        {/* ═══════ LEFT COLUMN: Form Controls (scrollable) ═══════ */}
+        <div className="w-full lg:w-[420px] xl:w-[460px] lg:flex-shrink-0 lg:overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface)]/30"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--color-border) transparent' }}>
+          <div className="p-3 sm:p-4 space-y-3">
 
-            {character && stats ? (
-              <div ref={previewContainerRef} style={{ width: '100%', overflow: 'hidden' }}>
-                <div
-                  ref={cardRef}
-                  style={{
-                    width: '1200px',
-                    height: '675px',
-                    transformOrigin: 'top left',
-                    transform: `scale(${previewScale})`,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    background: '#0a0e14',
-                  }}
-                >
-                  {/* ── Background: Character Art Zone (Left 0-700px) ── */}
-                  <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    width: '700px',
-                    height: '675px',
-                    overflow: 'hidden',
-                  }}>
-                    {splashUrl && (
-                      <img
-                        src={splashUrl}
-                        alt={character.Name}
-                        crossOrigin="anonymous"
-                        style={{
-                          position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          objectPosition: 'center',
-                        }}
-                      />
-                    )}
-                    {/* Bottom gradient fade */}
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: '200px',
-                      background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`,
-                    }} />
-                    {/* Right gradient fade to data panel */}
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      bottom: 0,
-                      width: '150px',
-                      background: `linear-gradient(to right, transparent 0%, ${theme.bg} 100%)`,
-                    }} />
-                    {/* Element glow around art area */}
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      boxShadow: `inset 0 0 80px ${theme.glow}`,
-                      pointerEvents: 'none',
-                    }} />
-                  </div>
+            {/* Page Title */}
+            <div className="flex items-center gap-3 pb-3 border-b border-[var(--color-border)]">
+              <div className="w-8 h-8 bg-[var(--color-accent)] flex items-center justify-center" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}>
+                <Sparkles size={14} className="text-black" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-white leading-tight" style={{ fontFamily: 'Rajdhani, sans-serif' }}>Operator Showcase</h1>
+                <p className="text-[10px] text-[var(--color-text-muted)] tracking-wider uppercase" style={{ fontFamily: 'Share Tech Mono, monospace' }}>RIOS-CARD-001 // Character Card Creator</p>
+              </div>
+            </div>
 
-                  {/* ── Top accent line ── */}
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '3px',
-                    background: theme.primary,
-                    zIndex: 30,
-                  }} />
+            {/* Save Slots (Account-linked) */}
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)]/80">
+              <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]/50 flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider">
+                  {user ? `${user.username}'s Cards` : 'Local Saves'}
+                </h3>
+                <span className="text-[10px] text-[var(--color-text-muted)]">
+                  {user ? <span className="flex items-center gap-1"><User size={10} /> Synced</span> : 'Sign in to sync'}
+                </span>
+              </div>
+              <div className="p-2 space-y-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[0, 1, 2].map(slot => {
+                    const save = accountSaves[slot];
+                    const isActive = activeSlot === slot;
+                    return (
+                      <div key={slot} className={`relative border p-2 transition-all cursor-pointer group ${isActive ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5' : 'border-[var(--color-border)] hover:border-[var(--color-text-muted)]'}`}>
+                        <div className="text-[10px] text-[var(--color-text-muted)] mb-0.5">Slot {slot + 1}</div>
+                        {save ? (
+                          <>
+                            <div className="text-xs text-white font-semibold truncate">{save.charName}</div>
+                            <div className="text-[10px] text-[var(--color-text-muted)]">Lv.{save.level}</div>
+                            <div className="flex gap-1 mt-1">
+                              <button onClick={(e) => { e.stopPropagation(); loadFromSlot(slot); }}
+                                className="flex-1 text-[9px] py-0.5 border border-[var(--color-border)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10">Load</button>
+                              <button onClick={(e) => { e.stopPropagation(); deleteSlot(slot); }}
+                                className="px-1 py-0.5 border border-[var(--color-border)] text-red-400/60 hover:text-red-400 hover:border-red-400/30"><Trash2 size={9} /></button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-[10px] text-[var(--color-text-muted)]/50 italic">Empty</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-1.5">
+                  <button onClick={() => saveToSlot(activeSlot)}
+                    className="flex-1 py-1.5 bg-[var(--color-accent)] text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity">
+                    <Save size={12} /> {saveMessage || `Save to Slot ${activeSlot + 1}`}
+                  </button>
+                  <button onClick={resetShowcase}
+                    className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs hover:border-[var(--color-accent)] flex items-center gap-1">
+                    <FilePlus2 size={12} /> New
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                  {/* ── Right Side: Data Dossier Panel (680-1200px) ── */}
-                  <div style={{
-                    position: 'absolute',
-                    left: '680px',
-                    top: 0,
-                    width: '520px',
-                    height: '675px',
-                    background: 'rgba(10, 14, 20, 0.92)',
-                    borderLeft: `3px solid ${theme.primary}`,
-                    padding: '30px 24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    zIndex: 10,
-                  }}>
-                    {/* Scanline overlay */}
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
-                      pointerEvents: 'none',
-                    }} />
+            {/* Showcase Name */}
+            <FormSection title="Showcase Name">
+              <input type="text" value={showcaseName} onChange={e => setShowcaseName(e.target.value)}
+                placeholder="Enter showcase name" className={inputClass} />
+            </FormSection>
 
-                    {/* Grid pattern */}
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      backgroundImage: `linear-gradient(${theme.primary}15 1px, transparent 1px), linear-gradient(90deg, ${theme.primary}15 1px, transparent 1px)`,
-                      backgroundSize: '20px 20px',
-                      opacity: 0.3,
-                      pointerEvents: 'none',
-                    }} />
+            {/* User Info */}
+            <FormSection title="User Information">
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Username</label>
+                <input type="text" value={username} onChange={e => setUsername(e.target.value)}
+                  placeholder="Enter your username" className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">User Code</label>
+                <input type="text" value={userCode} onChange={e => setUserCode(e.target.value)}
+                  placeholder="Enter your in-game user ID" className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Server</label>
+                <select value={server} onChange={e => setServer(e.target.value)} className={inputClass}>
+                  <option value="">Select server region</option>
+                  <option value="Americas/Europe">Americas/Europe</option>
+                  <option value="Asia">Asia</option>
+                  <option value="China">China</option>
+                </select>
+              </div>
+            </FormSection>
 
-                    {/* Content */}
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                      {/* Top: OPERATOR FILE label */}
-                      <div style={{
-                        fontFamily: 'Share Tech Mono, monospace',
-                        fontSize: '10px',
-                        letterSpacing: '2px',
-                        color: theme.accent,
-                        marginBottom: '8px',
-                      }}>OPERATOR FILE</div>
-
-                      {/* Character name */}
-                      <h1 style={{
-                        fontFamily: 'Rajdhani, sans-serif',
-                        fontSize: '40px',
-                        fontWeight: 700,
-                        color: '#ffffff',
-                        textTransform: 'uppercase',
-                        lineHeight: '1',
-                        marginBottom: '8px',
-                      }}>{character.Name}</h1>
-
-                      {/* Rarity stars */}
-                      <div style={{ marginBottom: '12px' }}>
+            {/* Character */}
+            <FormSection title="Character">
+              <button onClick={() => setCharPickerOpen(true)}
+                className="w-full flex items-center gap-3 p-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
+              >
+                {character ? (
+                  <>
+                    <div className="w-12 h-12 bg-[var(--color-surface-2)] relative flex-shrink-0">
+                      {iconUrl && <Image src={iconUrl} alt={character.Name} fill className="object-cover" sizes="48px" unoptimized />}
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="flex items-center gap-0.5">
                         {Array.from({ length: character.Rarity }).map((_, i) => (
-                          <span key={i} style={{ color: theme.primary, fontSize: '14px' }}>★</span>
+                          <Star key={i} size={10} className="fill-current" style={{ color: RARITY_COLORS[character.Rarity] }} />
                         ))}
                       </div>
+                      <div className="text-sm text-white font-semibold">{character.Name}</div>
+                      <div className="text-[10px] text-[var(--color-text-muted)]">Click to change</div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-[var(--color-text-muted)] py-2">Click to select a character...</div>
+                )}
+                <ChevronDown size={16} className="text-[var(--color-text-muted)]" />
+              </button>
 
-                      {/* Divider line */}
-                      <div style={{
-                        height: '1px',
-                        background: `linear-gradient(to right, ${theme.primary} 0%, transparent 100%)`,
-                        marginBottom: '16px',
-                      }} />
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Character Level</label>
+                <select value={level} onChange={e => setLevel(Number(e.target.value))} className={inputClass}>
+                  {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
+                    <option key={lv} value={lv}>Lv. {lv}</option>
+                  ))}
+                </select>
+              </div>
 
-                      {/* Element + Role badges */}
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                        <div style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          padding: '6px 12px',
-                          background: ELEMENT_COLORS[character.Element] + '30',
-                          border: `1px solid ${ELEMENT_COLORS[character.Element]}`,
-                        }}>
-                          <span style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            color: ELEMENT_COLORS[character.Element],
-                            textTransform: 'uppercase',
-                          }}>{character.Element}</span>
-                        </div>
-                        <div style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '6px 12px',
-                          background: 'rgba(255,255,255,0.1)',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                        }}>
-                          {roleIconUrl && (
-                            <img src={roleIconUrl} alt={character.Role} crossOrigin="anonymous" style={{ width: '14px', height: '14px' }} />
-                          )}
-                          <span style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            color: '#ffffff',
-                          }}>{character.Role}</span>
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Breakthrough - {CHAR_BREAKTHROUGH_LABELS[charBreakthrough]}</label>
+                <div className="flex gap-0.5">
+                  {CHAR_BREAKTHROUGH_LABELS.map((label, i) => (
+                    <button key={i} onClick={() => setCharBreakthrough(i)}
+                      className={`flex-1 py-1 text-[10px] font-bold border transition-all ${i <= charBreakthrough ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Potential (Dupes)</label>
+                <div className="flex gap-0.5">
+                  {[0, 1, 2, 3, 4, 5, 6].map(p => (
+                    <button key={p} onClick={() => setPotential(p)}
+                      className={`flex-1 py-1 text-[10px] font-bold border transition-colors ${potential === p ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                    >{p}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Affinity Lv.{affinity}</label>
+                <div className="flex gap-0.5">
+                  {[0, 1, 2, 3, 4].map(a => (
+                    <button key={a} onClick={() => setAffinity(a)}
+                      className={`flex-1 py-1 text-[10px] font-bold border transition-colors ${affinity === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                    >{a}</button>
+                  ))}
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Weapon */}
+            {character && (
+              <FormSection title="Weapon">
+                <button onClick={() => setWeaponPickerOpen(true)}
+                  className="w-full flex items-center gap-3 p-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
+                >
+                  {weapon ? (
+                    <>
+                      <div className="w-10 h-10 bg-[var(--color-surface-2)] relative flex-shrink-0">
+                        {weaponIconUrl && <Image src={weaponIconUrl} alt={weapon.Name} fill className="object-contain p-0.5" sizes="40px" unoptimized />}
+                      </div>
+                      <div className="text-left flex-1">
+                        <div className="text-xs text-white">{weapon.Name}</div>
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: weapon.Rarity }).map((_, i) => (
+                            <Star key={i} size={8} className="fill-current" style={{ color: RARITY_COLORS[weapon.Rarity] || '#888' }} />
+                          ))}
                         </div>
                       </div>
-
-                      {/* Level + Breakthrough display */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                        <div style={{
-                          display: 'inline-block',
-                          padding: '8px 16px',
-                          background: 'rgba(0,0,0,0.5)',
-                          border: `2px solid ${theme.primary}`,
-                        }}>
-                          <span style={{
-                            fontFamily: 'Rajdhani, sans-serif',
-                            fontSize: '12px',
-                            color: theme.accent,
-                            marginRight: '6px',
-                          }}>LV</span>
-                          <span style={{
-                            fontFamily: 'Rajdhani, sans-serif',
-                            fontSize: '32px',
-                            fontWeight: 700,
-                            color: '#ffffff',
-                          }}>{level}</span>
+                    </>
+                  ) : (
+                    <div className="text-xs text-[var(--color-text-muted)] py-1">Click to select weapon...</div>
+                  )}
+                  <ChevronDown size={14} className="text-[var(--color-text-muted)]" />
+                </button>
+                {weapon && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Weapon Lv</label>
+                        <select value={weaponLevel} onChange={e => setWeaponLevel(Number(e.target.value))} className={inputClass}>
+                          {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
+                            <option key={lv} value={lv}>Lv. {lv}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Potential</label>
+                        <div className="flex gap-0.5">
+                          {[0, 1, 2, 3, 4, 5].map(p => (
+                            <button key={p} onClick={() => setWeaponPotential(p)}
+                              className={`flex-1 py-1 text-[10px] font-bold border transition-colors ${weaponPotential === p ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                            >{p}</button>
+                          ))}
                         </div>
-                        {charBreakthrough > 0 && (
-                          <div style={{ display: 'flex', gap: '3px' }}>
-                            {Array.from({ length: charBreakthrough }).map((_, i) => (
-                              <span key={i} style={{ color: theme.primary, fontSize: '14px' }}>✦</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold mb-0.5 text-[var(--color-text-muted)] uppercase">Breakthrough</label>
+                      <div className="flex gap-0.5">
+                        {WEAPON_BREAKTHROUGH_LABELS.map((_, i) => (
+                          <button key={i} onClick={() => setWeaponBreakthrough(i)}
+                            className={`flex-1 py-1 text-[10px] font-bold border transition-all ${i <= weaponBreakthrough ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                          >B{i}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {weaponEssence && (
+                      <div className="space-y-1.5 pt-1.5 border-t border-[var(--color-border)]">
+                        <label className="block text-[10px] font-bold text-[var(--color-text-muted)] uppercase">Essence Bonuses</label>
+                        {[
+                          { label: weaponEssence.primaryAttr },
+                          { label: weaponEssence.secondaryStat || 'Secondary' },
+                          { label: weaponData?.SkillName?.split(':')[0] || weaponEssence.skillStat },
+                        ].map((ess, idx) => (
+                          <div key={idx}>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[200px]">{ess.label}</span>
+                              <span className="text-[10px] text-[var(--color-accent)]">Lv. {essenceLevels[idx]}</span>
+                            </div>
+                            <div className="flex gap-px">
+                              {Array.from({ length: 9 }).map((_, i) => (
+                                <button key={i} onClick={() => setEssenceLevels(prev => { const n = [...prev]; n[idx] = i + 1; return n; })}
+                                  className={`flex-1 h-2.5 border transition-colors ${i < essenceLevels[idx] ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </FormSection>
+            )}
+
+            {/* Equipment */}
+            {character && (
+              <FormSection title="Equipment">
+                {equipSlots.map(({ label, state, setter }) => {
+                  const piece = state.pieceName ? findGearPieceByName(state.pieceName) : null;
+                  const pieceStats = state.pieceName ? getGearPieceStats(state.pieceName) : [];
+                  return (
+                    <div key={label} className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase w-10">{label}</span>
+                        <button onClick={() => setEquipPickerSlot(label)}
+                          className="flex-1 flex items-center gap-2 py-1 px-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
+                        >
+                          {state.pieceName && piece ? (
+                            <>
+                              <div className="w-7 h-7 bg-[var(--color-surface-2)] relative flex-shrink-0" style={{ borderLeft: `2px solid ${TIER_COLORS[piece.tier]}` }}>
+                                {piece.icon && (
+                                  <Image src={piece.icon} alt={piece.name} fill className="object-contain p-0.5" sizes="28px" unoptimized />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <span className="text-[10px] text-white truncate block">{piece.name}</span>
+                                {state.setName && <span className="text-[8px] text-[var(--color-text-muted)]">{state.setName}</span>}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-[10px] text-[var(--color-text-muted)]">None</span>
+                          )}
+                        </button>
+                        {state.pieceName && (
+                          <div className="flex gap-px">
+                            {[0, 1, 2, 3].map(a => (
+                              <button key={a} onClick={() => setter({ ...state, artifice: a })}
+                                className={`w-6 h-6 text-[9px] font-bold border transition-colors ${state.artifice >= a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                              >+{a}</button>
                             ))}
                           </div>
                         )}
-                        {potential > 0 && (
-                          <span style={{ fontFamily: 'Share Tech Mono, monospace', fontSize: '11px', color: theme.accent }}>P{potential}</span>
-                        )}
                       </div>
-
-                      {/* Core attributes: 2x2 grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                        {[
-                          { label: 'STR', value: stats.STR, icon: STAT_ICONS.Strength },
-                          { label: 'AGI', value: stats.AGI, icon: STAT_ICONS.Agility },
-                          { label: 'INT', value: stats.INT, icon: STAT_ICONS.Intellect },
-                          { label: 'WILL', value: stats.WILL, icon: STAT_ICONS.Will },
-                        ].map(attr => (
-                          <div key={attr.label} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px 12px',
-                            background: 'rgba(0,0,0,0.4)',
-                            border: `1px solid ${theme.primary}30`,
-                          }}>
-                            <img src={attr.icon} alt={attr.label} crossOrigin="anonymous" style={{ width: '20px', height: '20px' }} />
-                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{attr.label}</span>
-                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginLeft: 'auto' }}>{attr.value}</span>
+                      {state.pieceName && pieceStats.length > 0 && (
+                        <div className="ml-10 pl-2 border-l border-[var(--color-border)]">
+                          <div className="flex items-center justify-between py-px">
+                            <span className="text-[8px] text-[var(--color-text-muted)]">DEF</span>
+                            <span className="text-[9px] text-white">{piece?.def || 0}</span>
                           </div>
+                          {pieceStats.map((sub, si) => (
+                            <div key={si} className="flex items-center justify-between py-px">
+                              <span className="text-[9px] text-[var(--color-text-muted)]">{sub.stat}</span>
+                              <span className="text-[9px] text-[var(--color-accent)]">{sub.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </FormSection>
+            )}
+
+            {/* Skill Levels */}
+            {character && (
+              <FormSection title="Skill Levels">
+                {SKILL_TYPES.map(skill => {
+                  const currentLv = skillLevels[skill.key as keyof typeof skillLevels];
+                  const Icon = skill.icon;
+                  return (
+                    <div key={skill.key}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-[var(--color-text-muted)] flex items-center gap-1.5">
+                          <Icon size={11} className="text-[var(--color-accent)]" /> {skill.label}
+                        </span>
+                        <span className="text-[10px] text-[var(--color-accent)] font-bold">Lv. {currentLv}</span>
+                      </div>
+                      <div className="flex gap-px">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(lv => (
+                          <button key={lv} onClick={() => setSkillLevels(prev => ({ ...prev, [skill.key]: lv }))}
+                            className={`flex-1 h-5 text-[8px] font-bold border transition-colors ${currentLv >= lv ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                          >{lv}</button>
                         ))}
                       </div>
+                    </div>
+                  );
+                })}
+              </FormSection>
+            )}
 
-                      {/* Combat stats: HP/ATK/DEF in a row */}
-                      <div style={{ marginBottom: '16px' }}>
+            {/* Talent Levels */}
+            {character && (
+              <FormSection title="Talent Levels">
+                {talents.map((talent, idx) => (
+                  <div key={idx}>
+                    <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">{talent.name} <span className="text-[var(--color-text-muted)]/60">({talent.type})</span></label>
+                    <div className="flex gap-0.5">
+                      {([
+                        { key: 'locked' as TalentState, label: 'Locked' },
+                        { key: 'base' as TalentState, label: 'Base (α)' },
+                        { key: 'upgrade' as TalentState, label: 'Upgrade (β)' },
+                      ]).map(opt => (
+                        <button key={opt.key} onClick={() => setTalentStates(prev => { const n = [...prev]; n[idx] = opt.key; return n; })}
+                          className={`flex-1 py-1 text-[10px] font-bold border transition-colors ${talentStates[idx] === opt.key ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                        >{opt.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </FormSection>
+            )}
+
+            {/* Color Theme */}
+            <FormSection title="Customization">
+              <div>
+                <label className="block text-[10px] font-bold mb-1 text-[var(--color-text-muted)] uppercase">Color Theme</label>
+                <div className="flex flex-wrap gap-1">
+                  <button onClick={() => setColorTheme('auto')}
+                    className={`px-2 py-1 text-[10px] font-bold border transition-colors ${colorTheme === 'auto' ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+                  >Auto</button>
+                  {Object.entries(THEME_COLORS).map(([name, t]) => (
+                    <button key={name} onClick={() => setColorTheme(name)}
+                      className={`px-2 py-1 text-[10px] font-bold border transition-colors ${colorTheme === name ? '' : 'border-[var(--color-border)]'}`}
+                      style={colorTheme === name ? { borderColor: t.primary, color: t.primary, backgroundColor: t.primary + '15' } : { color: t.primary + '99' }}
+                    >{name}</button>
+                  ))}
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Export Actions */}
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-3 space-y-2">
+              <div className="flex gap-1.5">
+                <button onClick={() => downloadCard('png')} disabled={!character || isExporting}
+                  className="flex-1 py-2 bg-[var(--color-accent)] text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity">
+                  <Download size={13} /> {isExporting ? 'Exporting...' : 'Export PNG'}
+                </button>
+                <button onClick={() => downloadCard('jpg')} disabled={!character || isExporting}
+                  className="py-2 px-3 border border-[var(--color-border)] text-white font-bold text-xs hover:border-[var(--color-accent)] disabled:opacity-50 transition-colors">JPG</button>
+                <button onClick={copyToClipboard} disabled={!character || isExporting}
+                  className="py-2 px-3 border border-[var(--color-border)] text-white font-bold text-xs hover:border-[var(--color-accent)] disabled:opacity-50 transition-colors flex items-center gap-1">
+                  <Copy size={12} /> Copy
+                </button>
+              </div>
+              <div className="flex gap-1.5">
+                <button onClick={() => { const text = `Check out my ${character?.Name} build! Made with Zero Sanity`; window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://zerosanity.app/character-card')}`, '_blank'); }}
+                  disabled={!character}
+                  className="flex-1 py-1.5 border border-[var(--color-border)] text-[var(--color-text-muted)] text-[10px] hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center justify-center gap-1 transition-colors">
+                  <Share2 size={10} /> Share on X
+                </button>
+                <button onClick={() => { window.open(`https://reddit.com/submit?title=${encodeURIComponent(`${character?.Name} Showcase - Zero Sanity`)}&url=${encodeURIComponent('https://zerosanity.app/character-card')}`, '_blank'); }}
+                  disabled={!character}
+                  className="flex-1 py-1.5 border border-[var(--color-border)] text-[var(--color-text-muted)] text-[10px] hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center justify-center gap-1 transition-colors">
+                  <Share2 size={10} /> Share on Reddit
+                </button>
+              </div>
+            </div>
+
+            <div className="h-8" /> {/* Bottom padding for scroll */}
+          </div>
+        </div>
+
+        {/* ═══════ RIGHT COLUMN: Card Preview (sticky, centered) ═══════ */}
+        <div className="w-full lg:flex-1 lg:min-w-0 bg-[#0A0908] flex items-start justify-center overflow-y-auto p-3 sm:p-4 lg:p-6">
+          {character && stats ? (
+            <div ref={previewContainerRef} className="w-full max-w-[1200px]">
+              <div
+                ref={cardRef}
+                style={{
+                  width: '1200px',
+                  height: '675px',
+                  transformOrigin: 'top left',
+                  transform: `scale(${previewScale})`,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: theme.bg,
+                }}
+              >
+                {/* ── Background: Character Art Zone (Left 0-650px) ── */}
+                <div style={{
+                  position: 'absolute', left: 0, top: 0, width: '660px', height: '675px', overflow: 'hidden',
+                }}>
+                  {splashUrl && (
+                    <img src={splashUrl} alt={character.Name} crossOrigin="anonymous"
+                      style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                  )}
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '200px', background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)` }} />
+                  <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '180px', background: `linear-gradient(to right, transparent 0%, ${theme.bg} 100%)` }} />
+                  <div style={{ position: 'absolute', inset: 0, boxShadow: `inset 0 0 80px ${theme.glow}`, pointerEvents: 'none' }} />
+                </div>
+
+                {/* ── Top accent line ── */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: theme.primary, zIndex: 30 }} />
+
+                {/* ── Right Side: Data Dossier Panel ── */}
+                <div style={{
+                  position: 'absolute', left: '640px', top: 0, width: '560px', height: '675px',
+                  background: 'rgba(10, 14, 20, 0.93)',
+                  borderLeft: `3px solid ${theme.primary}`,
+                  padding: '20px 22px 20px 22px',
+                  display: 'flex', flexDirection: 'column',
+                  zIndex: 10,
+                }}>
+                  {/* Scanline overlay */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)', pointerEvents: 'none' }} />
+                  {/* Grid pattern */}
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(${theme.primary}10 1px, transparent 1px), linear-gradient(90deg, ${theme.primary}10 1px, transparent 1px)`, backgroundSize: '20px 20px', opacity: 0.3, pointerEvents: 'none' }} />
+
+                  <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* OPERATOR FILE label */}
+                    <div style={{ fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '2px', color: theme.accent, marginBottom: '4px' }}>OPERATOR FILE // {showcaseName || 'UNTITLED SHOWCASE'}</div>
+
+                    {/* Character name + Element/Role row */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', marginBottom: '6px' }}>
+                      <h1 style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '34px', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', lineHeight: '1', margin: 0 }}>{character.Name}</h1>
+                      <div style={{ display: 'flex', gap: '6px', paddingBottom: '4px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: ELEMENT_COLORS[character.Element], padding: '2px 8px', background: ELEMENT_COLORS[character.Element] + '20', border: `1px solid ${ELEMENT_COLORS[character.Element]}50` }}>{character.Element}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#fff', padding: '2px 8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {roleIconUrl && <img src={roleIconUrl} alt="" crossOrigin="anonymous" style={{ width: '12px', height: '12px' }} />}
+                          {character.Role}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Rarity + Level + Breakthrough + Potential + Affinity */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', gap: '1px' }}>
+                        {Array.from({ length: character.Rarity }).map((_, i) => (
+                          <span key={i} style={{ color: RARITY_COLORS[character.Rarity], fontSize: '12px' }}>★</span>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', padding: '4px 10px', background: 'rgba(0,0,0,0.5)', border: `2px solid ${theme.primary}` }}>
+                        <span style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '10px', color: theme.accent }}>LV</span>
+                        <span style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '24px', fontWeight: 700, color: '#ffffff', lineHeight: '1' }}>{level}</span>
+                      </div>
+                      {charBreakthrough > 0 && (
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          {Array.from({ length: charBreakthrough }).map((_, i) => (
+                            <span key={i} style={{ color: theme.primary, fontSize: '12px' }}>✦</span>
+                          ))}
+                        </div>
+                      )}
+                      {potential > 0 && <span style={{ fontFamily: 'Share Tech Mono, monospace', fontSize: '10px', color: theme.accent, padding: '2px 6px', background: `${theme.primary}15`, border: `1px solid ${theme.primary}30` }}>P{potential}</span>}
+                      {affinity > 0 && <span style={{ fontFamily: 'Share Tech Mono, monospace', fontSize: '10px', color: '#FF8FAA', padding: '2px 6px', background: 'rgba(255,143,170,0.1)', border: '1px solid rgba(255,143,170,0.3)' }}>♥ {affinity}</span>}
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{ height: '1px', background: `linear-gradient(to right, ${theme.primary} 0%, transparent 100%)`, marginBottom: '10px' }} />
+
+                    {/* Stats: Two-row layout */}
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      {/* Left column: Core stats */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '8px', color: theme.accent, marginBottom: '4px', letterSpacing: '1.5px', fontWeight: 700 }}>COMBAT STATS</div>
                         {[
                           { label: 'HP', value: stats.HP.toLocaleString() },
                           { label: 'ATK', value: stats.ATK.toLocaleString() },
                           { label: 'DEF', value: stats.DEF.toLocaleString() },
-                        ].map(stat => (
-                          <div key={stat.label} style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            padding: '6px 0',
-                            borderBottom: `1px solid ${theme.primary}15`,
-                          }}>
-                            <span style={{ fontSize: '12px', color: theme.accent, fontWeight: 700 }}>{stat.label}</span>
-                            <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 700 }}>{stat.value}</span>
+                        ].map(s => (
+                          <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: `1px solid ${theme.primary}10` }}>
+                            <span style={{ fontSize: '10px', color: theme.accent, fontWeight: 700 }}>{s.label}</span>
+                            <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 700 }}>{s.value}</span>
                           </div>
                         ))}
                       </div>
-
-                      {/* CRIT Rate and CRIT DMG */}
-                      <div style={{ marginBottom: '20px' }}>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          padding: '6px 0',
-                        }}>
-                          <span style={{ fontSize: '11px', color: theme.primary, fontWeight: 700 }}>CRIT Rate</span>
-                          <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 700 }}>{stats['CRIT Rate']}%</span>
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          padding: '6px 0',
-                        }}>
-                          <span style={{ fontSize: '11px', color: theme.primary, fontWeight: 700 }}>CRIT DMG</span>
-                          <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 700 }}>{stats['CRIT DMG']}%</span>
+                      {/* Right column: Attributes */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '8px', color: theme.accent, marginBottom: '4px', letterSpacing: '1.5px', fontWeight: 700 }}>ATTRIBUTES</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
+                          {[
+                            { label: 'STR', value: stats.STR },
+                            { label: 'AGI', value: stats.AGI },
+                            { label: 'INT', value: stats.INT },
+                            { label: 'WILL', value: stats.WILL },
+                          ].map(attr => (
+                            <div key={attr.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 6px', background: `${theme.primary}08`, border: `1px solid ${theme.primary}15` }}>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>{attr.label}</span>
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>{attr.value}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
+                    </div>
 
-                      {/* Skills section */}
-                      <div style={{ marginBottom: '20px' }}>
-                        <div style={{
-                          fontSize: '10px',
-                          color: theme.accent,
-                          marginBottom: '8px',
-                          letterSpacing: '1px',
-                          fontWeight: 700,
-                        }}>COMBAT SKILLS</div>
+                    {/* Secondary Stats Row */}
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                      {[
+                        { label: 'CRIT Rate', value: `${stats['CRIT Rate']}%` },
+                        { label: 'CRIT DMG', value: `${stats['CRIT DMG']}%` },
+                        { label: 'Arts Int.', value: `${stats['Arts Intensity']}` },
+                        { label: 'Phys DMG', value: `${stats['Physical DMG']}` },
+                      ].map(s => (
+                        <div key={s.label} style={{ flex: 1, padding: '4px 6px', background: `${theme.primary}08`, border: `1px solid ${theme.primary}12`, textAlign: 'center' }}>
+                          <div style={{ fontSize: '7px', color: theme.primary, fontWeight: 700, letterSpacing: '0.5px' }}>{s.label}</div>
+                          <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }}>{s.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Skills Row */}
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ fontSize: '8px', color: theme.accent, marginBottom: '5px', letterSpacing: '1.5px', fontWeight: 700 }}>COMBAT SKILLS</div>
+                      <div style={{ display: 'flex', gap: '4px' }}>
                         {SKILL_TYPES.map(skill => {
                           const lv = skillLevels[skill.key as keyof typeof skillLevels];
                           return (
-                            <div key={skill.key} style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              marginBottom: '6px',
-                            }}>
-                              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', width: '32px' }}>{skill.short}</span>
-                              <div style={{ display: 'flex', gap: '3px', flex: 1 }}>
+                            <div key={skill.key} style={{ flex: 1, padding: '5px', background: 'rgba(0,0,0,0.4)', border: `1px solid ${theme.primary}20`, textAlign: 'center' }}>
+                              <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginBottom: '2px' }}>{skill.short}</div>
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
                                 {Array.from({ length: 12 }).map((_, idx) => (
-                                  <div key={idx} style={{
-                                    width: '6px',
-                                    height: '6px',
-                                    borderRadius: '50%',
-                                    background: idx < lv ? theme.primary : 'rgba(255,255,255,0.15)',
-                                  }} />
+                                  <div key={idx} style={{ width: '4px', height: '4px', borderRadius: '50%', background: idx < lv ? theme.primary : 'rgba(255,255,255,0.12)' }} />
                                 ))}
                               </div>
-                              <span style={{ fontSize: '10px', color: '#ffffff', fontWeight: 700, width: '24px', textAlign: 'right' }}>{lv}</span>
+                              <div style={{ fontSize: '13px', fontWeight: 700, color: lv >= 10 ? theme.primary : '#ffffff' }}>Lv.{lv}</div>
                             </div>
                           );
                         })}
                       </div>
+                    </div>
 
-                      {/* Weapon display */}
-                      {weapon && (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '10px',
-                          background: 'rgba(0,0,0,0.5)',
-                          border: `1px solid ${theme.primary}30`,
-                          marginBottom: '12px',
-                        }}>
-                          {weaponIconUrl && (
-                            <img src={weaponIconUrl} alt={weapon.Name} crossOrigin="anonymous" style={{ width: '32px', height: '32px' }} />
-                          )}
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 700 }}>{weapon.Name}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              {Array.from({ length: weapon.Rarity }).map((_, i) => (
-                                <span key={i} style={{ color: RARITY_COLORS[weapon.Rarity] || '#888', fontSize: '9px' }}>★</span>
-                              ))}
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>Lv.{weaponLevel}</span>
-                              {weaponBreakthrough > 0 && (
-                                <span style={{ fontSize: '8px', color: theme.accent }}>B{weaponBreakthrough}</span>
-                              )}
-                              {weaponPotential > 0 && (
-                                <span style={{ fontSize: '8px', color: theme.primary }}>P{weaponPotential}</span>
-                              )}
-                            </div>
+                    {/* Weapon */}
+                    {weapon && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', background: 'rgba(0,0,0,0.5)', border: `1px solid ${theme.primary}25`, marginBottom: '8px' }}>
+                        {weaponIconUrl && <img src={weaponIconUrl} alt={weapon.Name} crossOrigin="anonymous" style={{ width: '28px', height: '28px' }} />}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '10px', color: '#ffffff', fontWeight: 700 }}>{weapon.Name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {Array.from({ length: weapon.Rarity }).map((_, i) => (
+                              <span key={i} style={{ color: RARITY_COLORS[weapon.Rarity] || '#888', fontSize: '8px' }}>★</span>
+                            ))}
+                            <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)' }}>Lv.{weaponLevel}</span>
+                            {weaponBreakthrough > 0 && <span style={{ fontSize: '8px', color: theme.accent }}>B{weaponBreakthrough}</span>}
+                            {weaponPotential > 0 && <span style={{ fontSize: '8px', color: theme.primary }}>P{weaponPotential}</span>}
                           </div>
                         </div>
-                      )}
+                        {/* Essence levels */}
+                        {weaponEssence && (
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {essenceLevels.map((lv, idx) => (
+                              <div key={idx} style={{ width: '22px', height: '22px', background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: theme.primary }}>{lv}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                      {/* Equipment summary */}
+                    {/* Equipment + Talents Row */}
+                    <div style={{ display: 'flex', gap: '8px', flex: 1, minHeight: 0 }}>
+                      {/* Equipment */}
                       {equippedSets.length > 0 && (
-                        <div style={{ marginBottom: '12px' }}>
-                          <div style={{
-                            fontSize: '9px',
-                            color: theme.accent,
-                            marginBottom: '6px',
-                            letterSpacing: '1px',
-                          }}>EQUIPMENT SET</div>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            {equippedSets.slice(0, 4).map((eq, idx) => {
-                              const eqIcon = EQUIPMENT_ICONS[eq.setName];
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '8px', color: theme.accent, marginBottom: '4px', letterSpacing: '1.5px', fontWeight: 700 }}>EQUIPMENT</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
+                            {equipSlots.filter(s => s.state.pieceName).map(({ label, state }) => {
+                              const piece = findGearPieceByName(state.pieceName);
+                              const pieceStats = getGearPieceStats(state.pieceName);
                               return (
-                                <div key={idx} style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 8px',
-                                  background: 'rgba(0,0,0,0.4)',
-                                  border: `1px solid ${theme.primary}20`,
-                                }}>
-                                  {eqIcon && (
-                                    <img src={eqIcon} alt={eq.setName} crossOrigin="anonymous" style={{ width: '18px', height: '18px' }} />
-                                  )}
-                                  <span style={{ fontSize: '9px', color: '#ffffff' }}>+{eq.artifice}</span>
+                                <div key={label} style={{ padding: '4px 5px', background: 'rgba(0,0,0,0.4)', border: `1px solid ${theme.primary}15`, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  {piece?.icon && <img src={piece.icon} alt={piece.name} crossOrigin="anonymous" style={{ width: '16px', height: '16px' }} />}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: '8px', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{state.pieceName}</div>
+                                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)' }}>{label} {state.setName ? `(${state.setName})` : ''} +{state.artifice}</div>
+                                    {pieceStats.length > 0 && (
+                                      <div style={{ fontSize: '7px', color: theme.accent }}>
+                                        {pieceStats.map(s => `${s.stat} ${s.value}`).join(' / ')}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             })}
@@ -945,492 +1324,69 @@ export default function CharacterCardPage() {
                         </div>
                       )}
 
-                      {/* Talents display */}
+                      {/* Talents */}
                       {talentStates.some(t => t !== 'locked') && (
-                        <div style={{ marginBottom: '8px' }}>
-                          <div style={{
-                            fontSize: '9px',
-                            color: theme.accent,
-                            marginBottom: '4px',
-                            letterSpacing: '1px',
-                          }}>TALENTS</div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            {talents.map((talent, idx) => (
-                              talentStates[idx] !== 'locked' && (
-                                <div key={idx} style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  padding: '3px 6px',
-                                  background: 'rgba(0,0,0,0.4)',
-                                  border: `1px solid ${theme.primary}20`,
-                                  fontSize: '8px',
-                                  color: 'rgba(255,255,255,0.7)',
-                                }}>
-                                  <span style={{ color: theme.primary, fontWeight: 700 }}>{talentStates[idx] === 'base' ? 'α' : 'β'}</span>
-                                  <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{talent.name}</span>
-                                </div>
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ── Bottom bar: username + watermark ── */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '40px',
-                    background: 'rgba(10, 14, 20, 0.95)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 24px',
-                    zIndex: 30,
-                    borderTop: `1px solid ${theme.primary}30`,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {username && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{username}</span>}
-                      {userCode && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>#{userCode}</span>}
-                      {server && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>{server}</span>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        background: theme.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                        <span style={{ fontSize: '8px', fontWeight: 900, color: '#000000' }}>ZS</span>
-                      </div>
-                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.5px' }}>zerosanity.app</span>
-                    </div>
-                  </div>
-
-                  {/* ── Corner brackets (all 4 corners) ── */}
-                  {/* Top-left */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    width: '20px',
-                    height: '20px',
-                    borderTop: `2px solid ${theme.primary}60`,
-                    borderLeft: `2px solid ${theme.primary}60`,
-                    zIndex: 25,
-                  }} />
-                  {/* Top-right */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    width: '20px',
-                    height: '20px',
-                    borderTop: `2px solid ${theme.primary}60`,
-                    borderRight: `2px solid ${theme.primary}60`,
-                    zIndex: 25,
-                  }} />
-                  {/* Bottom-left */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '52px',
-                    left: '12px',
-                    width: '20px',
-                    height: '20px',
-                    borderBottom: `2px solid ${theme.primary}60`,
-                    borderLeft: `2px solid ${theme.primary}60`,
-                    zIndex: 25,
-                  }} />
-                  {/* Bottom-right */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '52px',
-                    right: '12px',
-                    width: '20px',
-                    height: '20px',
-                    borderBottom: `2px solid ${theme.primary}60`,
-                    borderRight: `2px solid ${theme.primary}60`,
-                    zIndex: 25,
-                  }} />
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-24 text-[var(--color-text-muted)]" style={{ aspectRatio: '16 / 9', maxWidth: '100%', margin: '0 auto' }}>
-                <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Select a character to create a showcase card</p>
-                <p className="text-sm mt-2 text-[var(--color-text-muted)]/60">Configure stats, equipment, skills, and export as image</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ═══════ RIGHT: Controls ═══════ */}
-        <div className="order-1 xl:order-2 w-full xl:w-[360px] xl:shrink-0 space-y-3 xl:max-h-[calc(100vh-120px)] xl:overflow-y-auto xl:pr-1 xl:sticky xl:top-4">
-
-          {/* Showcase Name */}
-          <div className={sectionClass}>
-            <label className="block text-xs font-bold text-[var(--color-text-secondary)]">Showcase Name</label>
-            <input type="text" value={showcaseName} onChange={e => setShowcaseName(e.target.value)}
-              placeholder="Enter showcase name" className={inputClass} />
-          </div>
-
-          {/* User Info */}
-          <div className={sectionClass}>
-            <h3 className="text-sm font-bold text-white">User Information</h3>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Username</label>
-              <input type="text" value={username} onChange={e => setUsername(e.target.value)}
-                placeholder="Enter your username" className={inputClass} />
-            </div>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">User Code</label>
-              <input type="text" value={userCode} onChange={e => setUserCode(e.target.value)}
-                placeholder="Enter your in-game user ID" className={inputClass} />
-            </div>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Server</label>
-              <select value={server} onChange={e => setServer(e.target.value)} className={inputClass}>
-                <option value="">Select server region</option>
-                <option value="Americas/Europe">Americas/Europe</option>
-                <option value="Asia">Asia</option>
-                <option value="China">China</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Character */}
-          <div className={sectionClass}>
-            <h3 className="text-sm font-bold text-white">Character</h3>
-            <button onClick={() => setCharPickerOpen(true)}
-              className="w-full flex items-center gap-3 p-3 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
-            >
-              {character ? (
-                <>
-                  <div className="w-14 h-14 bg-[var(--color-surface-2)] relative flex-shrink-0">
-                    {iconUrl && <Image src={iconUrl} alt={character.Name} fill className="object-cover" sizes="48px" unoptimized />}
-                  </div>
-                  <div className="text-left flex-1">
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: character.Rarity }).map((_, i) => (
-                        <Star key={i} size={12} className="fill-current" style={{ color: RARITY_COLORS[character.Rarity] }} />
-                      ))}
-                    </div>
-                    <div className="text-sm text-white font-semibold">{character.Name}</div>
-                    <div className="text-xs text-[var(--color-text-muted)]">Click to change</div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm text-[var(--color-text-muted)] py-2">Click to select a character...</div>
-              )}
-              <ChevronDown size={18} className="text-[var(--color-text-muted)]" />
-            </button>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Character Level</label>
-              <select value={level} onChange={e => setLevel(Number(e.target.value))} className={inputClass}>
-                {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
-                  <option key={lv} value={lv}>Lv. {lv}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Breakthrough - {CHAR_BREAKTHROUGH_LABELS[charBreakthrough]}/{CHAR_BREAKTHROUGH_LABELS.length - 1}</label>
-              <div className="flex gap-1">
-                {CHAR_BREAKTHROUGH_LABELS.map((label, i) => (
-                  <button key={i} onClick={() => setCharBreakthrough(i)}
-                    className={`flex-1 py-1.5 text-xs font-bold border transition-all ${charBreakthrough === i ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : charBreakthrough > i ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]/60' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                  >{'★'.repeat(i + 1).substring(0, 3)}{i > 2 ? '+' : ''}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Potential (Dupes)</label>
-              <div className="flex gap-1">
-                {[0, 1, 2, 3, 4, 5, 6].map(p => (
-                  <button key={p} onClick={() => setPotential(p)}
-                    className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${potential === p ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                  >{p}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Affinity Lv.{affinity}</label>
-              <div className="flex gap-1">
-                {[0, 1, 2, 3, 4].map(a => (
-                  <button key={a} onClick={() => setAffinity(a)}
-                    className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${affinity === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                  >{a}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Weapon */}
-          {character && (
-            <div className={sectionClass}>
-              <h3 className="text-sm font-bold text-white">Weapon</h3>
-              <button onClick={() => setWeaponPickerOpen(true)}
-                className="w-full flex items-center gap-3 p-3 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
-              >
-                {weapon ? (
-                  <>
-                    <div className="w-12 h-12 bg-[var(--color-surface-2)] relative flex-shrink-0">
-                      {weaponIconUrl && <Image src={weaponIconUrl} alt={weapon.Name} fill className="object-contain p-0.5" sizes="40px" unoptimized />}
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="text-sm text-white">{weapon.Name}</div>
-                      <div className="flex items-center gap-0.5">
-                        {Array.from({ length: weapon.Rarity }).map((_, i) => (
-                          <Star key={i} size={8} className="fill-current" style={{ color: RARITY_COLORS[weapon.Rarity] || '#888' }} />
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-sm text-[var(--color-text-muted)] py-1">Click to select weapon...</div>
-                )}
-                <ChevronDown size={18} className="text-[var(--color-text-muted)]" />
-              </button>
-              {weapon && (
-                <>
-                  <div>
-                    <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Weapon Level</label>
-                    <select value={weaponLevel} onChange={e => setWeaponLevel(Number(e.target.value))} className={inputClass}>
-                      {Array.from({ length: 80 }, (_, i) => 80 - i).map(lv => (
-                        <option key={lv} value={lv}>Lv. {lv}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Breakthrough - {WEAPON_BREAKTHROUGH_LABELS[weaponBreakthrough]}/{WEAPON_BREAKTHROUGH_LABELS.length - 1}</label>
-                    <div className="flex gap-1">
-                      {WEAPON_BREAKTHROUGH_LABELS.map((_, i) => (
-                        <button key={i} onClick={() => setWeaponBreakthrough(i)}
-                          className={`flex-1 py-1.5 text-xs font-bold border transition-all flex items-center justify-center gap-0.5 ${weaponBreakthrough >= i ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                        >{Array.from({ length: i + 1 }).map((__, j) => <span key={j} style={{ fontSize: '8px' }}>{'>'}</span>)}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-1 text-[var(--color-text-muted)]">Weapon Potential - P{weaponPotential}/5</label>
-                    <div className="flex gap-1">
-                      {[0, 1, 2, 3, 4, 5].map(p => (
-                        <button key={p} onClick={() => setWeaponPotential(p)}
-                          className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${weaponPotential === p ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                        >{p}</button>
-                      ))}
-                    </div>
-                  </div>
-                  {weaponEssence && (
-                    <div className="space-y-2 pt-1 border-t border-[var(--color-border)]">
-                      <label className="block text-xs font-bold text-[var(--color-text-muted)]">Weapon Skill Levels (Essence Bonuses)</label>
-                      {[
-                        { label: `${weaponEssence.primaryAttr} [L]`, maxLv: 9 },
-                        { label: `${weaponEssence.secondaryStat || 'Secondary'} [L]`, maxLv: 9 },
-                        { label: `${weaponData?.SkillName?.split(':')[0] || weaponEssence.skillStat}: ${weaponData?.SkillName?.split(':')[1]?.trim() || ''}`, maxLv: 9 },
-                      ].map((ess, idx) => (
-                        <div key={idx}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[200px]">{ess.label}</span>
-                            <span className="text-[10px] text-[var(--color-accent)]">Lv. {essenceLevels[idx]}/{ess.maxLv}</span>
-                          </div>
-                          <div className="flex gap-0.5">
-                            {Array.from({ length: ess.maxLv }).map((_, i) => (
-                              <button key={i} onClick={() => setEssenceLevels(prev => { const n = [...prev]; n[idx] = i + 1; return n; })}
-                                className={`flex-1 h-3 border transition-colors ${i < essenceLevels[idx] ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'}`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Equipment */}
-          {character && (
-            <div className={sectionClass}>
-              <h3 className="text-sm font-bold text-white">Equipment</h3>
-              {equipSlots.map(({ label, state, setter }) => (
-                <div key={label} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[var(--color-text-muted)] uppercase">{label}</span>
-                  </div>
-                  <button onClick={() => setEquipPickerSlot(label)}
-                    className="w-full flex items-center gap-2 p-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
-                  >
-                    {state.setName ? (
-                      <>
-                        <div className="w-10 h-10 bg-[var(--color-surface-2)] relative flex-shrink-0">
-                          {EQUIPMENT_ICONS[state.setName] && (
-                            <Image src={EQUIPMENT_ICONS[state.setName]} alt={state.setName} fill className="object-contain p-0.5" sizes="32px" unoptimized />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-white truncate">{state.setName} {SLOT_SUFFIXES[label] || ''}</div>
-                          <div className="text-xs text-[var(--color-text-muted)]">Click to change</div>
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-xs text-[var(--color-text-muted)] py-1">Select {label.toLowerCase()} equipment...</span>
-                    )}
-                  </button>
-                  {state.setName && (
-                    <div className="space-y-1.5">
-                      <div className="text-xs font-bold text-[var(--color-text-muted)]">Artifice</div>
-                      {(EQUIPMENT_SUBSTATS[state.setName] || []).map((sub, si) => (
-                        <div key={si}>
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[10px] text-[var(--color-text-secondary)]">{sub.stat} +{sub.base}</span>
-                          </div>
-                          <div className="flex gap-1">
-                            {[0, 1, 2, 3].map(a => (
-                              <button key={a} onClick={() => setter({ ...state, artifice: a })}
-                                className={`flex-1 py-0.5 text-[10px] font-bold border transition-colors ${state.artifice >= a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                              >+{a}</button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                      {!EQUIPMENT_SUBSTATS[state.setName] && (
-                        <div className="flex items-center gap-1">
-                          {[0, 1, 2, 3].map(a => (
-                            <button key={a} onClick={() => setter({ ...state, artifice: a })}
-                              className={`flex-1 py-0.5 text-xs font-bold border transition-colors ${state.artifice === a ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                            >+{a}</button>
+                        <div style={{ width: equippedSets.length > 0 ? '140px' : 'auto', flexShrink: 0 }}>
+                          <div style={{ fontSize: '8px', color: theme.accent, marginBottom: '4px', letterSpacing: '1.5px', fontWeight: 700 }}>TALENTS</div>
+                          {talents.map((talent, idx) => (
+                            talentStates[idx] !== 'locked' && (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 5px', background: 'rgba(0,0,0,0.4)', border: `1px solid ${theme.primary}15`, marginBottom: '2px' }}>
+                                <span style={{ color: theme.primary, fontWeight: 700, fontSize: '10px' }}>{talentStates[idx] === 'base' ? 'α' : 'β'}</span>
+                                <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{talent.name}</span>
+                              </div>
+                            )
                           ))}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Skill Levels */}
-          {character && (
-            <div className={sectionClass}>
-              <h3 className="text-sm font-bold text-white">Skill Levels</h3>
-              {SKILL_TYPES.map(skill => {
-                const currentLv = skillLevels[skill.key as keyof typeof skillLevels];
-                return (
-                  <div key={skill.key} className="border border-[var(--color-border)] p-2">
-                    <label className="flex items-center justify-between text-xs font-bold text-[var(--color-text-muted)] mb-1.5">
-                      <span>{skill.label}</span>
-                      <span className="text-[var(--color-accent)]">Lv. {currentLv}</span>
-                    </label>
-                    <div className="grid grid-cols-6 gap-0.5">
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map(lv => (
-                        <button key={lv} onClick={() => setSkillLevels(prev => ({ ...prev, [skill.key]: lv }))}
-                          className={`py-1 text-[10px] font-bold border transition-colors ${currentLv === lv ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/15' : currentLv > lv ? 'border-[var(--color-accent)]/30 text-[var(--color-accent)]/50 bg-[var(--color-accent)]/5' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                        >{lv <= 9 ? lv : lv === 10 ? <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" /> : lv === 11 ? <span className="flex items-center justify-center gap-px"><span className="w-1 h-1 rounded-full bg-current" /><span className="w-1 h-1 rounded-full bg-current" /></span> : <span className="flex items-center justify-center gap-px"><span className="w-1 h-1 rounded-full bg-current" /><span className="w-1 h-1 rounded-full bg-current" /><span className="w-1 h-1 rounded-full bg-current" /></span>}</button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Talent Levels */}
-          {character && (
-            <div className={sectionClass}>
-              <h3 className="text-sm font-bold text-[var(--color-accent)]">Talent Levels</h3>
-              {talents.map((talent, idx) => (
-                <div key={idx} className="border border-[var(--color-border)] border-dashed p-2">
-                  <label className="block text-xs font-bold text-[var(--color-text-muted)] mb-1.5">{talent.name}<span className="text-[10px] text-[var(--color-text-muted)]/60 ml-1">({talent.type})</span></label>
-                  <div className="flex gap-1">
-                    {([
-                      { key: 'locked' as TalentState, label: 'Locked', icon: '🔒' },
-                      { key: 'base' as TalentState, label: 'Base (α)' },
-                      { key: 'upgrade' as TalentState, label: 'Upgrade (β)' },
-                    ]).map(opt => (
-                      <button key={opt.key} onClick={() => setTalentStates(prev => { const n = [...prev]; n[idx] = opt.key; return n; })}
-                        className={`flex-1 py-1.5 text-[10px] font-bold border transition-colors ${talentStates[idx] === opt.key ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-                      >
-                        <span className="border-l-2 pl-1.5" style={{ borderColor: talentStates[idx] === opt.key ? 'var(--color-accent)' : 'transparent' }}>{opt.label}</span>
-                      </button>
-                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* Color Theme */}
-          <div className={sectionClass}>
-            <h3 className="text-sm font-bold text-white">Color Theme</h3>
-            <div className="flex flex-wrap gap-1.5">
-              <button onClick={() => setColorTheme('auto')}
-                className={`px-2.5 py-1.5 text-sm font-bold border transition-colors ${colorTheme === 'auto' ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-              >Auto</button>
-              {Object.entries(THEME_COLORS).map(([name, t]) => (
-                <button key={name} onClick={() => setColorTheme(name)}
-                  className={`px-2.5 py-1.5 text-sm font-bold border transition-colors ${colorTheme === name ? '' : 'border-[var(--color-border)]'}`}
-                  style={colorTheme === name ? { borderColor: t.primary, color: t.primary, backgroundColor: t.primary + '15' } : { color: t.primary + '99' }}
-                >{name}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Save / Load / New */}
-          <div className={sectionClass}>
-            <button onClick={saveShowcase}
-              className="w-full py-2.5 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
-            >
-              <Save className="w-4 h-4" />
-              {saveMessage || 'Save Showcase'}
-            </button>
-            <div className="flex gap-2">
-              <button onClick={() => setShowLoadModal(true)}
-                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] flex items-center justify-center gap-2"
-              ><FolderOpen className="w-4 h-4" /> Load</button>
-              <button onClick={resetShowcase}
-                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] flex items-center justify-center gap-2"
-              ><FilePlus2 className="w-4 h-4" /> New</button>
-            </div>
-          </div>
-
-          {/* Export Actions */}
-          <div className={sectionClass}>
-            <div className="flex gap-2">
-              <button onClick={() => downloadCard('png')} disabled={!character || isExporting}
-                className="flex-1 py-2.5 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-              >
-                <Download className="w-4 h-4" />
-                {isExporting ? 'Exporting...' : 'Export PNG'}
-              </button>
-              <button onClick={() => downloadCard('jpg')} disabled={!character || isExporting}
-                className="py-2.5 px-4 border border-[var(--color-border)] text-white font-bold clip-corner-tl hover:border-[var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >JPG</button>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={copyToClipboard} disabled={!character || isExporting}
-                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center justify-center gap-2"
-              >Copy to Clipboard</button>
-              <div className="relative">
-                <button onClick={() => setShowShareMenu(!showShareMenu)} disabled={!character}
-                  className="py-2 px-3 border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:border-[var(--color-accent)] disabled:opacity-50 flex items-center gap-2"
-                ><Share2 size={16} /> Share</button>
-                {showShareMenu && character && (
-                  <div className="absolute right-0 bottom-full mb-2 w-44 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl shadow-[var(--shadow-card-hover)] z-50">
-                    <button onClick={shareToTwitter} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">Post on X</button>
-                    <button onClick={shareToReddit} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">Post on Reddit</button>
-                    <button onClick={copyToClipboard} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] border-t border-[var(--color-border)]">Copy for Discord</button>
+                {/* ── Bottom bar: username + watermark ── */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: '36px',
+                  background: 'rgba(10, 14, 20, 0.95)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0 20px', zIndex: 30, borderTop: `1px solid ${theme.primary}30`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {username && <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{username}</span>}
+                    {userCode && <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>#{userCode}</span>}
+                    {server && <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>{server}</span>}
                   </div>
-                )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Zero Sanity Logo */}
+                    <svg width="18" height="18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={theme.primary}/>
+                      <path d="M32 6 L58 32 L32 58 L6 32 Z" fill={theme.bg}/>
+                      <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={theme.primary}/>
+                    </svg>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.5px', fontFamily: 'Share Tech Mono, monospace' }}>zerosanity.app</span>
+                  </div>
+                </div>
+
+                {/* ── Corner brackets ── */}
+                {[
+                  { top: '10px', left: '10px', borderTop: `2px solid ${theme.primary}50`, borderLeft: `2px solid ${theme.primary}50` },
+                  { top: '10px', right: '10px', borderTop: `2px solid ${theme.primary}50`, borderRight: `2px solid ${theme.primary}50` },
+                  { bottom: '46px', left: '10px', borderBottom: `2px solid ${theme.primary}50`, borderLeft: `2px solid ${theme.primary}50` },
+                  { bottom: '46px', right: '10px', borderBottom: `2px solid ${theme.primary}50`, borderRight: `2px solid ${theme.primary}50` },
+                ].map((s, i) => (
+                  <div key={i} style={{ position: 'absolute', width: '18px', height: '18px', zIndex: 25, ...s }} />
+                ))}
               </div>
             </div>
-          </div>
+          ) : (
+            <div ref={previewContainerRef} className="w-full max-w-[1200px] flex items-center justify-center" style={{ minHeight: '400px' }}>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 border-2 border-[var(--color-border)] flex items-center justify-center" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}>
+                  <Sparkles className="w-6 h-6 text-[var(--color-text-muted)]" />
+                </div>
+                <p className="text-sm text-[var(--color-text-muted)]">Select a character to create a showcase card</p>
+                <p className="text-xs mt-2 text-[var(--color-text-muted)]/60">Configure stats, equipment, skills, and export as image</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1443,39 +1399,8 @@ export default function CharacterCardPage() {
       )}
       {equipPickerSlot && currentEquipPickerState && (
         <EquipmentPickerModal open={true} onClose={() => setEquipPickerSlot(null)} slot={equipPickerSlot}
-          currentSet={currentEquipPickerState.state.setName}
-          onSelect={name => { currentEquipPickerState.setter({ ...currentEquipPickerState.state, setName: name }); }} />
-      )}
-      {showShareMenu && <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />}
-
-      {/* Load Modal */}
-      {showLoadModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowLoadModal(false)}>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl w-full max-w-md max-h-[70vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-              <h3 className="text-white font-bold text-base">Load Showcase</h3>
-              <button onClick={() => setShowLoadModal(false)} className="text-[var(--color-text-muted)] hover:text-white"><X size={20} /></button>
-            </div>
-            <div className="p-4 overflow-y-auto flex-1 space-y-2">
-              {savedShowcases.length === 0 ? (
-                <div className="text-center py-8 text-[var(--color-text-muted)] text-sm">No saved showcases yet. Create one and click Save!</div>
-              ) : (
-                savedShowcases.map((save, idx) => (
-                  <button key={idx} onClick={() => { loadShowcase(save); setShowLoadModal(false); }}
-                    className="w-full flex items-center gap-3 p-3 border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors text-left"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white font-semibold truncate">{save.name}</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{save.charName} Lv.{save.level} - {new Date(save.savedAt).toLocaleDateString()}</div>
-                    </div>
-                    <button onClick={e => { e.stopPropagation(); const saves = [...savedShowcases]; saves.splice(idx, 1); localStorage.setItem('zs-showcases', JSON.stringify(saves)); setShowLoadModal(false); setTimeout(() => setShowLoadModal(true), 50); }}
-                      className="text-[var(--color-text-muted)] hover:text-red-400 p-1"><X size={14} /></button>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+          currentPieceName={currentEquipPickerState.state.pieceName}
+          onSelect={(pieceName, setName) => { currentEquipPickerState.setter({ ...currentEquipPickerState.state, pieceName, setName }); }} />
       )}
     </div>
   );

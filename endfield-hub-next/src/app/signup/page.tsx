@@ -37,7 +37,11 @@ export default function SignupPage() {
 
     try {
       await register(username, email, password);
-      router.push('/profile');
+      // Redirect to last page or profile
+      const returnTo = sessionStorage.getItem('endfield-return-to') || '/profile';
+      sessionStorage.removeItem('endfield-return-to');
+      const safeReturnTo = returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/profile';
+      router.push(safeReturnTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
