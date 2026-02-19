@@ -66,6 +66,16 @@ export async function fetchBanners() {
   return data.data;
 }
 
+export async function fetchOperatorGuide(slug: string) {
+  if (!STRAPI_URL) return null;
+  try {
+    const { data } = await api.get(`/operator-guides?filters[slug][$eq]=${slug}&populate=*`);
+    return data?.data?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createBlueprint(blueprintData: Record<string, unknown>) {
   const { data } = await api.post('/blueprints', { data: blueprintData });
   return data.data;

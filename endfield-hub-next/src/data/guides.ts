@@ -20,6 +20,11 @@ export interface OperatorGuide {
   skillPriority: string;
   synergies: string[];
   teamComps: TeamComp[];
+  // Expanded longform fields (optional for backwards compat)
+  introduction?: string;
+  gameplayTips?: string[];
+  gearNotes?: string;
+  lastUpdated?: string;
 }
 
 export interface WeaponRecommendation {
@@ -55,11 +60,11 @@ export const DEFAULT_TIER_LIST: Record<TierRating, TierListEntry[]> = {
     { slug: 'pogranichnik', name: 'Pogranichnik', tier: 'S', element: 'Physical', role: 'Vanguard' },
     { slug: 'last-rite', name: 'Last Rite', tier: 'S', element: 'Cryo', role: 'Assault' },
     { slug: 'antal', name: 'Antal', tier: 'S', element: 'Electric', role: 'Supporter' },
+    { slug: 'avywenna', name: 'Avywenna', tier: 'S', element: 'Electric', role: 'Assault' },
+    { slug: 'xaihi', name: 'Xaihi', tier: 'S', element: 'Cryo', role: 'Supporter' },
   ],
   A: [
     { slug: 'endministrator', name: 'Endministrator', tier: 'A', element: 'Physical', role: 'Guard' },
-    { slug: 'avywenna', name: 'Avywenna', tier: 'A', element: 'Electric', role: 'Assault' },
-    { slug: 'xaihi', name: 'Xaihi', tier: 'A', element: 'Cryo', role: 'Supporter' },
     { slug: 'perlica', name: 'Perlica', tier: 'A', element: 'Electric', role: 'Caster' },
     { slug: 'akekuri', name: 'Akekuri', tier: 'A', element: 'Heat', role: 'Vanguard' },
     { slug: 'chen-qianyu', name: 'Chen Qianyu', tier: 'A', element: 'Physical', role: 'Guard' },
@@ -116,6 +121,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Universal Support', members: ['Ardelia', 'Laevatain', 'Gilberta', 'Endministrator'], notes: 'Ardelia provides healing and debuffs while the team deals damage' },
       { name: 'Nature Core', members: ['Ardelia', 'Gilberta', 'Fluorite', 'Endministrator'], notes: 'Double Nature support with Gilberta for maximum buff uptime' },
     ],
+    introduction: 'Ardelia stands as the premier support operator in Arknights: Endfield, functioning as both the game\'s most reliable healer and a powerful force multiplier. Available for free through the permanent beginner login event, she occupies a unique position providing healing, Corrosion debuffs that convert into Physical and Arts susceptibility, and consistent damage amplification. Her versatility allows integration into virtually any team composition, and community consensus unanimously places her at the top of support tier lists. No other operator currently matches her combination of sustain, debuff application, and accessibility.',
+    gameplayTips: ['Time Corrosion application before major DPS windows to maximize damage amplification from susceptibility debuffs', 'Coordinate ultimate usage with team burst phases to combine healing and damage amplification simultaneously', 'Position Ardelia safely behind frontline units to prevent interruption of healing channels during critical moments', 'Pair with multiple damage types to fully utilize both Physical and Arts susceptibility debuff effects', 'Monitor Corrosion stacks on priority targets and consume them strategically rather than on cooldown'],
+    gearNotes: 'Eternal Xiranite is the endgame set providing 16% damage boost to all teammates after applying amplification buffs. Individual pieces grant Will, Intellect, Ultimate Gain Efficiency, and Arts Intensity. Catastrophe serves as a strong alternative emphasizing debuff duration. For early game, Mordvolt Resistant provides Will increases and Treatment Efficiency. Prioritize healing effectiveness and debuff duration stats.',
+    lastUpdated: '2025-02-19',
   },
 
   'ember': {
@@ -147,6 +156,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Heat Defense', members: ['Ember', 'Laevatain', 'Akekuri', 'Ardelia'], notes: 'Ember tanks while Laevatain deals damage' },
     ],
+    introduction: 'Ember functions as a versatile Heat Defender operating as a hybrid tank and support unit. Her kit centers on applying Vulnerable debuffs through a generic Combo Skill trigger that works in any team composition, alongside team-wide shielding based on her own HP. While she provides decent frontline presence and Physical Status application for Swordmancer synergy, her lack of damage amplification tools keeps her below premier supports. She particularly excels in Physical teams where Swordmancer gear enables consistent stagger through her skill rotations, and she scales well as a Will-focused operator.',
+    gameplayTips: ['Position Ember aggressively to take damage, triggering her ATK increase passive while using Battle and Combo Skills to mitigate incoming damage', 'Time Battle Skill usage when being hit to apply bonus stagger damage and maximize Vulnerability uptime for Physical damage dealers', 'Prioritize Will stat through gear selection as healing scales directly with this attribute', 'Use Ultimate strategically before burst damage phases to provide team-wide shields and protection', 'In Swordmancer builds, maintain consistent skill rotations to permanently lock down bosses through stagger application'],
+    gearNotes: 'LYNX set is optimal for healing-focused builds, granting +20% Treatment Efficiency and 15% damage reduction for allies for 10 seconds. Eternal Xiranite provides team-wide damage boost after applying Protection buffs. For early game, Mordvolt Resistant offers Will increases. The choice between LYNX and Eternal Xiranite depends on whether your team needs more survivability (LYNX) or damage amplification (Xiranite).',
+    lastUpdated: '2025-02-19',
   },
 
   'endministrator': {
@@ -167,18 +180,22 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'As the free protagonist, Endministrator provides exceptional value for all players. A Physical Guard with balanced stats emphasizing Agility, they excel at applying Physical vulnerability debuffs that amplify the entire team\'s damage. Their kit provides good crowd control through crystallization mechanics and solid sustained DPS. While not matching dedicated Assault operators in raw damage, their versatility and free availability make them a staple in most team compositions early on. Physical teams built around Endministrator, Pogranichnik, and Chen Qianyu form one of the strongest free-to-play compositions available.',
     bestWeapons: [
-      { name: 'Rapid Ascent', rating: 5, notes: 'Best in slot - +42% Physical DMG for skills, +98% DMG vs Staggered enemies' },
-      { name: 'Eminent Repute', rating: 4, notes: 'Strong support-oriented alternative with team damage buff' },
-      { name: 'Sundering Steel', rating: 3, notes: '5-star option with +34.7% Physical DMG' },
-      { name: 'Contingent Measure', rating: 2, notes: 'Solid 4-star fallback option' },
+      { name: 'Grand Vision', rating: 5, notes: 'Signature best in slot - Damage boost on next Battle Skill/Ultimate after Combo Skill, perfect rotation synergy' },
+      { name: 'Eminent Repute', rating: 4, notes: 'Team utility option consuming Vulnerable Stacks for team ATK increase' },
+      { name: 'Sundering Steel', rating: 3, notes: '5-star F2P option with ATK, Physical DMG, and Agility boosts' },
+      { name: 'Contingent Measure', rating: 2, notes: '4-star fallback with solid base stats' },
     ],
-    bestGearSets: ['Swordmancer', 'Type 50 Yinglung'],
-    skillPriority: 'Battle Skill > Combo Skill > Ultimate > Basic Attack',
+    bestGearSets: ['Swordmancer', 'Bonekrusha'],
+    skillPriority: 'Battle Skill > Combo Skill = Ultimate > Basic Attack',
     synergies: ['Pogranichnik', 'Chen Qianyu', 'Lifeng', 'Ardelia'],
     teamComps: [
       { name: 'Physical Core', members: ['Endministrator', 'Pogranichnik', 'Chen Qianyu', 'Ardelia'], notes: 'Strong F2P Physical team with vulnerability stacking' },
       { name: 'Balanced F2P', members: ['Endministrator', 'Last Rite', 'Ardelia', 'Antal'], notes: 'Mixed element team using free operators' },
     ],
+    introduction: 'As the protagonist of Arknights: Endfield, Endministrator serves as a premier Physical damage dealer with unique Originium Crystal mechanics that no other operator currently possesses. This free 6-star functions as the main DPS anchor for Physical compositions, offering both consistent damage output and valuable team utility through Realspace Stasis buffs. The character\'s accessibility through main story progression makes them viable for all players regardless of gacha luck. Physical teams built around Endministrator, Pogranichnik, and Chen Qianyu form one of the strongest compositions in the game.',
+    gameplayTips: ['Trigger teammate Combo Skills via their Final Strikes to generate Originium Crystals through Sealing Sequence', 'Apply Vulnerable stacks from Chen Qianyu or Lifeng before using Battle Skill to maximize Crush damage consumption', 'Execute Basic Attacks before breaking Crystals to accumulate Combat Talent bonus stacks', 'Time Ultimates when enemies are Staggered for maximum damage output across all team compositions', 'Manage team slot ordering carefully as Combo Skill priority triggers based on position'],
+    gearNotes: 'Swordmancer (4-piece) grants +20% Stagger Efficiency Bonus and triggers additional Physical damage after applying Physical Status effects. Bonekrusha delivers massive Battle Skill damage increases when consuming Combo Skill stacks. For early game, Roving MSGR provides Agility +50 and conditional Physical DMG +20%. The Swordmancer set synergizes perfectly with Crystal-consuming mechanics.',
+    lastUpdated: '2025-02-19',
   },
 
   'gilberta': {
@@ -211,6 +228,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Universal Amplifier', members: ['Gilberta', 'Laevatain', 'Ardelia', 'Akekuri'], notes: 'Gilberta debuffs while Laevatain deals massive AoE damage' },
       { name: 'Cryo Amplified', members: ['Gilberta', 'Yvonne', 'Last Rite', 'Xaihi'], notes: 'Gilberta\'s defense reduction amplifies Cryo burst damage' },
     ],
+    introduction: 'Gilberta is often compared to Genshin Impact\'s Kazuha for her universal support capabilities. As a Nature Supporter specializing in gravity-based crowd control and defense reduction, she amplifies team damage regardless of elemental composition. Her ability to create gravity zones that slow enemies while reducing their defenses makes her valuable in mixed-element teams, and her Arts Susceptibility application is one of the strongest damage multipliers available. Community consensus places her as a long-term meta staple whose value only increases as more characters are released.',
+    gameplayTips: ['Position gravity fields to cover high-traffic enemy paths, maximizing the number of affected targets', 'Coordinate gravity field placement with ally area-of-effect abilities for devastating combinations', 'Use Arts Susceptibility application before allied arts damage bursts to amplify total team output', 'Leverage crowd control to protect vulnerable backline units like healers and ranged DPS', 'Against bosses with CC immunity, focus on maintaining Arts Susceptibility debuff uptime instead'],
+    gearNotes: 'Eternal Xiranite is optimal providing 16% damage boost to all teammates after applying amplification buffs. Catastrophe serves as an alternative emphasizing debuff duration and Nature damage. Both sets synergize well with her support-focused playstyle. Prioritize Will, Intellect, and Arts Intensity substats.',
+    lastUpdated: '2025-02-19',
   },
 
   'laevatain': {
@@ -243,6 +264,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Heat Meta', members: ['Laevatain', 'Akekuri', 'Antal', 'Ardelia'], notes: 'The strongest team composition in the game. Akekuri and Antal enable Laevatain\'s damage ceiling.' },
       { name: 'Heat Budget', members: ['Laevatain', 'Ember', 'Wulfgard', 'Ardelia'], notes: 'Alternative with Ember tanking and Wulfgard providing off-field Heat damage' },
     ],
+    introduction: 'Laevatain operates as the premier Heat-element hypercarry striker, dominating AoE damage when properly supported by Heat Infliction applicators. Her role centers on absorbing Heat stacks from teammates to power devastating area-of-effect damage through enhanced Battle Skills and a transformative Ultimate that significantly amplifies basic attack damage and range for 15 seconds. Community sources consistently position her as the strongest operator when team conditions are met, though her performance drops substantially without proper Heat support. The strongest team in the game revolves around enabling her damage ceiling.',
+    gameplayTips: ['Build to four Melting Flame stacks before using Battle Skill to trigger the additional enhanced hit with maximum damage and Ultimate charge', 'During 15-second Ultimate transformation, focus on basic attack chains as they become your primary damage source with significantly amplified multipliers', 'Coordinate with Heat-inflicting teammates like Wulfgard and Akekuri to ensure consistent stack generation before consumption windows', 'Leverage Ardelia\'s Corrosion application to trigger Final Strike for Combo Skill activation and additional Melting Flame stacks', 'Prioritize consuming Heat Infliction stacks from teammates immediately through Final Strike during Battle Skill'],
+    gearNotes: 'Hot Work (3-piece) grants Heat DMG +50% for 10 seconds after triggering Combustion, synergizing perfectly with enhanced Battle Skill mechanics. Combine with Tide Fall Light Armor for Ultimate Gain Efficiency. Tide Surge is an alternative for burst-focused builds. For early game, Mordvolt Insulation grants Intellect and Arts DMG when above 80% HP.',
+    lastUpdated: '2025-02-19',
   },
 
   'last-rite': {
@@ -274,6 +299,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Cryo Core', members: ['Last Rite', 'Yvonne', 'Xaihi', 'Snowshine'], notes: 'Full Cryo team maximizing affliction stacking and freeze uptime' },
       { name: 'Cryo F2P', members: ['Last Rite', 'Xaihi', 'Estella', 'Ardelia'], notes: 'Accessible Cryo team with healing support' },
     ],
+    introduction: 'Last Rite functions as an elite Cryo hypercarry striker specializing in single-target damage amplification through Cryo Susceptibility mechanics. Her role centers on applying debuffs that benefit herself and other Cryo damage dealers like Yvonne and Xaihi. She possesses one of the highest damage Ultimates in the game and distinguishes herself through exceptional burst windows when consuming exactly four Cryo Infliction stacks. Her restrictive team requirements demand specific Cryo Infliction applicators but reward proper composition with devastating damage. Community consensus positions her as a premier single-target specialist.',
+    gameplayTips: ['Execute the optimal rotation: Apply Cryo Infliction with Battle Skill, consume exactly 4 Cryo Inflictions in Combo Skill, then cast Ultimate immediately after for synergistic burst', 'Target four Infliction stacks rather than minimum three to maximize Cryo Susceptibility uptime', 'Time Ultimates during Staggered states for maximum damage output', 'Coordinate with Xaihi and Fluorite to ensure consistent four-stack generation before consuming', 'Leverage Ardelia\'s Arts Susceptibility application alongside Cryo Susceptibility for multiplicative debuff stacking'],
+    gearNotes: 'Tide Surge is the only viable endgame option, providing Arts Intensity boost after applying multiple Inflictions. Components: Bonekrusha Poncho, Tide Surge Gauntlets, Hanging River O2 Tube for both kit slots. The Type 50 Yinglung Light Armor can substitute the armor slot. For early game, Aburrey\'s Legacy provides Skill damage scaling before farming Tide Surge.',
+    lastUpdated: '2025-02-19',
   },
 
   'lifeng': {
@@ -298,12 +327,16 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Valiant', rating: 4, notes: 'Good alternative with strong passive' },
       { name: 'Chimeric Justice', rating: 3, notes: '5-star polearm with decent stats' },
     ],
-    bestGearSets: ['Swordmancer', 'AIC Heavy'],
-    skillPriority: 'Battle Skill > Combo Skill > Ultimate > Basic Attack',
+    bestGearSets: ['Eternal Xiranite', 'Bonekrusha'],
+    skillPriority: 'Battle Skill > Ultimate = Combo Skill > Basic Attack',
     synergies: ['Endministrator', 'Pogranichnik', 'Chen Qianyu', 'Ardelia'],
     teamComps: [
       { name: 'Physical Guard Stack', members: ['Lifeng', 'Endministrator', 'Pogranichnik', 'Ardelia'], notes: 'Double Guard composition with Pogranichnik enabling Physical damage' },
     ],
+    introduction: 'Lifeng serves as a Physical damage sub-DPS and support hybrid, distinguished by his unique ability to apply Physical Susceptibility independently through Battle Skill without requiring pre-existing Vulnerable stacks. His role centers on amplifying team damage through debuff application and Link stack generation that enhance subsequent teammate abilities. Multi-hit attack patterns enable consistent stagger application and exceptional synergy with Physical compositions. Community consensus positions him as a critical enabler for top-tier Physical teams, forming the core alongside Pogranichnik and Endministrator.',
+    gameplayTips: ['Initiate combat with Battle Skill to apply Physical Susceptibility without requiring Vulnerable stacks, enabling teammates to capitalize immediately', 'Trigger Combo Skill via controlled operator\'s Final Strike to generate Link stacks for additional Ultimate hits', 'Execute Ultimate after Link generation to apply Knockdown twice, generating two Vulnerable stacks', 'Prioritize Intellect and Will stat optimization as Illumination talent grants 0.15% ATK per point', 'Activate Battle Skill before teammates apply Vulnerability to ensure Physical Susceptibility applies first'],
+    gearNotes: 'Eternal Xiranite provides versatile team-wide benefits synergizing with Illumination talent. Combine with Swordmancer Flint kit pieces. Bonekrusha is an alternative for burst-focused builds with Wearer ATK +15% and Battle Skill DMG +30% after Combo Skill cast. For early game, Roving MSGR emphasizes Physical damage and Agility.',
+    lastUpdated: '2025-02-19',
   },
 
   'pogranichnik': {
@@ -335,6 +368,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Physical Meta', members: ['Pogranichnik', 'Endministrator', 'Chen Qianyu', 'Ardelia'], notes: 'The premier Physical team with Pogranichnik enabling all damage' },
     ],
+    introduction: 'Pogranichnik is the cornerstone of Physical team compositions, providing an unmatched combination of SP generation, attack buffs, debuffs, and sub-DPS output. His unique value proposition centers on exceptional SP generation for the entire team while maintaining respectable Physical damage. This dual functionality makes him a non-negotiable member of the best Physical team in the game. His high Will stat gives him surprising durability for a Vanguard, and his sword\'s fast attack speed makes him excellent at generating combos and maintaining consistent pressure.',
+    gameplayTips: ['Prioritize ultimate usage during extended encounters to maximize cumulative SP generation value', 'Pair with operators having powerful but expensive ultimates to fully capitalize on SP acceleration', 'Position aggressively to maintain Physical damage pressure while generating skill points', 'Coordinate team burst windows around damage buff ultimate activation', 'Use Cryo application to freeze priority targets, enabling allies to focus damage safely'],
+    gearNotes: 'Frontiers reduces Combo Skill cooldown by 15% and grants team 16% damage boost for 12 seconds after SP recovery. Type 50 Yinglung provides ATK increase with Combo Skill damage scaling. The choice depends on whether your team needs SP acceleration (Frontiers) or personal damage contribution (Type 50).',
+    lastUpdated: '2025-02-19',
   },
 
   'yvonne': {
@@ -367,6 +404,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Cryo Boss Killer', members: ['Yvonne', 'Last Rite', 'Xaihi', 'Gilberta'], notes: 'Maximum single-target damage with freeze control' },
       { name: 'Cryo Freeze', members: ['Yvonne', 'Snowshine', 'Xaihi', 'Ardelia'], notes: 'Freeze-focused composition with sustained healing' },
     ],
+    introduction: 'Yvonne operates as the premier single-target damage dealer in Arknights: Endfield, specializing in boss elimination through Cryo burst damage. Her kit revolves around applying Solidification effects to freeze enemies while buffing her own damage through summoned companion Tink-a-Bella. She delivers the highest concentrated single-target damage in the game, particularly after Ultimate activation. Her synergy with Last Rite creates devastating Cryo compositions, and she is a priority target for players who want to excel in high-difficulty boss encounters.',
+    gameplayTips: ['Conserve ultimate for boss phases or priority target elimination rather than general enemy waves', 'Apply Solidification freeze effects to dangerous enemies before they execute high-damage abilities', 'Position Tink-a-Bella strategically to maximize buff uptime and damage amplification', 'Pair with debuff supports like Ardelia to amplify already exceptional burst damage further', 'Focus fire frozen targets with full team to maximize damage during crowd control windows'],
+    gearNotes: 'MI Security provides 5% Crit Rate with ATK increase stacking on crits (up to 5 stacks). Tide Surge provides Arts Intensity boost synergizing with Cryo damage. MI Security is preferred for consistent crit scaling, while Tide Surge excels in burst-heavy encounters. Prioritize Crit Rate, Crit DMG, and Cryo DMG substats.',
+    lastUpdated: '2025-02-19',
   },
 
   // ===== 5-STAR OPERATORS =====
@@ -385,7 +426,7 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       'Vanguard role overlaps with stronger options like Arclight',
       'Lacks standout utility compared to other 5-stars',
     ],
-    review: 'Alesh is a situational Cryo Vanguard with high Strength but limited current meta relevance. While she can contribute to Cryo teams with freeze reactions, she is generally outperformed by higher-rarity options. Her high Strength stat gives her decent base damage, but without standout utility or unique mechanics, she struggles to justify a team slot over alternatives. She may become more relevant as future content introduces Cryo-favoring mechanics.',
+    review: 'Alesh functions as an SP battery and Cryo enabler in Shatter-focused compositions. She recovers SP via Originium Crystals from Endministrator and forces Solidification for teammates to exploit. In Shatter teams alongside Endministrator, Chen Qianyu, and Estella, she provides consistent Cryo application and SP generation. While she lacks standalone carry potential, her utility in specific compositions makes her a solid investment for players building Shatter or hybrid Physical/Cryo teams.',
     bestWeapons: [
       { name: 'Finchaser 3.0', rating: 5, notes: 'Best in slot - +19.6% Cryo DMG Taken on enemies when applying Solidification' },
       { name: 'Thermite Cutter', rating: 4, notes: 'Universal support option for team utility' },
@@ -398,6 +439,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Cryo Support', members: ['Alesh', 'Last Rite', 'Xaihi', 'Ardelia'], notes: 'Budget Cryo team filler role' },
     ],
+    introduction: 'Alesh functions as an SP battery and Cryo enabler in Shatter-focused team compositions. She recovers SP via Originium Crystals from Endministrator and forces Solidification for teammates to exploit. In Shatter teams alongside Endministrator, Chen Qianyu, and Estella, she provides consistent Cryo application and SP generation that improves overall rotation fluidity. While she lacks standalone carry potential, her utility in specific compositions makes her a solid investment for players building Shatter or hybrid Physical/Cryo teams.',
+    gameplayTips: ['Focus on applying Cryo Infliction consistently to enable Solidification triggers for teammates', 'Coordinate SP generation with team rotation timing for maximum skill uptime', 'Use Finchaser 3.0 to apply Cryo DMG Taken debuff on Solidification for team damage amplification', 'Position safely to maintain SP generation uptime without interruption'],
+    gearNotes: 'Frontiers reduces cooldowns and provides team damage boost on SP recovery, synergizing with her SP battery role. Catastrophe is an alternative for debuff duration extension. Prioritize support stats over personal damage.',
+    lastUpdated: '2025-02-19',
   },
 
   'arclight': {
@@ -427,11 +472,15 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Electric Team', members: ['Arclight', 'Avywenna', 'Perlica', 'Antal'], notes: 'Full Electric composition with chain damage' },
     ],
+    introduction: 'Arclight operates as a hybrid sub-DPS and SP battery for Electric team compositions. Her kit delivers consistent Electric damage while generating SP that accelerates team rotations. She provides Electric DMG buffs through her talent and applies Electrification through multiple abilities. While not the primary damage dealer, her combination of SP generation and Electric enabling makes her a valuable complement to Avywenna and Perlica in Electric-focused teams. Her performance improves significantly in sustained encounters where SP generation compounds over time.',
+    gameplayTips: ['Use lock-on before Battle Skill to ensure Electric Infliction lands on priority targets', 'Time Ultimate for sustained buff uptime rather than casting on cooldown', 'Trigger Combo Skill reactively when allies apply Electric Inflictions for incremental damage', 'Avoid chaining three consecutive ability casts unless burst is needed - space them for positive SP generation', 'During Ultimate activation, position to hit multiple enemies for additional Combo Skill trigger opportunities'],
+    gearNotes: 'Swordmancer provides Physical damage and Stagger synergy for consistent crowd control contribution. Mordvolt Insulation grants Intellect and Arts DMG when above 80% HP for damage-focused builds. The choice depends on whether you prioritize physical utility or Arts damage output.',
+    lastUpdated: '2025-02-19',
   },
 
   'avywenna': {
     slug: 'avywenna',
-    ratings: { overall: 'A', pve: 'A', boss: 'A', support: 'B' },
+    ratings: { overall: 'S', pve: 'S', boss: 'S', support: 'B' },
     pros: [
       'Electric DPS meta driver with strong polearm attacks',
       'Balanced stats provide consistent performance',
@@ -447,17 +496,21 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'Avywenna is the Electric team\'s primary DPS driver, excelling in compositions built around Electrification stacking. Her polearm provides good range and her balanced stat distribution with high Will gives her better durability than typical Assault operators. She synergizes exceptionally well with Perlica and Antal, forming the backbone of Electric team compositions. While her peak damage doesn\'t match 6-star Assault operators, within her element she is the clear best choice and provides excellent value for 5-star investment.',
     bestWeapons: [
-      { name: 'Cohesive Traction', rating: 4, notes: 'Best 5-star polearm for Electric DPS' },
-      { name: 'Chimeric Justice', rating: 3, notes: 'Alternative with good base stats' },
-      { name: 'Aggeloslayer', rating: 2, notes: '4-star polearm option' },
+      { name: 'JET', rating: 5, notes: 'Best in slot - Increased Arts damage after Battle/Combo Skills, obtainable via level 45 weapon selector' },
+      { name: 'Cohesive Traction', rating: 4, notes: 'Signature weapon - Accessible via Stock Bills or 400 Arsenal tickets, consistent performance' },
+      { name: 'Chimeric Justice', rating: 2, notes: '5-star alternative with decent base stats' },
     ],
-    bestGearSets: ['Mordvolt Insulation', 'Tide Surge'],
-    skillPriority: 'Battle Skill > Combo Skill > Ultimate > Basic Attack',
+    bestGearSets: ['Bonekrusha', 'Aburrey\'s Legacy'],
+    skillPriority: 'Battle Skill > Combo Skill = Ultimate > Basic Attack',
     synergies: ['Perlica', 'Antal', 'Arclight', 'Gilberta'],
     teamComps: [
       { name: 'Electric Meta', members: ['Avywenna', 'Perlica', 'Antal', 'Gilberta'], notes: 'Strongest Electric team with Gilberta amplifying damage' },
       { name: 'Electric Core', members: ['Avywenna', 'Arclight', 'Antal', 'Ardelia'], notes: 'Budget Electric team with healing support' },
     ],
+    introduction: 'Avywenna stands as the premier Electric DPS and cornerstone of Electric team compositions. Her unique Thunderlance mechanic creates a positioning-based gameplay loop where players stack and retrieve lances for devastating burst damage. She cannot function independently, requiring dedicated support from Perlica to apply Electric Infliction triggering her Combo Skill. However, when properly supported, Avywenna delivers exceptional AoE and single-target damage that justifies building entire team compositions around her. She defines the Electric archetype, making her presence in such teams non-negotiable.',
+    gameplayTips: ['Accumulate 6 or more Thunderlances on the battlefield before activating Battle Skill to pull them back for maximum damage per cast', 'Follow Ultimate immediately with Perlica\'s abilities to trigger Electric Burst reactions and enable Combo Skill', 'Position deliberately to create optimal lance spread patterns, ensuring Battle Skill collects all deployed lances', 'Ensure Perlica\'s abilities are available before committing major skills - running out of Infliction sources severely hampers output', 'Thunderlance returns generate energy, creating self-sustaining loops when managed properly'],
+    gearNotes: 'Bonekrusha (4-piece) with Type 50 Yinglung Gloves provides Will scaling, Combo Skill damage bonuses, and Battle Skill amplification. This maximizes burst potential since damage concentrates in these two ability types. Aburrey\'s Legacy is the early game alternative with 24% universal Skill damage increase. Prioritize Will and Combo Skill damage substats.',
+    lastUpdated: '2025-02-19',
   },
 
   'chen-qianyu': {
@@ -489,6 +542,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Physical Trio', members: ['Chen Qianyu', 'Pogranichnik', 'Endministrator', 'Ardelia'], notes: 'Triple Physical with maximum vulnerability stacking' },
     ],
+    introduction: 'Chen Qianyu serves as the cornerstone support for Physical damage teams, functioning as both a vulnerability applicator and substantial sub-DPS. Her kit revolves around applying Lift effects that generate Vulnerability stacks for allies to consume, amplifying team damage dramatically. Free from the "Break the Siege" quest, she is simultaneously beginner-friendly and endgame-viable. Physical teams essentially require her presence, making investment virtually mandatory for players pursuing Physical damage strategies. She contributes both meaningful personal damage through her Ultimate and irreplaceable team utility.',
+    gameplayTips: ['Cast Battle Skill at engagement start to initiate Lift effects and create Vulnerability stacks immediately', 'Space Battle Skill and Combo Skill activations rather than using consecutively to preserve Combat Talent ATK stacks', 'Deploy Ultimate specifically when enemies are Staggered for dramatically increased damage through the seven-sequence chain', 'Coordinate Vulnerability stack consumption timing with teammates to prevent premature waste', 'Complete basic attack chains against Staggered enemies for finisher bonus damage rather than canceling into skills'],
+    gearNotes: 'Swordmancer (4-piece) provides Agility and Strength scaling with set bonuses triggering additional Physical damage and Stagger after applying status conditions. She continuously procs these bonuses through Lift and Vulnerability application. Bonekrusha is an alternative for Ultimate-focused burst builds. Roving MSGR serves as an accessible early-game option.',
+    lastUpdated: '2025-02-19',
   },
 
   'da-pan': {
@@ -508,16 +565,20 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'Da Pan is a straightforward Physical Assault operator built around raw Strength. His greatsword hits land hard with significant stagger, but the weapon type\'s slower attack speed limits his overall DPS compared to faster alternatives. He functions adequately as a Physical team\'s secondary damage dealer but lacks the utility or unique mechanics to stand out. For players lacking 6-star Assault operators, Da Pan fills the role competently, though he should be replaced when better options become available.',
     bestWeapons: [
-      { name: 'Finishing Call', rating: 4, notes: 'Best 5-star greatsword for Physical damage' },
-      { name: 'Ancient Canal', rating: 3, notes: 'Alternative with good passive' },
-      { name: 'Industry 0.1', rating: 2, notes: '4-star budget option' },
+      { name: 'Exemplar', rating: 5, notes: 'Best in slot - Physical damage boost after Battle Skill, high uptime with rotation' },
+      { name: 'Sundered Prince', rating: 4, notes: 'F2P friendly with Crit Rate, ATK buffs and Stagger enhancement' },
+      { name: 'Ancient Canal', rating: 3, notes: 'Signature weapon - Brutality and Strength scaling, reliable through progression' },
     ],
-    bestGearSets: ['Type 50 Yinglung', 'Armored MSGR'],
-    skillPriority: 'Battle Skill > Ultimate > Combo Skill > Basic Attack',
+    bestGearSets: ['Æthertech', 'Aburrey\'s Legacy'],
+    skillPriority: 'Combo Skill > Battle Skill = Ultimate > Basic Attack',
     synergies: ['Pogranichnik', 'Endministrator', 'Chen Qianyu'],
     teamComps: [
       { name: 'Physical Assault', members: ['Da Pan', 'Pogranichnik', 'Lifeng', 'Ardelia'], notes: 'Physical team with Da Pan as primary DPS' },
     ],
+    introduction: 'Da Pan functions as a Physical DPS Striker specializing in Vulnerability stack consumption through burst windows. His core gameplay revolves around building exactly 4 Vulnerability stacks, then detonating them via Combo Skill for massive damage amplified by his Crush effect. His Ultimate hits multiple enemies while generating Prep Ingredients stacks that reduce Combo Skill cooldown. While solid in multi-target scenarios, he faces competition from Endministrator in single-target fights. Community consensus places him as a strong but non-essential addition to Physical teams.',
+    gameplayTips: ['Monitor Vulnerability stack accumulation carefully - reach exactly 4 stacks before activating Combo Skill for maximum burst', 'Start engagements with Battle Skill to apply Lift and generate initial Vulnerability stacks', 'Deploy Ultimate specifically against multiple enemies for Prep Ingredients that reduce Combo Skill cooldown', 'Coordinate with teammates to ensure Crush debuff window is exploited by the entire team', 'Use Salty or Mild talent by chaining Ultimate into Combo Skill for explosive burst rotations'],
+    gearNotes: 'Æthertech (4-piece) provides ATK increases and Physical damage amplification against Vulnerable enemies, activating constantly during optimal gameplay. Pair with Swordmancer TAC Gauntlets off-piece for Physical output. Aburrey\'s Legacy grants Skill DMG +24% for early game, providing consistent performance before farming endgame sets.',
+    lastUpdated: '2025-02-19',
   },
 
   'perlica': {
@@ -549,6 +610,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Electric Core', members: ['Perlica', 'Avywenna', 'Antal', 'Gilberta'], notes: 'Premier Electric team with Gilberta amplification' },
     ],
+    introduction: 'Perlica is the indispensable Electric Infliction enabler and backbone of all Electric team compositions. Her Battle Skill establishes Electric Infliction on priority targets, and her Combo Skill applies Electrification for additional debuff damage. She functions as a hybrid support/sub-DPS, providing consistent Electric application that enables operators like Avywenna to function. Without Perlica, Electric teams simply cannot operate effectively. Her A-tier placement reflects excellence within her niche while acknowledging limited utility outside specialized Electric compositions.',
+    gameplayTips: ['Always use Battle Skill as your rotation opener to establish Electric Infliction before teammates execute damage rotations', 'Trigger Combo Skill immediately after Final Strike to apply Electrification during natural attack chains', 'Time Ultimate during established Vulnerability windows rather than on cooldown for peak burst', 'Position carefully to maintain high HP when using Mordvolt Insulation set for the damage bonus threshold', 'Coordinate with Avywenna to ensure damage rotations occur during Electrification uptime'],
+    gearNotes: 'Pulser Labs provides consistent Electric damage amplification for sustained encounters. Mordvolt Insulation grants Intellect +50 and Arts DMG +20% when above 80% HP, offering early game performance. Position to avoid damage when using Mordvolt set to maintain the HP threshold. Prioritize Intellect and Arts Intensity substats.',
+    lastUpdated: '2025-02-19',
   },
 
   'snowshine': {
@@ -579,11 +644,15 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Cryo Defense', members: ['Snowshine', 'Last Rite', 'Xaihi', 'Ardelia'], notes: 'Cryo team with Snowshine tanking and creating frozen zones' },
     ],
+    introduction: 'Snowshine operates as a sustain-oriented Cryo Defender specializing in defensive support rather than traditional tanking. She brings a unique combination of healing, crowd control, and Cryo application to Shatter-focused team compositions. Her Combo Skill provides instant and continuous healing to nearby allies when the controlled operator drops below 60% HP, while her Ultimate delivers forced Solidification for enabling Shatter combos. Her niche lies in compositions that want both survivability and Cryo reactions without dedicating separate slots.',
+    gameplayTips: ['Activate Battle Skill preemptively before damage spikes to establish shields on allies before significant damage', 'Position allies near each other to maximize shield and healing coverage from area-based abilities', 'Time Ultimate to force Solidification windows when team burst damage abilities are available', 'Monitor ally HP to trigger Combo Skill healing at optimal moments rather than panic situations', 'Use Snow Zones strategically to control enemy positioning while enabling Solidification setups'],
+    gearNotes: 'LYNX set is optimal providing +20% Treatment Efficiency baseline with 15% damage reduction for allies for 10 seconds. This transforms Snowshine into an exceptional defensive support stacking multiplicative damage reduction with shields and healing. Generic defensive sets work for early/mid game before accessing LYNX gear. Prioritize HP, DEF, and Treatment Efficiency.',
+    lastUpdated: '2025-02-19',
   },
 
   'wulfgard': {
     slug: 'wulfgard',
-    ratings: { overall: 'B', pve: 'B', boss: 'B', support: 'C' },
+    ratings: { overall: 'A', pve: 'A', boss: 'A', support: 'B' },
     pros: [
       'Highest Strength stat among Casters at 162',
       'Handcannon provides safe ranged engagement',
@@ -598,21 +667,25 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'Wulfgard is an unusual Heat Caster whose highest stat is Strength rather than Intellect, creating an unconventional damage profile. His handcannon provides safe ranged attacks with Heat damage application, making him useful for applying Combustion in Heat teams. However, with Laevatain dominating the Heat DPS role, Wulfgard struggles to justify his team slot. He works best as an off-field damage contributor when a second Heat element is needed, but should not be a priority investment.',
     bestWeapons: [
-      { name: 'Opus: The Living', rating: 4, notes: 'Best 5-star handcannon for Heat builds' },
-      { name: 'Rational Farewell', rating: 3, notes: 'Alternative with good base stats' },
-      { name: 'Long Road', rating: 2, notes: '4-star budget handcannon' },
+      { name: 'Clannibal', rating: 5, notes: 'Best in slot - Infliction priority ensures consistent Heat stack application for personal and team damage' },
+      { name: 'Opus: The Living', rating: 3, notes: 'Arts Intensity scaling for Combustion and Heat ability multipliers' },
+      { name: 'Rational Farewell', rating: 2, notes: 'Budget handcannon with balanced stat increases' },
     ],
     bestGearSets: ['Hot Work', 'Armored MSGR'],
-    skillPriority: 'Battle Skill > Combo Skill > Ultimate > Basic Attack',
+    skillPriority: 'Battle Skill > Ultimate > Basic Attack > Combo Skill',
     synergies: ['Laevatain', 'Ember', 'Akekuri'],
     teamComps: [
       { name: 'Heat Support DPS', members: ['Wulfgard', 'Laevatain', 'Ember', 'Ardelia'], notes: 'Wulfgard provides off-field Heat damage' },
     ],
+    introduction: 'Wulfgard functions as a hybrid damage dealer and enabler specializing in Heat reactions, particularly Combustion mechanics. He uniquely balances applying infliction stacks for teammates while consuming those same reactions for personal damage through enhanced Battle Skill versions. His signature mechanic involves triggering enhanced abilities by consuming active Combustion or Electrification. Wulfgard applies the most Heat Infliction stacks among all operators, making him invaluable as either a main DPS in F2P compositions or a reaction enabler supporting hypercarries like Laevatain.',
+    gameplayTips: ['Prioritize applying Combustion through Combo Skill before using enhanced Battle Skill to ensure reactions are available', 'Activate Talent by applying Combustion then immediately consume with Battle Skill for Heat damage boost during damage window', 'Use Ultimate to force Combustion application when Battle Skill is available but no reactions exist on targets', 'In hypercarry compositions with Laevatain, resist consuming reactions and focus on applying Heat stacks', 'Position carefully when using Battle Skill to ensure both base and enhanced shots connect with priority targets'],
+    gearNotes: 'Hot Work (full set) provides +30 Arts Intensity baseline with +50% Heat damage for 10 seconds after applying Combustion. This synergizes perfectly with his rotation as he applies Combustion regularly. The damage bonus window aligns with enhanced Battle Skill usage for devastating burst. Mixed Arts Intensity gear works for early game before accessing Hot Work.',
+    lastUpdated: '2025-02-19',
   },
 
   'xaihi': {
     slug: 'xaihi',
-    ratings: { overall: 'A', pve: 'A', boss: 'A', support: 'A' },
+    ratings: { overall: 'S', pve: 'S', boss: 'S', support: 'S' },
     pros: [
       'Versatile healer with strong Cryo affliction application',
       'High Will stat provides excellent durability',
@@ -628,16 +701,21 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'Xaihi is the premier Cryo support operator, providing sustained healing while constantly applying Cryo affliction to enemies. Her high Will stat makes her surprisingly durable, and her Arts Unit enables safe ranged healing that doesn\'t require risky positioning. She is essential for Cryo team compositions, enabling damage amplification through consistent Cryo status application. While Ardelia outperforms her in raw healing and universal support, within Cryo teams Xaihi\'s element-specific utility makes her the superior choice. She is a must-build for anyone running Last Rite or Yvonne.',
     bestWeapons: [
-      { name: 'Wild Wanderer', rating: 4, notes: 'Best 5-star Arts Unit for Cryo Supporters' },
-      { name: 'Freedom to Proselytize', rating: 3, notes: 'Good healing-focused alternative' },
-      { name: 'Fluorescent Roc', rating: 2, notes: '4-star budget option' },
+      { name: 'Chivalric Virtues', rating: 5, notes: 'Best in slot - Team-wide ATK buff when healing allies, synergizes with Battle Skill healing' },
+      { name: 'Detonation Unit', rating: 4, notes: 'Vulnerability debuffs on enemies, multiplicative scaling with amplifications' },
+      { name: 'Monaihe', rating: 3, notes: 'Improves Ultimate uptime for more frequent Cryo/Nature amplification' },
+      { name: 'Freedom to Proselytize', rating: 3, notes: 'Focused healing enhancement for maximum Treatment Efficiency' },
     ],
-    bestGearSets: ['LYNX', 'Mordvolt Resistant'],
-    skillPriority: 'Combo Skill > Ultimate > Battle Skill > Basic Attack',
+    bestGearSets: ['Eternal Xiranite', 'Mordvolt Resistant'],
+    skillPriority: 'Ultimate > Battle Skill > Combo Skill > Basic Attack',
     synergies: ['Last Rite', 'Yvonne', 'Snowshine', 'Alesh'],
     teamComps: [
       { name: 'Cryo Healer Core', members: ['Xaihi', 'Last Rite', 'Yvonne', 'Snowshine'], notes: 'Full Cryo team with Xaihi as dedicated healer' },
     ],
+    introduction: 'Xaihi stands as a premier support operator who simultaneously functions as buffer, debuffer, and healer, making her invaluable in Cryo and Nature-focused teams. Her kit provides amplification effects boosting Arts, Cryo, and Nature damage while maintaining team health through healing mechanics. Unlike specialized supports, Xaihi delivers comprehensive support capabilities that reduce the need for multiple dedicated support slots. Her S-tier status within Cryo/Nature compositions reflects her irreplaceable value, where she enables damage ceilings unattainable with alternative supports.',
+    gameplayTips: ['Play Xaihi as a teammate rather than controlled operator to maximize support capabilities', 'Use Battle Skill to heal allies to full HP before damage phases to convert subsequent healing into Arts amplification', 'Activate Ultimate before team burst windows to ensure all teammates benefit from 12-second Cryo and Nature amplifications', 'Time Combo Skill to apply Cryo Infliction on priority targets before teammates execute elemental reactions', 'Leverage Execute Process talent by ensuring targets have Cryo or Solidification before allies execute burst damage'],
+    gearNotes: 'Eternal Xiranite is optimal providing 16% damage boost to all teammates after applying amplification buffs. Individual pieces grant Will, Intellect, Ultimate Gain Efficiency, and Arts Intensity. Mordvolt Resistant is the early/mid game alternative emphasizing Will and Treatment Efficiency. Prioritize Will Boost, HP Boost, and healing-related substats.',
+    lastUpdated: '2025-02-19',
   },
 
   // ===== 4-STAR OPERATORS =====
@@ -669,6 +747,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     teamComps: [
       { name: 'Heat Enabler', members: ['Akekuri', 'Laevatain', 'Antal', 'Ardelia'], notes: 'Akekuri enables Laevatain\'s maximum DPS ceiling' },
     ],
+    introduction: 'Akekuri is one of the most remarkable 4-star operators in the game, providing exceptional support value that punches far above her rarity. As a Heat Vanguard, she is an essential enabler for Laevatain\'s maximum damage output and a core member of the strongest team composition in the game. Her fast sword attacks and SP generation through stagger mechanics make her useful even outside Heat teams. Being a 4-star makes her extremely accessible, and her easy potential maxing gives excellent F2P value.',
+    gameplayTips: ['Focus on generating SP through stagger mechanics to enable faster team rotations', 'Apply Heat Infliction consistently to enable Laevatain\'s Melting Flame stack consumption', 'Time Combo Skill triggers to coincide with Laevatain\'s damage windows for maximum team output', 'Position aggressively to maintain attack pressure while generating SP through combat', 'In non-Heat teams, focus on SP generation utility over Heat application'],
+    gearNotes: 'Æthertech provides team-wide support benefits with ATK scaling. Hot Work is an alternative for Heat-focused builds emphasizing Combustion synergy. Both sets work well, with the choice depending on whether you prioritize team support (Æthertech) or personal Heat damage (Hot Work).',
+    lastUpdated: '2025-02-19',
   },
 
   'antal': {
@@ -699,6 +781,10 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { name: 'Universal Support', members: ['Antal', 'Laevatain', 'Akekuri', 'Ardelia'], notes: 'The strongest team in the game - Antal enables Laevatain\'s peak damage' },
       { name: 'Electric Support', members: ['Antal', 'Avywenna', 'Perlica', 'Gilberta'], notes: 'Electric team with Antal as primary support' },
     ],
+    introduction: 'Antal is widely considered one of the best support operators in the game regardless of rarity. Her specialized amplification provides unmatched value within Electric and Heat team compositions, applying Focus debuffs and team-wide elemental damage buffs through her Ultimate. She is a core member of the strongest team in the game alongside Laevatain, Akekuri, and Ardelia. Her Intellect of 165 is the highest among all 4-stars, and her support kit is so effective that she enables damage ceilings no other support can match in elemental compositions.',
+    gameplayTips: ['Use lock-on functionality before Battle Skill to ensure Focus debuff lands on priority targets accurately', 'Cast Ultimate either at rotation start for sustained uptime or immediately before hypercarry executes peak damage', 'Trigger Combo Skill reactively when allies apply Arts Inflictions for incremental value', 'Focus entirely on enabling teammates rather than attempting personal damage rotations', 'In Heat teams, coordinate Ultimate timing with Laevatain\'s enhanced Battle Skill windows'],
+    gearNotes: 'LYNX set provides healing enhancement and team damage reduction. Mordvolt Insulation grants Intellect +50 and Arts DMG +20% when above 80% HP for damage-focused support. The choice depends on whether your team needs additional survivability (LYNX) or Antal to contribute some personal damage (Mordvolt). Prioritize Intellect substats.',
+    lastUpdated: '2025-02-19',
   },
 
   'catcher': {
@@ -717,15 +803,20 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'Catcher is the weakest Defender in the current roster, offering little beyond basic tanking capabilities. While his Strength stat matches Ember\'s at 176, he lacks any unique mechanics or utility that would justify his team slot over alternatives. He serves primarily as an early-game placeholder for players who haven\'t yet obtained better Defenders. Once Ember, Snowshine, or any 6-star Defender is available, Catcher should be replaced. Investment in Catcher is not recommended unless no other Defender options exist.',
     bestWeapons: [
-      { name: 'Industry 0.1', rating: 3, notes: 'Best available 4-star greatsword' },
-      { name: 'Quencher', rating: 2, notes: 'Alternative budget option' },
+      { name: 'Former Finery', rating: 4, notes: 'Best in slot - Heals Protected allies, HP and Will stats for defensive support' },
+      { name: 'OBJ Heavy Burden', rating: 3, notes: 'Signature with DEF scaling that increases shield values' },
+      { name: 'Seeker of Dark Lung', rating: 2, notes: 'For players wanting some offensive value from Catcher' },
     ],
-    bestGearSets: ['AIC Heavy', 'Armored MSGR'],
+    bestGearSets: ['Frontiers', 'Armored MSGR'],
     skillPriority: 'Combo Skill > Battle Skill > Ultimate > Basic Attack',
     synergies: ['Endministrator', 'Da Pan'],
     teamComps: [
       { name: 'Physical Budget', members: ['Catcher', 'Endministrator', 'Da Pan', 'Ardelia'], notes: 'Budget Physical team with Catcher as early-game tank' },
     ],
+    introduction: 'Catcher serves as a defensive support specialist for Physical team compositions, providing damage mitigation through shields while applying Vulnerable and Weaken debuffs. Rated C-Tier overall, he struggles to find meaningful meta positioning due to superior alternatives in both tank and support categories. His Combo Skill shields only half the team with uncontrollable trigger conditions, and his sustain requires dropping below specific HP thresholds. Players should consider him primarily as a budget option for Physical teams lacking better alternatives, transitioning away once superior defenders become available.',
+    gameplayTips: ['Activate Battle Skill immediately before taking damage to trigger counterattack mechanics and Vulnerable application', 'Position near vulnerable teammates during dangerous enemy mechanics to ensure Combo Skill shield coverage', 'Use Ultimate for Weaken application and Knockdown crowd control during dangerous enemy attacks', 'Focus on maintaining defensive uptime rather than attempting complex mechanical execution', 'Since Combo Skill only shields half the team, position near your most valuable operators'],
+    gearNotes: 'Frontiers reduces Combo Skill cooldown by 15% and grants team 16% damage boost for 12 seconds after skill SP recovery. This transforms Catcher from pure defense into a hybrid support. Armored MSGR grants 50 Strength and 30% damage reduction when HP drops below 50% for early game defensive value.',
+    lastUpdated: '2025-02-19',
   },
 
   'estella': {
@@ -745,15 +836,20 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     ],
     review: 'Estella is a Cryo Guard with high Will that makes her durable despite her 4-star rarity. Her polearm provides decent range and her Cryo element enables freeze reactions in Cryo team compositions. However, she lacks standout mechanics and is generally outperformed by 5-star and above options. She serves as a capable early-game Cryo team filler and can contribute to Cryo teams when better Guards aren\'t available. Her high Will makes her surprisingly tanky, which can be useful in content where sustain matters.',
     bestWeapons: [
-      { name: "Pathfinder's Beacon", rating: 3, notes: 'Best 4-star polearm option' },
-      { name: 'Aggeloslayer', rating: 2, notes: 'Alternative with different passive' },
+      { name: 'OBJ Razorhorn', rating: 5, notes: 'Signature best in slot - Scaling against Cryo Inflicted/Solidified enemies with Physical damage bonus' },
+      { name: 'Valiant', rating: 4, notes: 'Strong alternative leveraging Physical Susceptibility for amplified damage' },
+      { name: 'Aggeloslayer', rating: 3, notes: 'Budget 4-star with Will stat and post-Battle Skill ATK buff' },
     ],
-    bestGearSets: ['Mordvolt Resistant', 'AIC Heavy'],
-    skillPriority: 'Combo Skill > Battle Skill > Ultimate > Basic Attack',
+    bestGearSets: ['Type 50 Yinglung', 'Eternal Xiranite'],
+    skillPriority: 'Combo Skill > Ultimate > Battle Skill > Basic Attack',
     synergies: ['Last Rite', 'Xaihi', 'Snowshine'],
     teamComps: [
       { name: 'Cryo Budget', members: ['Estella', 'Last Rite', 'Xaihi', 'Ardelia'], notes: 'Budget Cryo team with Estella as Guard filler' },
     ],
+    introduction: 'Estella operates as a Physical Support hybrid specializing in Shatter team compositions. Her primary function involves applying Physical Susceptibility to enemies affected by Solidification, enabling team-wide damage amplification through coordinated Arts Reactions. She possesses strong mechanical synergies with high Combo Skill multipliers, though Solidification teams are currently overshadowed by pure Physical compositions. Her accessible 4-star rarity makes investment more feasible, creating a niche as a budget Shatter enabler for players building around Cryo/Physical hybrid strategies.',
+    gameplayTips: ['Apply Cryo Infliction with Battle Skill then ensure teammates trigger Solidification before executing Combo Skill', 'Execute Combo Skill against Solidified enemies to trigger both increased damage and Physical Susceptibility simultaneously', 'Deploy Ultimate after applying debuffs to capitalize on amplified damage rather than immediately', 'Coordinate with teammates to ensure Solidification persists until Combo Skill connects', 'Leverage polearm range to maintain safe positioning while contributing to Solidification setups'],
+    gearNotes: 'Type 50 Yinglung (3-piece) provides 15% ATK increase with Combo Skill damage scaling after ally Battle Skills. Pair with Swordmancer TAC Gauntlets off-piece. Eternal Xiranite is the support-focused alternative maximizing debuff application. Aburrey\'s Legacy provides strong early game Skill DMG +24% with ATK buffs.',
+    lastUpdated: '2025-02-19',
   },
 
   'fluorite': {
@@ -771,17 +867,23 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       'Outperformed by 5-star and 6-star Caster alternatives',
       'Agility stat is wasted on a Caster build',
     ],
-    review: 'Fluorite is the only dedicated Nature Caster, which gives her a unique niche but also highlights the current limitations of Nature team compositions. Her unusually high Agility (168) is wasted on a Caster whose damage scales with Intellect, creating an awkward stat distribution. She can apply Nature Vulnerability through her handcannon attacks, but her overall damage output is low. She currently has limited competitive value but may become more relevant as more Nature operators are released and Nature team compositions develop.',
+    review: 'Fluorite is a specialized enabler for Cryo and Nature reaction teams, essential for operators like Last Rite and Yvonne who consume Cryo Inflictions for amplified damage. Her kit revolves around applying additional elemental infliction stacks through Combo Skill and Ultimate. Despite extremely long Combo Skill cooldowns (40 seconds base), she provides irreplaceable value in her niche. The Frontiers equipment set is critical for addressing her cooldown issues. Avoid using her Battle Skill in most compositions as it applies unwanted Nature Inflictions that can disrupt elemental reaction sequences. She performs best as a teammate rather than the controlled operator.',
     bestWeapons: [
-      { name: 'Long Road', rating: 3, notes: 'Best available 4-star handcannon' },
-      { name: 'Howling Guard', rating: 2, notes: 'Alternative budget option' },
+      { name: 'OBJ Velocitous', rating: 5, notes: 'Best in slot - Ultimate Gain Efficiency supporting enabler role' },
+      { name: 'Wedge', rating: 4, notes: 'Arts DMG and Crit Rate for personal damage contribution' },
+      { name: 'Navigator', rating: 3, notes: 'Hybrid option balancing Infliction application and damage' },
+      { name: 'Howling Guard', rating: 2, notes: 'Budget 4-star for Suppression builds' },
     ],
-    bestGearSets: ['Mordvolt Insulation', 'Catastrophe'],
-    skillPriority: 'Battle Skill > Combo Skill > Ultimate > Basic Attack',
+    bestGearSets: ['Frontiers', 'MI Security'],
+    skillPriority: 'Combo Skill = Ultimate > Basic Attack > Battle Skill',
     synergies: ['Ardelia', 'Gilberta'],
     teamComps: [
       { name: 'Nature Niche', members: ['Fluorite', 'Ardelia', 'Gilberta', 'Endministrator'], notes: 'Nature-heavy composition utilizing Vulnerability stacking' },
     ],
+    introduction: 'Fluorite is a specialized enabler for Cryo and Nature reaction teams, providing essential Infliction stacking for operators like Last Rite and Yvonne. Her kit revolves around applying additional elemental infliction stacks through Combo Skill and Ultimate while supporting Arts Reaction triggers. Despite her C-tier overall rating, she is nearly irreplaceable in Cryo compositions where consistent Infliction application is critical. Her extreme Combo Skill cooldown (40 seconds base) is her primary weakness, making the Frontiers equipment set critical for viability.',
+    gameplayTips: ['Wait until enemies have sufficient Cryo or Nature Inflictions before deploying Combo Skill to maximize the long cooldown value', 'Use Combo Skill immediately when available given the prohibitively long recharge time', 'Avoid triggering Battle Skill unless specifically coordinating Nature reactions, as it disrupts Cryo sequences', 'Deploy Improvised Explosives strategically for Slow effects and supplementary Nature Infliction', 'Be extremely careful when layering Nature and Cryo Inflictions together to avoid unintended Solidification'],
+    gearNotes: 'Frontiers (4-piece) is essential to address the crippling 40-second Combo Skill cooldown. Without this set, her Combo Skill cycles too slowly for consistent value. MI Security is the damage-focused alternative with Crit Rate stacking. Mordvolt Insulation provides early game Intellect and Arts DMG when above 80% HP.',
+    lastUpdated: '2025-02-19',
   },
 };
 

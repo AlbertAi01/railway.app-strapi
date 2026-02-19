@@ -1,14 +1,15 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Zap, Wind, Brain, Heart, Star, Sword, Shield, ChevronDown, ChevronUp, Trophy, Target, Users, Crosshair, ThumbsUp, ThumbsDown, BookOpen } from 'lucide-react';
+import { ArrowLeft, Zap, Wind, Brain, Heart, Star, Sword, Shield, ChevronDown, ChevronUp, Trophy, Target, Users, Crosshair, ThumbsUp, ThumbsDown, BookOpen, Lightbulb, Wrench, Calendar } from 'lucide-react';
 import { CHARACTERS } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
-import { CHARACTER_BANNERS, CHARACTER_ICONS, PROFESSION_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
+import { CHARACTER_BANNERS, CHARACTER_ICONS, CHARACTER_SPLASH, PROFESSION_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
 import { getOperatorGuide, TIER_COLORS } from '@/data/guides';
-import type { TierRating } from '@/data/guides';
+import type { TierRating, OperatorGuide } from '@/data/guides';
+import { fetchOperatorGuide } from '@/lib/api';
 
 function TierBadge({ tier, label }: { tier: TierRating; label: string }) {
   return (
@@ -51,6 +52,31 @@ function Section({ title, icon, children, accent }: { title: string; icon: React
 export default function CharacterDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const char = CHARACTERS.find(c => c.Slug === slug);
+  const [guide, setGuide] = useState<OperatorGuide | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    // Load static guide immediately
+    const staticGuide = getOperatorGuide(slug);
+    if (staticGuide) setGuide(staticGuide);
+
+    // Then try to overlay Strapi CMS data
+    fetchOperatorGuide(slug).then((strapiData) => {
+      if (strapiData) {
+        const attrs = strapiData.attributes || strapiData;
+        setGuide(prev => ({
+          ...(prev || {} as OperatorGuide),
+          slug,
+          ...(attrs.review && { review: attrs.review }),
+          ...(attrs.introduction && { introduction: attrs.introduction }),
+          ...(attrs.gameplayTips && { gameplayTips: attrs.gameplayTips }),
+          ...(attrs.gearNotes && { gearNotes: attrs.gearNotes }),
+          ...(attrs.lastUpdated && { lastUpdated: attrs.lastUpdated }),
+        }));
+      }
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, [slug]);
 
   if (!char) {
     return (
@@ -61,11 +87,11 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
     );
   }
 
-  const guide = getOperatorGuide(slug);
   const rarityColor = RARITY_COLORS[char.Rarity] || '#999';
   const elementColor = ELEMENT_COLORS[char.Element];
   const maxStat = 200;
   const profIcon = PROFESSION_ICONS[char.Role];
+  const splashUrl = CHARACTER_SPLASH[char.Name];
 
   return (
     <div>
@@ -186,6 +212,23 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
 
           {guide && (
             <>
+              {/* Introduction (longform GEO content) */}
+              {guide.introduction && (
+                <Section title="Introduction" icon={<BookOpen size={16} />} accent={elementColor}>
+                  <div className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-line">
+                    {guide.introduction}
+                  </div>
+                </Section>
+              )}
+
+              {/* Last Updated Badge */}
+              {guide.lastUpdated && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
+                  <Calendar size={12} />
+                  <span>Guide last updated: {guide.lastUpdated}</span>
+                </div>
+              )}
+
               {/* Review */}
               <Section title="Review" icon={<BookOpen size={16} />} accent={TIER_COLORS[guide.ratings.overall]}>
                 <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">{guide.review}</p>
@@ -319,6 +362,29 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
                   ))}
                 </div>
               </Section>
+
+              {/* Gameplay Tips */}
+              {guide.gameplayTips && guide.gameplayTips.length > 0 && (
+                <Section title="Gameplay Tips" icon={<Lightbulb size={16} />} accent="#FFD429">
+                  <ul className="space-y-3">
+                    {guide.gameplayTips.map((tip, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm">
+                        <span className="text-[var(--color-accent)] font-mono text-xs mt-0.5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                        <span className="text-[var(--color-text-secondary)] leading-relaxed">{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {/* Gear Notes (detailed equipment explanation) */}
+              {guide.gearNotes && (
+                <Section title="Gear & Equipment Deep Dive" icon={<Wrench size={16} />}>
+                  <div className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-line">
+                    {guide.gearNotes}
+                  </div>
+                </Section>
+              )}
             </>
           )}
 
@@ -329,6 +395,53 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
           )}
         </div>
       </div>
+
+      {/* Structured Data for GEO (Google Generative Engine Optimization) */}
+      {guide && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Article',
+              headline: `${char.Name} Guide - Arknights: Endfield Build & Teams`,
+              description: guide.review,
+              author: { '@type': 'Organization', name: 'Zero Sanity', url: 'https://zerosanity.app' },
+              publisher: { '@type': 'Organization', name: 'Zero Sanity', url: 'https://zerosanity.app' },
+              ...(guide.lastUpdated && { dateModified: guide.lastUpdated }),
+              mainEntity: {
+                '@type': 'FAQPage',
+                mainEntity: [
+                  {
+                    '@type': 'Question',
+                    name: `What is the best build for ${char.Name} in Arknights: Endfield?`,
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: `Best weapons: ${guide.bestWeapons.map(w => w.name).join(', ')}. Best gear sets: ${guide.bestGearSets.join(', ')}. Skill priority: ${guide.skillPriority}.`,
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: `What are the best teams for ${char.Name}?`,
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: guide.teamComps.map(t => `${t.name}: ${t.members.join(', ')} - ${t.notes}`).join(' | '),
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: `Is ${char.Name} good in Arknights: Endfield?`,
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: `${char.Name} is rated ${guide.ratings.overall} tier overall (PvE: ${guide.ratings.pve}, Boss: ${guide.ratings.boss}). ${guide.review}`,
+                    },
+                  },
+                ],
+              },
+            }),
+          }}
+        />
+      )}
     </div>
   );
 }
