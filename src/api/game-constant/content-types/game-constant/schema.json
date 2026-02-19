@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "game_constants",
+  "info": {
+    "singularName": "game-constant",
+    "pluralName": "game-constants",
+    "displayName": "Game Constant",
+    "description": "Configurable game constants, rates, and settings"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Key": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Value": {
+      "type": "json",
+      "required": true
+    },
+    "Category": {
+      "type": "enumeration",
+      "enum": ["gacha", "gameplay", "ui", "tier-list", "banners", "ascension", "essences", "achievements"],
+      "required": true
+    },
+    "Description": {
+      "type": "text"
+    }
+  }
+}

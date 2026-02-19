@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "gear_pieces",
+  "info": {
+    "singularName": "gear-piece",
+    "pluralName": "gear-pieces",
+    "displayName": "Gear Piece",
+    "description": "Individual gear pieces (set and standalone) with stats"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true
+    },
+    "SetName": {
+      "type": "string"
+    },
+    "Tier": {
+      "type": "enumeration",
+      "enum": ["T0", "T1", "T2", "T3", "T4"],
+      "required": true
+    },
+    "Level": {
+      "type": "integer",
+      "default": 0
+    },
+    "DEF": {
+      "type": "integer",
+      "default": 0
+    },
+    "Stats": {
+      "type": "json"
+    },
+    "IconUrl": {
+      "type": "string"
+    },
+    "EquipmentSet": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::equipment-set.equipment-set"
+    }
+  }
+}

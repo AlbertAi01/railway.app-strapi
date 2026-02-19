@@ -1,0 +1,104 @@
+{
+  "kind": "collectionType",
+  "collectionName": "operator_guides",
+  "info": {
+    "singularName": "operator-guide",
+    "pluralName": "operator-guides",
+    "displayName": "Operator Guide",
+    "description": "Per-character build guides with ratings, weapons, gear, and team comps"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Slug": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Character": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::character.character"
+    },
+    "RatingOverall": {
+      "type": "enumeration",
+      "enum": ["SS", "S", "A", "B", "C", "D"],
+      "required": true
+    },
+    "RatingPvE": {
+      "type": "enumeration",
+      "enum": ["SS", "S", "A", "B", "C", "D"],
+      "required": true
+    },
+    "RatingBoss": {
+      "type": "enumeration",
+      "enum": ["SS", "S", "A", "B", "C", "D"],
+      "required": true
+    },
+    "RatingSupport": {
+      "type": "enumeration",
+      "enum": ["SS", "S", "A", "B", "C", "D"],
+      "required": true
+    },
+    "Pros": {
+      "type": "json"
+    },
+    "Cons": {
+      "type": "json"
+    },
+    "Review": {
+      "type": "richtext",
+      "required": true
+    },
+    "Introduction": {
+      "type": "richtext"
+    },
+    "BestWeapons": {
+      "type": "json"
+    },
+    "BestGearSets": {
+      "type": "json"
+    },
+    "SkillPriority": {
+      "type": "text"
+    },
+    "SkillData": {
+      "type": "json"
+    },
+    "GearSetDetails": {
+      "type": "json"
+    },
+    "DamageCalcs": {
+      "type": "json"
+    },
+    "StatPriorities": {
+      "type": "json"
+    },
+    "Synergies": {
+      "type": "json"
+    },
+    "TeamComps": {
+      "type": "json"
+    },
+    "GameplayTips": {
+      "type": "json"
+    },
+    "GearNotes": {
+      "type": "richtext"
+    },
+    "ElementalNotes": {
+      "type": "richtext"
+    },
+    "RotationGuide": {
+      "type": "richtext"
+    },
+    "ComparisonNotes": {
+      "type": "richtext"
+    },
+    "LastUpdated": {
+      "type": "string"
+    }
+  }
+}

@@ -403,18 +403,23 @@ export const STANDALONE_GEAR: GearPiece[] = [
 
 // CDN file patterns known to be missing (CDN returns HTML 200 instead of image)
 // These will be stripped so components fall back to placeholder icons
-const BROKEN_CDN_PREFIXES = [
-  'frontier01_', 'misec01_', 'pulser01_', 'intagi01_',
-];
-const BROKEN_CDN_FILES = [
-  'attri01_edc_01', 'attri01_edc_02', 'usp02_hand_02',
+// Updated based on actual CDN testing - many T4 set icons are missing
+const BROKEN_CDN_PATTERNS = [
+  // Complete sets with missing icons
+  'frontier01',      // Frontiers set - all pieces missing
+  'misec01',         // MI Security set - all pieces missing
+  'pulser01',        // Pulser Labs set - all pieces missing
+  'intagi01',        // AIC Light set - all pieces missing
+  // Specific broken pieces from otherwise working sets
+  'attri01_edc_01',  // Bonekrusha Figurine
+  'attri01_edc_02',  // Bonekrusha Figurine T1
+  'usp02_hand_02',   // Eternal Xiranite Gloves T1
 ];
 
 function isIconBroken(icon?: string): boolean {
   if (!icon) return false;
-  const file = icon.split('/').pop() || '';
-  return BROKEN_CDN_PREFIXES.some(p => file.includes(p)) ||
-    BROKEN_CDN_FILES.some(f => file.includes(f));
+  const filename = icon.split('/').pop() || '';
+  return BROKEN_CDN_PATTERNS.some(pattern => filename.includes(pattern));
 }
 
 // Strip broken icons so consumers get clean data

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useReducer, useCallback, useMemo } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 import {
   FileText,
   Database,
@@ -206,11 +208,11 @@ const BUILDINGS: Building[] = [
 ];
 
 const CATEGORY_COLORS: Record<Building['category'], string> = {
-  Production: '#22c55e',
-  Processing: '#3b82f6',
-  Storage: '#f97316',
-  Utility: '#06b6d4',
-  Logistics: '#eab308',
+  Production: '#4ade80',
+  Processing: '#60a5fa',
+  Storage: '#FFD429',
+  Utility: '#22d3ee',
+  Logistics: '#fbbf24',
   Plots: '#10b981',
 };
 
@@ -485,11 +487,15 @@ export default function FactoryPlannerPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [state, dispatch] = useReducer(reducer, initialState);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(0.45);
+  const [zoom, setZoom] = useState(1.0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [mouseGridPos, setMouseGridPos] = useState<{ gridX: number; gridY: number } | null>(null);
+
+  // Auth for cloud sync
+  const { token } = useAuthStore();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const CELL_SIZE = 40;
   const activeConfig = OUTPOST_CONFIGS.find(c => c.id === state.outpostConfig) || OUTPOST_CONFIGS[0];
@@ -546,8 +552,8 @@ export default function FactoryPlannerPage() {
     canvas.style.height = `${canvasSize.height}px`;
     ctx.scale(dpr, dpr);
 
-    // Clear
-    ctx.fillStyle = '#0A0A0A';
+    // Clear - darker background matching Zero Sanity
+    ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
     // Transform
@@ -556,12 +562,12 @@ export default function FactoryPlannerPage() {
     ctx.scale(zoom, zoom);
     ctx.translate(-GRID_WIDTH * CELL_SIZE / 2, -GRID_HEIGHT * CELL_SIZE / 2);
 
-    // Grid background
-    ctx.fillStyle = '#111318';
+    // Grid background - warm-tinted
+    ctx.fillStyle = '#161310';
     ctx.fillRect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE);
 
-    // Grid lines
-    ctx.strokeStyle = '#1e2230';
+    // Grid lines - warm gray
+    ctx.strokeStyle = '#1a1815';
     ctx.lineWidth = 1;
     for (let x = 0; x <= GRID_WIDTH; x++) {
       ctx.beginPath();
@@ -576,8 +582,8 @@ export default function FactoryPlannerPage() {
       ctx.stroke();
     }
 
-    // Major grid lines every 5 cells
-    ctx.strokeStyle = '#2a3040';
+    // Major grid lines every 5 cells - slightly lighter warm
+    ctx.strokeStyle = '#2a2520';
     ctx.lineWidth = 1.5;
     for (let x = 0; x <= GRID_WIDTH; x += 5) {
       ctx.beginPath();
@@ -590,20 +596,6 @@ export default function FactoryPlannerPage() {
       ctx.moveTo(0, y * CELL_SIZE);
       ctx.lineTo(GRID_WIDTH * CELL_SIZE, y * CELL_SIZE);
       ctx.stroke();
-    }
-
-    // Coordinate labels every 5 cells
-    ctx.fillStyle = '#4a5568';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    for (let x = 0; x <= GRID_WIDTH; x += 5) {
-      ctx.fillText(x.toString(), x * CELL_SIZE, -4);
-    }
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    for (let y = 0; y <= GRID_HEIGHT; y += 5) {
-      ctx.fillText(y.toString(), -6, y * CELL_SIZE);
     }
 
     // ── PAC Drawing ──
@@ -635,14 +627,14 @@ export default function FactoryPlannerPage() {
       ctx.stroke();
     }
 
-    // PAC border
+    // PAC border - cyan with amber accent
     ctx.strokeStyle = '#00b0ff';
     ctx.lineWidth = 3;
     ctx.strokeRect(pacX + 1.5, pacY + 1.5, pacWidth - 3, pacHeight - 3);
 
-    // Corner decorations
+    // Corner decorations - amber for Zero Sanity branding
     const cornerSize = 12;
-    ctx.strokeStyle = '#00b0ff';
+    ctx.strokeStyle = '#FFD429';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(pacX, pacY + cornerSize); ctx.lineTo(pacX, pacY); ctx.lineTo(pacX + cornerSize, pacY); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(pacX + pacWidth - cornerSize, pacY); ctx.lineTo(pacX + pacWidth, pacY); ctx.lineTo(pacX + pacWidth, pacY + cornerSize); ctx.stroke();
@@ -772,19 +764,69 @@ export default function FactoryPlannerPage() {
     ctx.fillStyle = '#f97316';
     ctx.fillText('ORANGE = Items FROM Depot (6 total)', pacX + pacWidth / 2, pacY + pacHeight / 2 + 64);
 
-    // Grid boundary
-    ctx.strokeStyle = '#2a3040';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 4]);
+    // ── GRID BOUNDARY MARKERS (like endfieldtools.dev) ──
+    // Thick border around valid grid area
+    ctx.strokeStyle = '#FFD429';
+    ctx.lineWidth = 4;
     ctx.strokeRect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE);
-    ctx.setLineDash([]);
+
+    // Corner markers (L-shaped brackets)
+    const bracketSize = 30;
+    const bracketThick = 3;
+    ctx.strokeStyle = '#FFD429';
+    ctx.lineWidth = bracketThick;
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(0, bracketSize);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(bracketSize, 0);
+    ctx.stroke();
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(GRID_WIDTH * CELL_SIZE - bracketSize, 0);
+    ctx.lineTo(GRID_WIDTH * CELL_SIZE, 0);
+    ctx.lineTo(GRID_WIDTH * CELL_SIZE, bracketSize);
+    ctx.stroke();
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(0, GRID_HEIGHT * CELL_SIZE - bracketSize);
+    ctx.lineTo(0, GRID_HEIGHT * CELL_SIZE);
+    ctx.lineTo(bracketSize, GRID_HEIGHT * CELL_SIZE);
+    ctx.stroke();
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(GRID_WIDTH * CELL_SIZE - bracketSize, GRID_HEIGHT * CELL_SIZE);
+    ctx.lineTo(GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE);
+    ctx.lineTo(GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE - bracketSize);
+    ctx.stroke();
 
     // Field size label at top
-    ctx.fillStyle = '#4a5568';
-    ctx.font = '12px monospace';
+    ctx.fillStyle = '#FFD429';
+    ctx.font = 'bold 13px "Share Tech Mono", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(`${activeConfig.name} — ${GRID_WIDTH} x ${GRID_HEIGHT} tiles`, GRID_WIDTH * CELL_SIZE / 2, -20);
+    ctx.fillText(`${activeConfig.name} — ${GRID_WIDTH} x ${GRID_HEIGHT} tiles`, GRID_WIDTH * CELL_SIZE / 2, -24);
+
+    // OUT OF BOUNDS text outside grid (top)
+    ctx.fillStyle = '#ff444480';
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('OUT OF BOUNDS', GRID_WIDTH * CELL_SIZE / 2, -60);
+
+    // Grid coordinate labels along edges
+    ctx.fillStyle = '#FFD429';
+    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    for (let x = 0; x <= GRID_WIDTH; x += 5) {
+      ctx.fillText(x.toString(), x * CELL_SIZE, -8);
+    }
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let y = 0; y <= GRID_HEIGHT; y += 5) {
+      ctx.fillText(y.toString(), -8, y * CELL_SIZE);
+    }
 
     // Depot Bus indicators
     if (activeConfig.depotBusSides >= 1) {
@@ -945,6 +987,15 @@ export default function FactoryPlannerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.outpostConfig]);
 
+  // Initialize with PAC centered on first load
+  useEffect(() => {
+    if (canvasSize.width > 0 && canvasSize.height > 0) {
+      // Center the PAC in viewport on initial load
+      setPan({ x: 0, y: 0 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasSize.width, canvasSize.height]);
+
   // ── Helpers ──
 
   // Convert screen coords to grid coords
@@ -983,9 +1034,9 @@ export default function FactoryPlannerPage() {
     return -1;
   };
 
-  // ── Save / Load ──
+  // ── Save / Load (with cloud sync) ──
 
-  const saveToLocalStorage = useCallback(() => {
+  const saveToLocalStorage = useCallback(async () => {
     try {
       const data = {
         buildings: state.grid.buildings,
@@ -993,15 +1044,32 @@ export default function FactoryPlannerPage() {
         version: 1,
       };
       localStorage.setItem('aic-planner-save', JSON.stringify(data));
-    } catch { /* silently fail */ }
-  }, [state.grid.buildings, state.outpostConfig]);
 
-  const loadFromLocalStorage = useCallback(() => {
+      // Also sync to cloud if authenticated
+      if (token) {
+        await syncToCloud('factoryPlanner' as any, data, token);
+      }
+    } catch { /* silently fail */ }
+  }, [state.grid.buildings, state.outpostConfig, token]);
+
+  const loadFromLocalStorage = useCallback(async () => {
     try {
-      const raw = localStorage.getItem('aic-planner-save');
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      if (data.buildings && Array.isArray(data.buildings)) {
+      let data: any = null;
+
+      // Try cloud first if authenticated
+      if (token) {
+        data = await loadFromCloud('factoryPlanner' as any, token);
+      }
+
+      // Fall back to localStorage
+      if (!data) {
+        const raw = localStorage.getItem('aic-planner-save');
+        if (raw) {
+          data = JSON.parse(raw);
+        }
+      }
+
+      if (data && data.buildings && Array.isArray(data.buildings)) {
         dispatch({ type: 'CLEAR_GRID' });
         data.buildings.forEach((b: PlacedBuilding) => {
           dispatch({ type: 'PLACE_BUILDING', building: b });
@@ -1011,6 +1079,28 @@ export default function FactoryPlannerPage() {
         }
       }
     } catch { /* silently fail */ }
+  }, [token]);
+
+  // Debounced auto-save when buildings change
+  useEffect(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToLocalStorage();
+    }, 2000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [state.grid.buildings, saveToLocalStorage]);
+
+  // Load on mount
+  useEffect(() => {
+    loadFromLocalStorage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Export/Import/Share ──
@@ -1439,14 +1529,14 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={12} />
           </button>
           {state.showOutpostMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[280px] z-50">
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[280px] z-[100]">
               <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Main PAC</div>
               {OUTPOST_CONFIGS.filter(c => c.pacType === 'pac').map(config => (
                 <button
                   key={config.id}
                   onClick={() => dispatch({ type: 'SET_OUTPOST_CONFIG', config: config.id })}
                   className={`w-full px-3 py-2 text-left flex items-center justify-between gap-3 transition-colors ${
-                    state.outpostConfig === config.id ? 'bg-[#00b0ff20] text-[#00b0ff]' : 'text-gray-300 hover:bg-[#2A2A2A] hover:text-white'
+                    state.outpostConfig === config.id ? 'bg-[var(--color-accent-glow)] text-[var(--color-accent)]' : 'text-gray-300 hover:bg-[var(--color-surface-2)] hover:text-white'
                   }`}
                 >
                   <div>
@@ -1462,7 +1552,7 @@ export default function FactoryPlannerPage() {
                   key={config.id}
                   onClick={() => dispatch({ type: 'SET_OUTPOST_CONFIG', config: config.id })}
                   className={`w-full px-3 py-2 text-left flex items-center justify-between gap-3 transition-colors ${
-                    state.outpostConfig === config.id ? 'bg-[#00b0ff20] text-[#00b0ff]' : 'text-gray-300 hover:bg-[#2A2A2A] hover:text-white'
+                    state.outpostConfig === config.id ? 'bg-[var(--color-accent-glow)] text-[var(--color-accent)]' : 'text-gray-300 hover:bg-[var(--color-surface-2)] hover:text-white'
                   }`}
                 >
                   <div>
@@ -1508,12 +1598,12 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={11} className="opacity-50" />
           </ToolbarButton>
           {state.showFileMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[180px] z-50">
-              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><FileText size={12} />New Grid <span className="text-gray-500 text-[10px] ml-auto">Ctrl+N</span></button>
-              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Upload size={12} />Load <span className="text-gray-500 text-[10px] ml-auto">Ctrl+O</span></button>
-              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Download size={12} />Save <span className="text-gray-500 text-[10px] ml-auto">Ctrl+S</span></button>
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[180px] z-[100]">
+              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><FileText size={12} />New Grid <span className="text-gray-500 text-[10px] ml-auto">Ctrl+N</span></button>
+              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Upload size={12} />Load <span className="text-gray-500 text-[10px] ml-auto">Ctrl+O</span></button>
+              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Download size={12} />Save <span className="text-gray-500 text-[10px] ml-auto">Ctrl+S</span></button>
               <div className="border-t border-[var(--color-border)] my-1" />
-              <button onClick={() => { shareBlueprint(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Share2 size={12} />Share Blueprint</button>
+              <button onClick={() => { shareBlueprint(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Share2 size={12} />Share Blueprint</button>
             </div>
           )}
         </div>
@@ -1526,11 +1616,11 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={11} className="opacity-50" />
           </ToolbarButton>
           {state.showDataMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[180px] z-50">
-              <button onClick={() => { exportJSON(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Download size={12} />Export JSON</button>
-              <button onClick={() => { importJSONClick(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Upload size={12} />Import JSON</button>
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[180px] z-[100]">
+              <button onClick={() => { exportJSON(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Download size={12} />Export JSON</button>
+              <button onClick={() => { importJSONClick(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Upload size={12} />Import JSON</button>
               <div className="border-t border-[var(--color-border)] my-1" />
-              <button onClick={() => { copyJSON(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Clipboard size={12} />Copy to Clipboard</button>
+              <button onClick={() => { copyJSON(); dispatch({ type: 'TOGGLE_DATA_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Clipboard size={12} />Copy to Clipboard</button>
             </div>
           )}
         </div>
@@ -1543,13 +1633,13 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={11} className="opacity-50" />
           </ToolbarButton>
           {state.showEditMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-xl py-1 min-w-[140px] z-50">
-              <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'delete' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Trash2 size={12} />Delete Mode <span className="text-gray-500 text-[10px] ml-auto">X</span></button>
-              <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'move' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><MousePointer2 size={12} />Move Mode <span className="text-gray-500 text-[10px] ml-auto">M</span></button>
-              <button onClick={() => { dispatch({ type: 'ROTATE_PLACEMENT' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><RotateCw size={12} />Rotate 90° <span className="text-gray-500 text-[10px] ml-auto">R</span></button>
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[140px] z-[100]">
+              <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'delete' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Trash2 size={12} />Delete Mode <span className="text-gray-500 text-[10px] ml-auto">X</span></button>
+              <button onClick={() => { dispatch({ type: 'SET_TOOL_MODE', mode: 'move' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><MousePointer2 size={12} />Move Mode <span className="text-gray-500 text-[10px] ml-auto">M</span></button>
+              <button onClick={() => { dispatch({ type: 'ROTATE_PLACEMENT' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><RotateCw size={12} />Rotate 90° <span className="text-gray-500 text-[10px] ml-auto">R</span></button>
               <button className="w-full px-3 py-1.5 text-left text-xs text-gray-500 cursor-not-allowed flex items-center gap-2"><Copy size={12} />Copy (coming soon)</button>
               <div className="border-t border-[var(--color-border)] my-1" />
-              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"><Trash2 size={12} />Clear All Buildings</button>
+              <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_EDIT_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Trash2 size={12} />Clear All Buildings</button>
             </div>
           )}
         </div>
@@ -1734,41 +1824,41 @@ export default function FactoryPlannerPage() {
           </button>
         </div>
 
-        {/* Stats Panel (top-right overlay) */}
+        {/* Stats Panel (top-right overlay) - RIOS terminal style */}
         {state.showStats && (
-          <div className="absolute top-4 right-4 z-10 w-56 bg-[var(--color-surface)]/95 backdrop-blur-sm border border-[var(--color-border)] shadow-xl">
-            <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] flex items-center gap-1.5"><BarChart3 size={12} />FACTORY STATS</h3>
-              <button onClick={() => dispatch({ type: 'TOGGLE_STATS' })} className="text-gray-400 hover:text-white"><X size={14} /></button>
+          <div className="absolute top-4 right-4 z-10 w-56 bg-[var(--color-surface)]/95 backdrop-blur-sm border border-[var(--color-border)] shadow-xl clip-corner-tl">
+            <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between bg-[var(--color-surface-2)]">
+              <h3 className="text-xs font-bold terminal-text-sm flex items-center gap-1.5"><BarChart3 size={12} />FACTORY STATS</h3>
+              <button onClick={() => dispatch({ type: 'TOGGLE_STATS' })} className="text-gray-400 hover:text-[var(--color-accent)]"><X size={14} /></button>
             </div>
-            <div className="p-3 space-y-2 text-xs">
+            <div className="p-3 space-y-2 text-xs font-mono">
               <div className="flex justify-between">
-                <span className="text-gray-400">Total Buildings</span>
-                <span className="text-white font-bold">{statsData.total}</span>
+                <span className="text-[var(--color-text-muted)]">Total Buildings</span>
+                <span className="text-[var(--color-accent)] font-bold">{statsData.total}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Power Usage</span>
-                <span className="text-white font-bold">{statsData.totalPower} <span className="text-[10px] text-gray-500">kW</span></span>
+                <span className="text-[var(--color-text-muted)]">Power Usage</span>
+                <span className="text-[var(--color-accent)] font-bold">{statsData.totalPower} <span className="text-[10px] text-gray-500">W</span></span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Total Inputs</span>
-                <span className="text-white font-bold">{statsData.totalInputs}</span>
+                <span className="text-[var(--color-text-muted)]">Total Inputs</span>
+                <span className="text-[var(--color-accent)] font-bold">{statsData.totalInputs}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Total Outputs</span>
-                <span className="text-white font-bold">{statsData.totalOutputs}</span>
+                <span className="text-[var(--color-text-muted)]">Total Outputs</span>
+                <span className="text-[var(--color-accent)] font-bold">{statsData.totalOutputs}</span>
               </div>
               {statsData.total > 0 && (
                 <>
                   <div className="border-t border-[var(--color-border)] pt-2 mt-2">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">By Category</div>
+                    <div className="terminal-text-sm mb-1">By Category</div>
                     {Object.entries(statsData.categoryCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
                       <div key={cat} className="flex justify-between py-0.5">
                         <span className="flex items-center gap-1.5">
                           <span className="w-2 h-2 inline-block" style={{ backgroundColor: CATEGORY_COLORS[cat as Building['category']] || '#888' }} />
                           <span className="text-gray-300">{cat}</span>
                         </span>
-                        <span className="text-white">{count}</span>
+                        <span className="text-[var(--color-accent)]">{count}</span>
                       </div>
                     ))}
                   </div>

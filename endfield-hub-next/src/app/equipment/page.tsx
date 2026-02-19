@@ -10,7 +10,7 @@ import { EQUIPMENT_ICONS } from '@/lib/assets';
 function SetIcon({ src, name, tierColor }: { src: string; name: string; tierColor: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <span className="text-lg font-bold" style={{ color: tierColor }}>{name[0]}</span>;
-  return <Image src={src} alt={name} width={56} height={56} className="object-contain" loading="lazy" onError={() => setFailed(true)} />;
+  return <Image src={src} alt={name} width={56} height={56} className="object-contain" loading="lazy" unoptimized onError={() => setFailed(true)} />;
 }
 
 export default function Equipment() {
@@ -81,17 +81,24 @@ export default function Equipment() {
                     <p className="text-[var(--color-text-muted)] text-sm font-semibold mb-3">Set Pieces ({set.pieces.length})</p>
                     <div className="grid grid-cols-1 gap-3">
                       {set.pieces.map(piece => (
-                        <div key={piece.id} className="p-3 bg-[var(--color-surface-2)] clip-corner-tl text-sm">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-white font-medium">{piece.name}</span>
-                            <span className="text-[var(--color-text-muted)]">DEF {piece.def}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {piece.stats.map((stat, idx) => (
-                              <span key={idx} className="text-[var(--color-accent)]">
-                                {stat.name} {stat.value}
-                              </span>
-                            ))}
+                        <div key={piece.id} className="p-3 bg-[var(--color-surface-2)] clip-corner-tl text-sm flex items-center gap-3">
+                          {piece.icon && (
+                            <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: `${tierColor}15` }}>
+                              <Image src={piece.icon} alt={piece.name} width={48} height={48} className="object-contain" loading="lazy" unoptimized />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-white font-medium">{piece.name}</span>
+                              <span className="text-[var(--color-text-muted)]">DEF {piece.def}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {piece.stats.map((stat, idx) => (
+                                <span key={idx} className="text-[var(--color-accent)]">
+                                  {stat.name} {stat.value}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}

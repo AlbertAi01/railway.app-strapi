@@ -24,9 +24,15 @@
       "type": "richtext",
       "required": true
     },
+    "DetailDescription": {
+      "type": "richtext"
+    },
     "ImportString": {
       "type": "text",
       "required": true
+    },
+    "ImportCodes": {
+      "type": "json"
     },
     "Upvotes": {
       "type": "integer",
@@ -37,6 +43,15 @@
       "multiple": true,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "PreviewImage": {
+      "type": "string"
+    },
+    "ProductIcon": {
+      "type": "string"
+    },
+    "ProductName": {
+      "type": "string"
     },
     "Region": {
       "type": "enumeration",
@@ -49,6 +64,9 @@
     "Tags": {
       "type": "json"
     },
+    "Operators": {
+      "type": "json"
+    },
     "Category": {
       "type": "enumeration",
       "enum": ["Production", "Processing", "Assembly", "Power", "Storage", "Complete Chain", "Compact", "Megafactory"],
@@ -59,11 +77,28 @@
       "enum": ["Beginner", "Intermediate", "Advanced", "Expert"],
       "default": "Beginner"
     },
+    "BuildingCount": {
+      "type": "integer"
+    },
+    "GridSize": {
+      "type": "string"
+    },
+    "NetPower": {
+      "type": "integer"
+    },
     "OutputsPerMin": {
-      "type": "decimal"
+      "type": "json"
     },
     "FacilityCount": {
       "type": "integer"
+    },
+    "Status": {
+      "type": "enumeration",
+      "enum": ["approved", "pending", "rejected"],
+      "default": "approved"
+    },
+    "SubmittedAt": {
+      "type": "datetime"
     },
     "Recipes": {
       "type": "relation",

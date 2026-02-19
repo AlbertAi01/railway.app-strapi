@@ -84,7 +84,7 @@ function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isEx
           style={{ backgroundColor: `${rarityColor}15`, border: `1px solid ${rarityColor}30` }}
         >
           {icon ? (
-            <Image src={icon} alt={weapon.Name} width={56} height={56} className="w-14 h-14 object-contain" loading="lazy" />
+            <Image src={icon} alt={weapon.Name} width={56} height={56} className="w-14 h-14 object-contain" loading="lazy" unoptimized />
           ) : (
             <Sword size={24} style={{ color: rarityColor }} />
           )}

@@ -118,26 +118,28 @@ export const CHARACTER_SPLASH: Record<string, string> = {
 };
 
 // Role / Profession icons
+// 0=sword(Guard) 1=crossbow(Caster) 2=shield(Defender) 3=snowflake(Supporter) 4=N-symbol(Vanguard) 5=polearm(Assault)
 export const PROFESSION_ICONS: Record<string, string> = {
-  'Supporter': `${TOOLS_CDN}/charprofessionicon/icon_profession_0.png`,
-  'Guard': `${TOOLS_CDN}/charprofessionicon/icon_profession_1.png`,
-  'Caster': `${TOOLS_CDN}/charprofessionicon/icon_profession_2.png`,
-  'Assault': `${TOOLS_CDN}/charprofessionicon/icon_profession_3.png`,
-  'Defender': `${TOOLS_CDN}/charprofessionicon/icon_profession_4.png`,
-  'Vanguard': `${TOOLS_CDN}/charprofessionicon/icon_profession_5.png`,
+  'Guard': `${TOOLS_CDN}/charprofessionicon/icon_profession_0.png`,
+  'Caster': `${TOOLS_CDN}/charprofessionicon/icon_profession_1.png`,
+  'Defender': `${TOOLS_CDN}/charprofessionicon/icon_profession_2.png`,
+  'Supporter': `${TOOLS_CDN}/charprofessionicon/icon_profession_3.png`,
+  'Vanguard': `${TOOLS_CDN}/charprofessionicon/icon_profession_4.png`,
+  'Assault': `${TOOLS_CDN}/charprofessionicon/icon_profession_5.png`,
 };
 
 // Equipment set icons
+// Note: Some sets have missing CDN icons and will use fallback rendering with first letter + tier color
 export const EQUIPMENT_ICONS: Record<string, string> = {
   // T4 Late Game (Lv70)
   'Æthertech': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_poise01_body_01.png`,
   'Bonekrusha': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_attri01_body_03.png`,
   'Eternal Xiranite': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_usp02_body_01.png`,
-  // 'Frontiers': not yet on CDN
+  // 'Frontiers': CDN returns HTML instead of image - will use fallback
   'Hot Work': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_fire_natr01_body_01.png`,
   'LYNX': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_heal01_body_01.png`,
-  // 'MI Security': not yet on CDN
-  // 'Pulser Labs': not yet on CDN
+  // 'MI Security': CDN returns HTML instead of image - will use fallback
+  // 'Pulser Labs': CDN returns HTML instead of image - will use fallback
   'Swordmancer': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_phy01_body_02.png`,
   'Tide Surge': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_burst01_body_01.png`,
   'Type 50 Yinglung': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_atk02_body_01.png`,
@@ -150,7 +152,7 @@ export const EQUIPMENT_ICONS: Record<string, string> = {
   'Roving MSGR': `${TOOLS_CDN}/itemicon/item_equip_t3_suit_agi01_body_01.png`,
   // T1 Early Game (Lv10-28)
   'AIC Heavy': `${TOOLS_CDN}/itemicon/item_equip_t1_suit_stragi01_body_01.png`,
-  // 'AIC Light': not yet on CDN
+  // 'AIC Light': CDN returns HTML instead of image - will use fallback
 };
 
 // Weapon icons (mapped by weapon name)
@@ -270,6 +272,30 @@ export const MATERIAL_ICONS: Record<string, string> = {
   'Vitrodendra': `${TOOLS_CDN}/itemicon/item_plant_crylplant_1_3.png`,
   'Blighted Jadeleaf': `${TOOLS_CDN}/itemicon/item_plant_crylplant_2_1.png`,
   'False Aggela': `${TOOLS_CDN}/itemicon/item_plant_crylplant_2_2.png`,
+  // Weapon breakthrough materials (generic)
+  'Weapon Protodisk': `${TOOLS_CDN}/itemicon/item_weapon_break_stage_1_2.png`,
+  'Weapon Protoset': `${TOOLS_CDN}/itemicon/item_weapon_break_stage_3_4.png`,
+  // Weapon-specific breakthrough materials (per weapon type)
+  'Greatsword Fragment I': `${TOOLS_CDN}/itemicon/item_weapon_greatsword_1.png`,
+  'Greatsword Fragment II': `${TOOLS_CDN}/itemicon/item_weapon_greatsword_2.png`,
+  'Greatsword Fragment III': `${TOOLS_CDN}/itemicon/item_weapon_greatsword_3.png`,
+  'Greatsword Fragment IV': `${TOOLS_CDN}/itemicon/item_weapon_greatsword_4.png`,
+  'Arts Unit Fragment I': `${TOOLS_CDN}/itemicon/item_weapon_arts_1.png`,
+  'Arts Unit Fragment II': `${TOOLS_CDN}/itemicon/item_weapon_arts_2.png`,
+  'Arts Unit Fragment III': `${TOOLS_CDN}/itemicon/item_weapon_arts_3.png`,
+  'Arts Unit Fragment IV': `${TOOLS_CDN}/itemicon/item_weapon_arts_4.png`,
+  'Polearm Fragment I': `${TOOLS_CDN}/itemicon/item_weapon_polearm_1.png`,
+  'Polearm Fragment II': `${TOOLS_CDN}/itemicon/item_weapon_polearm_2.png`,
+  'Polearm Fragment III': `${TOOLS_CDN}/itemicon/item_weapon_polearm_3.png`,
+  'Polearm Fragment IV': `${TOOLS_CDN}/itemicon/item_weapon_polearm_4.png`,
+  'Handcannon Fragment I': `${TOOLS_CDN}/itemicon/item_weapon_handcannon_1.png`,
+  'Handcannon Fragment II': `${TOOLS_CDN}/itemicon/item_weapon_handcannon_2.png`,
+  'Handcannon Fragment III': `${TOOLS_CDN}/itemicon/item_weapon_handcannon_3.png`,
+  'Handcannon Fragment IV': `${TOOLS_CDN}/itemicon/item_weapon_handcannon_4.png`,
+  'Sword Fragment I': `${TOOLS_CDN}/itemicon/item_weapon_sword_1.png`,
+  'Sword Fragment II': `${TOOLS_CDN}/itemicon/item_weapon_sword_2.png`,
+  'Sword Fragment III': `${TOOLS_CDN}/itemicon/item_weapon_sword_3.png`,
+  'Sword Fragment IV': `${TOOLS_CDN}/itemicon/item_weapon_sword_4.png`,
 };
 
 // Item ID to display name mapping (for game API data)
@@ -300,6 +326,29 @@ export const MATERIAL_ID_TO_NAME: Record<string, string> = {
   'item_plant_crylplant_1_3': 'Vitrodendra',
   'item_plant_crylplant_2_1': 'Blighted Jadeleaf',
   'item_plant_crylplant_2_2': 'False Aggela',
+  // Weapon breakthrough materials
+  'item_weapon_break_stage_1_2': 'Weapon Protodisk',
+  'item_weapon_break_stage_3_4': 'Weapon Protoset',
+  'item_weapon_greatsword_1': 'Greatsword Fragment I',
+  'item_weapon_greatsword_2': 'Greatsword Fragment II',
+  'item_weapon_greatsword_3': 'Greatsword Fragment III',
+  'item_weapon_greatsword_4': 'Greatsword Fragment IV',
+  'item_weapon_arts_1': 'Arts Unit Fragment I',
+  'item_weapon_arts_2': 'Arts Unit Fragment II',
+  'item_weapon_arts_3': 'Arts Unit Fragment III',
+  'item_weapon_arts_4': 'Arts Unit Fragment IV',
+  'item_weapon_polearm_1': 'Polearm Fragment I',
+  'item_weapon_polearm_2': 'Polearm Fragment II',
+  'item_weapon_polearm_3': 'Polearm Fragment III',
+  'item_weapon_polearm_4': 'Polearm Fragment IV',
+  'item_weapon_handcannon_1': 'Handcannon Fragment I',
+  'item_weapon_handcannon_2': 'Handcannon Fragment II',
+  'item_weapon_handcannon_3': 'Handcannon Fragment III',
+  'item_weapon_handcannon_4': 'Handcannon Fragment IV',
+  'item_weapon_sword_1': 'Sword Fragment I',
+  'item_weapon_sword_2': 'Sword Fragment II',
+  'item_weapon_sword_3': 'Sword Fragment III',
+  'item_weapon_sword_4': 'Sword Fragment IV',
 };
 
 // Helper to get character icon with fallback

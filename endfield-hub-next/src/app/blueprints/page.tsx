@@ -5,7 +5,7 @@ import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff, Filte
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import Image from 'next/image';
-import { fetchBlueprints } from '@/lib/api';
+import { fetchBlueprints, createBlueprint } from '@/lib/api';
 import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
@@ -66,28 +66,30 @@ export default function Blueprints() {
     saveUserBlueprint(newBp);
     setUserSubmissions(getUserBlueprints());
 
-    // Also attempt Strapi submission (best-effort)
+    // Submit to Strapi backend with proper API client (includes auth token)
+    let strapiSuccess = false;
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_STRAPI_URL;
-      if (apiUrl) {
-        await fetch(`${apiUrl}/api/blueprints`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            data: {
-              Title: newBp.Title,
-              Description: newBp.Description,
-              ImportString: newBp.ImportString,
-              Region: newBp.Region,
-              Author: newBp.Author,
-              Tags: newBp.Tags,
-              Operators: newBp.operators,
-            },
-          }),
-        });
-      }
-    } catch {
-      // Strapi submission failed - that's ok, we have localStorage
+      await createBlueprint({
+        Title: newBp.Title,
+        Description: newBp.Description || 'User-submitted blueprint.',
+        DetailDescription: newBp.detailDescription || newBp.Description || '',
+        ImportString: newBp.ImportString,
+        ImportCodes: newBp.importCodes,
+        Region: newBp.Region,
+        Author: newBp.Author,
+        Tags: newBp.Tags,
+        Operators: newBp.operators || [],
+        PreviewImage: newBp.previewImage || '',
+        ProductName: newBp.productName || '',
+        Category: newBp.category || 'Production',
+        Complexity: newBp.complexity || 'Beginner',
+        Status: 'pending',
+        SubmittedAt: new Date().toISOString(),
+        OutputsPerMin: newBp.outputsPerMin || [],
+      });
+      strapiSuccess = true;
+    } catch (err) {
+      console.warn('Strapi blueprint submission failed:', err);
     }
 
     // Clear form and show success

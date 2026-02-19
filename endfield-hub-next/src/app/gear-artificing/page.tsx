@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Wrench, Search, X } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
-import { GEAR_SETS, STANDALONE_GEAR, type GearPiece, type GearSet } from '@/data/gear';
+import { GEAR_SETS, STANDALONE_GEAR, TIER_COLORS, type GearPiece, type GearSet } from '@/data/gear';
 
 // ──────────── Artificing Solver Logic ────────────
 
@@ -154,18 +155,34 @@ function TierBadge({ tier, className = '' }: { tier: MatchTier; className?: stri
   );
 }
 
-function GearIcon({ src, className = 'w-12 h-12' }: { src?: string; className?: string }) {
+function GearIcon({ src, name, tier, className = 'w-12 h-12' }: { src?: string; name: string; tier: string; className?: string }) {
   const [failed, setFailed] = useState(false);
+  const tierColor = TIER_COLORS[tier as keyof typeof TIER_COLORS] || TIER_COLORS.T0;
+
   if (!src || failed) {
     return (
-      <div className={`${className} shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center`}>
-        <Wrench size={16} className="text-[var(--color-text-tertiary)]" />
+      <div
+        className={`${className} shrink-0 flex items-center justify-center border border-[var(--color-border)]`}
+        style={{ backgroundColor: `${tierColor}20` }}
+      >
+        <span className="text-lg font-bold" style={{ color: tierColor }}>
+          {name[0]}
+        </span>
       </div>
     );
   }
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" className={`${className} shrink-0 object-contain`} onError={() => setFailed(true)} />
+    <Image
+      src={src}
+      alt={name}
+      width={48}
+      height={48}
+      className={`${className} shrink-0 object-contain`}
+      loading="lazy"
+      unoptimized
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -255,10 +272,10 @@ function GearPickerModal({
                     onClick={() => { onSelect(piece); onClose(); }}
                     className="flex items-center gap-2.5 p-2 border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)] transition-colors text-left rounded-sm"
                   >
-                    <GearIcon src={piece.icon} />
+                    <GearIcon src={piece.icon} name={piece.name} tier={piece.tier} />
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">T4</span>
+                        <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">{piece.tier}</span>
                         <span className="text-xs font-semibold text-white truncate">{piece.name}</span>
                       </div>
                       <p className="text-[10px] text-[var(--color-text-tertiary)]">DEF +{piece.def}</p>
@@ -285,10 +302,10 @@ function GearPickerModal({
                     onClick={() => { onSelect(piece); onClose(); }}
                     className="flex items-center gap-2.5 p-2 border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-accent)] transition-colors text-left rounded-sm"
                   >
-                    <GearIcon src={piece.icon} />
+                    <GearIcon src={piece.icon} name={piece.name} tier={piece.tier} />
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">T4</span>
+                        <span className="text-[10px] font-bold bg-[var(--color-accent)] text-black px-1 py-0.5 leading-none">{piece.tier}</span>
                         <span className="text-xs font-semibold text-white truncate">{piece.name}</span>
                       </div>
                       <p className="text-[10px] text-[var(--color-text-tertiary)]">DEF +{piece.def}</p>
@@ -446,7 +463,7 @@ export default function GearArtificingPage() {
 
                       <div className="flex items-center gap-3">
                         {/* Icon */}
-                        <GearIcon src={result.piece.icon} />
+                        <GearIcon src={result.piece.icon} name={result.piece.name} tier={result.piece.tier} />
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">

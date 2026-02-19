@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "weapon_essences",
+  "info": {
+    "singularName": "weapon-essence",
+    "pluralName": "weapon-essences",
+    "displayName": "Weapon Essence",
+    "description": "Weapon essence stat configurations for the essence solver"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "WeaponName": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "WeaponRarity": {
+      "type": "integer",
+      "min": 3,
+      "max": 6
+    },
+    "WeaponType": {
+      "type": "enumeration",
+      "enum": ["Greatsword", "Polearm", "Handcannon", "Sword", "Arts Unit"]
+    },
+    "PrimaryAttr": {
+      "type": "enumeration",
+      "enum": ["Strength Boost", "Agility Boost", "Will Boost", "Intellect Boost", "Main Attribute Boost"],
+      "required": true
+    },
+    "SecondaryStat": {
+      "type": "string"
+    },
+    "SkillStat": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

@@ -5,7 +5,7 @@
     "singularName": "equipment-set",
     "pluralName": "equipment-sets",
     "displayName": "Equipment Set",
-    "description": "Equipment/artifact sets in Arknights: Endfield"
+    "description": "Equipment/gear sets in Arknights: Endfield"
   },
   "options": {
     "draftAndPublish": true
@@ -28,9 +28,24 @@
       "min": 1,
       "max": 6
     },
-    "TwoPieceBonus": {
+    "Tier": {
+      "type": "enumeration",
+      "enum": ["T0", "T1", "T2", "T3", "T4"]
+    },
+    "GamePhase": {
+      "type": "enumeration",
+      "enum": ["Early Game", "Mid Game", "Late Game"]
+    },
+    "Level": {
+      "type": "integer",
+      "default": 0
+    },
+    "SetBonus": {
       "type": "richtext",
       "required": true
+    },
+    "TwoPieceBonus": {
+      "type": "richtext"
     },
     "FourPieceBonus": {
       "type": "richtext"
@@ -43,6 +58,12 @@
       "multiple": false,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "IconUrl": {
+      "type": "string"
+    },
+    "Pieces": {
+      "type": "json"
     },
     "PieceStats": {
       "type": "json"

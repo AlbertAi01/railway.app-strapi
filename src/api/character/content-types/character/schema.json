@@ -43,6 +43,22 @@
       "enum": ["Greatsword", "Polearm", "Handcannon", "Sword", "Arts Unit"],
       "required": true
     },
+    "Strength": {
+      "type": "integer",
+      "default": 0
+    },
+    "Agility": {
+      "type": "integer",
+      "default": 0
+    },
+    "Intellect": {
+      "type": "integer",
+      "default": 0
+    },
+    "Will": {
+      "type": "integer",
+      "default": 0
+    },
     "BaseHP": {
       "type": "integer",
       "default": 0
@@ -84,6 +100,18 @@
       "multiple": true,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "IconUrl": {
+      "type": "string"
+    },
+    "BannerUrl": {
+      "type": "string"
+    },
+    "GachaUrl": {
+      "type": "string"
+    },
+    "SplashUrl": {
+      "type": "string"
     },
     "Skills": {
       "type": "relation",

@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "farming_zones",
+  "info": {
+    "singularName": "farming-zone",
+    "pluralName": "farming-zones",
+    "displayName": "Farming Zone",
+    "description": "Essence farming zone locations with available stat pools"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "ZoneId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "Region": {
+      "type": "string",
+      "required": true
+    },
+    "Enemy": {
+      "type": "string",
+      "required": true
+    },
+    "SecondaryStats": {
+      "type": "json",
+      "required": true
+    },
+    "SkillStats": {
+      "type": "json",
+      "required": true
+    }
+  }
+}

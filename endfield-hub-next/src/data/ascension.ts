@@ -170,3 +170,145 @@ export function getSkillMaterials(slug: string, skillGroup: number, fromLevel: n
 
   return Object.entries(totals).map(([id, count]) => ({ id, count }));
 }
+
+// ─── Weapon Breakthrough Costs ──────────────────────────────────────────────
+// Weapons break at levels 20, 40, 60, 80 (vs characters at 20, 40, 60, 70)
+// Weapon breakthrough costs are simpler than character costs - only gold + materials
+
+export const WEAPON_BREAK_COSTS: Record<string, { gold: number; materials: { id: string; count: number }[] }> = {
+  weaponBreak20: {
+    gold: 2000,
+    materials: [
+      { id: 'item_weapon_break_stage_1_2', count: 5 },
+    ],
+  },
+  weaponBreak40: {
+    gold: 8000,
+    materials: [
+      { id: 'item_weapon_break_stage_1_2', count: 15 },
+    ],
+  },
+  weaponBreak60: {
+    gold: 25000,
+    materials: [
+      { id: 'item_weapon_break_stage_3_4', count: 20 },
+    ],
+  },
+  weaponBreak80: {
+    gold: 120000,
+    materials: [
+      { id: 'item_weapon_break_stage_3_4', count: 30 },
+    ],
+  },
+};
+
+// Per-weapon material assignments
+// These are weapon-specific breakthrough materials that vary per weapon
+export const WEAPON_MATERIALS: Record<string, {
+  breakMat20: string;  // tier-1 weapon material for break 20
+  breakMat40: string;  // tier-2 weapon material for break 40
+  breakMat60: string;  // tier-3 weapon material for break 60
+  breakMat80: string;  // tier-4 weapon material for break 80
+}> = {
+  // 6-star Greatswords
+  'exemplar': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'former-finery': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'thunderberge': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'sundered-prince': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'khravengger': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  // 6-star Arts Units
+  'opus-etch-figure': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'detonation-unit': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'oblivion': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'chivalric-virtues': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'delivery-guaranteed': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'dreams-of-the-starry-beach': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  // 6-star Polearms
+  'valiant': { breakMat20: 'item_weapon_polearm_1', breakMat40: 'item_weapon_polearm_2', breakMat60: 'item_weapon_polearm_3', breakMat80: 'item_weapon_polearm_4' },
+  'jet': { breakMat20: 'item_weapon_polearm_1', breakMat40: 'item_weapon_polearm_2', breakMat60: 'item_weapon_polearm_3', breakMat80: 'item_weapon_polearm_4' },
+  'mountain-bearer': { breakMat20: 'item_weapon_polearm_1', breakMat40: 'item_weapon_polearm_2', breakMat60: 'item_weapon_polearm_3', breakMat80: 'item_weapon_polearm_4' },
+  // 6-star Handcannons
+  'navigator': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  'wedge': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  'clannibal': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  'artzy-tyrannical': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  // 6-star Swords
+  'forgeborn-scathe': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'umbral-torch': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'rapid-ascent': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'thermite-cutter': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'eminent-repute': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'white-night-nova': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'never-rest': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'grand-vision': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  // 5-star Greatswords
+  'seeker-of-dark-lung': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'finishing-call': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'ancient-canal': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  'obj-heavy-burden': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
+  // 5-star Arts Units
+  'wild-wanderer': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'stanza-of-memorials': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'monaihe': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'freedom-to-proselytize': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  'obj-arts-identifier': { breakMat20: 'item_weapon_arts_1', breakMat40: 'item_weapon_arts_2', breakMat60: 'item_weapon_arts_3', breakMat80: 'item_weapon_arts_4' },
+  // 5-star Polearms
+  'chimeric-justice': { breakMat20: 'item_weapon_polearm_1', breakMat40: 'item_weapon_polearm_2', breakMat60: 'item_weapon_polearm_3', breakMat80: 'item_weapon_polearm_4' },
+  'cohesive-traction': { breakMat20: 'item_weapon_polearm_1', breakMat40: 'item_weapon_polearm_2', breakMat60: 'item_weapon_polearm_3', breakMat80: 'item_weapon_polearm_4' },
+  'obj-razorhorn': { breakMat20: 'item_weapon_polearm_1', breakMat40: 'item_weapon_polearm_2', breakMat60: 'item_weapon_polearm_3', breakMat80: 'item_weapon_polearm_4' },
+  // 5-star Handcannons
+  'rational-farewell': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  'opus-the-living': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  'obj-velocitous': { breakMat20: 'item_weapon_handcannon_1', breakMat40: 'item_weapon_handcannon_2', breakMat60: 'item_weapon_handcannon_3', breakMat80: 'item_weapon_handcannon_4' },
+  // 5-star Swords
+  'sundering-steel': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'fortmaker': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'aspirant': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'twelve-questions': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'obj-edge-of-lightness': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+  'finchaser-3-0': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
+};
+
+// Weapon breakthrough material counts per break level
+export const WEAPON_BREAK_MAT_COUNTS: Record<string, number> = {
+  weaponBreak20: 3,
+  weaponBreak40: 6,
+  weaponBreak60: 10,
+  weaponBreak80: 15,
+};
+
+// Helper: compute total materials for a weapon from currentBreak to targetBreak
+export function getWeaponBreakMaterials(slug: string, fromBreak: number, toBreak: number): MaterialCost[] {
+  const weaponMats = WEAPON_MATERIALS[slug];
+  if (!weaponMats) return [];
+
+  const totals: Record<string, number> = {};
+  const breakLevels = [20, 40, 60, 80];
+
+  for (const level of breakLevels) {
+    if (level <= fromBreak || level > toBreak) continue;
+    const key = `weaponBreak${level}` as keyof typeof WEAPON_BREAK_COSTS;
+    const cost = WEAPON_BREAK_COSTS[key];
+    if (!cost) continue;
+
+    // Gold
+    totals['item_gold'] = (totals['item_gold'] || 0) + cost.gold;
+
+    // Generic break materials
+    for (const item of cost.materials) {
+      totals[item.id] = (totals[item.id] || 0) + item.count;
+    }
+
+    // Weapon-specific breakthrough materials
+    const matCount = WEAPON_BREAK_MAT_COUNTS[key];
+    let matId: string;
+    if (level === 20) matId = weaponMats.breakMat20;
+    else if (level === 40) matId = weaponMats.breakMat40;
+    else if (level === 60) matId = weaponMats.breakMat60;
+    else matId = weaponMats.breakMat80;
+
+    totals[matId] = (totals[matId] || 0) + matCount;
+  }
+
+  return Object.entries(totals).map(([id, count]) => ({ id, count }));
+}
