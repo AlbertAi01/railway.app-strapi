@@ -4,7 +4,7 @@ import { Map as MapIcon } from 'lucide-react';
 import Link from 'next/link';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
-const MAPS = [
+const MAPS: { id: string; name: string; desc: string; pois: string; zones: string; thumb: string; buggy?: boolean }[] = [
   {
     id: 'valley-iv',
     name: 'Valley IV',
@@ -20,6 +20,7 @@ const MAPS = [
     pois: '1,600+ points of interest',
     zones: '2 zones',
     thumb: 'https://endfieldtools.dev/assets/images/endfield/levelmap/levelmapgrids/map02lv002/map02_lv002_5_5.png',
+    buggy: true,
   },
 ];
 
@@ -39,7 +40,12 @@ export default function MapPage() {
                   <img src={m.thumb} alt={m.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-surface)] via-transparent to-transparent" />
                   <div className="absolute bottom-3 left-4 right-4">
-                    <h2 className="text-2xl font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wider">{m.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wider">{m.name}</h2>
+                      {m.buggy && (
+                        <span className="text-[10px] bg-red-500/80 text-white px-2 py-0.5 font-bold font-mono uppercase tracking-wider">BUGGY</span>
+                      )}
+                    </div>
                     <div className="flex gap-4 text-xs text-[var(--color-accent)] font-mono uppercase mt-1">
                       <span>{m.zones}</span>
                       <span>{m.pois}</span>

@@ -46,7 +46,7 @@ const navigation: NavItem[] = [
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={18} /> },
     ],
   },
-  { label: 'Interactive Map', path: '/map', icon: <Map size={20} /> },
+  { label: 'Interactive Map (BUGGY)', path: '/map', icon: <Map size={20} /> },
   {
     label: 'Headhunt Ops', path: '/headhunt-tracker', icon: <Target size={20} />,
     isNew: true,
@@ -167,7 +167,7 @@ export default function Sidebar() {
                 ZERO SANITY
               </span>
               <p className="terminal-text-sm text-[var(--color-text-muted)] mt-0.5">
-                ENDFIELD.TOOLKIT.v2.0
+                ENDFIELD.TOOLKIT.v0.1
               </p>
             </div>
           </Link>
@@ -211,7 +211,7 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div className="p-4 border-t border-[var(--color-border)]">
-          <p className="terminal-text-sm text-[var(--color-text-muted)]">ZS.v2.0.0 &middot; zerosanity.app</p>
+          <p className="terminal-text-sm text-[var(--color-text-muted)]">ZS.v0.1 &middot; zerosanity.app</p>
           <p className="terminal-text-sm text-[var(--color-text-muted)] mt-1">GAME ASSETS &copy; GRYPHLINE</p>
         </div>
       </aside>

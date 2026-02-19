@@ -16,6 +16,8 @@ export interface ImportCode {
 export type Complexity = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 export type Category = 'Production' | 'Processing' | 'Power' | 'Complete Chain' | 'Compact';
 
+export type BlueprintStatus = 'approved' | 'pending' | 'rejected';
+
 export interface BlueprintEntry {
   id: number;
   Title: string;
@@ -38,6 +40,30 @@ export interface BlueprintEntry {
   importCodes: ImportCode[];
   complexity: Complexity;
   category: Category;
+  status?: BlueprintStatus;
+  submittedAt?: string;
+}
+
+// localStorage persistence for user-submitted blueprints
+const STORAGE_KEY = 'endfield-user-blueprints';
+
+export function getUserBlueprints(): BlueprintEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+export function saveUserBlueprint(bp: BlueprintEntry): void {
+  const existing = getUserBlueprints();
+  existing.unshift(bp);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+}
+
+export function removeUserBlueprint(id: number): void {
+  const existing = getUserBlueprints().filter(bp => bp.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 }
 
 // Find blueprints tagged with a specific operator (by slug or name)

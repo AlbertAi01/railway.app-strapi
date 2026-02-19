@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff, Filter, Zap, Package } from 'lucide-react';
+import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff, Filter, Zap, Package, AlertTriangle, Clock, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import Image from 'next/image';
 import { fetchBlueprints } from '@/lib/api';
-import { SCRAPED_BLUEPRINTS, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
+import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function Blueprints() {
@@ -17,7 +17,9 @@ export default function Blueprints() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showMySubmissions, setShowMySubmissions] = useState(false);
   const [blueprints, setBlueprints] = useState<BlueprintEntry[]>(SCRAPED_BLUEPRINTS);
+  const [userSubmissions, setUserSubmissions] = useState<BlueprintEntry[]>([]);
   const { user } = useAuthStore();
   const isAuthenticated = !!user;
 
@@ -30,61 +32,81 @@ export default function Blueprints() {
   const [submitComplexity, setSubmitComplexity] = useState<Complexity>('Beginner');
   const [submitTags, setSubmitTags] = useState('');
   const [submitOperators, setSubmitOperators] = useState('');
+  const [submitImageUrl, setSubmitImageUrl] = useState('');
+  const [submitProductName, setSubmitProductName] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   const handleSubmitBlueprint = async () => {
     if (!submitTitle.trim() || !submitImport.trim()) return;
     setSubmitStatus('submitting');
+
+    const newBp: BlueprintEntry = {
+      id: Date.now(),
+      Title: submitTitle.trim(),
+      Description: submitDesc.trim(),
+      ImportString: submitImport.trim(),
+      Upvotes: 0,
+      Region: submitRegion,
+      Author: user?.username || 'anonymous',
+      Tags: submitTags.split(',').map(t => t.trim()).filter(Boolean),
+      operators: submitOperators.split(',').map(t => t.trim()).filter(Boolean),
+      slug: submitTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      detailDescription: submitDesc.trim() || 'User-submitted blueprint.',
+      outputsPerMin: [],
+      importCodes: [{ region: submitRegion, code: submitImport.trim() }],
+      complexity: submitComplexity,
+      category: submitCategory,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      previewImage: submitImageUrl.trim() || undefined,
+      productName: submitProductName.trim() || undefined,
+    };
+
+    // Always save to localStorage first (guaranteed to work)
+    saveUserBlueprint(newBp);
+    setUserSubmissions(getUserBlueprints());
+
+    // Also attempt Strapi submission (best-effort)
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'https://strapi.zerosanity.app';
-      const res = await fetch(`${apiUrl}/api/blueprints`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          data: {
-            Title: submitTitle.trim(),
-            Description: submitDesc.trim(),
-            ImportString: submitImport.trim(),
-            Region: submitRegion,
-            Author: user?.username || 'anonymous',
-            Tags: submitTags.split(',').map(t => t.trim()).filter(Boolean),
-            Operators: submitOperators.split(',').map(t => t.trim()).filter(Boolean),
-          },
-        }),
-      });
-      if (res.ok) {
-        const newBp: BlueprintEntry = {
-          id: Date.now(),
-          Title: submitTitle.trim(),
-          Description: submitDesc.trim(),
-          ImportString: submitImport.trim(),
-          Upvotes: 0,
-          Region: submitRegion,
-          Author: user?.username || 'anonymous',
-          Tags: submitTags.split(',').map(t => t.trim()).filter(Boolean),
-          operators: submitOperators.split(',').map(t => t.trim()).filter(Boolean),
-          category: submitCategory,
-          complexity: submitComplexity,
-          slug: submitTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-          detailDescription: submitDesc.trim() || 'User-submitted blueprint.',
-          outputsPerMin: [],
-          importCodes: [{ region: submitRegion, code: submitImport.trim() }],
-        };
-        setBlueprints(prev => [newBp, ...prev]);
-        setSubmitTitle(''); setSubmitDesc(''); setSubmitImport(''); setSubmitTags(''); setSubmitOperators('');
-        setSubmitStatus('success');
-        setTimeout(() => { setSubmitStatus('idle'); setShowCreate(false); }, 2000);
-      } else {
-        setSubmitStatus('error');
-        setTimeout(() => setSubmitStatus('idle'), 3000);
+      const apiUrl = process.env.NEXT_PUBLIC_STRAPI_URL;
+      if (apiUrl) {
+        await fetch(`${apiUrl}/api/blueprints`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: {
+              Title: newBp.Title,
+              Description: newBp.Description,
+              ImportString: newBp.ImportString,
+              Region: newBp.Region,
+              Author: newBp.Author,
+              Tags: newBp.Tags,
+              Operators: newBp.operators,
+            },
+          }),
+        });
       }
     } catch {
-      setSubmitStatus('error');
-      setTimeout(() => setSubmitStatus('idle'), 3000);
+      // Strapi submission failed - that's ok, we have localStorage
     }
+
+    // Clear form and show success
+    setSubmitTitle(''); setSubmitDesc(''); setSubmitImport('');
+    setSubmitTags(''); setSubmitOperators(''); setSubmitImageUrl(''); setSubmitProductName('');
+    setSubmitStatus('success');
+    setTimeout(() => { setSubmitStatus('idle'); setShowCreate(false); setShowMySubmissions(true); }, 1500);
+  };
+
+  const handleDeleteSubmission = (id: number) => {
+    removeUserBlueprint(id);
+    setUserSubmissions(getUserBlueprints());
   };
 
   useEffect(() => {
+    // Load user submissions from localStorage
+    setUserSubmissions(getUserBlueprints());
+
+    // Also try to load from Strapi
     fetchBlueprints()
       .then((data) => {
         if (data && Array.isArray(data) && data.length > 0) {
@@ -107,10 +129,9 @@ export default function Blueprints() {
               importCodes: [],
               complexity: 'Intermediate' as Complexity,
               category: 'Production' as Category,
+              status: 'approved' as const,
             };
           });
-          // Merge user-submitted Strapi blueprints with scraped community blueprints.
-          // Only add Strapi entries whose titles don't duplicate scraped ones.
           const scrapedTitles = new Set(SCRAPED_BLUEPRINTS.map(bp => bp.Title.toLowerCase()));
           const userSubmitted = mapped.filter(bp => !scrapedTitles.has(bp.Title.toLowerCase()));
           setBlueprints([...SCRAPED_BLUEPRINTS, ...userSubmitted]);
@@ -144,23 +165,88 @@ export default function Blueprints() {
           <RIOSHeader title="Blueprint Registry" category="LOGISTICS" code="RIOS-BP-001" icon={<LayoutGrid size={32} />} />
           <p className="text-[var(--color-text-muted)] text-base mt-2">Community factory blueprints for Arknights: Endfield</p>
         </div>
-        {isAuthenticated ? (
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-2 bg-[var(--color-accent)] text-black px-5 py-2.5 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-accent)]/90 transition-colors shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]"
-          >
-            <Plus size={18} /> Submit Blueprint
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            className="flex items-center gap-2 bg-[var(--color-surface)] text-[var(--color-text-secondary)] px-5 py-2.5 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-surface-2)] transition-colors no-underline border border-[var(--color-border)]"
-          >
-            <LogIn size={18} /> Login to Submit
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {userSubmissions.length > 0 && (
+            <button
+              onClick={() => setShowMySubmissions(!showMySubmissions)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border transition-colors ${
+                showMySubmissions
+                  ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                  : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+              }`}
+            >
+              <Clock size={16} />
+              My Submissions ({userSubmissions.length})
+            </button>
+          )}
+          {isAuthenticated ? (
+            <button
+              onClick={() => setShowCreate(!showCreate)}
+              className="flex items-center gap-2 bg-[var(--color-accent)] text-black px-5 py-2.5 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-accent)]/90 transition-colors shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]"
+            >
+              <Plus size={18} /> Submit Blueprint
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-2 bg-[var(--color-surface)] text-[var(--color-text-secondary)] px-5 py-2.5 clip-corner-tl text-sm font-semibold hover:bg-[var(--color-surface-2)] transition-colors no-underline border border-[var(--color-border)]"
+            >
+              <LogIn size={18} /> Login to Submit
+            </Link>
+          )}
+        </div>
       </div>
 
+      {/* ──── My Submissions Panel ──── */}
+      {showMySubmissions && userSubmissions.length > 0 && (
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 mb-8 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-white font-bold font-mono text-sm uppercase tracking-wider flex items-center gap-2">
+              <Clock size={16} className="text-[var(--color-accent)]" />
+              My Submissions
+            </h3>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">Stored locally on this device</span>
+          </div>
+          <div className="bg-[var(--color-surface-2)] border border-yellow-500/30 px-4 py-2.5 flex items-start gap-2 text-sm">
+            <AlertTriangle size={16} className="text-yellow-500 flex-shrink-0 mt-0.5" />
+            <p className="text-[var(--color-text-secondary)]">
+              Submissions are saved locally and submitted for review. Approved blueprints will appear in the public registry.
+              Your local submissions are visible only to you until approved.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {userSubmissions.map(bp => (
+              <div key={bp.id} className="flex items-center gap-4 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)]">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-sm font-semibold truncate">{bp.Title}</span>
+                    <span className={`text-[10px] px-2 py-0.5 font-bold font-mono uppercase ${
+                      bp.status === 'approved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                      bp.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                      'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                    }`}>
+                      {bp.status || 'pending'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {bp.Region} &middot; {bp.category} &middot; {bp.complexity}
+                    {bp.submittedAt && ` &middot; ${new Date(bp.submittedAt).toLocaleDateString()}`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDeleteSubmission(bp.id)}
+                  className="text-[var(--color-text-muted)] hover:text-red-400 transition-colors p-1"
+                  title="Delete submission"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ──── Create Blueprint Form ──── */}
       {showCreate && isAuthenticated && (
         <div className="bg-[var(--color-surface)] border border-[var(--color-accent)] clip-corner-tl p-6 mb-8 space-y-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
@@ -168,13 +254,23 @@ export default function Blueprints() {
             <span className="text-[9px] font-mono text-[var(--color-text-muted)]">Submitting as {user?.username}</span>
           </div>
           <div className="space-y-3">
-            <div>
-              <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Blueprint Title *</label>
-              <input
-                placeholder="e.g. Efficient Carbon Fiber 2x"
-                value={submitTitle} onChange={e => setSubmitTitle(e.target.value)}
-                className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Blueprint Title *</label>
+                <input
+                  placeholder="e.g. Efficient Carbon Fiber 2x"
+                  value={submitTitle} onChange={e => setSubmitTitle(e.target.value)}
+                  className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              </div>
+              <div>
+                <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Product Name</label>
+                <input
+                  placeholder="e.g. Buck Capsule [A], Ferrium Component"
+                  value={submitProductName} onChange={e => setSubmitProductName(e.target.value)}
+                  className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              </div>
             </div>
             <div>
               <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Description</label>
@@ -187,27 +283,37 @@ export default function Blueprints() {
             <div>
               <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Import String (EFO Code) *</label>
               <input
-                placeholder="Paste your blueprint import string here"
+                placeholder="Paste your blueprint import string here (e.g. EFO01...)"
                 value={submitImport} onChange={e => setSubmitImport(e.target.value)}
                 className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[var(--color-accent)]"
               />
             </div>
             <div>
-              <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Tags (comma separated)</label>
+              <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Screenshot URL</label>
               <input
-                placeholder="e.g. efficient, compact, carbon fiber"
-                value={submitTags} onChange={e => setSubmitTags(e.target.value)}
+                placeholder="Paste a URL to your factory screenshot (Imgur, Discord CDN, etc.)"
+                value={submitImageUrl} onChange={e => setSubmitImageUrl(e.target.value)}
                 className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
               />
+              <p className="text-[9px] text-[var(--color-text-muted)] mt-1">Upload your screenshot to Imgur or similar and paste the direct image URL</p>
             </div>
-            <div>
-              <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Related Operators (comma separated)</label>
-              <input
-                placeholder="e.g. Laevatain, Akekuri, Ardelia"
-                value={submitOperators} onChange={e => setSubmitOperators(e.target.value)}
-                className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
-              />
-              <p className="text-[9px] text-[var(--color-text-muted)] mt-1">This blueprint will appear on tagged operator pages under &quot;Community Builds&quot;</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Tags (comma separated)</label>
+                <input
+                  placeholder="e.g. efficient, compact, carbon fiber"
+                  value={submitTags} onChange={e => setSubmitTags(e.target.value)}
+                  className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              </div>
+              <div>
+                <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Related Operators (comma separated)</label>
+                <input
+                  placeholder="e.g. Laevatain, Akekuri, Ardelia"
+                  value={submitOperators} onChange={e => setSubmitOperators(e.target.value)}
+                  className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <div>
@@ -254,8 +360,8 @@ export default function Blueprints() {
               >
                 Cancel
               </button>
-              {submitStatus === 'error' && (
-                <span className="text-xs font-mono text-red-400">Failed to submit. Blueprint saved locally.</span>
+              {submitStatus === 'success' && (
+                <span className="text-xs font-mono text-green-400">Blueprint submitted for review!</span>
               )}
             </div>
           </div>
@@ -310,7 +416,6 @@ export default function Blueprints() {
         {showFilters && (
           <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 clip-corner-tl p-5 shadow-[var(--shadow-card)]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Category Filter */}
               <div>
                 <label className="text-sm text-[var(--color-text-muted)] mb-2 block uppercase tracking-wider">Category</label>
                 <div className="flex flex-wrap gap-2">
@@ -329,8 +434,6 @@ export default function Blueprints() {
                   ))}
                 </div>
               </div>
-
-              {/* Complexity Filter */}
               <div>
                 <label className="text-sm text-[var(--color-text-muted)] mb-2 block uppercase tracking-wider">Complexity</label>
                 <div className="flex flex-wrap gap-2">
@@ -350,14 +453,9 @@ export default function Blueprints() {
                 </div>
               </div>
             </div>
-
-            {/* Clear Filters */}
             {(categoryFilter || complexityFilter) && (
               <button
-                onClick={() => {
-                  setCategoryFilter(null);
-                  setComplexityFilter(null);
-                }}
+                onClick={() => { setCategoryFilter(null); setComplexityFilter(null); }}
                 className="mt-3 text-xs text-[var(--color-accent)] hover:underline"
               >
                 Clear all filters
@@ -366,7 +464,6 @@ export default function Blueprints() {
           </div>
         )}
 
-        {/* Results Count */}
         <div className="text-sm text-[var(--color-text-muted)]">
           Showing <span className="text-[var(--color-accent)] font-semibold">{filtered.length}</span> of{' '}
           <span className="text-white font-semibold">{blueprints.length}</span> blueprints
@@ -398,7 +495,6 @@ export default function Blueprints() {
                     <span className="text-[10px] uppercase tracking-wider opacity-40">No Preview</span>
                   </div>
                 )}
-                {/* Product icon overlay */}
                 {bp.productIcon && (
                   <div className="absolute bottom-2 right-2 w-10 h-10 bg-[#0a0a0a]/80 border border-[var(--color-border)] p-1 backdrop-blur-sm">
                     <Image

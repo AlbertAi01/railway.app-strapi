@@ -81,7 +81,7 @@ export default function Home() {
         />
 
         <div className="flex flex-wrap gap-3 mb-10">
-          <span className="terminal-text text-[var(--color-originium)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] clip-corner-tl">v2.0.0</span>
+          <span className="terminal-text text-[var(--color-originium)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] clip-corner-tl">v0.1</span>
           <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">23 OPERATORS</span>
           <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">15+ MODULES</span>
         </div>
