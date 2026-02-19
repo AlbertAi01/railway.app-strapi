@@ -29,6 +29,7 @@ export default function Blueprints() {
   const [submitCategory, setSubmitCategory] = useState<Category>('Production');
   const [submitComplexity, setSubmitComplexity] = useState<Complexity>('Beginner');
   const [submitTags, setSubmitTags] = useState('');
+  const [submitOperators, setSubmitOperators] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   const handleSubmitBlueprint = async () => {
@@ -47,6 +48,7 @@ export default function Blueprints() {
             Region: submitRegion,
             Author: user?.username || 'anonymous',
             Tags: submitTags.split(',').map(t => t.trim()).filter(Boolean),
+            Operators: submitOperators.split(',').map(t => t.trim()).filter(Boolean),
           },
         }),
       });
@@ -60,6 +62,7 @@ export default function Blueprints() {
           Region: submitRegion,
           Author: user?.username || 'anonymous',
           Tags: submitTags.split(',').map(t => t.trim()).filter(Boolean),
+          operators: submitOperators.split(',').map(t => t.trim()).filter(Boolean),
           category: submitCategory,
           complexity: submitComplexity,
           slug: submitTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
@@ -68,7 +71,7 @@ export default function Blueprints() {
           importCodes: [{ region: submitRegion, code: submitImport.trim() }],
         };
         setBlueprints(prev => [newBp, ...prev]);
-        setSubmitTitle(''); setSubmitDesc(''); setSubmitImport(''); setSubmitTags('');
+        setSubmitTitle(''); setSubmitDesc(''); setSubmitImport(''); setSubmitTags(''); setSubmitOperators('');
         setSubmitStatus('success');
         setTimeout(() => { setSubmitStatus('idle'); setShowCreate(false); }, 2000);
       } else {
@@ -97,6 +100,7 @@ export default function Blueprints() {
               Region: ((attrs as Record<string, unknown>).Region as string) || 'NA / EU',
               Author: ((attrs as Record<string, unknown>).Author as string) || 'guest',
               Tags: Array.isArray((attrs as Record<string, unknown>).Tags) ? ((attrs as Record<string, unknown>).Tags as string[]) : [],
+              operators: Array.isArray((attrs as Record<string, unknown>).Operators) ? ((attrs as Record<string, unknown>).Operators as string[]) : [],
               slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
               detailDescription: ((attrs as Record<string, unknown>).Description as string) || 'User-submitted blueprint.',
               outputsPerMin: [],
@@ -195,6 +199,15 @@ export default function Blueprints() {
                 value={submitTags} onChange={e => setSubmitTags(e.target.value)}
                 className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
               />
+            </div>
+            <div>
+              <label className="text-[9px] font-mono text-[var(--color-accent)] uppercase font-bold mb-1 block">Related Operators (comma separated)</label>
+              <input
+                placeholder="e.g. Laevatain, Akekuri, Ardelia"
+                value={submitOperators} onChange={e => setSubmitOperators(e.target.value)}
+                className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]"
+              />
+              <p className="text-[9px] text-[var(--color-text-muted)] mt-1">This blueprint will appear on tagged operator pages under &quot;Community Builds&quot;</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <div>

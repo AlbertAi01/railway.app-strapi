@@ -519,85 +519,127 @@ export default function TierListPage() {
           </div>
         )}
 
-        {/* ─── Tier List ─── */}
-        <div ref={tierListRef} className="space-y-1">
-          {TIERS.map(tier => (
-            <div
-              key={tier}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(tier)}
-              onClick={() => handleTierClick(tier)}
-              className={`p-4 ${TIER_COLORS[tier]} transition-all ${selectedCharacter ? 'cursor-pointer hover:brightness-125 hover:ring-1 hover:ring-[var(--color-accent)]/40' : ''}`}
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-16 flex-shrink-0 flex flex-col items-center">
-                  <div className="text-4xl font-bold" style={{ color: TIER_LABEL_COLORS[tier] }}>{tier}</div>
-                  <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                    {tierList[tier]?.length || 0}
+        {/* ─── Tier List + Bench Sidebar Layout ─── */}
+        <div className="flex gap-4">
+          {/* Main Tier List */}
+          <div className="flex-1 min-w-0">
+            <div ref={tierListRef} className="space-y-1">
+              {TIERS.map(tier => (
+                <div
+                  key={tier}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(tier)}
+                  onClick={() => handleTierClick(tier)}
+                  className={`p-4 ${TIER_COLORS[tier]} transition-all ${selectedCharacter ? 'cursor-pointer hover:brightness-125 hover:ring-1 hover:ring-[var(--color-accent)]/40' : ''}`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 flex-shrink-0 flex flex-col items-center">
+                      <div className="text-4xl font-bold" style={{ color: TIER_LABEL_COLORS[tier] }}>{tier}</div>
+                      <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
+                        {tierList[tier]?.length || 0}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-[80px]">
+                      <div className="flex flex-wrap gap-2">
+                        {tierList[tier]?.map(charName => (
+                          <CharacterCard key={charName} charName={charName} currentTier={tier} />
+                        ))}
+                        {(!tierList[tier] || tierList[tier].length === 0) && (
+                          <div className={`flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-muted)] text-sm border border-dashed clip-corner-tl ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)]'}`}>
+                            {selectedCharacter ? `Click to place ${selectedCharacter} here` : 'Drop operators here'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex-1 min-h-[80px]">
-                  <div className="flex flex-wrap gap-2">
-                    {tierList[tier]?.map(charName => (
-                      <CharacterCard key={charName} charName={charName} currentTier={tier} />
-                    ))}
-                    {(!tierList[tier] || tierList[tier].length === 0) && (
-                      <div className={`flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-muted)] text-sm border border-dashed clip-corner-tl ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)]'}`}>
-                        {selectedCharacter ? `Click to place ${selectedCharacter} here` : 'Drop operators here'}
-                      </div>
-                    )}
-                  </div>
+              ))}
+            </div>
+
+            {/* Unranked Characters */}
+            {tierList.Unranked && tierList.Unranked.length > 0 && (
+              <div
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop('Unranked')}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mt-6"
+              >
+                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-[var(--color-text-muted)]">UNRANKED</span>
+                  <span className="text-xs text-[var(--color-text-muted)] font-normal">({tierList.Unranked.length})</span>
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {tierList.Unranked.map(charName => (
+                    <CharacterCard key={charName} charName={charName} currentTier="Unranked" />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ─── Bench (Sticky Scrolling Sidebar) ─── */}
+          <div className="hidden xl:block w-64 shrink-0">
+            <div
+              className="sticky top-4 max-h-[calc(100vh-2rem)] flex flex-col"
+            >
+              <div
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop('Bench')}
+                onClick={() => handleTierClick('Bench')}
+                className={`flex flex-col bg-[var(--color-surface)] border border-dashed border-[var(--color-accent)]/30 clip-corner-tl transition-all overflow-hidden ${selectedCharacter ? 'cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5' : ''}`}
+              >
+                <div className="p-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] shrink-0">
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="text-[var(--color-accent)]">BENCH</span>
+                    <span className="text-[10px] text-[var(--color-text-muted)] font-normal">
+                      {tierList.Bench?.length ? `(${tierList.Bench.length})` : ''}
+                    </span>
+                  </h2>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Park operators while rearranging</p>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px]">
+                  {tierList.Bench && tierList.Bench.length > 0 ? (
+                    tierList.Bench.map(charName => (
+                      <CharacterCard key={charName} charName={charName} currentTier="Bench" />
+                    ))
+                  ) : (
+                    <div className={`flex items-center justify-center min-h-[120px] text-xs border border-dashed clip-corner-tl p-3 text-center ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}>
+                      {selectedCharacter ? `Click to bench ${selectedCharacter}` : 'Drop or click operators here to hold them temporarily'}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* ─── Bench (Temporary Holding Area) ─── */}
-        <div
-          onDragOver={handleDragOver}
-          onDrop={() => handleDrop('Bench')}
-          onClick={() => handleTierClick('Bench')}
-          className={`bg-[var(--color-surface)] border border-dashed border-[var(--color-accent)]/30 clip-corner-tl p-4 mt-4 transition-all ${selectedCharacter ? 'cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5' : ''}`}
-        >
-          <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-            <span className="text-[var(--color-accent)]">BENCH</span>
-            <span className="text-xs text-[var(--color-text-muted)] font-normal">
-              Temporary holding area
-              {tierList.Bench?.length ? ` (${tierList.Bench.length})` : ''}
-            </span>
-          </h2>
-          {tierList.Bench && tierList.Bench.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {tierList.Bench.map(charName => (
-                <CharacterCard key={charName} charName={charName} currentTier="Bench" />
-              ))}
-            </div>
-          ) : (
-            <div className={`flex items-center justify-center min-h-[60px] text-sm border border-dashed clip-corner-tl ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}>
-              {selectedCharacter ? `Click to bench ${selectedCharacter}` : 'Park operators here while rearranging'}
-            </div>
-          )}
-        </div>
-
-        {/* Unranked Characters */}
-        {tierList.Unranked && tierList.Unranked.length > 0 && (
+        {/* ─── Bench (Mobile/Tablet fallback - shown below on smaller screens) ─── */}
+        <div className="xl:hidden mt-4">
           <div
             onDragOver={handleDragOver}
-            onDrop={() => handleDrop('Unranked')}
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 mt-6"
+            onDrop={() => handleDrop('Bench')}
+            onClick={() => handleTierClick('Bench')}
+            className={`bg-[var(--color-surface)] border border-dashed border-[var(--color-accent)]/30 clip-corner-tl p-4 transition-all ${selectedCharacter ? 'cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5' : ''}`}
           >
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <span className="text-[var(--color-text-muted)]">UNRANKED</span>
-              <span className="text-xs text-[var(--color-text-muted)] font-normal">({tierList.Unranked.length})</span>
+            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <span className="text-[var(--color-accent)]">BENCH</span>
+              <span className="text-xs text-[var(--color-text-muted)] font-normal">
+                Temporary holding area
+                {tierList.Bench?.length ? ` (${tierList.Bench.length})` : ''}
+              </span>
             </h2>
-            <div className="flex flex-wrap gap-2">
-              {tierList.Unranked.map(charName => (
-                <CharacterCard key={charName} charName={charName} currentTier="Unranked" />
-              ))}
-            </div>
+            {tierList.Bench && tierList.Bench.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {tierList.Bench.map(charName => (
+                  <CharacterCard key={charName} charName={charName} currentTier="Bench" />
+                ))}
+              </div>
+            ) : (
+              <div className={`flex items-center justify-center min-h-[60px] text-sm border border-dashed clip-corner-tl ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}>
+                {selectedCharacter ? `Click to bench ${selectedCharacter}` : 'Park operators here while rearranging'}
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         <div className="mt-6 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-sm">
           <h3 className="font-bold text-white mb-2">How to use:</h3>

@@ -3,13 +3,14 @@
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Zap, Wind, Brain, Heart, Star, Sword, Shield, ChevronDown, ChevronUp, Trophy, Target, Users, Crosshair, ThumbsUp, ThumbsDown, BookOpen, Lightbulb, Wrench, Calendar } from 'lucide-react';
+import { ArrowLeft, Zap, Wind, Brain, Heart, Star, Sword, Shield, ChevronDown, ChevronUp, Trophy, Target, Users, Crosshair, ThumbsUp, ThumbsDown, BookOpen, Lightbulb, Wrench, Calendar, Package, Copy, Check, ExternalLink } from 'lucide-react';
 import { CHARACTERS } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import { CHARACTER_BANNERS, CHARACTER_ICONS, CHARACTER_SPLASH, PROFESSION_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
 import { getOperatorGuide, TIER_COLORS } from '@/data/guides';
 import type { TierRating, OperatorGuide } from '@/data/guides';
-import { fetchOperatorGuide } from '@/lib/api';
+import { fetchOperatorGuide, fetchBlueprints } from '@/lib/api';
+import { SCRAPED_BLUEPRINTS, getBlueprintsForOperator, type BlueprintEntry } from '@/data/blueprints';
 
 function TierBadge({ tier, label }: { tier: TierRating; label: string }) {
   return (
@@ -54,6 +55,8 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
   const char = CHARACTERS.find(c => c.Slug === slug);
   const [guide, setGuide] = useState<OperatorGuide | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [communityBuilds, setCommunityBuilds] = useState<BlueprintEntry[]>([]);
+  const [copiedBpId, setCopiedBpId] = useState<number | null>(null);
 
   useEffect(() => {
     // Load static guide immediately
@@ -77,6 +80,62 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, [slug]);
+
+  // Load community builds tagged with this operator
+  useEffect(() => {
+    if (!char) return;
+    // Check static blueprints first
+    const staticBuilds = getBlueprintsForOperator(char.Name);
+    setCommunityBuilds(staticBuilds);
+
+    // Also check Strapi blueprints for operator tags
+    fetchBlueprints().then((data) => {
+      if (!data || !Array.isArray(data)) return;
+      const strapiBuilds = data
+        .map((item: Record<string, unknown>) => {
+          const attrs = (item as Record<string, unknown>).attributes || item;
+          return { attrs, id: (item as Record<string, unknown>).id as number };
+        })
+        .filter(({ attrs }) => {
+          const ops = (attrs as Record<string, unknown>).Operators;
+          const tags = (attrs as Record<string, unknown>).Tags;
+          const nameLower = char.Name.toLowerCase();
+          if (Array.isArray(ops) && ops.some((o: string) => o.toLowerCase() === nameLower)) return true;
+          if (Array.isArray(tags) && tags.some((t: string) => t.toLowerCase() === nameLower)) return true;
+          return false;
+        })
+        .map(({ attrs, id }) => {
+          const a = attrs as Record<string, unknown>;
+          const title = (a.Title as string) || '';
+          return {
+            id,
+            Title: title,
+            Description: (a.Description as string) || '',
+            ImportString: (a.ImportString as string) || '',
+            Upvotes: (a.Upvotes as number) || 0,
+            Region: (a.Region as string) || 'NA / EU',
+            Author: (a.Author as string) || 'guest',
+            Tags: Array.isArray(a.Tags) ? a.Tags as string[] : [],
+            operators: Array.isArray(a.Operators) ? a.Operators as string[] : [],
+            slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            detailDescription: (a.Description as string) || '',
+            outputsPerMin: [],
+            importCodes: [],
+            complexity: 'Intermediate' as const,
+            category: 'Production' as const,
+          } satisfies BlueprintEntry;
+        });
+      // Merge static + strapi, deduplicate by title
+      const allBuilds = [...staticBuilds];
+      const existingTitles = new Set(allBuilds.map(b => b.Title.toLowerCase()));
+      for (const b of strapiBuilds) {
+        if (!existingTitles.has(b.Title.toLowerCase())) {
+          allBuilds.push(b);
+        }
+      }
+      setCommunityBuilds(allBuilds);
+    }).catch(() => {});
+  }, [char]);
 
   if (!char) {
     return (
@@ -385,6 +444,88 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
                   </div>
                 </Section>
               )}
+
+              {/* Community Builds */}
+              <Section title={`Community Builds for ${char.Name}`} icon={<Package size={16} />} accent={elementColor}>
+                {communityBuilds.length > 0 ? (
+                  <div className="space-y-3">
+                    {communityBuilds.map(bp => (
+                      <div key={bp.id} className="flex items-start gap-3 p-3 bg-[var(--color-surface-2)] clip-corner-tl border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors group">
+                        {bp.previewImage && (
+                          <div className="w-20 h-16 flex-shrink-0 relative overflow-hidden border border-[var(--color-border)]">
+                            <Image src={bp.previewImage} alt={bp.Title} fill className="object-cover" sizes="80px" unoptimized />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Link
+                              href={`/blueprints/${bp.slug}`}
+                              className="text-white text-sm font-semibold truncate hover:text-[var(--color-accent)] transition-colors no-underline"
+                            >
+                              {bp.Title}
+                            </Link>
+                            {bp.complexity && (
+                              <span className={`text-[9px] px-1.5 py-0.5 font-mono border shrink-0 ${
+                                bp.complexity === 'Beginner' ? 'text-green-400 border-green-400/30' :
+                                bp.complexity === 'Intermediate' ? 'text-blue-400 border-blue-400/30' :
+                                bp.complexity === 'Advanced' ? 'text-purple-400 border-purple-400/30' :
+                                'text-red-400 border-red-400/30'
+                              }`}>
+                                {bp.complexity}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[var(--color-text-muted)] text-xs">
+                            by {bp.Author} &middot; {bp.Region}
+                            {bp.Upvotes > 0 && <> &middot; <ThumbsUp size={10} className="inline" /> {bp.Upvotes}</>}
+                          </p>
+                          {bp.outputsPerMin?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {bp.outputsPerMin.slice(0, 2).map((o, i) => (
+                                <span key={i} className="text-[10px] text-[var(--color-accent)] font-mono">
+                                  {o.rate}/min {o.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <Link
+                            href={`/blueprints/${bp.slug}`}
+                            className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors no-underline"
+                            title="View blueprint"
+                          >
+                            <ExternalLink size={14} />
+                          </Link>
+                          {bp.ImportString?.startsWith('EFO') && (
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(bp.ImportString);
+                                setCopiedBpId(bp.id);
+                                setTimeout(() => setCopiedBpId(null), 2000);
+                              }}
+                              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                              title="Copy import code"
+                            >
+                              {copiedBpId === bp.id ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-[var(--color-text-muted)] text-sm mb-2">No community builds tagged for {char.Name} yet.</p>
+                    <Link
+                      href="/blueprints"
+                      className="text-[var(--color-accent)] text-xs hover:underline no-underline"
+                    >
+                      Submit a blueprint and tag {char.Name} to feature it here
+                    </Link>
+                  </div>
+                )}
+              </Section>
             </>
           )}
 

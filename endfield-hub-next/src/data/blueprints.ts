@@ -25,6 +25,7 @@ export interface BlueprintEntry {
   Region: string;
   Author: string;
   Tags: string[];
+  operators?: string[];
   previewImage?: string;
   productIcon?: string;
   productName?: string;
@@ -37,6 +38,16 @@ export interface BlueprintEntry {
   importCodes: ImportCode[];
   complexity: Complexity;
   category: Category;
+}
+
+// Find blueprints tagged with a specific operator (by slug or name)
+export function getBlueprintsForOperator(operatorName: string): BlueprintEntry[] {
+  const nameLower = operatorName.toLowerCase();
+  return SCRAPED_BLUEPRINTS.filter(bp => {
+    if (bp.operators?.some(op => op.toLowerCase() === nameLower)) return true;
+    if (bp.Tags?.some(t => t.toLowerCase() === nameLower)) return true;
+    return false;
+  });
 }
 
 export const SCRAPED_BLUEPRINTS: BlueprintEntry[] = [
