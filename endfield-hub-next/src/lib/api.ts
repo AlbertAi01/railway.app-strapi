@@ -40,8 +40,9 @@ export async function fetchGuide(slug: string) {
 }
 
 export async function fetchBlueprints() {
+  if (!STRAPI_URL) return [];
   const { data } = await api.get('/blueprints?populate=*&pagination[pageSize]=100&sort=Upvotes:desc');
-  return data.data;
+  return data?.data ?? [];
 }
 
 export async function fetchRecipes() {

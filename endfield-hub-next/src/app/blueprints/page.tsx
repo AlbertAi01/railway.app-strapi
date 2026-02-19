@@ -84,18 +84,25 @@ export default function Blueprints() {
   useEffect(() => {
     fetchBlueprints()
       .then((data) => {
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data) && data.length > 0) {
           const mapped: BlueprintEntry[] = data.map((item: Record<string, unknown>, idx: number) => {
             const attrs = (item as Record<string, unknown>).attributes || item;
+            const title = ((attrs as Record<string, unknown>).Title as string) || '';
             return {
               id: (item as Record<string, unknown>).id as number || idx + 1,
-              Title: (attrs as Record<string, unknown>).Title as string || '',
-              Description: (attrs as Record<string, unknown>).Description as string || '',
-              ImportString: (attrs as Record<string, unknown>).ImportString as string || '',
-              Upvotes: (attrs as Record<string, unknown>).Upvotes as number || 0,
-              Region: (attrs as Record<string, unknown>).Region as string || 'NA / EU',
-              Author: (attrs as Record<string, unknown>).Author as string || 'guest',
-              Tags: ((attrs as Record<string, unknown>).Tags as string[]) || [],
+              Title: title,
+              Description: ((attrs as Record<string, unknown>).Description as string) || '',
+              ImportString: ((attrs as Record<string, unknown>).ImportString as string) || '',
+              Upvotes: ((attrs as Record<string, unknown>).Upvotes as number) || 0,
+              Region: ((attrs as Record<string, unknown>).Region as string) || 'NA / EU',
+              Author: ((attrs as Record<string, unknown>).Author as string) || 'guest',
+              Tags: Array.isArray((attrs as Record<string, unknown>).Tags) ? ((attrs as Record<string, unknown>).Tags as string[]) : [],
+              slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              detailDescription: ((attrs as Record<string, unknown>).Description as string) || 'User-submitted blueprint.',
+              outputsPerMin: [],
+              importCodes: [],
+              complexity: 'Intermediate' as Complexity,
+              category: 'Production' as Category,
             };
           });
           // Merge user-submitted Strapi blueprints with scraped community blueprints.
@@ -109,7 +116,8 @@ export default function Blueprints() {
   }, []);
 
   const filtered = blueprints.filter(bp => {
-    if (search && !bp.Title.toLowerCase().includes(search.toLowerCase()) && !bp.Tags.some(t => t.toLowerCase().includes(search.toLowerCase()))) return false;
+    const tags = bp.Tags || [];
+    if (search && !bp.Title.toLowerCase().includes(search.toLowerCase()) && !tags.some(t => t.toLowerCase().includes(search.toLowerCase()))) return false;
     if (regionFilter && bp.Region !== regionFilter) return false;
     if (categoryFilter && bp.category !== categoryFilter) return false;
     if (complexityFilter && bp.complexity !== complexityFilter) return false;
@@ -413,7 +421,7 @@ export default function Blueprints() {
                 </div>
 
                 {/* Production Rates */}
-                {bp.outputsPerMin.length > 0 && (
+                {(bp.outputsPerMin?.length ?? 0) > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
                     {bp.outputsPerMin.slice(0, 3).map((output, idx) => (
                       <div key={idx} className="flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] px-3 py-1.5 clip-corner-tl">
@@ -463,7 +471,7 @@ export default function Blueprints() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-1.5">
-                    {bp.Tags.slice(0, 4).map(tag => (
+                    {(bp.Tags || []).slice(0, 4).map(tag => (
                       <span key={tag} className="text-[11px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-1 border border-[var(--color-border)]">{tag}</span>
                     ))}
                   </div>

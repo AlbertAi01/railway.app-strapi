@@ -87,31 +87,34 @@ export const CHARACTER_GACHA: Record<string, string> = {
   'Fluorite': `${TOOLS_CDN}/chargacha/chr_0022_bounda.png`,
 };
 
-// Character splash art (full illustrations from wiki)
+// Character splash art (full illustrations from wiki, proxied to avoid CORS)
+const splashProxy = (wikiPath: string) =>
+  `/api/proxy-image?url=${encodeURIComponent(`${WIKI_CDN}/${wikiPath}`)}`;
+
 export const CHARACTER_SPLASH: Record<string, string> = {
-  'Ardelia': `${WIKI_CDN}/Ardelia_Splash_Art.png`,
-  'Ember': `${WIKI_CDN}/Ember_Splash_Art.png`,
-  'Endministrator': `${WIKI_CDN}/Endministrator_%28Male%29_Splash_Art.png`,
-  'Gilberta': `${WIKI_CDN}/Gilberta_Splash_Art.png`,
-  'Laevatain': `${WIKI_CDN}/Laevatain_Splash_Art.png`,
-  'Last Rite': `${WIKI_CDN}/Last_Rite_Splash_Art.png`,
-  'Lifeng': `${WIKI_CDN}/Lifeng_Splash_Art.png`,
-  'Pogranichnik': `${WIKI_CDN}/Pogranichnik_Splash_Art.png`,
-  'Yvonne': `${WIKI_CDN}/Yvonne_Splash_Art.png`,
-  'Alesh': `${WIKI_CDN}/Alesh_Splash_Art.png`,
-  'Arclight': `${WIKI_CDN}/Arclight_Splash_Art.png`,
-  'Avywenna': `${WIKI_CDN}/Avywenna_Splash_Art.png`,
-  'Chen Qianyu': `${WIKI_CDN}/Chen_Qianyu_Splash_Art.png`,
-  'Da Pan': `${WIKI_CDN}/Da_Pan_Splash_Art.png`,
-  'Perlica': `${WIKI_CDN}/Perlica_Splash_Art.png`,
-  'Snowshine': `${WIKI_CDN}/Snowshine_Splash_Art.png`,
-  'Wulfgard': `${WIKI_CDN}/Wulfgard_Splash_Art.png`,
-  'Xaihi': `${WIKI_CDN}/Xaihi_Splash_Art.png`,
-  'Akekuri': `${WIKI_CDN}/Akekuri_Splash_Art.png`,
-  'Antal': `${WIKI_CDN}/Antal_Splash_Art.png`,
-  'Catcher': `${WIKI_CDN}/Catcher_Splash_Art.png`,
-  'Estella': `${WIKI_CDN}/Estella_Splash_Art.png`,
-  'Fluorite': `${WIKI_CDN}/Fluorite_Splash_Art.png`,
+  'Ardelia': splashProxy('Ardelia_Splash_Art.png'),
+  'Ember': splashProxy('Ember_Splash_Art.png'),
+  'Endministrator': splashProxy('Endministrator_%28Male%29_Splash_Art.png'),
+  'Gilberta': splashProxy('Gilberta_Splash_Art.png'),
+  'Laevatain': splashProxy('Laevatain_Splash_Art.png'),
+  'Last Rite': splashProxy('Last_Rite_Splash_Art.png'),
+  'Lifeng': splashProxy('Lifeng_Splash_Art.png'),
+  'Pogranichnik': splashProxy('Pogranichnik_Splash_Art.png'),
+  'Yvonne': splashProxy('Yvonne_Splash_Art.png'),
+  'Alesh': splashProxy('Alesh_Splash_Art.png'),
+  'Arclight': splashProxy('Arclight_Splash_Art.png'),
+  'Avywenna': splashProxy('Avywenna_Splash_Art.png'),
+  'Chen Qianyu': splashProxy('Chen_Qianyu_Splash_Art.png'),
+  'Da Pan': splashProxy('Da_Pan_Splash_Art.png'),
+  'Perlica': splashProxy('Perlica_Splash_Art.png'),
+  'Snowshine': splashProxy('Snowshine_Splash_Art.png'),
+  'Wulfgard': splashProxy('Wulfgard_Splash_Art.png'),
+  'Xaihi': splashProxy('Xaihi_Splash_Art.png'),
+  'Akekuri': splashProxy('Akekuri_Splash_Art.png'),
+  'Antal': splashProxy('Antal_Splash_Art.png'),
+  'Catcher': splashProxy('Catcher_Splash_Art.png'),
+  'Estella': splashProxy('Estella_Splash_Art.png'),
+  'Fluorite': splashProxy('Fluorite_Splash_Art.png'),
 };
 
 // Role / Profession icons

@@ -82,6 +82,7 @@ function getDefaultTierList(): { [key: string]: string[] } {
     B: [],
     C: [],
     D: [],
+    Bench: [],
     Unranked: [],
   };
 
@@ -101,6 +102,7 @@ function getDefaultTierList(): { [key: string]: string[] } {
 export default function TierListPage() {
   const [tierList, setTierList] = useState<{ [key: string]: string[] }>(getDefaultTierList);
   const [draggedCharacter, setDraggedCharacter] = useState<string | null>(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const tierListRef = useRef<HTMLDivElement>(null);
@@ -178,6 +180,7 @@ export default function TierListPage() {
     Object.keys(newTierList).forEach(key => {
       newTierList[key] = newTierList[key].filter(c => c !== draggedCharacter);
     });
+    newTierList[tier] = newTierList[tier] || [];
     newTierList[tier].push(draggedCharacter);
     setTierList(newTierList);
     setDraggedCharacter(null);
@@ -188,8 +191,24 @@ export default function TierListPage() {
     Object.keys(newTierList).forEach(key => {
       newTierList[key] = newTierList[key].filter(c => c !== character);
     });
+    newTierList[tier] = newTierList[tier] || [];
     newTierList[tier].push(character);
     setTierList(newTierList);
+  };
+
+  // Click-to-pick, click-to-place
+  const handleCharacterClick = (charName: string) => {
+    if (selectedCharacter === charName) {
+      setSelectedCharacter(null); // deselect
+    } else {
+      setSelectedCharacter(charName);
+    }
+  };
+
+  const handleTierClick = (tier: string) => {
+    if (!selectedCharacter) return;
+    moveCharacter(selectedCharacter, tier);
+    setSelectedCharacter(null);
   };
 
   const exportAsImage = async () => {
@@ -256,8 +275,8 @@ export default function TierListPage() {
     const character = CHARACTERS.find(c => c.Name === charName);
     if (!character) return null;
 
-    // If filters are active and this character doesn't match, dim it
     const isFiltered = hasActiveFilters && !visibleCharacters.has(charName);
+    const isSelected = selectedCharacter === charName;
 
     const iconUrl = CHARACTER_ICONS[character.Name];
     const elemColor = ELEMENT_COLORS[character.Element as Element] || '#888';
@@ -266,9 +285,10 @@ export default function TierListPage() {
       <div
         draggable
         onDragStart={() => handleDragStart(charName)}
-        className={`bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 cursor-move hover:border-[var(--color-accent)] transition-all group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] ${
+        onClick={(e) => { e.stopPropagation(); handleCharacterClick(charName); }}
+        className={`bg-[var(--color-surface)] border clip-corner-tl p-4 cursor-pointer hover:border-[var(--color-accent)] transition-all group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] select-none ${
           isFiltered ? 'opacity-20' : ''
-        }`}
+        } ${isSelected ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/40 bg-[var(--color-accent)]/5' : 'border-[var(--color-border)]'}`}
       >
         <div className="flex items-center gap-3">
           {iconUrl && (
@@ -295,12 +315,12 @@ export default function TierListPage() {
         </div>
 
         {/* Quick move buttons */}
-        <div className="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className={`mt-1 flex gap-1 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
           {TIERS.map(t => (
             t !== currentTier && (
               <button
                 key={t}
-                onClick={() => moveCharacter(charName, t)}
+                onClick={(e) => { e.stopPropagation(); moveCharacter(charName, t); setSelectedCharacter(null); }}
                 className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:text-black"
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = TIER_LABEL_COLORS[t])}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
@@ -309,9 +329,18 @@ export default function TierListPage() {
               </button>
             )
           ))}
+          {currentTier !== 'Unranked' && currentTier !== 'Bench' && (
+            <button
+              onClick={(e) => { e.stopPropagation(); moveCharacter(charName, 'Bench'); setSelectedCharacter(null); }}
+              className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-accent)] hover:text-black"
+              title="Move to Bench"
+            >
+              BN
+            </button>
+          )}
           {currentTier !== 'Unranked' && (
             <button
-              onClick={() => moveCharacter(charName, 'Unranked')}
+              onClick={(e) => { e.stopPropagation(); moveCharacter(charName, 'Unranked'); setSelectedCharacter(null); }}
               className="text-xs px-2 py-1 bg-[var(--color-border)] clip-corner-tl hover:bg-[var(--color-text-tertiary)] hover:text-black"
             >
               -
@@ -475,6 +504,21 @@ export default function TierListPage() {
           )}
         </div>
 
+        {/* Selected character indicator */}
+        {selectedCharacter && (
+          <div className="sticky top-0 z-30 bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/40 clip-corner-tl px-4 py-2 mb-3 flex items-center justify-between backdrop-blur-sm">
+            <span className="text-sm text-[var(--color-accent)] font-bold">
+              {selectedCharacter} selected -- click a tier to place
+            </span>
+            <button
+              onClick={() => setSelectedCharacter(null)}
+              className="text-xs px-3 py-1 border border-[var(--color-accent)]/40 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         {/* ─── Tier List ─── */}
         <div ref={tierListRef} className="space-y-1">
           {TIERS.map(tier => (
@@ -482,7 +526,8 @@ export default function TierListPage() {
               key={tier}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(tier)}
-              className={`p-4 ${TIER_COLORS[tier]}`}
+              onClick={() => handleTierClick(tier)}
+              className={`p-4 ${TIER_COLORS[tier]} transition-all ${selectedCharacter ? 'cursor-pointer hover:brightness-125 hover:ring-1 hover:ring-[var(--color-accent)]/40' : ''}`}
             >
               <div className="flex items-start gap-4">
                 <div className="w-16 flex-shrink-0 flex flex-col items-center">
@@ -497,8 +542,8 @@ export default function TierListPage() {
                       <CharacterCard key={charName} charName={charName} currentTier={tier} />
                     ))}
                     {(!tierList[tier] || tierList[tier].length === 0) && (
-                      <div className="flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-muted)] text-sm border border-dashed border-[var(--color-border)] clip-corner-tl">
-                        Drop operators here
+                      <div className={`flex items-center justify-center w-full min-h-[80px] text-[var(--color-text-muted)] text-sm border border-dashed clip-corner-tl ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)]'}`}>
+                        {selectedCharacter ? `Click to place ${selectedCharacter} here` : 'Drop operators here'}
                       </div>
                     )}
                   </div>
@@ -506,6 +551,33 @@ export default function TierListPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* ─── Bench (Temporary Holding Area) ─── */}
+        <div
+          onDragOver={handleDragOver}
+          onDrop={() => handleDrop('Bench')}
+          onClick={() => handleTierClick('Bench')}
+          className={`bg-[var(--color-surface)] border border-dashed border-[var(--color-accent)]/30 clip-corner-tl p-4 mt-4 transition-all ${selectedCharacter ? 'cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5' : ''}`}
+        >
+          <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+            <span className="text-[var(--color-accent)]">BENCH</span>
+            <span className="text-xs text-[var(--color-text-muted)] font-normal">
+              Temporary holding area
+              {tierList.Bench?.length ? ` (${tierList.Bench.length})` : ''}
+            </span>
+          </h2>
+          {tierList.Bench && tierList.Bench.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {tierList.Bench.map(charName => (
+                <CharacterCard key={charName} charName={charName} currentTier="Bench" />
+              ))}
+            </div>
+          ) : (
+            <div className={`flex items-center justify-center min-h-[60px] text-sm border border-dashed clip-corner-tl ${selectedCharacter ? 'border-[var(--color-accent)]/40 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-muted)]'}`}>
+              {selectedCharacter ? `Click to bench ${selectedCharacter}` : 'Park operators here while rearranging'}
+            </div>
+          )}
         </div>
 
         {/* Unranked Characters */}
@@ -530,8 +602,10 @@ export default function TierListPage() {
         <div className="mt-6 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-sm">
           <h3 className="font-bold text-white mb-2">How to use:</h3>
           <ul className="space-y-1 text-[var(--color-text-secondary)]">
+            <li>-- Click an operator to pick them up, then click a tier row to place them</li>
             <li>-- Drag and drop operators between tiers to customize rankings</li>
             <li>-- Hover over an operator and click tier buttons for quick assignment</li>
+            <li>-- Use the Bench to temporarily hold operators while rearranging</li>
             <li>-- Use filters above to highlight specific characters by element, role, rarity, or weapon</li>
             <li>-- Click Save to store your customized tier list in local storage</li>
             <li>-- Click Reset to restore community consensus default rankings</li>
