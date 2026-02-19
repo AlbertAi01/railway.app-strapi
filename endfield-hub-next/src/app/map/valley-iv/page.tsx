@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ChevronLeft, ChevronDown, ChevronRight, Filter, ZoomIn, ZoomOut, Maximize2, Eye, EyeOff, Check, Search, Settings, Layers, X, Cloud, CloudOff, Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronRight, Filter, ZoomIn, ZoomOut, Maximize2, Eye, EyeOff, Check, Search, Layers, X, Cloud, CloudOff, Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
@@ -16,15 +16,16 @@ interface POI {
   px: number; py: number; zone: string; layer: number; name: string;
 }
 interface ZoneLabel { id: string; name: string; x: number; y: number; }
-interface TileZone { id: string; folder: string; cols: number; rows: number; startX: number; startY: number; }
 interface MapData {
   mapId: string; width: number; height: number;
   zones: Record<string, string>; zoneLabels: ZoneLabel[];
-  tileZones: TileZone[]; pois: POI[];
+  pois: POI[];
 }
 
+// Exact tile definition with correct coordinates
+interface TileDef { src: string; x: number; y: number; key: string; }
+
 // ──── Sub-type configuration ────
-// Maps entity types to human-readable names and groups them
 interface SubType { label: string; icon: string; types: string[]; }
 interface CategoryDef {
   label: string; color: string; icon: string; defaultOn: boolean;
@@ -118,6 +119,105 @@ function getEntityIcon(type: string): string {
   return ENTITY_ICON[type] || 'item_diamond';
 }
 
+// Generate all tiles with EXACT coordinates from endfieldtools.dev
+function generateAllTiles(): TileDef[] {
+  const tiles: TileDef[] = [];
+
+  // Helper to generate tiles for a zone
+  const addTiles = (id: string, folder: string, startX: number, startY: number, tileList: Array<[number, number]>) => {
+    for (const [col, row] of tileList) {
+      const x = startX + (col - 1) * 600;
+      const y = startY - (row - 1) * 600; // Y DECREASES per row
+      const fname = `${id}_${col}_${row}.png`;
+      tiles.push({
+        src: `${TILE_BASE}/${folder}/${fname}`,
+        x,
+        y,
+        key: `${id}_${col}_${row}`
+      });
+    }
+  };
+
+  // map01lv007 (Power Plateau) - Cols 1-8, Rows 1-8 (64 tiles, full grid)
+  const lv007Tiles: Array<[number, number]> = [];
+  for (let col = 1; col <= 8; col++) {
+    for (let row = 1; row <= 8; row++) {
+      lv007Tiles.push([col, row]);
+    }
+  }
+  addTiles('map01_lv007', 'map01lv007', 1800, 3000, lv007Tiles);
+
+  // map01lv006 (Origin Lodespring) - Cols 4-8, Rows 1-8 (37 tiles, sparse)
+  const lv006Tiles: Array<[number, number]> = [];
+  for (let col = 4; col <= 7; col++) {
+    for (let row = 1; row <= 8; row++) {
+      lv006Tiles.push([col, row]);
+    }
+  }
+  // Col 8 only has rows 4-8
+  for (let row = 4; row <= 8; row++) {
+    lv006Tiles.push([8, row]);
+  }
+  addTiles('map01_lv006', 'map01lv006', 4800, 3000, lv006Tiles);
+
+  // map01lv005 (Originium Science Park) - Cols 1-7, Rows 1-6 (30 tiles, sparse)
+  const lv005Tiles: Array<[number, number]> = [];
+  for (let col = 1; col <= 6; col++) {
+    for (let row = 1; row <= 4; row++) {
+      lv005Tiles.push([col, row]);
+    }
+  }
+  // Col 7 has rows 1-6
+  for (let row = 1; row <= 6; row++) {
+    lv005Tiles.push([7, row]);
+  }
+  addTiles('map01_lv005', 'map01lv005', 5400, 5400, lv005Tiles);
+
+  // map01lv003 (Aburrey Quarry) - Cols 1-5, Rows 1-5 (17 tiles, very sparse)
+  const lv003Tiles: Array<[number, number]> = [
+    // Col 1 has rows 1-5
+    [1, 1], [1, 2], [1, 3], [1, 4], [1, 5],
+    // Cols 2-5 have rows 1-3 only
+    [2, 1], [2, 2], [2, 3],
+    [3, 1], [3, 2], [3, 3],
+    [4, 1], [4, 2], [4, 3],
+    [5, 1], [5, 2], [5, 3],
+  ];
+  addTiles('map01_lv003', 'map01lv003', 4800, 7200, lv003Tiles);
+
+  // map01lv002 (Valley Pass) - Cols 1-5, Rows 1-5 (17 tiles, very sparse)
+  const lv002Tiles: Array<[number, number]> = [
+    // Cols 1-3 have rows 1-5
+    [1, 1], [1, 2], [1, 3], [1, 4], [1, 5],
+    [2, 1], [2, 2], [2, 3], [2, 4], [2, 5],
+    [3, 1], [3, 2], [3, 3], [3, 4], [3, 5],
+    // Cols 4-5 have row 1 only
+    [4, 1],
+    [5, 1],
+  ];
+  addTiles('map01_lv002', 'map01lv002', 0, 3600, lv002Tiles);
+
+  // map01lv001 (The Hub) - Cols 1-8, Rows 1-5 (33 tiles, sparse)
+  const lv001Tiles: Array<[number, number]> = [];
+  // Cols 1-4 have rows 1-4
+  for (let col = 1; col <= 4; col++) {
+    for (let row = 1; row <= 4; row++) {
+      lv001Tiles.push([col, row]);
+    }
+  }
+  // Cols 5-7 have rows 1-5
+  for (let col = 5; col <= 7; col++) {
+    for (let row = 1; row <= 5; row++) {
+      lv001Tiles.push([col, row]);
+    }
+  }
+  // Col 8 has rows 4-5 only
+  lv001Tiles.push([8, 4], [8, 5]);
+  addTiles('map01_lv001', 'map01lv001', 600, 6000, lv001Tiles);
+
+  return tiles;
+}
+
 const STORAGE_KEY = 'zerosanity-map-valley-iv';
 
 export default function ValleyIVMapPage() {
@@ -130,7 +230,6 @@ export default function ValleyIVMapPage() {
     }
     return defaults;
   });
-  // Track disabled sub-types (entity types that user has toggled off)
   const [disabledSubTypes, setDisabledSubTypes] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['chest']));
   const [completed, setCompleted] = useState<Set<string>>(() => {
@@ -162,16 +261,13 @@ export default function ValleyIVMapPage() {
   const lastTouchDist = useRef(0);
   const lastTouchCenter = useRef({ x: 0, y: 0 });
 
-  // Tile loading system
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tileCache = useRef<Map<string, HTMLImageElement>>(new Map());
-  const loadingTiles = useRef<Set<string>>(new Set());
+  // Tile loading state
+  const [loadedTiles, setLoadedTiles] = useState<Set<string>>(new Set());
   const [tilesLoaded, setTilesLoaded] = useState(0);
-  const [tilesTotal, setTilesTotal] = useState(0);
-  const loadQueueRef = useRef<{ src: string; x: number; y: number; key: string }[]>([]);
-  const activeLoads = useRef(0);
-  const MAX_CONCURRENT = 8;
-  const rafRef = useRef<number>(0);
+
+  // Generate all tiles once
+  const allTiles = useMemo(() => generateAllTiles(), []);
+  const tilesTotal = allTiles.length;
 
   // Load map data
   useEffect(() => {
@@ -190,7 +286,7 @@ export default function ValleyIVMapPage() {
       });
   }, []);
 
-  // Calculate initial viewport after data loads AND container mounts
+  // Calculate initial viewport
   const viewportInitialized = useRef(false);
   useEffect(() => {
     if (!mapData || !containerRef.current || viewportInitialized.current) return;
@@ -205,7 +301,7 @@ export default function ValleyIVMapPage() {
     });
   }, [mapData]);
 
-  // Load cloud data on mount
+  // Load cloud data
   useEffect(() => {
     if (cloudLoaded.current || !token) return;
     cloudLoaded.current = true;
@@ -219,7 +315,7 @@ export default function ValleyIVMapPage() {
     })();
   }, [token]);
 
-  // Save completed to localStorage + debounced cloud sync
+  // Save completed
   const saveCompleted = useCallback((next: Set<string>) => {
     const arr = [...next];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
@@ -278,7 +374,7 @@ export default function ValleyIVMapPage() {
     });
   }, [saveCompleted]);
 
-  // Visible POIs - now also filters by disabled sub-types
+  // Visible POIs
   const visiblePois = useMemo(() => {
     if (!mapData) return [];
     return mapData.pois.filter(p => {
@@ -344,7 +440,7 @@ export default function ValleyIVMapPage() {
     isDragging.current = false;
   }, []);
 
-  // Zoom handler - zoom towards cursor
+  // Zoom handler
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
@@ -360,7 +456,7 @@ export default function ValleyIVMapPage() {
     setZoom(newZoom);
   }, [zoom]);
 
-  // Touch handlers for mobile
+  // Touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       isDragging.current = true;
@@ -448,156 +544,18 @@ export default function ValleyIVMapPage() {
     setSelectedPoi(poi);
   }, [zoom]);
 
-  // Generate all tile definitions
-  const allTiles = useMemo(() => {
-    if (!mapData) return [];
-    const result: { src: string; x: number; y: number; key: string }[] = [];
-    for (const tz of mapData.tileZones) {
-      for (let col = 1; col <= tz.cols; col++) {
-        for (let row = 1; row <= tz.rows; row++) {
-          const x = tz.startX + (col - 1) * TILE_SIZE;
-          const y = tz.startY + (row - 1) * TILE_SIZE;
-          const fname = `${tz.id}_${col}_${row}.png`;
-          result.push({ src: `${TILE_BASE}/${tz.folder}/${fname}`, x, y, key: `${tz.id}_${col}_${row}` });
-        }
-      }
-    }
-    return result;
-  }, [mapData]);
+  // Track tile loading
+  const handleTileLoad = useCallback((key: string) => {
+    setLoadedTiles(prev => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      setTilesLoaded(next.size);
+      return next;
+    });
+  }, []);
 
-  // Draw tiles onto canvas
-  const drawTiles = useCallback(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || !mapData) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const vw = container.clientWidth;
-    const vh = container.clientHeight;
-
-    // Resize canvas to container
-    if (canvas.width !== vw * dpr || canvas.height !== vh * dpr) {
-      canvas.width = vw * dpr;
-      canvas.height = vh * dpr;
-      canvas.style.width = vw + 'px';
-      canvas.style.height = vh + 'px';
-    }
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, vw, vh);
-
-    // Apply transform
-    ctx.save();
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(zoom, zoom);
-
-    // Draw cached tiles
-    for (const tile of allTiles) {
-      const img = tileCache.current.get(tile.key);
-      if (img) {
-        ctx.drawImage(img, tile.x, tile.y, TILE_SIZE, TILE_SIZE);
-      }
-    }
-
-    // Draw zone labels
-    if (showZoneLabels && mapData.zoneLabels) {
-      ctx.save();
-      for (const z of mapData.zoneLabels) {
-        ctx.save();
-        ctx.translate(z.x, z.y);
-        ctx.scale(1 / zoom, 1 / zoom);
-        ctx.font = 'bold 14px system-ui';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = 'rgba(0,0,0,0.95)';
-        ctx.shadowBlur = 4;
-        ctx.letterSpacing = '0.05em';
-        ctx.fillText(z.name.toUpperCase(), 0, 0);
-        // Double draw for stronger shadow
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.fillText(z.name.toUpperCase(), 0, 0);
-        ctx.restore();
-      }
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }, [allTiles, offset, zoom, mapData, showZoneLabels]);
-
-  // Process tile loading queue
-  const processQueue = useCallback(() => {
-    while (activeLoads.current < MAX_CONCURRENT && loadQueueRef.current.length > 0) {
-      const tile = loadQueueRef.current.shift()!;
-      if (tileCache.current.has(tile.key) || loadingTiles.current.has(tile.key)) continue;
-
-      loadingTiles.current.add(tile.key);
-      activeLoads.current++;
-
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        tileCache.current.set(tile.key, img);
-        loadingTiles.current.delete(tile.key);
-        activeLoads.current--;
-        setTilesLoaded(prev => prev + 1);
-        drawTiles();
-        processQueue(); // Load next
-      };
-      img.onerror = () => {
-        loadingTiles.current.delete(tile.key);
-        activeLoads.current--;
-        processQueue(); // Skip failed, load next
-      };
-      img.src = tile.src;
-    }
-  }, [drawTiles]);
-
-  // Queue tiles for loading with center-first priority
-  useEffect(() => {
-    if (!mapData || !containerRef.current || allTiles.length === 0) return;
-
-    const vw = containerRef.current.clientWidth;
-    const vh = containerRef.current.clientHeight;
-    const centerX = (-offset.x / zoom) + (vw / zoom / 2);
-    const centerY = (-offset.y / zoom) + (vh / zoom / 2);
-
-    // Sort by distance from viewport center
-    const sorted = [...allTiles]
-      .filter(t => !tileCache.current.has(t.key) && !loadingTiles.current.has(t.key))
-      .map(t => ({
-        ...t,
-        dist: Math.hypot(t.x + TILE_SIZE / 2 - centerX, t.y + TILE_SIZE / 2 - centerY),
-      }))
-      .sort((a, b) => a.dist - b.dist);
-
-    // Also filter by visibility with generous margin
-    const margin = TILE_SIZE * 3;
-    const left = (-offset.x / zoom) - margin;
-    const top = (-offset.y / zoom) - margin;
-    const right = left + (vw / zoom) + margin * 2;
-    const bottom = top + (vh / zoom) + margin * 2;
-
-    const visible = sorted.filter(t =>
-      t.x + TILE_SIZE > left && t.x < right && t.y + TILE_SIZE > top && t.y < bottom
-    );
-
-    setTilesTotal(allTiles.length);
-    loadQueueRef.current = visible;
-    processQueue();
-  }, [allTiles, offset, zoom, mapData, processQueue]);
-
-  // Continuous canvas redraw on transform changes
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(() => drawTiles());
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [drawTiles]);
-
-  // Completion stats (category level)
+  // Completion stats
   const stats = useMemo(() => {
     if (!mapData) return {};
     const s: Record<string, { total: number; done: number }> = {};
@@ -609,7 +567,6 @@ export default function ValleyIVMapPage() {
     return s;
   }, [mapData, completed]);
 
-  // Sub-type stats: count per entity type
   const subTypeStats = useMemo(() => {
     if (!mapData) return {};
     const s: Record<string, { total: number; done: number }> = {};
@@ -621,7 +578,6 @@ export default function ValleyIVMapPage() {
     return s;
   }, [mapData, completed]);
 
-  // Get stats for a sub-type group (sum across all entity types in the group)
   const getSubTypeGroupStats = useCallback((types: string[]) => {
     let total = 0, done = 0;
     for (const t of types) {
@@ -631,7 +587,6 @@ export default function ValleyIVMapPage() {
     return { total, done };
   }, [subTypeStats]);
 
-  // Reset all completion data
   const resetProgress = useCallback(() => {
     if (confirm('Reset all completion progress for Valley IV? This cannot be undone.')) {
       setCompleted(new Set());
@@ -742,7 +697,7 @@ export default function ValleyIVMapPage() {
               >Clear</button>
             </div>
 
-            {/* Category list with expandable sub-types */}
+            {/* Category list */}
             <div className="flex-1 overflow-y-auto">
               {Object.entries(CATEGORY_CONFIG).map(([cat, cfg]) => {
                 const s = stats[cat] || { total: 0, done: 0 };
@@ -752,9 +707,7 @@ export default function ValleyIVMapPage() {
 
                 return (
                   <div key={cat} className="border-b border-[var(--color-border)]/30">
-                    {/* Category row */}
                     <div className="flex items-center">
-                      {/* Checkbox */}
                       <button
                         onClick={() => toggleCategory(cat)}
                         className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors ${
@@ -768,7 +721,6 @@ export default function ValleyIVMapPage() {
                         </div>
                       </button>
 
-                      {/* Category label + icon */}
                       <button
                         onClick={() => hasSubTypes ? toggleExpanded(cat) : toggleCategory(cat)}
                         className={`flex-1 flex items-center gap-2 py-2.5 pr-3 text-left transition-colors ${
@@ -789,17 +741,14 @@ export default function ValleyIVMapPage() {
                       </button>
                     </div>
 
-                    {/* Expanded sub-types */}
                     {hasSubTypes && isExpanded && isActive && (
                       <div className="pb-2 px-2">
-                        {/* Total row */}
                         <div className="flex items-center gap-2 px-2 py-1 mb-1" style={{ borderLeft: `2px solid ${cfg.color}` }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={`${ICON_BASE}/${cfg.icon}.png`} alt="" className="w-4 h-4" />
                           <span className="text-[10px] font-bold uppercase" style={{ color: cfg.color }}>Total: {s.done} / {s.total}</span>
                         </div>
 
-                        {/* Individual sub-types */}
                         <div className="grid grid-cols-2 gap-1">
                           {cfg.subTypes!.map((st) => {
                             const stStats = getSubTypeGroupStats(st.types);
@@ -856,7 +805,7 @@ export default function ValleyIVMapPage() {
           </div>
         )}
 
-        {/* ─── Map Canvas ─── */}
+        {/* ─── Map SVG ─── */}
         <div
           ref={containerRef}
           className="flex-1 relative overflow-hidden bg-black cursor-grab active:cursor-grabbing"
@@ -870,15 +819,56 @@ export default function ValleyIVMapPage() {
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'none' }}
         >
-          {/* Canvas tile layer */}
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0"
+          {/* SVG tile layer */}
+          <svg
+            className="absolute inset-0 w-full h-full"
             style={{ pointerEvents: 'none' }}
-          />
+          >
+            <g
+              transform={`translate(${offset.x}, ${offset.y}) scale(${zoom})`}
+              style={{ willChange: 'transform' }}
+            >
+              {allTiles.map(tile => (
+                <image
+                  key={tile.key}
+                  href={tile.src}
+                  x={tile.x}
+                  y={tile.y}
+                  width={TILE_SIZE}
+                  height={TILE_SIZE}
+                  onLoad={() => handleTileLoad(tile.key)}
+                  onError={() => handleTileLoad(tile.key)}
+                />
+              ))}
+
+              {/* Zone labels */}
+              {showZoneLabels && mapData.zoneLabels && mapData.zoneLabels.map(z => (
+                <text
+                  key={z.id}
+                  x={z.x}
+                  y={z.y}
+                  fontSize={14 / zoom}
+                  fontWeight="bold"
+                  fill="white"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    textShadow: '0 0 8px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.8)',
+                    letterSpacing: '0.05em',
+                    fontFamily: 'system-ui',
+                    paintOrder: 'stroke fill',
+                    stroke: 'rgba(0,0,0,0.95)',
+                    strokeWidth: 3 / zoom,
+                  }}
+                >
+                  {z.name.toUpperCase()}
+                </text>
+              ))}
+            </g>
+          </svg>
 
           {/* Tile loading progress */}
-          {tilesLoaded < tilesTotal && tilesTotal > 0 && (
+          {tilesLoaded < tilesTotal && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-[var(--color-surface)]/95 border border-[var(--color-border)] px-4 py-2 backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <Loader2 size={14} className="text-[var(--color-accent)] animate-spin" />
@@ -946,13 +936,13 @@ export default function ValleyIVMapPage() {
             })}
           </div>
 
-          {/* ─── POI Count Badge (top-right) ─── */}
+          {/* POI Count Badge */}
           <div className="absolute top-3 right-3 z-30 bg-[var(--color-surface)]/90 border border-[var(--color-border)] px-3 py-1.5 backdrop-blur-sm">
             <span className="text-xs font-mono text-[var(--color-accent)]">{visiblePois.length}</span>
             <span className="text-xs font-mono text-[var(--color-text-tertiary)]"> POIs visible</span>
           </div>
 
-          {/* ─── Right Side Controls ─── */}
+          {/* Right Side Controls */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5">
             <button
               onClick={() => setShowZoneLabels(!showZoneLabels)}
@@ -1001,13 +991,12 @@ export default function ValleyIVMapPage() {
               <Maximize2 size={16} />
             </button>
 
-            {/* Zoom percentage */}
             <div className="w-9 h-6 bg-[var(--color-surface)]/80 border border-[var(--color-border)] flex items-center justify-center">
               <span className="text-[9px] font-mono text-[var(--color-text-tertiary)]">{Math.round(zoom * 100)}%</span>
             </div>
           </div>
 
-          {/* ─── Sidebar toggle (when closed) ─── */}
+          {/* Sidebar toggle */}
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
@@ -1019,7 +1008,7 @@ export default function ValleyIVMapPage() {
           )}
         </div>
 
-        {/* ─── POI Detail Panel ─── */}
+        {/* POI Detail Panel */}
         {selectedPoi && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 max-w-sm w-full mx-4 clip-corner-tl shadow-2xl">
             <div className="flex items-start gap-3">

@@ -1,19 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff } from 'lucide-react';
+import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff, Filter, Zap, Package } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import Image from 'next/image';
 import { fetchBlueprints } from '@/lib/api';
-import { SCRAPED_BLUEPRINTS, type BlueprintEntry } from '@/data/blueprints';
+import { SCRAPED_BLUEPRINTS, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function Blueprints() {
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
+  const [complexityFilter, setComplexityFilter] = useState<Complexity | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [blueprints, setBlueprints] = useState<BlueprintEntry[]>(SCRAPED_BLUEPRINTS);
   const { user } = useAuthStore();
   const isAuthenticated = !!user;
@@ -48,8 +51,13 @@ export default function Blueprints() {
   const filtered = blueprints.filter(bp => {
     if (search && !bp.Title.toLowerCase().includes(search.toLowerCase()) && !bp.Tags.some(t => t.toLowerCase().includes(search.toLowerCase()))) return false;
     if (regionFilter && bp.Region !== regionFilter) return false;
+    if (categoryFilter && bp.category !== categoryFilter) return false;
+    if (complexityFilter && bp.complexity !== complexityFilter) return false;
     return true;
   }).sort((a, b) => b.Upvotes - a.Upvotes);
+
+  const categories: Category[] = ['Production', 'Processing', 'Power', 'Complete Chain', 'Compact'];
+  const complexities: Complexity[] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 
   const copyImportString = (id: number, str: string) => {
     navigator.clipboard.writeText(str);
@@ -101,35 +109,124 @@ export default function Blueprints() {
         </div>
       )}
 
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
-          <input
-            type="text"
-            placeholder="Search blueprints..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[var(--color-surface)] border border-[#333] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
-          />
+      {/* Search and Filters */}
+      <div className="space-y-3 mb-6">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+            <input
+              type="text"
+              placeholder="Search blueprints by name or tags..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-[var(--color-surface)] border border-[#333] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
+            />
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border clip-corner-tl ${
+              showFilters || categoryFilter || complexityFilter
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555] bg-[var(--color-surface)]'
+            }`}
+          >
+            <Filter size={16} />
+            Filters
+            {(categoryFilter || complexityFilter) && (
+              <span className="bg-[var(--color-accent)] text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
+                {(categoryFilter ? 1 : 0) + (complexityFilter ? 1 : 0)}
+              </span>
+            )}
+          </button>
+          <div className="flex gap-2">
+            {['Asia', 'NA / EU', 'CN'].map(r => (
+              <button
+                key={r}
+                onClick={() => setRegionFilter(regionFilter === r ? null : r)}
+                className={`px-3 py-1 text-xs font-medium border ${
+                  regionFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {['Asia', 'NA / EU', 'CN'].map(r => (
-            <button
-              key={r}
-              onClick={() => setRegionFilter(regionFilter === r ? null : r)}
-              className={`px-3 py-1 text-xs font-medium border ${
-                regionFilter === r ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10' : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 clip-corner-tl p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Category Filter */}
+              <div>
+                <label className="text-xs text-[var(--color-text-tertiary)] mb-2 block uppercase tracking-wider">Category</label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
+                      className={`px-3 py-1.5 text-xs font-medium border clip-corner-tl ${
+                        categoryFilter === cat
+                          ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                          : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Complexity Filter */}
+              <div>
+                <label className="text-xs text-[var(--color-text-tertiary)] mb-2 block uppercase tracking-wider">Complexity</label>
+                <div className="flex flex-wrap gap-2">
+                  {complexities.map(comp => (
+                    <button
+                      key={comp}
+                      onClick={() => setComplexityFilter(complexityFilter === comp ? null : comp)}
+                      className={`px-3 py-1.5 text-xs font-medium border clip-corner-tl ${
+                        complexityFilter === comp
+                          ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                          : 'border-[#333] text-[var(--color-text-secondary)] hover:border-[#555]'
+                      }`}
+                    >
+                      {comp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {(categoryFilter || complexityFilter) && (
+              <button
+                onClick={() => {
+                  setCategoryFilter(null);
+                  setComplexityFilter(null);
+                }}
+                className="mt-3 text-xs text-[var(--color-accent)] hover:underline"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Results Count */}
+        <div className="text-sm text-[var(--color-text-tertiary)]">
+          Showing <span className="text-[var(--color-accent)] font-semibold">{filtered.length}</span> of{' '}
+          <span className="text-white font-semibold">{blueprints.length}</span> blueprints
         </div>
       </div>
 
       <div className="space-y-3">
         {filtered.map(bp => (
-          <div key={bp.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-all overflow-hidden">
+          <Link
+            key={bp.id}
+            href={`/blueprints/${bp.slug}`}
+            className="block bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-all overflow-hidden group"
+          >
             <div className="flex">
               {/* Preview Image */}
               <div className="relative w-48 min-h-[140px] flex-shrink-0 bg-[#0a0a0a] border-r border-[var(--color-border)]">
@@ -138,7 +235,7 @@ export default function Blueprints() {
                     src={bp.previewImage}
                     alt={`${bp.Title} factory preview`}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-105 transition-transform"
                     sizes="192px"
                     unoptimized
                   />
@@ -168,7 +265,7 @@ export default function Blueprints() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-white font-semibold truncate">{bp.Title}</h3>
+                      <h3 className="text-white font-semibold truncate group-hover:text-[var(--color-accent)] transition-colors">{bp.Title}</h3>
                       {bp.productName && (
                         <span className="flex-shrink-0 text-[10px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 clip-corner-tl border border-[var(--color-accent)]/30 font-mono uppercase">
                           {bp.productName}
@@ -182,16 +279,69 @@ export default function Blueprints() {
                     <span className="text-sm font-semibold">{bp.Upvotes}</span>
                   </div>
                 </div>
-                <p className="text-[var(--color-text-secondary)] text-sm mb-3 whitespace-pre-line line-clamp-2">{bp.Description}</p>
+
+                {/* Production Rates */}
+                {bp.outputsPerMin.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {bp.outputsPerMin.slice(0, 3).map((output, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[#333] px-2 py-1 clip-corner-tl">
+                        <Package size={12} className="text-[var(--color-accent)]" />
+                        <span className="text-xs text-white font-mono">{output.rate}</span>
+                        <span className="text-xs text-[var(--color-text-tertiary)]">/min</span>
+                        <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[100px]">{output.name}</span>
+                      </div>
+                    ))}
+                    {bp.outputsPerMin.length > 3 && (
+                      <div className="flex items-center px-2 py-1 text-xs text-[var(--color-text-tertiary)]">
+                        +{bp.outputsPerMin.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Stats Row */}
+                <div className="flex items-center gap-4 mb-3">
+                  {bp.netPower !== undefined && (
+                    <div className={`flex items-center gap-1.5 text-xs ${
+                      bp.netPower > 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      <Zap size={14} />
+                      <span className="font-mono font-semibold">
+                        {bp.netPower > 0 ? '+' : ''}{bp.netPower} kW
+                      </span>
+                    </div>
+                  )}
+                  {bp.buildingCount && (
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                      <Package size={14} />
+                      <span>{bp.buildingCount} buildings</span>
+                    </div>
+                  )}
+                  {bp.complexity && (
+                    <span className={`text-[10px] px-2 py-0.5 font-mono border ${
+                      bp.complexity === 'Beginner' ? 'text-green-400 border-green-400/30 bg-green-400/10' :
+                      bp.complexity === 'Intermediate' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10' :
+                      bp.complexity === 'Advanced' ? 'text-purple-400 border-purple-400/30 bg-purple-400/10' :
+                      'text-red-400 border-red-400/30 bg-red-400/10'
+                    }`}>
+                      {bp.complexity}
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-1">
-                    {bp.Tags.map(tag => (
+                    {bp.Tags.slice(0, 4).map(tag => (
                       <span key={tag} className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] px-2 py-0.5 border border-[#333]">{tag}</span>
                     ))}
                   </div>
                   {bp.ImportString.startsWith('EFO') && (
                     <button
-                      onClick={() => copyImportString(bp.id, bp.ImportString)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        copyImportString(bp.id, bp.ImportString);
+                      }}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface-2)] border border-[#333] clip-corner-tl text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
                     >
                       {copiedId === bp.id ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy Import</>}
@@ -200,7 +350,7 @@ export default function Blueprints() {
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

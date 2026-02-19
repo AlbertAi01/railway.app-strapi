@@ -111,7 +111,7 @@ export const WEAPON_ESSENCES: WeaponEssence[] = [
   { name: 'Tarr 11', rarity: 3, type: 'Sword', primaryAttr: 'Main Attribute Boost', secondaryStat: null, skillStat: 'Assault' },
 ];
 
-// Farming zones (Severe Energy Alluvium)
+// Farming zones (Severe Energy Alluvium) - verified against EndfieldTools.dev v1.9.3
 export interface FarmingZone {
   id: string;
   name: string;
@@ -142,17 +142,17 @@ export const FARMING_ZONES: FarmingZone[] = [
     id: 'lodespring',
     name: 'Origin Lodespring',
     region: 'Valley IV',
-    enemy: 'Earthcrawler',
-    secondaryStats: ['HP Boost', 'Physical DMG Boost', 'Heat DMG Boost', 'Cryo DMG Boost', 'Nature DMG Boost', 'Critical Rate Boost', 'Arts Intensity Boost'],
-    skillStats: ['Suppression', 'Combative', 'Brutality', 'Infliction', 'Detonate', 'Twilight', 'Efficacy', 'Assault'],
+    enemy: 'Heavy Sting \u03b1',
+    secondaryStats: ['HP Boost', 'Physical DMG Boost', 'Heat DMG Boost', 'Cryo DMG Boost', 'Nature DMG Boost', 'Critical Rate Boost', 'Arts Intensity Boost', 'Treatment Efficiency Boost'],
+    skillStats: ['Assault', 'Suppression', 'Combative', 'Brutality', 'Infliction', 'Detonate', 'Twilight', 'Efficacy'],
   },
   {
     id: 'power-plateau',
     name: 'Power Plateau',
     region: 'Valley IV',
-    enemy: 'Dustback',
-    secondaryStats: ['Attack Boost', 'Physical DMG Boost', 'Heat DMG Boost', 'Nature DMG Boost', 'Critical Rate Boost', 'HP Boost', 'Arts Intensity Boost'],
-    skillStats: ['Pursuit', 'Crusher', 'Inspiring', 'Infliction', 'Medicant', 'Fracture', 'Flow', 'Efficacy'],
+    enemy: 'Bonekrusher Ballista',
+    secondaryStats: ['Attack Boost', 'HP Boost', 'Physical DMG Boost', 'Heat DMG Boost', 'Nature DMG Boost', 'Critical Rate Boost', 'Arts Intensity Boost', 'Treatment Efficiency Boost'],
+    skillStats: ['Pursuit', 'Crusher', 'Inspiring', 'Brutality', 'Infliction', 'Medicant', 'Fracture', 'Flow', 'Efficacy'],
   },
   {
     id: 'wuling',
@@ -164,26 +164,250 @@ export const FARMING_ZONES: FarmingZone[] = [
   },
 ];
 
-// Helper: count how many of a weapon's stats a zone can drop
-export function getZoneMatchScore(weapon: WeaponEssence, zone: FarmingZone): { total: number; matched: number; details: { stat: string; matched: boolean }[] } {
-  const details: { stat: string; matched: boolean }[] = [];
-  // Primary attributes are available in ALL zones
-  details.push({ stat: weapon.primaryAttr, matched: true });
+// How many secondary stats and skill stats each zone has (for probability calculations)
+const ZONE_SECONDARY_COUNT = (zone: FarmingZone) => zone.secondaryStats.length;
+const ZONE_SKILL_COUNT = (zone: FarmingZone) => zone.skillStats.length;
 
+// Match scoring for a single weapon against a zone
+export type MatchLevel = 'perfect' | 'good' | 'partial' | 'none';
+
+export interface WeaponZoneMatch {
+  weapon: WeaponEssence;
+  zone: FarmingZone;
+  primaryMatch: boolean;
+  secondaryMatch: boolean;
+  skillMatch: boolean;
+  matchCount: number;
+  total: number;
+  level: MatchLevel;
+  details: { stat: string; matched: boolean; type: 'primary' | 'secondary' | 'skill' }[];
+}
+
+export function getWeaponZoneMatch(weapon: WeaponEssence, zone: FarmingZone): WeaponZoneMatch {
+  const details: { stat: string; matched: boolean; type: 'primary' | 'secondary' | 'skill' }[] = [];
+
+  // Primary attributes available in ALL zones
+  details.push({ stat: weapon.primaryAttr, matched: true, type: 'primary' });
+
+  const secondaryMatch = weapon.secondaryStat ? zone.secondaryStats.includes(weapon.secondaryStat) : true;
   if (weapon.secondaryStat) {
-    const secMatch = zone.secondaryStats.includes(weapon.secondaryStat);
-    details.push({ stat: weapon.secondaryStat, matched: secMatch });
+    details.push({ stat: weapon.secondaryStat, matched: secondaryMatch, type: 'secondary' });
   }
 
   const skillMatch = zone.skillStats.includes(weapon.skillStat);
-  details.push({ stat: weapon.skillStat, matched: skillMatch });
+  details.push({ stat: weapon.skillStat, matched: skillMatch, type: 'skill' });
 
   const total = details.length;
-  const matched = details.filter(d => d.matched).length;
-  return { total, matched, details };
+  const matchCount = details.filter(d => d.matched).length;
+
+  let level: MatchLevel = 'none';
+  if (matchCount === total) level = 'perfect';
+  else if (matchCount >= 2) level = 'good';
+  else if (matchCount >= 1) level = 'partial';
+
+  return { weapon, zone, primaryMatch: true, secondaryMatch, skillMatch, matchCount, total, level, details };
 }
 
-// Helper: find best zone(s) for a weapon
+// Determine the optimal fixed stat for pre-engrave.
+// The fixed stat should be the stat (secondary OR skill) from the priority weapon
+// that maximizes the number of "perfect" or "good" matches across ALL selected weapons
+// when combined with the best zone.
+export type FixedStatType = 'secondary' | 'skill';
+
+export interface PreEngraveConfig {
+  fixedStat: string;
+  fixedStatType: FixedStatType;
+  primaryAttrs: PrimaryAttr[];
+}
+
+export function computeOptimalPreEngrave(
+  priorityWeapon: WeaponEssence,
+  allWeapons: WeaponEssence[]
+): PreEngraveConfig {
+  // Candidate fixed stats: the priority weapon's secondary stat and skill stat
+  const candidates: { stat: string; type: FixedStatType }[] = [];
+  if (priorityWeapon.secondaryStat) {
+    candidates.push({ stat: priorityWeapon.secondaryStat, type: 'secondary' });
+  }
+  candidates.push({ stat: priorityWeapon.skillStat, type: 'skill' });
+
+  // For each candidate, count how many weapons share that stat
+  let bestCandidate = candidates[0];
+  let bestScore = -1;
+
+  for (const candidate of candidates) {
+    let score = 0;
+    for (const w of allWeapons) {
+      if (candidate.type === 'secondary') {
+        if (w.secondaryStat === candidate.stat) score += 10;
+      } else {
+        if (w.skillStat === candidate.stat) score += 10;
+      }
+      // Also consider cross-type: a skill stat locked means the zone
+      // secondary stat can still match other weapons' secondary needs
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestCandidate = candidate;
+    }
+  }
+
+  // Collect unique primary attributes across all selected weapons
+  const primarySet = new Set<PrimaryAttr>();
+  for (const w of allWeapons) {
+    primarySet.add(w.primaryAttr);
+  }
+  const primaryAttrs = Array.from(primarySet);
+
+  return {
+    fixedStat: bestCandidate.stat,
+    fixedStatType: bestCandidate.type,
+    primaryAttrs,
+  };
+}
+
+// Compute weapon compatibility label relative to a pre-engrave config
+export function getWeaponLabel(
+  weapon: WeaponEssence,
+  config: PreEngraveConfig,
+  isPriority: boolean
+): 'Priority' | 'Perfect' | 'Average' {
+  if (isPriority) return 'Priority';
+
+  // A weapon is "Perfect" if it shares the fixed stat with priority
+  const hasFixedStat = config.fixedStatType === 'secondary'
+    ? weapon.secondaryStat === config.fixedStat
+    : weapon.skillStat === config.fixedStat;
+
+  return hasFixedStat ? 'Perfect' : 'Average';
+}
+
+// Zone scoring algorithm (matches EndfieldTools.dev's weighted approach)
+// Priority weapon is weighted 10x higher
+export interface ZoneRanking {
+  zone: FarmingZone;
+  score: number;
+  perfectCount: number;
+  goodCount: number;
+  partialCount: number;
+  weaponMatches: WeaponZoneMatch[];
+  priorityMatch: WeaponZoneMatch;
+}
+
+export function rankZones(
+  priorityWeapon: WeaponEssence,
+  allWeapons: WeaponEssence[],
+  config: PreEngraveConfig
+): ZoneRanking[] {
+  // Only consider zones where the priority weapon can get a perfect 3/3
+  const rankings: ZoneRanking[] = [];
+
+  for (const zone of FARMING_ZONES) {
+    const priorityMatch = getWeaponZoneMatch(priorityWeapon, zone);
+
+    // Check if the fixed stat is available in this zone
+    const fixedStatAvailable = config.fixedStatType === 'secondary'
+      ? zone.secondaryStats.includes(config.fixedStat as SecondaryStat)
+      : zone.skillStats.includes(config.fixedStat as SkillStat);
+
+    if (!fixedStatAvailable) continue;
+
+    // For priority weapon, check if all non-fixed stats are also available
+    // The fixed stat is guaranteed, primary is always available,
+    // so we need the remaining stat to be in the zone's pool
+    let priorityCanBePerfect = true;
+    if (config.fixedStatType === 'skill') {
+      // Fixed = skill stat, so we need the secondary stat to be in zone
+      if (priorityWeapon.secondaryStat && !zone.secondaryStats.includes(priorityWeapon.secondaryStat)) {
+        priorityCanBePerfect = false;
+      }
+    } else {
+      // Fixed = secondary stat, so we need the skill stat to be in zone
+      if (!zone.skillStats.includes(priorityWeapon.skillStat)) {
+        priorityCanBePerfect = false;
+      }
+    }
+
+    if (!priorityCanBePerfect) continue;
+
+    const weaponMatches = allWeapons.map(w => getWeaponZoneMatch(w, zone));
+    let score = 0;
+    let perfectCount = 0;
+    let goodCount = 0;
+    let partialCount = 0;
+
+    for (let i = 0; i < weaponMatches.length; i++) {
+      const m = weaponMatches[i];
+      const isPriority = m.weapon.name === priorityWeapon.name;
+      const weight = isPriority ? 10 : 1;
+
+      if (m.level === 'perfect') {
+        score += 3 * weight;
+        perfectCount++;
+      } else if (m.level === 'good') {
+        score += 2 * weight;
+        goodCount++;
+      } else if (m.level === 'partial') {
+        score += 0.5 * weight;
+        partialCount++;
+      }
+    }
+
+    rankings.push({
+      zone,
+      score,
+      perfectCount,
+      goodCount,
+      partialCount,
+      weaponMatches,
+      priorityMatch,
+    });
+  }
+
+  rankings.sort((a, b) => b.score - a.score);
+  return rankings;
+}
+
+// Calculate the probability of getting a perfect 3/3 essence drop
+// Given the pre-engrave config and zone
+export function perfectDropChance(
+  weapon: WeaponEssence,
+  zone: FarmingZone,
+  config: PreEngraveConfig
+): number {
+  // Fixed stat: guaranteed (probability = 1)
+  // Primary attribute: 1/5 chance (5 possible primary attrs, 1/3 shown but actually 1/5 for specific)
+  // Actually: primary attributes available at 1/3 chance each (3 shown per essence)
+  // The remaining stat depends on zone pool size
+
+  const primaryProb = 1 / 3; // 1 out of 3 possible primaries per essence
+
+  if (config.fixedStatType === 'skill') {
+    // Skill is fixed. Need: primary (1/3) + secondary from zone pool
+    if (!weapon.secondaryStat) return primaryProb; // No secondary needed
+    const secInZone = zone.secondaryStats.includes(weapon.secondaryStat);
+    if (!secInZone) return 0;
+    const secProb = 1 / ZONE_SECONDARY_COUNT(zone);
+    return primaryProb * secProb;
+  } else {
+    // Secondary is fixed. Need: primary (1/3) + skill from zone pool
+    const skillInZone = zone.skillStats.includes(weapon.skillStat);
+    if (!skillInZone) return 0;
+    const skillProb = 1 / ZONE_SKILL_COUNT(zone);
+    return primaryProb * skillProb;
+  }
+}
+
+// Legacy helpers (kept for checker tab compatibility)
+export function getZoneMatchScore(weapon: WeaponEssence, zone: FarmingZone): { total: number; matched: number; details: { stat: string; matched: boolean }[] } {
+  const match = getWeaponZoneMatch(weapon, zone);
+  return {
+    total: match.total,
+    matched: match.matchCount,
+    details: match.details.map(d => ({ stat: d.stat, matched: d.matched })),
+  };
+}
+
 export function getBestZones(weapon: WeaponEssence): { zone: FarmingZone; score: ReturnType<typeof getZoneMatchScore> }[] {
   const results = FARMING_ZONES.map(zone => ({
     zone,
@@ -193,17 +417,16 @@ export function getBestZones(weapon: WeaponEssence): { zone: FarmingZone; score:
   return results;
 }
 
-// Helper: find all weapons that match a given essence (selected stats)
 export function findCompatibleWeapons(
   primary: PrimaryAttr | null,
   secondary: SecondaryStat | null,
   skill: SkillStat | null
 ): { weapon: WeaponEssence; matchCount: number; total: number }[] {
   return WEAPON_ESSENCES
-    .filter(w => w.rarity >= 4) // Skip 3-star for checker
+    .filter(w => w.rarity >= 4)
     .map(w => {
       let matchCount = 0;
-      let total = w.secondaryStat ? 3 : 2;
+      const total = w.secondaryStat ? 3 : 2;
       if (primary && w.primaryAttr === primary) matchCount++;
       if (secondary && w.secondaryStat === secondary) matchCount++;
       if (skill && w.skillStat === skill) matchCount++;

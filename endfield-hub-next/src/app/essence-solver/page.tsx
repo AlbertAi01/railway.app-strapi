@@ -10,7 +10,9 @@ import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 import {
   WEAPON_ESSENCES, FARMING_ZONES, PRIMARY_ATTRS, SECONDARY_STATS, SKILL_STATS,
   findCompatibleWeapons, getBestZones,
+  computeOptimalPreEngrave, getWeaponLabel, rankZones, perfectDropChance, getWeaponZoneMatch,
   type PrimaryAttr, type SecondaryStat, type SkillStat, type WeaponEssence, type FarmingZone,
+  type PreEngraveConfig,
 } from '@/data/essences';
 
 const RARITY_COLORS: Record<number, string> = { 6: '#FF8C00', 5: '#C0A000', 4: '#9B59B6', 3: '#3498DB' };
@@ -264,24 +266,50 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
   });
 
   const selected = selectedWeapons.map(n => WEAPON_ESSENCES.find(w => w.name === n)!).filter(Boolean);
+  const priorityWeapon = selected[0] || null;
 
-  // Calculate best zones for selected weapons
-  const zoneScores = useMemo(() => {
-    if (selected.length === 0) return [];
-    return FARMING_ZONES.map(zone => {
-      let totalMatched = 0;
-      let totalPossible = 0;
-      const weaponScores = selected.map(w => {
-        const score = getBestZones(w).find(z => z.zone.id === zone.id);
-        if (score) {
-          totalMatched += score.score.matched;
-          totalPossible += score.score.total;
-        }
-        return { weapon: w, score: score?.score };
-      });
-      return { zone, totalMatched, totalPossible, weaponScores };
-    }).sort((a, b) => b.totalMatched - a.totalMatched);
-  }, [selected]);
+  // Compute optimal pre-engrave configuration
+  const preEngrave = useMemo<PreEngraveConfig | null>(() => {
+    if (!priorityWeapon || selected.length === 0) return null;
+    return computeOptimalPreEngrave(priorityWeapon, selected);
+  }, [priorityWeapon, selected]);
+
+  // Compute weapon labels (Priority / Perfect / Average)
+  const weaponLabels = useMemo(() => {
+    if (!preEngrave || !priorityWeapon) return new Map<string, string>();
+    const labels = new Map<string, string>();
+    for (const w of selected) {
+      labels.set(w.name, getWeaponLabel(w, preEngrave, w.name === priorityWeapon.name));
+    }
+    return labels;
+  }, [selected, preEngrave, priorityWeapon]);
+
+  // Count labels (Priority counts as Perfect for the header counter)
+  const perfectCount = Array.from(weaponLabels.values()).filter(l => l === 'Perfect' || l === 'Priority').length;
+  const averageCount = Array.from(weaponLabels.values()).filter(l => l === 'Average').length;
+
+  // Rank zones using the new weighted algorithm
+  const zoneRankings = useMemo(() => {
+    if (!priorityWeapon || selected.length === 0 || !preEngrave) return [];
+    return rankZones(priorityWeapon, selected, preEngrave);
+  }, [priorityWeapon, selected, preEngrave]);
+
+  // Compute perfect drop chances for the best zone
+  const dropChances = useMemo(() => {
+    if (!preEngrave || zoneRankings.length === 0) return new Map<string, number>();
+    const bestZone = zoneRankings[0].zone;
+    const chances = new Map<string, number>();
+    for (const w of selected) {
+      chances.set(w.name, perfectDropChance(w, bestZone, preEngrave));
+    }
+    return chances;
+  }, [selected, preEngrave, zoneRankings]);
+
+  const LABEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+    'Priority': { bg: 'bg-[#FF8C00]/15', text: 'text-[#FF8C00]', border: 'border-[#FF8C00]' },
+    'Perfect': { bg: 'bg-green-500/15', text: 'text-green-400', border: 'border-green-500/50' },
+    'Average': { bg: 'bg-yellow-500/15', text: 'text-yellow-400', border: 'border-yellow-500/50' },
+  };
 
   return (
     <div className="space-y-6">
@@ -297,82 +325,57 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
           )}
         </div>
         <div className="p-4">
-          <p className="text-xs text-[var(--color-text-tertiary)] mb-3">Select the weapons you want to farm essences for. We will calculate which zone gives you the best chance of getting useful essences.</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-3">Select the weapons you want to farm essences for. We&apos;ll calculate which zone gives you the best chance of getting useful essences.</p>
 
           {selected.length > 0 && (
-            <div className="space-y-3 mb-4">
+            <div className="flex flex-wrap gap-3 mb-4">
               {selected.map((w, idx) => {
                 const wpnIcon = WEAPON_ICONS[w.name];
                 const rarityColor = RARITY_COLORS[w.rarity] || '#999';
                 const isPriority = idx === 0;
+                const label = weaponLabels.get(w.name) || 'Average';
+                const lc = LABEL_COLORS[label] || LABEL_COLORS['Average'];
                 return (
                   <div
                     key={w.name}
-                    className={`flex items-center gap-3 px-4 py-3 border-2 transition-all clip-corner-tl group ${isPriority ? 'bg-gradient-to-r from-[var(--color-accent)]/10 to-transparent' : 'bg-[var(--color-surface-2)]'}`}
-                    style={{ borderColor: isPriority ? '#FF8C00' : 'var(--color-border)' }}
+                    className={`relative flex items-center gap-3 px-4 py-3 border-2 transition-all clip-corner-tl group w-full sm:w-auto sm:flex-1 sm:min-w-[260px] ${lc.bg}`}
+                    style={{ borderColor: isPriority ? '#FF8C00' : label === 'Perfect' ? 'rgba(34,197,94,0.5)' : 'var(--color-border)' }}
                   >
-                    {isPriority && (
-                      <div className="absolute top-0 left-0 bg-[#FF8C00] text-black px-2 py-0.5 text-[8px] font-mono font-bold clip-corner-tl">
-                        PRIORITY
-                      </div>
-                    )}
                     <button
                       onClick={() => {
                         const newSelected = [w.name, ...selectedWeapons.filter(n => n !== w.name)];
                         setSelectedWeapons(newSelected);
                       }}
-                      className={`p-1.5 transition-all ${isPriority ? 'text-[#FF8C00]' : 'text-[var(--color-text-tertiary)] hover:text-[#FF8C00]'}`}
+                      className={`p-1.5 transition-all shrink-0 ${isPriority ? 'text-[#FF8C00]' : 'text-[var(--color-text-tertiary)] hover:text-[#FF8C00]'}`}
                       title="Set as priority weapon"
                     >
                       <Star size={18} fill={isPriority ? '#FF8C00' : 'none'} />
                     </button>
-                    <div className="relative w-20 h-20 shrink-0">
+                    <div className="relative w-16 h-16 shrink-0">
                       <div
                         className="w-full h-full bg-[var(--color-surface)] flex items-center justify-center overflow-hidden group-hover:bg-[var(--color-surface-2)] transition-colors"
                         style={{ borderBottom: `3px solid ${rarityColor}` }}
                       >
                         {wpnIcon ? (
-                          <Image src={wpnIcon} alt={w.name} width={80} height={80} className="w-20 h-20 object-contain group-hover:scale-110 transition-transform" unoptimized />
+                          <Image src={wpnIcon} alt={w.name} width={64} height={64} className="w-16 h-16 object-contain group-hover:scale-110 transition-transform" unoptimized />
                         ) : (
-                          <Sword size={24} className="text-[var(--color-text-tertiary)]" />
+                          <Sword size={20} className="text-[var(--color-text-tertiary)]" />
                         )}
-                      </div>
-                      {/* Weapon Type Badge */}
-                      <div className="absolute -top-1 -right-1 bg-[var(--color-accent)] text-black px-1.5 py-0.5 clip-corner-tl">
-                        <span className="text-[8px] font-mono font-bold uppercase">{w.type.substring(0, 3)}</span>
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-bold font-mono">{w.name}</p>
-                      <div className="flex items-center gap-2 mt-1 mb-2">
-                        <span className="text-xs font-mono font-bold" style={{ color: rarityColor }}>{w.rarity}★</span>
-                        <span className="text-[9px] font-mono text-[var(--color-text-tertiary)] uppercase">{w.type}</span>
+                      <p className="text-white text-sm font-bold font-mono truncate">{w.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-mono font-bold" style={{ color: rarityColor }}>{w.rarity}★</span>
+                        <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 ${lc.bg} ${lc.text} border ${lc.border}`}>{label}</span>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)] clip-corner-tl">
-                          {w.primaryAttr.replace(' Boost', '')}
-                        </span>
-                        {w.secondaryStat && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)] clip-corner-tl">
-                            {w.secondaryStat.replace(' Boost', '')}
-                          </span>
-                        )}
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)] clip-corner-tl">
-                          {w.skillStat}
-                        </span>
-                      </div>
-                      {isPriority && (
-                        <div className="mt-2 text-[9px] font-mono text-[#FF8C00] flex items-center gap-1">
-                          <CheckCircle size={10} /> Pre-engrave optimized for this weapon
-                        </div>
-                      )}
                     </div>
                     <button
                       onClick={() => setSelectedWeapons(prev => prev.filter(n => n !== w.name))}
-                      className="text-[var(--color-text-tertiary)] hover:text-red-400 transition-colors p-2 ml-auto"
+                      className="text-[var(--color-text-tertiary)] hover:text-red-400 transition-colors p-1 shrink-0"
                       title="Remove weapon"
                     >
-                      <span className="text-xl leading-none font-bold">×</span>
+                      <span className="text-lg leading-none font-bold">×</span>
                     </button>
                   </div>
                 );
@@ -393,8 +396,8 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
           {showPicker && (
             <div className="mt-3 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl space-y-3">
               <input
-                type="text" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-xs"
+                type="text" placeholder="Search weapons..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-xs font-mono"
               />
               <div className="flex flex-wrap gap-1.5">
                 <StatPill label="All" active={rarityFilter.length === 0} onClick={() => setRarityFilter([])} />
@@ -419,7 +422,6 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                       className="group relative flex flex-col items-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:shadow-lg hover:shadow-[var(--color-accent)]/20 transition-all overflow-hidden clip-corner-tl"
                       style={{ borderBottomColor: rarityColor, borderBottomWidth: '3px' }}
                     >
-                      {/* Weapon Type Badge */}
                       <div className="absolute top-1 right-1 z-10 bg-[var(--color-accent)]/90 text-black px-1.5 py-0.5 clip-corner-tl opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-[7px] font-mono font-bold uppercase tracking-wider">{w.type}</span>
                       </div>
@@ -458,7 +460,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
       </div>
 
       {/* Optimization Results */}
-      {selected.length > 0 && (
+      {selected.length > 0 && preEngrave && (
         <div className="space-y-4">
           {/* Optimized Header */}
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
@@ -467,15 +469,9 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                 <Star size={16} className="text-[#FF8C00]" fill="#FF8C00" />
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider font-tactical">Optimized for {selected[0].name}</h3>
               </div>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-green-400 font-bold">{selected.filter((w, i) => {
-                  const best = getBestZones(w);
-                  return best.some(z => z.score.matched === z.score.total);
-                }).length} Perfect</span>
-                <span className="text-yellow-400">{selected.filter((w) => {
-                  const best = getBestZones(w);
-                  return !best.some(z => z.score.matched === z.score.total);
-                }).length} Not optimal</span>
+              <div className="flex items-center gap-3 text-xs font-mono">
+                {perfectCount > 0 && <span className="text-green-400 font-bold">{perfectCount} Perfect</span>}
+                {averageCount > 0 && <span className="text-yellow-400">{averageCount} Average</span>}
               </div>
             </div>
             <div className="p-4 space-y-4">
@@ -487,49 +483,55 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-[var(--color-accent)] text-xs font-bold">Primary Attribute (3)</h4>
-                    <span className="text-[9px] px-1.5 py-0.5 bg-[var(--color-accent)] text-black font-bold">Pick this</span>
+                    <h4 className="text-[var(--color-accent)] text-xs font-bold font-mono">Primary Attribute ({preEngrave.primaryAttrs.length})</h4>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-[var(--color-accent)] text-black font-bold font-mono">Pick this</span>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {PRIMARY_ATTRS.filter(a => a === selected[0].primaryAttr || a === 'Main Attribute Boost' || a === 'Intellect Boost').slice(0, 3).map(a => (
-                      <span key={a} className={`text-xs px-3 py-1.5 border ${a === selected[0].primaryAttr ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'border-[var(--color-border)] text-[var(--color-text-secondary)]'}`}>
+                    {preEngrave.primaryAttrs.map(a => (
+                      <span key={a} className="text-xs px-3 py-1.5 border border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)] font-mono">
                         {a}
                       </span>
                     ))}
-                    <span className="text-xs px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)]">[Any]</span>
                   </div>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] italic">Primary attributes are available in all zones (1/3 chance each)</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] italic font-mono">Primary attributes are available in all zones (1/3 chance each)</p>
                 </div>
                 <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-4">
-                  <h4 className="text-[var(--color-accent)] text-xs font-bold mb-3">Fixed Stat</h4>
-                  <span className="text-xs px-3 py-1.5 border border-green-500/50 bg-green-500/10 text-green-400">
-                    {selected[0].secondaryStat || 'None'}
-                  </span>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] italic mt-2">This stat is guaranteed on every essence you farm</p>
+                  <h4 className="text-[var(--color-accent)] text-xs font-bold mb-3 font-mono">Fixed Stat</h4>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-3 py-1.5 border font-mono ${preEngrave.fixedStatType === 'skill' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' : 'border-green-500/50 bg-green-500/10 text-green-400'}`}>
+                      {preEngrave.fixedStat}
+                    </span>
+                    <span className="text-[9px] font-mono text-[var(--color-text-tertiary)] px-1.5 py-0.5 border border-[var(--color-border)] uppercase">
+                      {preEngrave.fixedStatType}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] italic mt-2 font-mono">This stat is guaranteed on every essence you farm</p>
                 </div>
               </div>
 
-              {/* Weapon Match Breakdown */}
-              <details className="group bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-                <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-[var(--color-surface)] transition-colors list-none">
-                  <span className="border-l-3 border-l-[var(--color-accent)] pl-2 text-xs sm:text-sm font-mono font-bold text-white uppercase tracking-wider">Weapon Compatibility Matrix</span>
-                  <svg className="w-4 h-4 text-[var(--color-text-tertiary)] ml-auto transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="border-t border-[var(--color-border)] p-4 bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-surface-2)] space-y-2">
-                  {selected.map((w, idx) => {
-                    const best = getBestZones(w);
-                    const topZone = best[0];
-                    const isPerfect = topZone && topZone.score.matched === topZone.score.total;
-                    const isPriority = idx === 0;
+              {/* Weapon Match Breakdown with Drop Chances */}
+              <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border)]">
+                  <span className="border-l-3 border-l-[var(--color-accent)] pl-2 text-xs font-mono font-bold text-white uppercase tracking-wider">Weapon Match Breakdown</span>
+                  {zoneRankings.length > 0 && (
+                    <span className="ml-auto text-[9px] font-mono text-[var(--color-text-tertiary)]">
+                      Perfect Essence Drop Chances ({zoneRankings[0].zone.name})
+                    </span>
+                  )}
+                </div>
+                <div className="p-4 space-y-2">
+                  {selected.map((w) => {
+                    const label = weaponLabels.get(w.name) || 'Average';
+                    const lc = LABEL_COLORS[label] || LABEL_COLORS['Average'];
+                    const chance = dropChances.get(w.name) || 0;
+                    const chancePercent = (chance * 100).toFixed(1);
                     return (
-                      <div key={w.name} className={`flex items-center gap-3 p-3 border clip-corner-tl transition-all hover:border-[var(--color-accent)] ${isPerfect ? 'bg-green-500/5 border-green-500/30' : 'bg-yellow-500/5 border-yellow-500/30'}`}>
+                      <div key={w.name} className={`flex items-center gap-3 p-3 border clip-corner-tl transition-all hover:border-[var(--color-accent)] ${lc.bg} ${lc.border}`}>
                         <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-[var(--color-surface)] relative">
                           {WEAPON_ICONS[w.name] ? (
                             <Image src={WEAPON_ICONS[w.name]} alt={w.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
                           ) : <Sword size={20} className="text-[var(--color-text-tertiary)]" />}
-                          {isPriority && (
+                          {label === 'Priority' && (
                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF8C00] rounded-full flex items-center justify-center">
                               <Star size={10} fill="#000" className="text-black" />
                             </div>
@@ -538,122 +540,254 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="text-white text-xs sm:text-sm font-bold font-mono">{w.name}</p>
-                            {isPriority && <span className="text-[8px] font-mono px-1.5 py-0.5 bg-[#FF8C00] text-black font-bold">PRIORITY</span>}
+                            <span className={`text-[8px] font-mono px-1.5 py-0.5 font-bold ${lc.bg} ${lc.text} border ${lc.border}`}>{label.toUpperCase()}</span>
                           </div>
                           <div className="flex flex-wrap gap-1">
-                            {topZone.score.details.map((d, i) => (
-                              <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${d.matched ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/30 text-red-400/70 bg-red-500/5'}`}>
-                                {d.matched ? '✓' : '✗'} {d.stat.replace(' Boost', '')}
+                            <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-accent)]/30 text-[var(--color-accent)] bg-[var(--color-accent)]/5 clip-corner-tl">
+                              {w.primaryAttr}
+                            </span>
+                            {w.secondaryStat && (
+                              <span className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${w.secondaryStat === preEngrave.fixedStat ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+                                {w.secondaryStat}
                               </span>
-                            ))}
+                            )}
+                            <span className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${w.skillStat === preEngrave.fixedStat ? 'border-purple-500/50 text-purple-400 bg-purple-500/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+                              {w.skillStat}
+                            </span>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className={`text-xs sm:text-sm font-mono font-bold block ${isPerfect ? 'text-green-400' : 'text-yellow-400'}`}>
-                            {topZone.score.matched}/{topZone.score.total}
+                          <span className={`text-sm font-mono font-bold block ${chance > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)]'}`}>
+                            {chancePercent}%
                           </span>
-                          <span className="text-[9px] font-mono text-[var(--color-text-tertiary)]">{isPerfect ? 'PERFECT' : 'PARTIAL'}</span>
+                          <span className="text-[8px] font-mono text-[var(--color-text-tertiary)]">drop chance</span>
                         </div>
                       </div>
                     );
                   })}
+                  <p className="text-[9px] font-mono text-[var(--color-text-tertiary)] italic mt-2">
+                    Chance to get a perfect 3/3 essence with this pre-engrave at the best zone.
+                  </p>
                 </div>
-              </details>
+              </div>
             </div>
           </div>
 
-          {/* Best Farming Zones */}
+          {/* Best Farming Zone */}
           <div className="bg-[var(--color-surface)] border-l-3 border-l-[var(--color-accent)] border border-[var(--color-border)] clip-corner-tl p-3">
             <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-400" />
-              Best Farming Zones
+              <MapPin size={16} className="text-[var(--color-accent)]" />
+              Farming Zone Rankings
             </h3>
-            <p className="text-[10px] font-mono text-[var(--color-text-tertiary)] mt-1">Ranked by total stat matches across all selected weapons</p>
+            <p className="text-[10px] font-mono text-[var(--color-text-tertiary)] mt-1">Only showing zones compatible with your priority weapon. Priority weapon match is weighted 10x higher in scoring.</p>
           </div>
-          {zoneScores.slice(0, 5).map(({ zone, totalMatched, totalPossible, weaponScores }, idx) => {
-            const efficiency = Math.round((totalMatched / totalPossible) * 100);
+
+          {zoneRankings.length === 0 && (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-8 text-center">
+              <MapPin size={32} className="mx-auto mb-2 text-[var(--color-text-tertiary)] opacity-30" />
+              <p className="text-sm font-mono text-white mb-1">No compatible zones found</p>
+              <p className="text-[10px] font-mono text-[var(--color-text-tertiary)]">No farming zone can produce a perfect essence for the priority weapon with this pre-engrave configuration.</p>
+            </div>
+          )}
+
+          {zoneRankings.map((ranking, idx) => {
+            const { zone, score, perfectCount: zPerfect, goodCount: zGood, weaponMatches } = ranking;
             const isTopChoice = idx === 0;
+
+            // Group weapons by match level
+            const perfectWeapons = weaponMatches.filter(m => m.level === 'perfect');
+            const goodWeapons = weaponMatches.filter(m => m.level === 'good');
+            const partialWeapons = weaponMatches.filter(m => m.level === 'partial');
+
             return (
               <div key={zone.id} className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden ${isTopChoice ? 'border-[var(--color-accent)] shadow-lg shadow-[var(--color-accent)]/20' : 'border-[var(--color-border)]'}`}>
                 {/* Zone Header */}
                 <div className={`px-4 py-3 border-b border-[var(--color-border)] ${isTopChoice ? 'bg-[var(--color-accent)]/10' : 'bg-[var(--color-surface-2)]'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {isTopChoice && <span className="text-[9px] font-mono font-bold px-2 py-0.5 bg-[var(--color-accent)] text-black clip-corner-tl">RECOMMENDED</span>}
-                      <MapPin size={14} className="text-[var(--color-accent)]" />
-                      <span className="text-white text-sm font-bold font-mono">{zone.name}</span>
+                      {!isTopChoice && <span className="text-[9px] font-mono font-bold text-[var(--color-text-tertiary)]">#{idx + 1}</span>}
+                      <span className="text-white text-sm font-bold font-mono">Severe Energy Alluvium: {zone.name}</span>
                       <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)] clip-corner-tl">{zone.region}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-[var(--color-text-tertiary)]">TARGET: {zone.enemy}</span>
-                      <span className="text-lg font-bold font-mono text-[var(--color-accent)]">{totalMatched}/{totalPossible}</span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-bold font-mono text-[var(--color-accent)]">{Math.round(score)} pts</span>
                     </div>
                   </div>
-                  {/* Efficiency Bar */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[9px] font-mono">
-                      <span className="text-[var(--color-text-tertiary)]">FARMING EFFICIENCY</span>
-                      <span className={`font-bold ${efficiency >= 90 ? 'text-green-400' : efficiency >= 70 ? 'text-[var(--color-accent)]' : 'text-yellow-400'}`}>{efficiency}%</span>
-                    </div>
-                    <div className="h-2 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-500 ${efficiency >= 90 ? 'bg-gradient-to-r from-green-500 to-green-400' : efficiency >= 70 ? 'bg-gradient-to-r from-[var(--color-accent)] to-cyan-400' : 'bg-gradient-to-r from-yellow-500 to-yellow-400'}`}
-                        style={{ width: `${efficiency}%` }}
-                      />
+                  <div className="flex items-center gap-3 text-[10px] font-mono">
+                    <span className="text-[var(--color-text-tertiary)]">vs. {zone.enemy}</span>
+                    <div className="flex items-center gap-2 ml-auto">
+                      {zPerfect > 0 && <span className="text-green-400 font-bold">{zPerfect} perfect</span>}
+                      {zGood > 0 && <span className="text-yellow-400">{zGood} good</span>}
                     </div>
                   </div>
                 </div>
-                {/* Weapon Breakdown */}
-                <div className="p-4 space-y-2">
-                  {weaponScores.map(({ weapon, score }) => {
-                    if (!score) return null;
-                    const isPerfect = score.matched === score.total;
-                    const weaponEfficiency = Math.round((score.matched / score.total) * 100);
-                    return (
-                      <div key={weapon.name} className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)] transition-all group/weapon">
-                        <div className="flex items-center gap-3 p-3">
-                          <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-[var(--color-surface)] group-hover/weapon:bg-[var(--color-surface-2)] transition-colors">
-                            {WEAPON_ICONS[weapon.name] ? (
-                              <Image src={WEAPON_ICONS[weapon.name]} alt={weapon.name} width={48} height={48} className="w-12 h-12 object-contain group-hover/weapon:scale-110 transition-transform" unoptimized />
-                            ) : <Sword size={20} className="text-[var(--color-text-tertiary)]" />}
-                          </div>
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="text-white text-xs font-bold font-mono">{weapon.name}</p>
-                                <span className="text-[9px] font-mono text-[var(--color-text-tertiary)]">{weapon.type} • {weapon.rarity}★</span>
+
+                {/* Weapon Breakdown grouped by match level */}
+                <div className="p-4 space-y-3">
+                  {perfectWeapons.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-green-400 uppercase">
+                        <CheckCircle size={12} /> Perfect (3/3)
+                      </div>
+                      <div className="space-y-1.5">
+                        {perfectWeapons.map(m => {
+                          const wpnLabel = weaponLabels.get(m.weapon.name) || 'Average';
+                          return (
+                            <div key={m.weapon.name} className="flex items-center gap-3 p-2.5 bg-green-500/5 border border-green-500/20 clip-corner-tl">
+                              <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--color-surface)]">
+                                {WEAPON_ICONS[m.weapon.name] ? (
+                                  <Image src={WEAPON_ICONS[m.weapon.name]} alt={m.weapon.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
+                                ) : <Sword size={16} className="text-[var(--color-text-tertiary)]" />}
                               </div>
-                              <div className="text-right">
-                                <span className={`text-xs font-mono font-bold ${isPerfect ? 'text-green-400' : 'text-yellow-400'}`}>
-                                  {score.matched}/{score.total}
-                                </span>
-                                <div className="text-[9px] font-mono text-[var(--color-text-tertiary)]">{weaponEfficiency}%</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-white text-xs font-bold font-mono">{m.weapon.name}</p>
+                                  <span className="text-[8px] font-mono" style={{ color: RARITY_COLORS[m.weapon.rarity] }}>{m.weapon.rarity}★</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {m.details.map((d, i) => (
+                                    <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 ${d.matched ? 'text-green-400' : 'text-red-400/70'}`}>
+                                      {d.stat.replace(' Boost', '')}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-green-400 font-mono font-bold text-xs shrink-0">{m.matchCount}/{m.total}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {goodWeapons.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-yellow-400 uppercase">
+                        Good (2/3)
+                      </div>
+                      <div className="space-y-1.5">
+                        {goodWeapons.map(m => (
+                          <div key={m.weapon.name} className="flex items-center gap-3 p-2.5 bg-yellow-500/5 border border-yellow-500/20 clip-corner-tl">
+                            <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--color-surface)]">
+                              {WEAPON_ICONS[m.weapon.name] ? (
+                                <Image src={WEAPON_ICONS[m.weapon.name]} alt={m.weapon.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
+                              ) : <Sword size={16} className="text-[var(--color-text-tertiary)]" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-white text-xs font-bold font-mono">{m.weapon.name}</p>
+                                <span className="text-[8px] font-mono" style={{ color: RARITY_COLORS[m.weapon.rarity] }}>{m.weapon.rarity}★</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {m.details.map((d, i) => (
+                                  <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 ${d.matched ? 'text-green-400' : 'text-red-400/70'}`}>
+                                    {d.stat.replace(' Boost', '')}
+                                  </span>
+                                ))}
                               </div>
                             </div>
-                            {/* Stat Match Indicators */}
-                            <div className="flex flex-wrap gap-1">
-                              {score.details.map((d, i) => (
-                                <span key={i} className={`text-[9px] font-mono px-2 py-0.5 border clip-corner-tl ${d.matched ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/30 text-red-400/70 bg-red-500/5'}`}>
-                                  {d.matched ? '✓' : '✗'} {d.stat.replace(' Boost', '')}
-                                </span>
-                              ))}
-                            </div>
-                            {/* Mini progress bar */}
-                            <div className="h-1 bg-[var(--color-surface)] overflow-hidden">
-                              <div
-                                className={`h-full transition-all ${isPerfect ? 'bg-green-500' : 'bg-yellow-500'}`}
-                                style={{ width: `${weaponEfficiency}%` }}
-                              />
-                            </div>
+                            <span className="text-yellow-400 font-mono font-bold text-xs shrink-0">{m.matchCount}/{m.total}</span>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {partialWeapons.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-[var(--color-text-tertiary)] uppercase">
+                        Partial (1/3)
+                      </div>
+                      <div className="space-y-1.5">
+                        {partialWeapons.map(m => (
+                          <div key={m.weapon.name} className="flex items-center gap-3 p-2.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl">
+                            <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--color-surface)]">
+                              {WEAPON_ICONS[m.weapon.name] ? (
+                                <Image src={WEAPON_ICONS[m.weapon.name]} alt={m.weapon.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
+                              ) : <Sword size={16} className="text-[var(--color-text-tertiary)]" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-white text-xs font-bold font-mono">{m.weapon.name}</p>
+                                <span className="text-[8px] font-mono" style={{ color: RARITY_COLORS[m.weapon.rarity] }}>{m.weapon.rarity}★</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {m.details.map((d, i) => (
+                                  <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 ${d.matched ? 'text-green-400' : 'text-red-400/70'}`}>
+                                    {d.stat.replace(' Boost', '')}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <span className="text-[var(--color-text-tertiary)] font-mono font-bold text-xs shrink-0">{m.matchCount}/{m.total}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recommended Pre-Engrave */}
+                  {isTopChoice && (
+                    <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
+                      <p className="text-[9px] font-mono text-[var(--color-accent)] font-bold uppercase mb-2">Recommended Pre-Engrave</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {preEngrave.primaryAttrs.map(a => (
+                          <span key={a} className="text-[10px] font-mono px-2 py-1 border border-[var(--color-accent)]/30 text-[var(--color-accent)] bg-[var(--color-accent)]/5 clip-corner-tl">{a}</span>
+                        ))}
+                        <span className="text-[var(--color-text-tertiary)] font-mono">+</span>
+                        <span className={`text-[10px] font-mono px-2 py-1 border clip-corner-tl ${preEngrave.fixedStatType === 'skill' ? 'border-purple-500/30 text-purple-400 bg-purple-500/5' : 'border-green-500/30 text-green-400 bg-green-500/5'}`}>
+                          {preEngrave.fixedStat}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Zone Stat Pool */}
+                  <details className="mt-2">
+                    <summary className="text-[9px] font-mono text-[var(--color-text-tertiary)] cursor-pointer hover:text-white transition-colors">
+                      View zone stat pool
+                    </summary>
+                    <div className="grid md:grid-cols-3 gap-3 mt-2">
+                      <div>
+                        <p className="text-[8px] font-mono text-[var(--color-accent)] uppercase mb-1 font-bold">Primary Attribute</p>
+                        <div className="flex flex-wrap gap-1">
+                          {PRIMARY_ATTRS.map(a => (
+                            <span key={a} className="text-[8px] font-mono px-1 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)]">{a.replace(' Boost', '')}</span>
+                          ))}
                         </div>
                       </div>
-                    );
-                  })}
+                      <div>
+                        <p className="text-[8px] font-mono text-[var(--color-accent)] uppercase mb-1 font-bold">Secondary Stat</p>
+                        <div className="flex flex-wrap gap-1">
+                          {zone.secondaryStats.map(s => (
+                            <span key={s} className="text-[8px] font-mono px-1 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)]">{s.replace(' Boost', '')}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-mono text-[var(--color-accent)] uppercase mb-1 font-bold">Skill Stat</p>
+                        <div className="flex flex-wrap gap-1">
+                          {zone.skillStats.map(s => (
+                            <span key={s} className="text-[8px] font-mono px-1 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)]">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {selected.length === 0 && (
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-12 text-center">
+          <Sword size={48} className="mx-auto mb-3 text-[var(--color-text-tertiary)] opacity-30" />
+          <p className="text-sm font-mono text-white mb-2">Select at least one weapon to see farming zone recommendations</p>
+          <p className="text-[10px] font-mono text-[var(--color-text-tertiary)]">Click &quot;Add Weapons&quot; above to get started</p>
         </div>
       )}
     </div>

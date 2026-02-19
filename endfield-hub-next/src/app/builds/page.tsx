@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Users, Plus, Search, X, Heart, Eye, Trash2, Edit3, Copy, ChevronDown, Shield, Sword as SwordIcon, Star } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import { CHARACTERS, WEAPONS, ELEMENTS, ROLES, WEAPON_TYPES } from '@/lib/data';
@@ -31,6 +32,7 @@ interface BuildCharacter {
   weapon?: string;
   equipment?: string;
   notes?: string;
+  skillLevels?: number[];
 }
 
 interface Build {
@@ -45,6 +47,7 @@ interface Build {
   views: number;
   createdAt: number;
   updatedAt: number;
+  author?: string;
 }
 
 type ViewMode = 'browse' | 'create' | 'my-builds';
@@ -57,55 +60,365 @@ const MAX_TEAM_SIZE = 4;
 // Sample community builds for demonstration
 const SAMPLE_BUILDS: Build[] = [
   {
-    id: 'sample-1', name: 'Laevatain Hypercarry', type: 'single',
-    characters: [{ name: 'Laevatain', weapon: 'Umbral Torch', equipment: 'Type 50 Yinglung' }],
-    tags: ['Meta', 'DPS'], notes: 'Best-in-slot setup for Laevatain. Umbral Torch provides the highest damage ceiling with Type 50 Yinglung for crit stacking.',
-    isPublic: true, likes: 47, views: 312, createdAt: Date.now() - 86400000 * 3, updatedAt: Date.now() - 86400000 * 3,
+    id: 'laevatain-hypercarry',
+    name: 'Laevatain Hypercarry',
+    type: 'single',
+    characters: [{
+      name: 'Laevatain',
+      weapon: 'Umbral Torch',
+      equipment: 'Type 50 Yinglung',
+      skillLevels: [10, 10, 10, 10],
+      notes: 'Main DPS - prioritize Heat DMG and Arts Intensity. Umbral Torch stacks perfectly with her kit.'
+    }],
+    tags: ['Meta', 'DPS'],
+    notes: 'Best-in-slot setup for Laevatain. Umbral Torch provides the highest damage ceiling with Type 50 Yinglung for crit stacking. Focus on building Intellect and Heat DMG. Use combo skills to maintain Yinglung\'s Edge stacks, then unleash ultimate for massive burst.',
+    isPublic: true,
+    likes: 47,
+    views: 312,
+    createdAt: Date.now() - 86400000 * 3,
+    updatedAt: Date.now() - 86400000 * 3,
+    author: 'ZeroSanity Staff',
   },
   {
-    id: 'sample-2', name: 'Cryo Freeze Team', type: 'team',
+    id: 'cryo-freeze-team',
+    name: 'Cryo Freeze Team',
+    type: 'team',
     characters: [
-      { name: 'Last Rite', weapon: 'Exemplar', equipment: 'Tide Surge' },
-      { name: 'Yvonne', weapon: 'Navigator', equipment: 'Type 50 Yinglung' },
-      { name: 'Xaihi', weapon: 'Wild Wanderer', equipment: 'LYNX' },
-      { name: 'Snowshine', weapon: 'Seeker of Dark Lung', equipment: 'Æthertech' },
+      {
+        name: 'Last Rite',
+        weapon: 'Exemplar',
+        equipment: 'Tide Surge',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Main DPS - stack Physical DMG and maximize greatsword combo chains.'
+      },
+      {
+        name: 'Yvonne',
+        weapon: 'Navigator',
+        equipment: 'Type 50 Yinglung',
+        skillLevels: [8, 10, 10, 8],
+        notes: 'Sub-DPS - provides Cryo burst damage and ranged support.'
+      },
+      {
+        name: 'Xaihi',
+        weapon: 'Wild Wanderer',
+        equipment: 'LYNX',
+        skillLevels: [6, 8, 10, 6],
+        notes: 'Healer - keeps team alive with consistent healing and shields.'
+      },
+      {
+        name: 'Snowshine',
+        weapon: 'Seeker of Dark Lung',
+        equipment: 'Æthertech',
+        skillLevels: [8, 8, 8, 10],
+        notes: 'Tank - absorbs damage and applies Cryo Infliction for team synergy.'
+      },
     ],
-    tags: ['Meta', 'Boss Kill'], notes: 'Full cryo team that chains freeze reactions. Last Rite as main DPS, Yvonne for sub-DPS burst, Xaihi healing, Snowshine tanking.',
-    isPublic: true, likes: 83, views: 621, createdAt: Date.now() - 86400000 * 7, updatedAt: Date.now() - 86400000 * 5,
+    tags: ['Meta', 'Boss Kill'],
+    notes: 'Full cryo team that chains freeze reactions. Last Rite as main DPS, Yvonne for sub-DPS burst, Xaihi healing, Snowshine tanking. Rotation: Snowshine applies Cryo Infliction → Yvonne burst → Last Rite combo chains. Keep enemies frozen for maximum damage uptime.',
+    isPublic: true,
+    likes: 83,
+    views: 621,
+    createdAt: Date.now() - 86400000 * 7,
+    updatedAt: Date.now() - 86400000 * 5,
+    author: 'ZeroSanity Staff',
   },
   {
-    id: 'sample-3', name: 'F2P Endministrator', type: 'single',
-    characters: [{ name: 'Endministrator', weapon: 'Fortmaker', equipment: 'Swordmancer' }],
-    tags: ['F2P', 'DPS'], notes: 'Budget-friendly build using the free protagonist. Fortmaker is a solid 5-star option.',
-    isPublic: true, likes: 124, views: 891, createdAt: Date.now() - 86400000 * 14, updatedAt: Date.now() - 86400000 * 10,
+    id: 'f2p-endministrator',
+    name: 'F2P Endministrator',
+    type: 'single',
+    characters: [{
+      name: 'Endministrator',
+      weapon: 'Fortmaker',
+      equipment: 'Swordmancer',
+      skillLevels: [10, 10, 8, 10],
+      notes: 'Versatile protagonist build - balanced stats make it work in any content.'
+    }],
+    tags: ['F2P', 'DPS'],
+    notes: 'Budget-friendly build using the free protagonist. Fortmaker is a solid 5-star option that scales well. Swordmancer set provides Physical Status synergy. Great for new players - all materials are farmable. Stack Agility and Physical DMG for best results.',
+    isPublic: true,
+    likes: 124,
+    views: 891,
+    createdAt: Date.now() - 86400000 * 14,
+    updatedAt: Date.now() - 86400000 * 10,
+    author: 'ZeroSanity Staff',
   },
   {
-    id: 'sample-4', name: 'Physical Quickswap', type: 'team',
+    id: 'physical-quickswap',
+    name: 'Physical Quickswap',
+    type: 'team',
     characters: [
-      { name: 'Endministrator', weapon: 'Forgeborn Scathe', equipment: 'Swordmancer' },
-      { name: 'Lifeng', weapon: 'Valiant', equipment: 'Type 50 Yinglung' },
-      { name: 'Chen Qianyu', weapon: 'Sundering Steel', equipment: 'Hot Work' },
-      { name: 'Gilberta', weapon: 'Opus: Etch Figure', equipment: 'LYNX' },
+      {
+        name: 'Endministrator',
+        weapon: 'Forgeborn Scathe',
+        equipment: 'Swordmancer',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Primary swap target - builds combo gauge quickly with sword attacks.'
+      },
+      {
+        name: 'Lifeng',
+        weapon: 'Valiant',
+        equipment: 'Type 50 Yinglung',
+        skillLevels: [8, 10, 10, 8],
+        notes: 'Polearm specialist - high burst after combo gauge is filled.'
+      },
+      {
+        name: 'Chen Qianyu',
+        weapon: 'Sundering Steel',
+        equipment: 'Hot Work',
+        skillLevels: [10, 10, 8, 8],
+        notes: 'Counter-focused Guard - exceptional Agility enables precise dodges and counters.'
+      },
+      {
+        name: 'Gilberta',
+        weapon: 'Opus: Etch Figure',
+        equipment: 'LYNX',
+        skillLevels: [6, 8, 10, 6],
+        notes: 'Healer/Support - Nature buffs and sustained team healing.'
+      },
     ],
-    tags: ['Meta', 'Speedrun'], notes: 'Rapid character swapping for continuous combo chains. Each character builds combo gauge for the next.',
-    isPublic: true, likes: 56, views: 445, createdAt: Date.now() - 86400000 * 5, updatedAt: Date.now() - 86400000 * 2,
+    tags: ['Meta', 'Speedrun'],
+    notes: 'Rapid character swapping for continuous combo chains. Each character builds combo gauge for the next. Focus on maintaining combo stacks across all operators. Swap when combo skill is ready to maximize Yinglung\'s Edge stacks. Gilberta provides safety net healing.',
+    isPublic: true,
+    likes: 56,
+    views: 445,
+    createdAt: Date.now() - 86400000 * 5,
+    updatedAt: Date.now() - 86400000 * 2,
+    author: 'ZeroSanity Staff',
   },
   {
-    id: 'sample-5', name: 'Ember Solo Tank', type: 'single',
-    characters: [{ name: 'Ember', weapon: 'Thunderberge', equipment: 'Æthertech' }],
-    tags: ['Tank', 'Off-Meta'], notes: 'Ember can solo-tank most content with Æthertech poise stacking. Thunderberge adds self-healing on hit.',
-    isPublic: true, likes: 31, views: 198, createdAt: Date.now() - 86400000 * 2, updatedAt: Date.now() - 86400000,
+    id: 'ember-solo-tank',
+    name: 'Ember Solo Tank',
+    type: 'single',
+    characters: [{
+      name: 'Ember',
+      weapon: 'Thunderberge',
+      equipment: 'Æthertech',
+      skillLevels: [8, 8, 10, 10],
+      notes: 'Unkillable tank - combo skill provides massive shields and self-healing.'
+    }],
+    tags: ['Tank', 'Off-Meta'],
+    notes: 'Ember can solo-tank most content with Æthertech poise stacking. Thunderberge adds self-healing on hit. Build Strength and HP for maximum survivability. Use combo skill on cooldown for shield uptime. Great for solo challenges and exploration.',
+    isPublic: true,
+    likes: 31,
+    views: 198,
+    createdAt: Date.now() - 86400000 * 2,
+    updatedAt: Date.now() - 86400000,
+    author: 'ZeroSanity Staff',
   },
   {
-    id: 'sample-6', name: 'Electric Overload', type: 'team',
+    id: 'electric-overload',
+    name: 'Electric Overload',
+    type: 'team',
     characters: [
-      { name: 'Arclight', weapon: 'Rapid Ascent', equipment: 'Hot Work' },
-      { name: 'Perlica', weapon: 'Detonation Unit', equipment: 'Eternal Xiranite' },
-      { name: 'Avywenna', weapon: 'Chimeric Justice', equipment: 'Type 50 Yinglung' },
-      { name: 'Antal', weapon: 'Hypernova Auto', equipment: 'Mordvolt Insulation' },
+      {
+        name: 'Arclight',
+        weapon: 'Rapid Ascent',
+        equipment: 'Hot Work',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Primary Electric DPS - fast sword attacks apply Electrification rapidly.'
+      },
+      {
+        name: 'Perlica',
+        weapon: 'Detonation Unit',
+        equipment: 'Eternal Xiranite',
+        skillLevels: [8, 10, 10, 8],
+        notes: 'Arts Caster - detonates Electric Infliction for massive AoE damage.'
+      },
+      {
+        name: 'Avywenna',
+        weapon: 'Chimeric Justice',
+        equipment: 'Type 50 Yinglung',
+        skillLevels: [8, 8, 10, 8],
+        notes: 'Polearm DPS - extends Electric chains with combo skills.'
+      },
+      {
+        name: 'Antal',
+        weapon: 'Hypernova Auto',
+        equipment: 'Mordvolt Insulation',
+        skillLevels: [6, 8, 10, 6],
+        notes: 'Electric Support - buffs team\'s Arts DMG and provides sustained Electric application.'
+      },
     ],
-    tags: ['Fun', 'DPS'], notes: 'All-electric team for maximum elemental reaction chains. Very satisfying to play even if not perfectly meta.',
-    isPublic: true, likes: 42, views: 267, createdAt: Date.now() - 86400000 * 6, updatedAt: Date.now() - 86400000 * 4,
+    tags: ['Fun', 'DPS'],
+    notes: 'All-electric team for maximum elemental reaction chains. Very satisfying to play even if not perfectly meta. Chain Electrification across all enemies for screen-wide damage. Perlica detonates for huge burst. Antal provides consistent buffs. Great for AoE encounters.',
+    isPublic: true,
+    likes: 42,
+    views: 267,
+    createdAt: Date.now() - 86400000 * 6,
+    updatedAt: Date.now() - 86400000 * 4,
+    author: 'ZeroSanity Staff',
+  },
+  {
+    id: 'nature-corruption-core',
+    name: 'Nature Corruption Core',
+    type: 'team',
+    characters: [
+      {
+        name: 'Ardelia',
+        weapon: 'Chivalric Virtues',
+        equipment: 'LYNX',
+        skillLevels: [6, 8, 10, 8],
+        notes: 'Main healer - high Will provides massive healing output.'
+      },
+      {
+        name: 'Gilberta',
+        weapon: 'Opus: Etch Figure',
+        equipment: 'Eternal Xiranite',
+        skillLevels: [6, 8, 10, 6],
+        notes: 'Sub-healer/Support - Nature buffs and Lifted application.'
+      },
+      {
+        name: 'Fluorite',
+        weapon: 'Fluorescent Roc',
+        equipment: 'Hot Work',
+        skillLevels: [8, 10, 8, 8],
+        notes: 'Nature Caster DPS - handcannon ranged attacks with high Agility.'
+      },
+      {
+        name: 'Ember',
+        weapon: 'Former Finery',
+        equipment: 'Æthertech',
+        skillLevels: [8, 8, 10, 10],
+        notes: 'Off-role tank - provides frontline protection while healers work.'
+      },
+    ],
+    tags: ['Support', 'Healer', 'Off-Meta'],
+    notes: 'Double healer comp focused on Nature element synergy and Corrosion application. Incredibly safe for difficult content. Ardelia and Gilberta provide overlapping heals and buffs. Fluorite adds Nature DPS from backline. Ember tanks. Can outlast nearly any encounter.',
+    isPublic: true,
+    likes: 29,
+    views: 183,
+    createdAt: Date.now() - 86400000 * 4,
+    updatedAt: Date.now() - 86400000 * 2,
+    author: 'ZeroSanity Staff',
+  },
+  {
+    id: 'heat-combustion-burst',
+    name: 'Heat Combustion Burst',
+    type: 'team',
+    characters: [
+      {
+        name: 'Laevatain',
+        weapon: 'Umbral Torch',
+        equipment: 'Type 50 Yinglung',
+        skillLevels: [10, 10, 10, 10],
+        notes: 'Main DPS - ultimate nuke with Heat DMG stacking.'
+      },
+      {
+        name: 'Wulfgard',
+        weapon: 'Rational Farewell',
+        equipment: 'Hot Work',
+        skillLevels: [8, 10, 8, 8],
+        notes: 'Heat Caster - applies Combustion and provides ranged DPS.'
+      },
+      {
+        name: 'Akekuri',
+        weapon: 'Thermite Cutter',
+        equipment: 'Frontiers',
+        skillLevels: [8, 8, 10, 8],
+        notes: 'Heat Vanguard - fast sword attacks maintain Combustion uptime.'
+      },
+      {
+        name: 'Gilberta',
+        weapon: 'Delivery Guaranteed',
+        equipment: 'LYNX',
+        skillLevels: [6, 8, 10, 6],
+        notes: 'Healer - off-element support for survivability.'
+      },
+    ],
+    tags: ['DPS', 'Speedrun'],
+    notes: 'Triple Heat DPS focused on Combustion stacking and burst windows. Apply Combustion with Wulfgard → stack with Akekuri → detonate with Laevatain ultimate. Gilberta heals when needed. Extremely high damage but requires careful resource management. Best for short fights.',
+    isPublic: true,
+    likes: 38,
+    views: 241,
+    createdAt: Date.now() - 86400000 * 8,
+    updatedAt: Date.now() - 86400000 * 6,
+    author: 'ZeroSanity Staff',
+  },
+  {
+    id: 'balanced-rainbow',
+    name: 'Balanced Rainbow',
+    type: 'team',
+    characters: [
+      {
+        name: 'Endministrator',
+        weapon: 'Forgeborn Scathe',
+        equipment: 'Swordmancer',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Physical DPS - well-rounded stats fit any situation.'
+      },
+      {
+        name: 'Laevatain',
+        weapon: 'Umbral Torch',
+        equipment: 'Hot Work',
+        skillLevels: [10, 10, 10, 10],
+        notes: 'Heat DPS - burst damage dealer.'
+      },
+      {
+        name: 'Last Rite',
+        weapon: 'Khravengger',
+        equipment: 'Tide Surge',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Cryo DPS - greatsword chains with freeze application.'
+      },
+      {
+        name: 'Arclight',
+        weapon: 'Rapid Ascent',
+        equipment: 'Frontiers',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Electric DPS - high Agility enables rapid elemental application.'
+      },
+    ],
+    tags: ['DPS', 'Fun'],
+    notes: 'Rainbow team with 4 different elements for maximum elemental coverage. Can adapt to any enemy weakness. No healer means high risk/high reward gameplay. Relies on dodging and killing enemies before they kill you. Great for players who know enemy patterns well.',
+    isPublic: true,
+    likes: 51,
+    views: 329,
+    createdAt: Date.now() - 86400000 * 9,
+    updatedAt: Date.now() - 86400000 * 7,
+    author: 'ZeroSanity Staff',
+  },
+  {
+    id: 'vanguard-rush',
+    name: 'Vanguard Rush',
+    type: 'team',
+    characters: [
+      {
+        name: 'Pogranichnik',
+        weapon: 'Never Rest',
+        equipment: 'Swordmancer',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Physical Vanguard - high Will provides sustain through SP recovery.'
+      },
+      {
+        name: 'Arclight',
+        weapon: 'Rapid Ascent',
+        equipment: 'MI Security',
+        skillLevels: [10, 10, 8, 10],
+        notes: 'Electric Vanguard - lightning-fast attacks and high mobility.'
+      },
+      {
+        name: 'Akekuri',
+        weapon: 'Aspirant',
+        equipment: 'Frontiers',
+        skillLevels: [8, 8, 10, 8],
+        notes: 'Heat Vanguard - swift burn application and combo chains.'
+      },
+      {
+        name: 'Alesh',
+        weapon: 'Finchaser 3.0',
+        equipment: 'Tide Surge',
+        skillLevels: [10, 8, 8, 10],
+        notes: 'Cryo Vanguard - high Strength provides frontline pressure.'
+      },
+    ],
+    tags: ['Speedrun', 'Fun'],
+    notes: 'All-Vanguard team focused on aggressive field control and rapid skill rotations. High mobility and constant pressure. Each operator has fast cooldowns - keep swapping to maintain buffs. Requires good mechanical skill. No dedicated healer means you must dodge well.',
+    isPublic: true,
+    likes: 27,
+    views: 156,
+    createdAt: Date.now() - 86400000 * 11,
+    updatedAt: Date.now() - 86400000 * 9,
+    author: 'ZeroSanity Staff',
   },
 ];
 
@@ -830,9 +1143,9 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div
-      onClick={() => setExpanded(!expanded)}
-      className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden cursor-pointer transition-all ${
+    <Link
+      href={`/builds/${build.id}`}
+      className={`block bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all ${
         expanded ? 'border-[var(--color-accent)]/60 ring-1 ring-[var(--color-accent)]/20' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
       }`}
     >
@@ -867,7 +1180,7 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
-              <ChevronDown size={14} className={`text-[var(--color-accent)] transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+              <span className="text-xs text-[var(--color-accent)] hover:underline flex-shrink-0">View Details →</span>
             </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
@@ -884,74 +1197,20 @@ function BuildCard({ build, onDuplicate, getCharElement, getCharRarity, getCharR
           </div>
         </div>
 
-        {/* Always show character gear summary in compact form */}
-        {!expanded && (
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-[var(--color-text-tertiary)]">
-            {build.characters.map((bc, i) => (
-              <span key={i}>
+        {/* Character gear summary */}
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-[var(--color-text-tertiary)]">
+          {build.characters.map((bc, i) => {
+            const elem = getCharElement(bc.name);
+            return (
+              <span key={i} className="flex items-center gap-1">
+                {elem && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[elem] }} />}
                 <span className="text-white">{bc.name}</span>
                 {bc.weapon && <span> + {bc.weapon}</span>}
               </span>
-            ))}
-          </div>
-        )}
-
-        {/* Expanded detail view */}
-        {expanded && (
-          <div className="mt-3 space-y-2" onClick={e => e.stopPropagation()}>
-            {build.characters.map((bc, i) => {
-              const role = getCharRole(bc.name);
-              const elem = getCharElement(bc.name);
-              const charIcon = CHARACTER_ICONS[bc.name];
-              const weaponIcon = bc.weapon ? WEAPON_ICONS[bc.weapon] : null;
-              const equipIcon = bc.equipment ? EQUIPMENT_ICONS[bc.equipment] : null;
-              return (
-                <div key={i} className="p-3 bg-[var(--color-surface-2)]"
-                  style={{ borderLeft: `3px solid ${elem ? ELEMENT_COLORS[elem] : '#666'}` }}>
-                  <div className="flex items-center gap-3">
-                    {charIcon && (
-                      <div className="w-12 h-12 relative flex-shrink-0 overflow-hidden" style={{ borderBottom: `2px solid ${RARITY_COLORS[getCharRarity(bc.name)] || '#666'}` }}>
-                        <Image src={charIcon} alt={bc.name} fill className="object-cover" unoptimized sizes="48px" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-bold text-sm">{bc.name}</span>
-                        {role && <span className="text-[10px] text-[var(--color-text-tertiary)]">{role}</span>}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 mt-1">
-                        {bc.weapon && (
-                          <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                            {weaponIcon && <Image src={weaponIcon} alt="" width={18} height={18} className="inline" unoptimized />}
-                            {bc.weapon}
-                          </span>
-                        )}
-                        {bc.equipment && (
-                          <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                            {equipIcon && <Image src={equipIcon} alt="" width={18} height={18} className="inline" unoptimized />}
-                            {bc.equipment}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {build.notes && (
-              <div className="p-3 bg-[var(--color-surface-2)] border-l-3 border-l-[var(--color-accent)]/30">
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{build.notes}</p>
-              </div>
-            )}
-            <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)] pt-1">
-              <span>{formatDate(build.createdAt)}</span>
-              <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="text-[var(--color-accent)] hover:underline flex items-center gap-1">
-                <Copy size={10} /> Copy to My Builds
-              </button>
-            </div>
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }

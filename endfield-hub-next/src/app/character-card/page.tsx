@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { CHARACTERS, WEAPONS } from '@/lib/data';
-import { CHARACTER_ICONS, CHARACTER_SPLASH, PROFESSION_ICONS, WEAPON_ICONS, STAT_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
+import { CHARACTER_ICONS, CHARACTER_SPLASH, CHARACTER_GACHA, CHARACTER_BANNERS, PROFESSION_ICONS, WEAPON_ICONS, STAT_ICONS, EQUIPMENT_ICONS } from '@/lib/assets';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Element, Role, WeaponType, Character, Weapon } from '@/types/game';
 import { Download, Search, X, Star, Sparkles, Share2, ChevronDown, Sword, Shield, Zap, Heart, Crosshair, Flame } from 'lucide-react';
@@ -12,12 +12,12 @@ import RIOSHeader from '@/components/ui/RIOSHeader';
 
 // ──────────── Theme Colors ────────────
 
-const THEME_COLORS: Record<string, { primary: string; bg: string; gradient: string; accent: string }> = {
-  Physical: { primary: '#CCCCCC', bg: '#0f1014', gradient: 'linear-gradient(135deg, #0f1014 0%, #1a1a22 50%, #0f1014 100%)', accent: '#888899' },
-  Heat: { primary: '#FF6B35', bg: '#120d08', gradient: 'linear-gradient(135deg, #120d08 0%, #1f150a 50%, #120d08 100%)', accent: '#CC5522' },
-  Cryo: { primary: '#00BFFF', bg: '#080e14', gradient: 'linear-gradient(135deg, #080e14 0%, #0c1828 50%, #080e14 100%)', accent: '#0088CC' },
-  Electric: { primary: '#C084FC', bg: '#100a18', gradient: 'linear-gradient(135deg, #100a18 0%, #1a1028 50%, #100a18 100%)', accent: '#9060CC' },
-  Nature: { primary: '#34D399', bg: '#081410', gradient: 'linear-gradient(135deg, #081410 0%, #0c1f18 50%, #081410 100%)', accent: '#22AA77' },
+const THEME_COLORS: Record<string, { primary: string; bg: string; accent: string; glow: string }> = {
+  Physical: { primary: '#CCCCCC', bg: '#0a0e14', accent: '#888899', glow: 'rgba(200,200,200,0.3)' },
+  Heat: { primary: '#FF6B35', bg: '#0a0e14', accent: '#CC5522', glow: 'rgba(255,107,53,0.4)' },
+  Cryo: { primary: '#00BFFF', bg: '#0a0e14', accent: '#0088CC', glow: 'rgba(0,191,255,0.4)' },
+  Electric: { primary: '#C084FC', bg: '#0a0e14', accent: '#9060CC', glow: 'rgba(192,132,252,0.4)' },
+  Nature: { primary: '#34D399', bg: '#0a0e14', accent: '#22AA77', glow: 'rgba(52,211,153,0.4)' },
 };
 
 // ──────────── Equipment Data ────────────
@@ -59,7 +59,6 @@ interface EquipmentSlotState {
 function computeStats(char: Character, level: number, potential: number) {
   const lvScale = level / 80;
   const potScale = 1 + potential * 0.02;
-  // Base combat stats derived from attribute points
   const hp = Math.round((3200 + char.Strength * 18 + char.Will * 8) * lvScale * potScale);
   const atk = Math.round((120 + char.Strength * 8 + char.Intellect * 6 + char.Agility * 3) * lvScale * potScale);
   const def = Math.round((80 + char.Will * 4 + char.Strength * 3) * lvScale * potScale);
@@ -269,15 +268,15 @@ const inputClass = "w-full px-3 py-2 bg-[#0A0A0A] border border-[var(--color-bor
 const sectionClass = "bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 space-y-3";
 
 export default function CharacterCardPage() {
-  // Character
-  const [selectedCharName, setSelectedCharName] = useState('');
+  // Character - Pre-load Laevatain
+  const [selectedCharName, setSelectedCharName] = useState('Laevatain');
   const [charPickerOpen, setCharPickerOpen] = useState(false);
   const [level, setLevel] = useState(80);
   const [potential, setPotential] = useState(0);
-  const [affinity, setAffinity] = useState(0);
+  const [affinity, setAffinity] = useState(5);
 
-  // Weapon
-  const [selectedWeaponName, setSelectedWeaponName] = useState('');
+  // Weapon - Pre-load Forgeborn Scathe
+  const [selectedWeaponName, setSelectedWeaponName] = useState('Forgeborn Scathe');
   const [weaponPickerOpen, setWeaponPickerOpen] = useState(false);
   const [weaponLevel, setWeaponLevel] = useState(80);
 
@@ -287,14 +286,14 @@ export default function CharacterCardPage() {
   const [userCode, setUserCode] = useState('');
   const [server, setServer] = useState('');
 
-  // Skills
-  const [skillLevels, setSkillLevels] = useState({ basic: 1, normal: 1, combo: 1, ultimate: 1 });
+  // Skills - Pre-loaded values
+  const [skillLevels, setSkillLevels] = useState({ basic: 10, normal: 10, combo: 8, ultimate: 10 });
 
-  // Equipment
+  // Equipment - Pre-load Swordmancer set
   const defaultEquip: EquipmentSlotState = { setName: '', artifice: 0, substat1: '', substat2: '', substat3: '' };
-  const [equipBody, setEquipBody] = useState<EquipmentSlotState>({ ...defaultEquip });
-  const [equipHand, setEquipHand] = useState<EquipmentSlotState>({ ...defaultEquip });
-  const [equipEdc1, setEquipEdc1] = useState<EquipmentSlotState>({ ...defaultEquip });
+  const [equipBody, setEquipBody] = useState<EquipmentSlotState>({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
+  const [equipHand, setEquipHand] = useState<EquipmentSlotState>({ setName: 'Swordmancer', artifice: 3, substat1: '', substat2: '', substat3: '' });
+  const [equipEdc1, setEquipEdc1] = useState<EquipmentSlotState>({ setName: 'Swordmancer', artifice: 2, substat1: '', substat2: '', substat3: '' });
   const [equipEdc2, setEquipEdc2] = useState<EquipmentSlotState>({ ...defaultEquip });
   const [equipPickerSlot, setEquipPickerSlot] = useState<string | null>(null);
 
@@ -305,6 +304,22 @@ export default function CharacterCardPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Preview scaling
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (previewContainerRef.current) {
+        const containerWidth = previewContainerRef.current.offsetWidth;
+        setPreviewScale(containerWidth / 1200);
+      }
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const character = CHARACTERS.find(c => c.Name === selectedCharName) || null;
   const weapon = WEAPONS.find(w => w.Name === selectedWeaponName) || null;
@@ -387,9 +402,464 @@ export default function CharacterCardPage() {
       <RIOSHeader title="Operator Showcase Creator" category="MEDIA" code="RIOS-CARD-001" icon={<Sparkles size={28} />}
         subtitle="Create and share beautiful character showcase cards" />
 
-      <div className="grid lg:grid-cols-[400px_1fr] gap-6 items-start">
-        {/* ═══════ LEFT: Controls ═══════ */}
-        <div className="space-y-3 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:pr-2">
+      <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
+        {/* ═══════ LEFT: Card Preview ═══════ */}
+        <div className="order-2 lg:order-1">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
+            <h2 className="text-xs font-bold text-white mb-3">Card Preview</h2>
+
+            {character && stats ? (
+              <div ref={previewContainerRef} style={{ width: '100%', overflow: 'hidden' }}>
+                <div
+                  ref={cardRef}
+                  style={{
+                    width: '1200px',
+                    height: '675px',
+                    transformOrigin: 'top left',
+                    transform: `scale(${previewScale})`,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    background: '#0a0e14',
+                  }}
+                >
+                  {/* ── Background: Character Art Zone (Left 0-700px) ── */}
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: '700px',
+                    height: '675px',
+                    overflow: 'hidden',
+                  }}>
+                    {splashUrl && (
+                      <img
+                        src={splashUrl}
+                        alt={character.Name}
+                        crossOrigin="anonymous"
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          objectPosition: 'center',
+                        }}
+                      />
+                    )}
+                    {/* Bottom gradient fade */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: '200px',
+                      background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`,
+                    }} />
+                    {/* Right gradient fade to data panel */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      width: '150px',
+                      background: `linear-gradient(to right, transparent 0%, ${theme.bg} 100%)`,
+                    }} />
+                    {/* Element glow around art area */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      boxShadow: `inset 0 0 80px ${theme.glow}`,
+                      pointerEvents: 'none',
+                    }} />
+                  </div>
+
+                  {/* ── Top accent line ── */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: theme.primary,
+                    zIndex: 30,
+                  }} />
+
+                  {/* ── Right Side: Data Dossier Panel (680-1200px) ── */}
+                  <div style={{
+                    position: 'absolute',
+                    left: '680px',
+                    top: 0,
+                    width: '520px',
+                    height: '675px',
+                    background: 'rgba(10, 14, 20, 0.92)',
+                    borderLeft: `3px solid ${theme.primary}`,
+                    padding: '30px 24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    zIndex: 10,
+                  }}>
+                    {/* Scanline overlay */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+                      pointerEvents: 'none',
+                    }} />
+
+                    {/* Grid pattern */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundImage: `linear-gradient(${theme.primary}15 1px, transparent 1px), linear-gradient(90deg, ${theme.primary}15 1px, transparent 1px)`,
+                      backgroundSize: '20px 20px',
+                      opacity: 0.3,
+                      pointerEvents: 'none',
+                    }} />
+
+                    {/* Content */}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      {/* Top: OPERATOR FILE label */}
+                      <div style={{
+                        fontFamily: 'Share Tech Mono, monospace',
+                        fontSize: '10px',
+                        letterSpacing: '2px',
+                        color: theme.accent,
+                        marginBottom: '8px',
+                      }}>OPERATOR FILE</div>
+
+                      {/* Character name */}
+                      <h1 style={{
+                        fontFamily: 'Rajdhani, sans-serif',
+                        fontSize: '40px',
+                        fontWeight: 700,
+                        color: '#ffffff',
+                        textTransform: 'uppercase',
+                        lineHeight: '1',
+                        marginBottom: '8px',
+                      }}>{character.Name}</h1>
+
+                      {/* Rarity stars */}
+                      <div style={{ marginBottom: '12px' }}>
+                        {Array.from({ length: character.Rarity }).map((_, i) => (
+                          <span key={i} style={{ color: theme.primary, fontSize: '14px' }}>★</span>
+                        ))}
+                      </div>
+
+                      {/* Divider line */}
+                      <div style={{
+                        height: '1px',
+                        background: `linear-gradient(to right, ${theme.primary} 0%, transparent 100%)`,
+                        marginBottom: '16px',
+                      }} />
+
+                      {/* Element + Role badges */}
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '6px 12px',
+                          background: ELEMENT_COLORS[character.Element] + '30',
+                          border: `1px solid ${ELEMENT_COLORS[character.Element]}`,
+                        }}>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: ELEMENT_COLORS[character.Element],
+                            textTransform: 'uppercase',
+                          }}>{character.Element}</span>
+                        </div>
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          background: 'rgba(255,255,255,0.1)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                        }}>
+                          {roleIconUrl && (
+                            <img src={roleIconUrl} alt={character.Role} crossOrigin="anonymous" style={{ width: '14px', height: '14px' }} />
+                          )}
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#ffffff',
+                          }}>{character.Role}</span>
+                        </div>
+                      </div>
+
+                      {/* Level display */}
+                      <div style={{ marginBottom: '20px' }}>
+                        <div style={{
+                          display: 'inline-block',
+                          padding: '8px 16px',
+                          background: 'rgba(0,0,0,0.5)',
+                          border: `2px solid ${theme.primary}`,
+                        }}>
+                          <span style={{
+                            fontFamily: 'Rajdhani, sans-serif',
+                            fontSize: '12px',
+                            color: theme.accent,
+                            marginRight: '6px',
+                          }}>LV</span>
+                          <span style={{
+                            fontFamily: 'Rajdhani, sans-serif',
+                            fontSize: '32px',
+                            fontWeight: 700,
+                            color: '#ffffff',
+                          }}>{level}</span>
+                        </div>
+                      </div>
+
+                      {/* Core attributes: 2x2 grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                        {[
+                          { label: 'STR', value: stats.STR, icon: STAT_ICONS.Strength },
+                          { label: 'AGI', value: stats.AGI, icon: STAT_ICONS.Agility },
+                          { label: 'INT', value: stats.INT, icon: STAT_ICONS.Intellect },
+                          { label: 'WILL', value: stats.WILL, icon: STAT_ICONS.Will },
+                        ].map(attr => (
+                          <div key={attr.label} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 12px',
+                            background: 'rgba(0,0,0,0.4)',
+                            border: `1px solid ${theme.primary}30`,
+                          }}>
+                            <img src={attr.icon} alt={attr.label} crossOrigin="anonymous" style={{ width: '20px', height: '20px' }} />
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{attr.label}</span>
+                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginLeft: 'auto' }}>{attr.value}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Combat stats: HP/ATK/DEF in a row */}
+                      <div style={{ marginBottom: '16px' }}>
+                        {[
+                          { label: 'HP', value: stats.HP.toLocaleString() },
+                          { label: 'ATK', value: stats.ATK.toLocaleString() },
+                          { label: 'DEF', value: stats.DEF.toLocaleString() },
+                        ].map(stat => (
+                          <div key={stat.label} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '6px 0',
+                            borderBottom: `1px solid ${theme.primary}15`,
+                          }}>
+                            <span style={{ fontSize: '12px', color: theme.accent, fontWeight: 700 }}>{stat.label}</span>
+                            <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 700 }}>{stat.value}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CRIT Rate and CRIT DMG */}
+                      <div style={{ marginBottom: '20px' }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '6px 0',
+                        }}>
+                          <span style={{ fontSize: '11px', color: theme.primary, fontWeight: 700 }}>CRIT Rate</span>
+                          <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 700 }}>{stats['CRIT Rate']}%</span>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '6px 0',
+                        }}>
+                          <span style={{ fontSize: '11px', color: theme.primary, fontWeight: 700 }}>CRIT DMG</span>
+                          <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 700 }}>{stats['CRIT DMG']}%</span>
+                        </div>
+                      </div>
+
+                      {/* Skills section */}
+                      <div style={{ marginBottom: '20px' }}>
+                        <div style={{
+                          fontSize: '10px',
+                          color: theme.accent,
+                          marginBottom: '8px',
+                          letterSpacing: '1px',
+                          fontWeight: 700,
+                        }}>COMBAT SKILLS</div>
+                        {SKILL_TYPES.map(skill => {
+                          const lv = skillLevels[skill.key as keyof typeof skillLevels];
+                          return (
+                            <div key={skill.key} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              marginBottom: '6px',
+                            }}>
+                              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', width: '32px' }}>{skill.short}</span>
+                              <div style={{ display: 'flex', gap: '3px', flex: 1 }}>
+                                {Array.from({ length: 12 }).map((_, idx) => (
+                                  <div key={idx} style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    borderRadius: '50%',
+                                    background: idx < lv ? theme.primary : 'rgba(255,255,255,0.15)',
+                                  }} />
+                                ))}
+                              </div>
+                              <span style={{ fontSize: '10px', color: '#ffffff', fontWeight: 700, width: '24px', textAlign: 'right' }}>{lv}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Weapon display */}
+                      {weapon && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px',
+                          background: 'rgba(0,0,0,0.5)',
+                          border: `1px solid ${theme.primary}30`,
+                          marginBottom: '12px',
+                        }}>
+                          {weaponIconUrl && (
+                            <img src={weaponIconUrl} alt={weapon.Name} crossOrigin="anonymous" style={{ width: '32px', height: '32px' }} />
+                          )}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 700 }}>{weapon.Name}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              {Array.from({ length: weapon.Rarity }).map((_, i) => (
+                                <span key={i} style={{ color: RARITY_COLORS[weapon.Rarity] || '#888', fontSize: '9px' }}>★</span>
+                              ))}
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>Lv.{weaponLevel}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Equipment summary */}
+                      {equippedSets.length > 0 && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{
+                            fontSize: '9px',
+                            color: theme.accent,
+                            marginBottom: '6px',
+                            letterSpacing: '1px',
+                          }}>EQUIPMENT SET</div>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {equippedSets.slice(0, 3).map((eq, idx) => {
+                              const eqIcon = EQUIPMENT_ICONS[eq.setName];
+                              return (
+                                <div key={idx} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 8px',
+                                  background: 'rgba(0,0,0,0.4)',
+                                  border: `1px solid ${theme.primary}20`,
+                                }}>
+                                  {eqIcon && (
+                                    <img src={eqIcon} alt={eq.setName} crossOrigin="anonymous" style={{ width: '18px', height: '18px' }} />
+                                  )}
+                                  <span style={{ fontSize: '9px', color: '#ffffff' }}>+{eq.artifice}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── Bottom bar: username + watermark ── */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '40px',
+                    background: 'rgba(10, 14, 20, 0.95)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 24px',
+                    zIndex: 30,
+                    borderTop: `1px solid ${theme.primary}30`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {username && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{username}</span>}
+                      {userCode && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>#{userCode}</span>}
+                      {server && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>{server}</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        background: theme.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <span style={{ fontSize: '8px', fontWeight: 900, color: '#000000' }}>ZS</span>
+                      </div>
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.5px' }}>zerosanity.app</span>
+                    </div>
+                  </div>
+
+                  {/* ── Corner brackets (all 4 corners) ── */}
+                  {/* Top-left */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    width: '20px',
+                    height: '20px',
+                    borderTop: `2px solid ${theme.primary}60`,
+                    borderLeft: `2px solid ${theme.primary}60`,
+                    zIndex: 25,
+                  }} />
+                  {/* Top-right */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    width: '20px',
+                    height: '20px',
+                    borderTop: `2px solid ${theme.primary}60`,
+                    borderRight: `2px solid ${theme.primary}60`,
+                    zIndex: 25,
+                  }} />
+                  {/* Bottom-left */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '52px',
+                    left: '12px',
+                    width: '20px',
+                    height: '20px',
+                    borderBottom: `2px solid ${theme.primary}60`,
+                    borderLeft: `2px solid ${theme.primary}60`,
+                    zIndex: 25,
+                  }} />
+                  {/* Bottom-right */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '52px',
+                    right: '12px',
+                    width: '20px',
+                    height: '20px',
+                    borderBottom: `2px solid ${theme.primary}60`,
+                    borderRight: `2px solid ${theme.primary}60`,
+                    zIndex: 25,
+                  }} />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-24 text-[var(--color-text-tertiary)]" style={{ aspectRatio: '16 / 9', maxWidth: '100%', margin: '0 auto' }}>
+                <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Select a character to create a showcase card</p>
+                <p className="text-xs mt-2 text-[var(--color-text-tertiary)]/60">Configure stats, equipment, skills, and export as image</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ═══════ RIGHT: Controls ═══════ */}
+        <div className="order-1 lg:order-2 space-y-3 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:pr-2">
 
           {/* Showcase Name */}
           <div className={sectionClass}>
@@ -620,219 +1090,6 @@ export default function CharacterCardPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* ═══════ RIGHT: Card Preview ═══════ */}
-        <div className="lg:sticky lg:top-20">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4">
-            <h2 className="text-xs font-bold text-white mb-3">Card Preview</h2>
-
-            {character && stats ? (
-              <div
-                ref={cardRef}
-                className="relative overflow-hidden mx-auto"
-                style={{
-                  background: theme.gradient,
-                  aspectRatio: '3 / 4',
-                  maxWidth: '560px',
-                }}
-              >
-                {/* ── Background splash ── */}
-                <div className="absolute inset-0">
-                  {splashUrl ? (
-                    <Image src={splashUrl} alt={character.Name} fill className="object-cover object-top opacity-50" sizes="600px" unoptimized />
-                  ) : iconUrl ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Image src={iconUrl} alt={character.Name} width={300} height={300} className="opacity-25" unoptimized />
-                    </div>
-                  ) : null}
-                  <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${theme.bg}40 0%, ${theme.bg}90 55%, ${theme.bg}ff 80%)` }} />
-                  <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${theme.bg}cc 0%, transparent 40%)` }} />
-                </div>
-
-                {/* ── Top accent line ── */}
-                <div className="absolute top-0 left-0 right-0 h-[3px] z-20" style={{ backgroundColor: theme.primary }} />
-
-                {/* ── Top-left: Name + Stars ── */}
-                <div className="absolute top-[3%] left-[4%] z-10">
-                  {showcaseName && (
-                    <div className="text-[9px] uppercase tracking-[0.25em] mb-0.5 opacity-60" style={{ color: theme.primary }}>{showcaseName}</div>
-                  )}
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none">{character.Name}</h2>
-                  <div className="flex items-center gap-0.5 mt-1">
-                    {Array.from({ length: character.Rarity }).map((_, i) => (
-                      <Star key={i} size={12} className="fill-current" style={{ color: theme.primary }} />
-                    ))}
-                  </div>
-                  {/* Element + Role badges */}
-                  <div className="flex items-center gap-1.5 mt-2">
-                    <div className="flex items-center gap-1 px-2 py-0.5" style={{ backgroundColor: ELEMENT_COLORS[character.Element] + '30', border: `1px solid ${ELEMENT_COLORS[character.Element]}60` }}>
-                      <span className="text-[9px] font-bold" style={{ color: ELEMENT_COLORS[character.Element] }}>{character.Element}</span>
-                    </div>
-                    <div className="flex items-center gap-1 px-2 py-0.5 bg-white/10 border border-white/20">
-                      {roleIconUrl && <div className="relative w-3 h-3"><Image src={roleIconUrl} alt={character.Role} fill className="object-contain" sizes="12px" unoptimized /></div>}
-                      <span className="text-[9px] font-bold text-white">{character.Role}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Top-right: Level badge ── */}
-                <div className="absolute top-[3%] right-[4%] z-10 text-right">
-                  <div className="relative inline-block">
-                    <div className="text-3xl sm:text-4xl font-black text-white leading-none">{level}</div>
-                    <div className="text-[8px] uppercase tracking-wider text-white/50 mt-0.5">LEVEL</div>
-                  </div>
-                </div>
-
-                {/* ── Middle: Skill icons row ── */}
-                <div className="absolute top-[28%] left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
-                  {SKILL_TYPES.map(skill => {
-                    const Icon = skill.icon;
-                    const lv = skillLevels[skill.key as keyof typeof skillLevels];
-                    return (
-                      <div key={skill.key} className="flex flex-col items-center">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2"
-                          style={{ borderColor: theme.primary + '80', backgroundColor: theme.bg + 'cc' }}>
-                          <Icon size={16} className="text-white/80" />
-                        </div>
-                        {/* Skill node dots */}
-                        <div className="flex gap-0.5 mt-1">
-                          {Array.from({ length: 12 }).map((_, idx) => (
-                            <div key={idx} className="w-1 h-1 rounded-full"
-                              style={{ backgroundColor: idx < lv ? theme.primary : 'rgba(255,255,255,0.15)' }} />
-                          ))}
-                        </div>
-                        <div className="text-[8px] text-white/60 mt-0.5">Lv.{lv}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* ── Right: Stats panel ── */}
-                <div className="absolute right-[3%] top-[3%] z-10 mt-16">
-                  <div className="p-2 min-w-[130px]" style={{ backgroundColor: theme.bg + 'dd', border: `1px solid ${theme.primary}20` }}>
-                    {/* Combat stats */}
-                    {[
-                      { label: 'HP', value: stats.HP.toLocaleString(), icon: Heart },
-                      { label: 'ATK', value: stats.ATK.toLocaleString(), icon: Sword },
-                      { label: 'DEF', value: stats.DEF.toLocaleString(), icon: Shield },
-                    ].map(s => (
-                      <div key={s.label} className="flex items-center justify-between py-0.5">
-                        <div className="flex items-center gap-1">
-                          <s.icon size={10} style={{ color: theme.primary }} />
-                          <span className="text-[9px] text-white/50">{s.label}</span>
-                        </div>
-                        <span className="text-[10px] text-white font-bold">{s.value}</span>
-                      </div>
-                    ))}
-                    <div className="h-[1px] my-1" style={{ backgroundColor: theme.primary + '20' }} />
-                    {/* Attribute stats */}
-                    {[
-                      { label: 'STR', value: stats.STR, icon: STAT_ICONS.Strength },
-                      { label: 'AGI', value: stats.AGI, icon: STAT_ICONS.Agility },
-                      { label: 'INT', value: stats.INT, icon: STAT_ICONS.Intellect },
-                      { label: 'WILL', value: stats.WILL, icon: STAT_ICONS.Will },
-                    ].map(s => (
-                      <div key={s.label} className="flex items-center justify-between py-0.5">
-                        <div className="flex items-center gap-1">
-                          <div className="relative w-3 h-3">
-                            <Image src={s.icon} alt={s.label} fill className="object-contain" sizes="12px" unoptimized />
-                          </div>
-                          <span className="text-[9px] text-white/50">{s.label}</span>
-                        </div>
-                        <span className="text-[10px] text-white font-bold">{s.value}</span>
-                      </div>
-                    ))}
-                    <div className="h-[1px] my-1" style={{ backgroundColor: theme.primary + '20' }} />
-                    <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[9px] font-bold" style={{ color: theme.primary }}>CRIT Rate</span>
-                      <span className="text-[10px] text-white font-bold">{stats['CRIT Rate']}%</span>
-                    </div>
-                    <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[9px] font-bold" style={{ color: theme.primary }}>CRIT DMG</span>
-                      <span className="text-[10px] text-white font-bold">{stats['CRIT DMG']}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Bottom: Equipment + Weapon strip ── */}
-                <div className="absolute bottom-[6%] left-[3%] right-[3%] z-10">
-                  {/* Equipment row */}
-                  {equippedSets.length > 0 && (
-                    <div className="flex gap-1.5 mb-2">
-                      {equippedSets.map((eq, idx) => {
-                        const eqIcon = EQUIPMENT_ICONS[eq.setName];
-                        const slotLabel = equipSlots[
-                          [equipBody, equipHand, equipEdc1, equipEdc2].indexOf(eq)
-                        ]?.label || '';
-                        return (
-                          <div key={idx} className="flex items-center gap-1.5 px-1.5 py-1" style={{ backgroundColor: theme.bg + 'cc', border: `1px solid ${theme.primary}20` }}>
-                            <div className="w-7 h-7 relative flex-shrink-0">
-                              {eqIcon && <Image src={eqIcon} alt={eq.setName} fill className="object-contain" sizes="28px" unoptimized />}
-                            </div>
-                            <div>
-                              <div className="text-[8px] text-white font-bold leading-tight">{eq.setName}</div>
-                              <div className="text-[7px] text-white/40">{SLOT_SUFFIXES[slotLabel] || slotLabel} +{eq.artifice}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Weapon display */}
-                  {weapon && (
-                    <div className="flex items-center gap-2 p-1.5" style={{ backgroundColor: theme.bg + 'cc', border: `1px solid ${theme.primary}20` }}>
-                      {weaponIconUrl && (
-                        <div className="relative w-10 h-10 flex-shrink-0">
-                          <Image src={weaponIconUrl} alt={weapon.Name} fill className="object-contain p-0.5" sizes="40px" unoptimized />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] text-white font-bold">{weapon.Name}</div>
-                        <div className="flex items-center gap-0.5">
-                          {Array.from({ length: weapon.Rarity }).map((_, i) => (
-                            <Star key={i} size={7} className="fill-current" style={{ color: RARITY_COLORS[weapon.Rarity] || '#888' }} />
-                          ))}
-                          <span className="text-[8px] text-white/40 ml-1">Lv.{weaponLevel}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[8px] text-white/40">{character.WeaponType}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Bottom bar: username + watermark ── */}
-                <div className="absolute bottom-0 left-0 right-0 h-[22px] flex items-center justify-between px-[3%] z-20" style={{ backgroundColor: theme.bg + 'ee' }}>
-                  <div className="flex items-center gap-2">
-                    {username && <span className="text-[9px] text-white/60 font-medium">{username}</span>}
-                    {userCode && <span className="text-[8px] text-white/30">#{userCode}</span>}
-                    {server && <span className="text-[8px] text-white/20">{server}</span>}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
-                      <span className="text-[6px] font-black text-black">ZS</span>
-                    </div>
-                    <span className="text-[8px] text-white/30 tracking-wide">zerosanity.app</span>
-                  </div>
-                </div>
-
-                {/* ── Decorative elements ── */}
-                <div className="absolute top-2 right-2 w-6 h-6 z-10 pointer-events-none">
-                  <div className="absolute top-0 right-0 w-full h-[1px]" style={{ backgroundColor: theme.primary + '30' }} />
-                  <div className="absolute top-0 right-0 h-full w-[1px]" style={{ backgroundColor: theme.primary + '30' }} />
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-24 text-[var(--color-text-tertiary)]" style={{ aspectRatio: '3 / 4', maxWidth: '560px', margin: '0 auto' }}>
-                <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Select a character to create a showcase card</p>
-                <p className="text-xs mt-2 text-[var(--color-text-tertiary)]/60">Configure stats, equipment, skills, and export as image</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
