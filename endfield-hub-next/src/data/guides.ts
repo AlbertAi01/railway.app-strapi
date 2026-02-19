@@ -224,6 +224,31 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Position Ember aggressively to take damage, triggering her ATK increase passive while using Battle and Combo Skills to mitigate incoming damage', 'Time Battle Skill usage when being hit to apply bonus stagger damage and maximize Vulnerability uptime for Physical damage dealers', 'Prioritize Will stat through gear selection as healing scales directly with this attribute', 'Use Ultimate strategically before burst damage phases to provide team-wide shields and protection', 'In Swordmancer builds, maintain consistent skill rotations to permanently lock down bosses through stagger application'],
     gearNotes: 'LYNX set is optimal for healing-focused builds, granting +20% Treatment Efficiency and 15% damage reduction for allies for 10 seconds. Eternal Xiranite provides team-wide damage boost after applying Protection buffs. For early game, Mordvolt Resistant offers Will increases. The choice between LYNX and Eternal Xiranite depends on whether your team needs more survivability (LYNX) or damage amplification (Xiranite).',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Team shielding (max HP build)', value: '~12,000 shield', conditions: 'Shield based on 25% Max HP with Thunderberge' },
+      { scenario: 'Combo Skill healing', value: '~6,800 HP', conditions: 'With Finishing Call +56% healing passive' },
+      { scenario: 'Vulnerable debuff amplification', value: '+12% DMG taken', conditions: 'Applied via Combo Skill on hit enemies' },
+      { scenario: 'Stagger output (Swordmancer)', value: '~3,200 stagger/rotation', conditions: 'Full skill rotation with Swordmancer 4-piece' },
+    ],
+    skillData: [
+      { name: 'Greatsword Strike', type: 'Normal Attack', multiplier: '120-160% ATK', description: 'Slow but powerful greatsword swings. Each hit generates Protection stacks and builds aggro. Final hit applies minor Vulnerable.', notes: 'Use between skill cooldowns to maintain aggro and Protection' },
+      { name: 'Iron Bastion', type: 'Battle Skill', multiplier: 'Shield: 25% Max HP', spCost: 25, description: 'Creates team-wide shields based on Ember\'s Max HP. Gains Protection status, activating support set bonuses. Applies Physical Status to nearby enemies.', notes: 'Use proactively before incoming damage spikes for maximum value' },
+      { name: 'Vulnerable Smash', type: 'Combo Skill', multiplier: '220% ATK + Heal: 180% Will', description: 'Generic trigger — activates after any ally\'s Final Strike. Deals greatsword slam applying Vulnerable debuff. Heals controlled operator based on Will.', notes: 'Core ability — provides both debuff and sustain in one action' },
+      { name: 'Fortress Flame', type: 'Ultimate', multiplier: 'Shield: 40% Max HP + 350% ATK', spCost: 100, description: 'Massive greatsword slam dealing Heat AoE damage. All allies receive reinforced shields and damage reduction for 10s. Applies Combustion to all hit enemies.', notes: 'Emergency button — use before major boss mechanics or team burst phases' },
+    ],
+    gearSetDetails: [
+      { name: 'LYNX', pieces: 3, bonusDescription: '+20% Treatment Efficiency. After applying heal, allies gain 15% damage reduction for 10s.', statBoosts: ['Treatment Efficiency +20%', 'Ally DMG Reduction 15%', '10s duration'], notes: 'Best defensive set — multiplicative damage reduction stacks with shields' },
+      { name: 'Eternal Xiranite', pieces: 3, bonusDescription: 'After applying Protection buff, all teammates deal +16% damage for 12s.', statBoosts: ['Team DMG +16%', '12s duration', 'Refreshable'], notes: 'Offensive alternative — Protection from Battle Skill triggers set bonus easily' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest base at 176 — HP and shield scaling' },
+      { stat: 'Will', priority: 'High', notes: 'Healing scales directly with Will stat' },
+      { stat: 'HP%', priority: 'High', notes: 'Shield strength scales with Max HP' },
+      { stat: 'DEF%', priority: 'Medium', notes: 'Reduces incoming damage while tanking' },
+      { stat: 'Treatment Efficiency', priority: 'Medium', notes: 'Improves Combo Skill healing output' },
+    ],
+    rotationGuide: 'START: Battle Skill (shields team + gains Protection status)\n→ Tank enemy attacks while building SP\n→ Ally executes Final Strike → triggers Combo Skill (Vulnerable + heal)\n→ Continue basic attacks to maintain aggro and Protection\n→ Battle Skill again on cooldown (refresh shields)\n→ Ultimate before major damage phases (massive shield + AoE)\n→ Repeat from Battle Skill\n\nKEY: Always maintain Protection status for set bonus uptime. Combo Skill triggers automatically — focus on positioning to hit priority targets with Vulnerable.',
+    comparisonNotes: 'vs Snowshine: Both are Defender tanks but serve different elements. Ember provides Vulnerable debuffs and generic Combo Skill triggers that work in any team, while Snowshine specializes in Cryo terrain and freeze support. Ember is more versatile; Snowshine is better in dedicated Cryo teams.\n\nvs Catcher: Catcher is a pure Physical tank with higher raw mitigation but zero support utility. Ember trades some tankiness for team shields, healing, and Vulnerable application. For teams that need both a tank and support utility, Ember is the superior choice.',
   },
 
   'endministrator': {
@@ -331,6 +356,17 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
       { stat: 'Ultimate Gain Efficiency', priority: 'Medium', notes: 'More frequent defense reduction windows' },
     ],
     comparisonNotes: 'vs Ardelia: Both are S-tier supports, but Gilberta focuses on CC + DEF reduction while Ardelia focuses on healing + Susceptibility debuffs. Running both provides the strongest support core in the game.\n\nvs Antal: Gilberta provides broader utility (any team) while Antal specializes in Heat/Electric. Gilberta is the more universal pick.',
+    skillData: [
+      { name: 'Nature Pulse', type: 'Normal Attack', multiplier: '100-130% ATK', description: 'Arts Unit projectile with Nature damage. Applies minor Lifted buildup on hit. Low damage but consistent Nature application.', notes: 'Use between cooldowns to maintain Lifted buildup on targets' },
+      { name: 'Gravity Well', type: 'Battle Skill', multiplier: '260% ATK', spCost: 22, description: 'Creates a gravity zone that pulls enemies inward and applies Arts Susceptibility. Enemies in the zone take increased Arts damage and have reduced movement speed.', notes: 'Core debuff ability — place on clusters for maximum value' },
+      { name: 'Verdant Collapse', type: 'Combo Skill', multiplier: '320% ATK (AoE)', description: 'Triggered by ally Final Strike. Generates massive gravity field applying Lifted status and converting into Arts Susceptibility debuffs on all affected enemies.', notes: 'The key team amplification tool — coordinate with DPS burst windows' },
+      { name: 'World Unraveled', type: 'Ultimate', multiplier: '480% ATK + 12s field', spCost: 100, description: 'Creates enormous gravity vortex lasting 12s. All enemies within take sustained Nature damage, gain Lifted + Arts Susceptibility, and are pulled toward center. Allies inside gain 20% Arts DMG bonus.', notes: 'Massive CC + damage amp window — use before full team burst' },
+    ],
+    gearSetDetails: [
+      { name: 'Eternal Xiranite', pieces: 3, bonusDescription: 'After applying amplification buff, all teammates deal +16% damage for 12s. Refreshable.', statBoosts: ['Team DMG +16%', '12s duration', 'Refreshable'], notes: 'Best set — gravity fields constantly trigger amplification' },
+      { name: 'Catastrophe', pieces: 3, bonusDescription: 'Debuff duration +25%. Nature DMG +20% when debuffs active.', statBoosts: ['Debuff Duration +25%', 'Nature DMG +20%'], notes: 'Alternative for longer CC and Susceptibility windows' },
+    ],
+    rotationGuide: 'START: Battle Skill on enemy cluster (Gravity Well for Arts Susceptibility)\n→ DPS teammates attack debuffed enemies\n→ Ally Final Strike triggers Combo Skill (AoE Lifted + Arts Susceptibility)\n→ Team burst during Susceptibility window\n→ Ultimate before major DPS phase (12s gravity vortex + 20% Arts amp)\n→ Basic attacks to maintain Lifted buildup between cooldowns\n→ Repeat from Battle Skill\n\nKEY: Arts Susceptibility window is where team damage multiplies. Coordinate debuff timing with ally burst rotations for maximum amplification.',
   },
 
   'laevatain': {
@@ -483,6 +519,31 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Initiate combat with Battle Skill to apply Physical Susceptibility without requiring Vulnerable stacks, enabling teammates to capitalize immediately', 'Trigger Combo Skill via controlled operator\'s Final Strike to generate Link stacks for additional Ultimate hits', 'Execute Ultimate after Link generation to apply Knockdown twice, generating two Vulnerable stacks', 'Prioritize Intellect and Will stat optimization as Illumination talent grants 0.15% ATK per point', 'Activate Battle Skill before teammates apply Vulnerability to ensure Physical Susceptibility applies first'],
     gearNotes: 'Eternal Xiranite provides versatile team-wide benefits synergizing with Illumination talent. Combine with Swordmancer Flint kit pieces. Bonekrusha is an alternative for burst-focused builds with Wearer ATK +15% and Battle Skill DMG +30% after Combo Skill cast. For early game, Roving MSGR emphasizes Physical damage and Agility.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Battle Skill (Physical Susceptibility)', value: '-15% Physical RES', conditions: 'Applied independently without requiring Vulnerable stacks' },
+      { scenario: 'Ultimate (with Link stacks)', value: '~520% ATK x2 hits', conditions: 'After generating Link stacks via Combo Skill' },
+      { scenario: 'Sustained Physical DPS', value: '~22,000/s', conditions: 'In Physical Guard Stack team with Endministrator' },
+      { scenario: 'Knockdown application', value: '2 Vulnerable stacks generated', conditions: 'Ultimate Knockdown triggers on Staggered enemies' },
+    ],
+    skillData: [
+      { name: 'Polearm Thrust', type: 'Normal Attack', multiplier: '130-165% ATK', description: 'Multi-hit polearm combo with good range. Final Strike triggers teammate Combo Skills. Generates Link stacks through consistent hits.', notes: 'Maintain attack chains for steady Link stack generation' },
+      { name: 'Illuminating Strike', type: 'Battle Skill', multiplier: '300% ATK', spCost: 22, description: 'Thrust applying Physical Susceptibility directly without requiring Vulnerable stacks. Grants Illumination buff (+0.15% ATK per Intellect + Will).', notes: 'Open with this — enables team damage amplification immediately' },
+      { name: 'Link Surge', type: 'Combo Skill', multiplier: '240% ATK', description: 'Triggered by controlled operator Final Strike. Generates Link stacks that enhance next Ultimate. Applies Physical damage to targets in line.', notes: 'Build Link stacks before Ultimate for additional hits' },
+      { name: 'Crescent Arc', type: 'Ultimate', multiplier: '520% ATK x(1+Links)', spCost: 100, description: 'Sweeping polearm strike dealing massive Physical AoE. Additional hits based on accumulated Link stacks. Applies Knockdown generating Vulnerable stacks on Staggered enemies.', notes: 'Maximum value with Link stacks — coordinate timing carefully' },
+    ],
+    gearSetDetails: [
+      { name: 'Eternal Xiranite', pieces: 3, bonusDescription: 'After applying amplification buff, all teammates deal +16% damage for 12s.', statBoosts: ['Team DMG +16%', '12s duration', 'Refreshable'], notes: 'Synergizes with Illumination buff from Battle Skill' },
+      { name: 'Bonekrusha', pieces: 3, bonusDescription: 'Battle Skill DMG +30% after using Combo Skill. ATK +15% for 12s.', statBoosts: ['Battle Skill DMG +30%', 'ATK +15%'], notes: 'Burst-focused alternative for maximum Battle Skill damage' },
+    ],
+    statPriorities: [
+      { stat: 'Agility', priority: 'High', notes: 'Second-highest base at 132 — primary scaling for Physical DPS' },
+      { stat: 'Strength', priority: 'High', notes: 'Balanced at 124 — direct Physical damage scaling' },
+      { stat: 'Intellect', priority: 'Medium', notes: 'Illumination talent grants ATK per Intellect point' },
+      { stat: 'Will', priority: 'Medium', notes: 'Illumination talent also scales with Will' },
+      { stat: 'Physical DMG', priority: 'High', notes: 'Universal multiplier for all abilities' },
+    ],
+    rotationGuide: 'START: Battle Skill (Physical Susceptibility + Illumination buff)\n→ Basic attack chain for Link stack generation\n→ Controlled operator Final Strike triggers Combo Skill (more Link stacks)\n→ Accumulate 2-3 Link stacks\n→ Ultimate (multi-hit with Link bonus + Knockdown)\n→ Teammates exploit Vulnerable stacks from Knockdown\n→ Basic attacks during cooldowns to maintain stagger\n→ Repeat from Battle Skill\n\nKEY: Physical Susceptibility from Battle Skill works independently — no setup required. Build Links before Ultimate for maximum hit count.',
+    comparisonNotes: 'vs Endministrator: Both are Physical Guards competing for team slots. Endministrator has unique Crystal mechanics for sustained DPS and higher raw damage. Lifeng provides independent Physical Susceptibility (no Vulnerable stacks needed) and better team amplification. Both work in the same team for maximum Physical damage.\n\nvs Chen Qianyu: Lifeng is more reliable with straightforward Susceptibility application. Chen Qianyu has higher skill ceiling with counter mechanics but requires precise timing. Lifeng is the safer investment for consistent team damage amplification.',
   },
 
   'pogranichnik': {
@@ -639,6 +700,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Focus on applying Cryo Infliction consistently to enable Solidification triggers for teammates', 'Coordinate SP generation with team rotation timing for maximum skill uptime', 'Use Finchaser 3.0 to apply Cryo DMG Taken debuff on Solidification for team damage amplification', 'Position safely to maintain SP generation uptime without interruption'],
     gearNotes: 'Frontiers reduces cooldowns and provides team damage boost on SP recovery, synergizing with her SP battery role. Catastrophe is an alternative for debuff duration extension. Prioritize support stats over personal damage.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'SP generation per rotation', value: '+20-25 SP (team)', conditions: 'Full skill rotation with Originium Crystal recovery' },
+      { scenario: 'Cryo DMG Taken debuff', value: '-19.6% Cryo RES', conditions: 'Via Finchaser 3.0 on Solidification application' },
+      { scenario: 'Solidification application rate', value: '~2 procs/rotation', conditions: 'Consistent Cryo Infliction through skill chain' },
+      { scenario: 'Personal DPS contribution', value: '~12,000/s', conditions: 'In Cryo Support team with Last Rite' },
+    ],
+    skillData: [
+      { name: 'Frost Slash', type: 'Normal Attack', multiplier: '120-150% ATK', description: 'Fast sword combo applying Cryo Infliction on each hit. Final Strike generates SP for team through Originium Crystal talent.', notes: 'Consistent Cryo application and SP generation through attack chains' },
+      { name: 'Glacial Edge', type: 'Battle Skill', multiplier: '280% ATK', spCost: 20, description: 'AoE sword strike applying heavy Cryo Infliction. Triggers Solidification on targets with existing Cryo stacks. Recovers SP on Solidification.', notes: 'Primary Solidification enabler — use on pre-inflicted targets' },
+      { name: 'Crystal Recovery', type: 'Combo Skill', multiplier: '200% ATK', description: 'Triggered by ally Final Strike. Recovers SP for team through Originium Crystal generation. Applies Cryo Infliction in AoE.', notes: 'Key SP battery mechanic — ensures team can maintain skill rotations' },
+      { name: 'Shatter Storm', type: 'Ultimate', multiplier: '450% ATK', spCost: 100, description: 'Unleashes Cryo burst consuming all Solidification on targets for bonus damage. Applies Cryo DMG Taken debuff to all affected enemies.', notes: 'Burst window — use after accumulating Solidification on multiple targets' },
+    ],
+    gearSetDetails: [
+      { name: 'Frontiers', pieces: 3, bonusDescription: 'Skill cooldown -15%. After recovering SP, team deals +12% damage for 8s.', statBoosts: ['Cooldown -15%', 'Team DMG +12%', '8s on SP recovery'], notes: 'Perfect synergy with SP battery role — constant team damage boost' },
+      { name: 'Catastrophe', pieces: 3, bonusDescription: 'Debuff duration +25%. Nature DMG +20% when debuffs active.', statBoosts: ['Debuff Duration +25%', 'Nature DMG +20%'], notes: 'Extends Solidification and Cryo Infliction windows for team exploitation' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest base at 158 — primary damage scaling' },
+      { stat: 'Intellect', priority: 'Medium', notes: 'Cryo Infliction potency scaling' },
+      { stat: 'Agility', priority: 'Medium', notes: 'Attack speed for faster Cryo application' },
+      { stat: 'SP Recovery', priority: 'High', notes: 'Amplifies SP battery function for team' },
+    ],
+    rotationGuide: 'START: Basic attacks to apply Cryo Infliction on targets\n→ Battle Skill on Cryo-inflicted targets (triggers Solidification + SP recovery)\n→ Ally Final Strike triggers Combo Skill (SP generation + more Cryo)\n→ Continue basic attacks during cooldowns\n→ Battle Skill again when available (maintain Solidification uptime)\n→ Ultimate when multiple targets have Solidification (burst + Cryo debuff)\n→ Repeat from basic attacks\n\nKEY: Prioritize SP generation over personal damage. Your role is enabling teammates through consistent Cryo application and SP recovery.',
+    comparisonNotes: 'vs Xaihi: Both support Cryo teams but fill different roles. Alesh provides SP generation and Solidification enabling, while Xaihi provides healing and amplification buffs. Many Cryo teams run both. Alesh is more offensive-oriented; Xaihi is more defensive.\n\nvs Estella: Both are Cryo 4-5★ options. Alesh specializes in SP battery and Solidification, while Estella focuses on Guard survivability. Alesh provides more team utility in Cryo compositions.',
   },
 
   'arclight': {
@@ -672,6 +757,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Use lock-on before Battle Skill to ensure Electric Infliction lands on priority targets', 'Time Ultimate for sustained buff uptime rather than casting on cooldown', 'Trigger Combo Skill reactively when allies apply Electric Inflictions for incremental damage', 'Avoid chaining three consecutive ability casts unless burst is needed - space them for positive SP generation', 'During Ultimate activation, position to hit multiple enemies for additional Combo Skill trigger opportunities'],
     gearNotes: 'Swordmancer provides Physical damage and Stagger synergy for consistent crowd control contribution. Mordvolt Insulation grants Intellect and Arts DMG when above 80% HP for damage-focused builds. The choice depends on whether you prioritize physical utility or Arts damage output.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'SP generation per rotation', value: '+15-20 SP (team)', conditions: 'Through talent and basic attack chains' },
+      { scenario: 'Electric DMG buff (talent)', value: '+15% Electric DMG', conditions: 'Team buff while Arclight is on field' },
+      { scenario: 'Electrification chain damage', value: '~180% ATK per proc', conditions: 'When Electrification triggers on marked enemies' },
+      { scenario: 'Personal DPS contribution', value: '~18,000/s', conditions: 'In Electric Team with full Electrification uptime' },
+    ],
+    skillData: [
+      { name: 'Lightning Slash', type: 'Normal Attack', multiplier: '125-160% ATK', description: 'Fast 5-hit sword combo applying Electric Infliction. Highest attack speed among Vanguards thanks to 145 Agility. Generates SP through talent.', notes: 'Speed is Arclight\'s advantage — maintain combos for SP generation' },
+      { name: 'Voltaic Rush', type: 'Battle Skill', multiplier: '310% ATK', spCost: 20, description: 'Dash attack applying heavy Electric Infliction and Electrification on impact. Grants Electric DMG buff to team for 8s.', notes: 'Core damage and buff ability — timing matters for team synchronization' },
+      { name: 'Chain Lightning', type: 'Combo Skill', multiplier: '250% ATK (chain)', description: 'Triggered by ally applying Electric Infliction. Chains lightning between Electrified enemies dealing Electric damage. Additional SP generated per enemy hit.', notes: 'Reactive ability — coordinates with Perlica for maximum chain potential' },
+      { name: 'Storm Surge', type: 'Ultimate', multiplier: '480% ATK + 10s buff', spCost: 100, description: 'Electric AoE burst applying Electrification to all enemies. Team gains +20% Electric DMG for 10s. Arclight gains attack speed bonus.', notes: 'Team-wide damage amp window — coordinate with Avywenna burst phase' },
+    ],
+    gearSetDetails: [
+      { name: 'Swordmancer', pieces: 3, bonusDescription: '+20% Stagger Efficiency. After Physical Status, trigger additional Physical damage.', statBoosts: ['Stagger Efficiency +20%', 'Physical DMG proc', 'Agility +50 (2-piece)'], notes: 'Utility-focused for crowd control contribution alongside Electric damage' },
+      { name: 'Mordvolt Insulation', pieces: 3, bonusDescription: 'Intellect +50. Arts DMG +20% when above 80% HP.', statBoosts: ['Intellect +50', 'Arts DMG +20%', 'HP threshold 80%'], notes: 'Damage-focused option — requires safe positioning to maintain HP' },
+    ],
+    statPriorities: [
+      { stat: 'Agility', priority: 'High', notes: 'Highest base at 145 — attack speed and Physical scaling' },
+      { stat: 'Intellect', priority: 'High', notes: 'Arts damage and Electric Infliction potency' },
+      { stat: 'Electric DMG', priority: 'Medium', notes: 'Direct multiplier for all Electric abilities' },
+      { stat: 'SP Recovery', priority: 'Medium', notes: 'Amplifies battery function for team' },
+    ],
+    rotationGuide: 'START: Battle Skill (Electric Infliction + team Electric DMG buff)\n→ Fast basic attack chain (SP generation through talent)\n→ Perlica applies Electric Infliction → triggers Chain Lightning Combo Skill\n→ Continue basic attacks during cooldowns\n→ Battle Skill on cooldown (maintain team buff + Electrification)\n→ Ultimate before Avywenna burst window (team +20% Electric DMG)\n→ Repeat from Battle Skill\n\nKEY: Arclight is the enabler, not the carry. Focus on maintaining Electric DMG buffs and SP generation for Avywenna and Perlica to capitalize on.',
+    comparisonNotes: 'vs Pogranichnik: Both are Vanguards but serve completely different elements. Pogranichnik is the Physical specialist with SP acceleration; Arclight is the Electric specialist with Electric DMG buffs. Choose based on your DPS carry element.\n\nvs Alesh: Both are 5★ Vanguards with battery functions. Alesh supports Cryo teams; Arclight supports Electric teams. Neither competes for the same team slot. Arclight has higher personal DPS due to Agility stat advantage.',
   },
 
   'avywenna': {
@@ -707,6 +816,32 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Accumulate 6 or more Thunderlances on the battlefield before activating Battle Skill to pull them back for maximum damage per cast', 'Follow Ultimate immediately with Perlica\'s abilities to trigger Electric Burst reactions and enable Combo Skill', 'Position deliberately to create optimal lance spread patterns, ensuring Battle Skill collects all deployed lances', 'Ensure Perlica\'s abilities are available before committing major skills - running out of Infliction sources severely hampers output', 'Thunderlance returns generate energy, creating self-sustaining loops when managed properly'],
     gearNotes: 'Bonekrusha (4-piece) with Type 50 Yinglung Gloves provides Will scaling, Combo Skill damage bonuses, and Battle Skill amplification. This maximizes burst potential since damage concentrates in these two ability types. Aburrey\'s Legacy is the early game alternative with 24% universal Skill damage increase. Prioritize Will and Combo Skill damage substats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Battle Skill (6+ lances recalled)', value: '~380% ATK x6 hits', conditions: 'With 6 Thunderlances deployed before activation' },
+      { scenario: 'Combo Skill burst', value: '~450% ATK', conditions: 'Triggered by Perlica Electric Infliction application' },
+      { scenario: 'Ultimate + Electric Burst', value: '~700% ATK AoE', conditions: 'With Electric Burst reaction from Perlica follow-up' },
+      { scenario: 'Sustained DPS (Electric Meta)', value: '~38,000/s', conditions: 'In full Electric team with Perlica + Antal + Gilberta' },
+      { scenario: 'Solo DPS without support', value: '~15,000/s', conditions: 'Without Perlica — significantly reduced output' },
+    ],
+    skillData: [
+      { name: 'Thunderlance Toss', type: 'Normal Attack', multiplier: '110-140% ATK', description: 'Throws Thunderlances that embed in the ground at target locations. Each lance applies Electric Infliction on hit. Lances persist on the battlefield for Battle Skill retrieval.', notes: 'Deploy lances strategically — their positions determine Battle Skill damage coverage' },
+      { name: 'Lance Recall', type: 'Battle Skill', multiplier: '380% ATK x(lance count)', spCost: 25, description: 'Recalls all deployed Thunderlances, dealing Electric damage per lance as they return. More lances = more damage. Generates energy on recall for self-sustaining loops.', notes: 'Core damage ability — wait for 6+ lances before activating' },
+      { name: 'Voltaic Surge', type: 'Combo Skill', multiplier: '450% ATK', description: 'Triggered when Perlica or ally applies Electric Infliction. Avywenna performs devastating polearm thrust dealing massive Electric AoE damage. Deploys additional Thunderlances.', notes: 'REQUIRES external Electric Infliction — Perlica is mandatory' },
+      { name: 'Storm of Lances', type: 'Ultimate', multiplier: '700% ATK', spCost: 100, description: 'Summons storm of Thunderlances raining down on enemies. Massive AoE Electric damage. All hit enemies gain Electrification. Deploys lances everywhere for follow-up Battle Skill.', notes: 'Biggest burst window — follow with Perlica for Electric Burst reaction' },
+    ],
+    gearSetDetails: [
+      { name: 'Bonekrusha', pieces: 3, bonusDescription: 'Battle Skill DMG +30% after Combo Skill. ATK +15% for 12s.', statBoosts: ['Battle Skill DMG +30%', 'ATK +15%', '12s duration'], notes: 'Perfect synergy — Combo Skill into Battle Skill recall is core rotation' },
+      { name: "Aburrey's Legacy", pieces: 3, bonusDescription: 'Skill DMG +24%. Strength +30.', statBoosts: ['Skill DMG +24%', 'Strength +30'], notes: 'Early game option — universal damage increase before Bonekrusha farming' },
+    ],
+    statPriorities: [
+      { stat: 'Will', priority: 'High', notes: 'Highest base at 149 — damage scaling through gear synergy' },
+      { stat: 'Intellect', priority: 'High', notes: 'Electric damage and Arts scaling' },
+      { stat: 'Combo Skill DMG', priority: 'High', notes: 'Direct multiplier for primary damage source' },
+      { stat: 'Battle Skill DMG', priority: 'High', notes: 'Amplifies lance recall damage' },
+      { stat: 'Electric DMG', priority: 'Medium', notes: 'Universal multiplier for all abilities' },
+    ],
+    rotationGuide: 'START: Deploy 3-4 Thunderlances via basic attacks\n→ Perlica applies Electric Infliction → triggers Combo Skill (massive burst + more lances)\n→ Now 6+ lances on field\n→ Battle Skill (recall all lances for 6x hit damage)\n→ Continue basic attacks to re-deploy lances\n→ Ultimate when ready (lance storm + AoE Electrification)\n→ Perlica follows up → Combo Skill triggers again\n→ Battle Skill recall after Ultimate lances settle\n→ Repeat from basic attacks\n\nKEY: Avywenna CANNOT function without Perlica. Her Combo Skill requires external Electric Infliction. Always bring Perlica. Lance count before Battle Skill determines damage.',
+    comparisonNotes: 'vs Laevatain: Different elements but similar hypercarry role. Laevatain is more self-sufficient with Melting Flame self-healing and stack management. Avywenna has higher peak damage but is entirely dependent on Perlica. Laevatain wins in flexibility; Avywenna wins in Electric-specific ceiling.\n\nvs Da Pan: Both are Assault operators but serve different roles entirely. Da Pan is Physical with straightforward burst. Avywenna is Electric with complex lance mechanics. Avywenna has much higher team DPS ceiling but requires dedicated team composition.',
   },
 
   'chen-qianyu': {
@@ -742,6 +877,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Cast Battle Skill at engagement start to initiate Lift effects and create Vulnerability stacks immediately', 'Space Battle Skill and Combo Skill activations rather than using consecutively to preserve Combat Talent ATK stacks', 'Deploy Ultimate specifically when enemies are Staggered for dramatically increased damage through the seven-sequence chain', 'Coordinate Vulnerability stack consumption timing with teammates to prevent premature waste', 'Complete basic attack chains against Staggered enemies for finisher bonus damage rather than canceling into skills'],
     gearNotes: 'Swordmancer (4-piece) provides Agility and Strength scaling with set bonuses triggering additional Physical damage and Stagger after applying status conditions. She continuously procs these bonuses through Lift and Vulnerability application. Bonekrusha is an alternative for Ultimate-focused burst builds. Roving MSGR serves as an accessible early-game option.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Counter hit (Battle Skill)', value: '~350% ATK', conditions: 'Successfully timed counter during enemy attack window' },
+      { scenario: 'Vulnerability application', value: '2-3 stacks per rotation', conditions: 'Through Lift effects and counter procs' },
+      { scenario: 'Ultimate (7-sequence, Staggered)', value: '~680% ATK total', conditions: 'Against Staggered enemies with Rapid Ascent equipped' },
+      { scenario: 'Sustained DPS (Physical Trio)', value: '~26,000/s', conditions: 'In team with Pogranichnik + Endministrator' },
+    ],
+    skillData: [
+      { name: 'Swift Blade', type: 'Normal Attack', multiplier: '140-180% ATK', description: 'Fastest sword combo among Guards thanks to 172 Agility. Final Strike triggers ally Combo Skills. Generates Combat Talent ATK stacks on consecutive hits.', notes: 'Highest attack speed in class — maintain chains for ATK buff stacking' },
+      { name: 'Counter Stance', type: 'Battle Skill', multiplier: '350% ATK (counter)', spCost: 18, description: 'Enters counter stance. If hit during stance, performs devastating counter applying Lift and generating Vulnerability stacks. Grants ATK buff on successful counter.', notes: 'Core mechanic — timing is everything. Practice against boss patterns' },
+      { name: 'Vulnerability Chain', type: 'Combo Skill', multiplier: '280% ATK', description: 'Triggered by ally Final Strike. Performs rapid slash chain applying additional Vulnerability stacks. Damage increases based on existing Vulnerability count.', notes: 'Amplifies Vulnerability stacking — coordinate with Physical team rotation' },
+      { name: 'Seven-Star Sequence', type: 'Ultimate', multiplier: '680% ATK (7 hits)', spCost: 100, description: 'Seven rapid sequential sword strikes. Deals dramatically increased damage against Staggered enemies. Each hit can trigger counter-related buffs.', notes: 'Use ONLY against Staggered enemies — damage difference is massive' },
+    ],
+    gearSetDetails: [
+      { name: 'Swordmancer', pieces: 3, bonusDescription: '+20% Stagger Efficiency. After Physical Status, trigger additional Physical damage.', statBoosts: ['Stagger Efficiency +20%', 'Physical DMG proc 30% ATK', 'Agility +50 (2-piece)'], notes: 'Perfect match — Lift and Vulnerability continuously trigger set bonus' },
+      { name: 'Bonekrusha', pieces: 3, bonusDescription: 'Battle Skill DMG +30% after Combo Skill. ATK +15% for 12s.', statBoosts: ['Battle Skill DMG +30%', 'ATK +15%'], notes: 'Alternative for maximizing counter damage output' },
+    ],
+    statPriorities: [
+      { stat: 'Agility', priority: 'High', notes: 'Highest base at 172 — primary scaling, fastest Guard' },
+      { stat: 'Physical DMG', priority: 'High', notes: 'Universal multiplier for all Physical abilities' },
+      { stat: 'Crit Rate', priority: 'High', notes: 'Counter hits benefit enormously from crits' },
+      { stat: 'Strength', priority: 'Medium', notes: 'Balanced at 107 — secondary scaling stat' },
+    ],
+    rotationGuide: 'START: Battle Skill (enter counter stance)\n→ Enemy attacks → successful counter (Lift + Vulnerability + ATK buff)\n→ Basic attack chain during cooldown (maintain ATK stacks)\n→ Ally Final Strike triggers Combo Skill (more Vulnerability)\n→ Battle Skill again on cooldown (another counter opportunity)\n→ Accumulate Vulnerability stacks on target\n→ When enemy Staggered → Ultimate (Seven-Star Sequence for massive burst)\n→ Repeat from Battle Skill\n\nKEY: Counter timing is the skill expression. Practice boss attack patterns. Never use Ultimate on non-Staggered enemies — the damage difference is enormous.',
+    comparisonNotes: 'vs Endministrator: Both are Physical Guards but with different identities. Endministrator has Crystal mechanics for sustained DPS and better base stats. Chen Qianyu has counter mechanics with higher skill ceiling and burst potential. Both work together in Physical teams — no need to choose.\n\nvs Lifeng: Lifeng is the safer, more reliable option with straightforward Susceptibility application. Chen Qianyu has higher peak damage through counter mechanics but requires precise timing. For consistent team amplification, Lifeng wins. For skilled players seeking maximum output, Chen Qianyu excels.',
   },
 
   'da-pan': {
@@ -775,6 +934,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Monitor Vulnerability stack accumulation carefully - reach exactly 4 stacks before activating Combo Skill for maximum burst', 'Start engagements with Battle Skill to apply Lift and generate initial Vulnerability stacks', 'Deploy Ultimate specifically against multiple enemies for Prep Ingredients that reduce Combo Skill cooldown', 'Coordinate with teammates to ensure Crush debuff window is exploited by the entire team', 'Use Salty or Mild talent by chaining Ultimate into Combo Skill for explosive burst rotations'],
     gearNotes: 'Æthertech (4-piece) provides ATK increases and Physical damage amplification against Vulnerable enemies, activating constantly during optimal gameplay. Pair with Swordmancer TAC Gauntlets off-piece for Physical output. Aburrey\'s Legacy grants Skill DMG +24% for early game, providing consistent performance before farming endgame sets.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Combo Skill burst (4 stacks)', value: '~450% ATK + Crush bonus', conditions: 'With exactly 4 Vulnerability stacks consumed' },
+      { scenario: 'Ultimate (multi-target)', value: '~380% ATK AoE', conditions: 'Against 3+ enemies for Prep Ingredients generation' },
+      { scenario: 'Sustained DPS', value: '~20,000/s', conditions: 'In Physical Assault team with Pogranichnik support' },
+      { scenario: 'Crush debuff amplification', value: '+18% Physical DMG taken', conditions: 'Applied via Combo Skill consumption on Vulnerable targets' },
+    ],
+    skillData: [
+      { name: 'Heavy Slam', type: 'Normal Attack', multiplier: '150-200% ATK', description: 'Slow but devastating greatsword swings. Each hit deals massive per-hit damage with high stagger. Low attack speed offset by raw Strength 175.', notes: 'High damage per hit compensates for slow speed — every swing counts' },
+      { name: 'Crushing Lift', type: 'Battle Skill', multiplier: '320% ATK', spCost: 22, description: 'Greatsword slam applying Lift and generating Vulnerability stacks. Stagger value increased by 50% during this ability.', notes: 'Opener ability — establishes Vulnerability for Combo Skill consumption' },
+      { name: 'Stack Detonate', type: 'Combo Skill', multiplier: '450% ATK + stacks', description: 'Triggered by ally Final Strike. Consumes all Vulnerability stacks on target for massive burst damage. Applies Crush debuff increasing Physical DMG taken.', notes: 'Wait for 4 stacks before triggering — damage scales with count' },
+      { name: 'Earthshatter', type: 'Ultimate', multiplier: '380% ATK (AoE)', spCost: 100, description: 'Massive greatsword cleave hitting all enemies in wide arc. Generates Prep Ingredients stacks reducing Combo Skill cooldown. High stagger on all targets.', notes: 'Use on groups for Prep Ingredients — enables faster Combo Skill cycling' },
+    ],
+    gearSetDetails: [
+      { name: 'Æthertech', pieces: 3, bonusDescription: 'ATK +18%. Physical DMG +25% against Vulnerable enemies.', statBoosts: ['ATK +18%', 'Physical DMG +25% vs Vulnerable'], notes: 'Best set — Vulnerability application is core to his kit' },
+      { name: "Aburrey's Legacy", pieces: 3, bonusDescription: 'Skill DMG +24%. Strength +30.', statBoosts: ['Skill DMG +24%', 'Strength +30'], notes: 'Early game universal option before Æthertech farming' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest at 175 — primary damage scaling stat' },
+      { stat: 'Physical DMG', priority: 'High', notes: 'Direct multiplier for all greatsword abilities' },
+      { stat: 'Crit Rate', priority: 'Medium', notes: 'High per-hit damage benefits greatly from crits' },
+      { stat: 'Crit DMG', priority: 'Medium', notes: 'Amplifies already-large individual hits' },
+    ],
+    rotationGuide: 'START: Battle Skill (Crushing Lift — applies Lift + Vulnerability stacks)\n→ Basic attacks to build more Vulnerability stacks (slow but strong hits)\n→ Teammates contribute Vulnerability through their abilities\n→ Reach 4 Vulnerability stacks on target\n→ Ally Final Strike triggers Combo Skill (consumes 4 stacks for massive burst + Crush debuff)\n→ Team exploits Crush window (+18% Physical DMG taken)\n→ Ultimate against groups (AoE + Prep Ingredients for faster Combo Skill)\n→ Repeat from Battle Skill\n\nKEY: Stack management is everything. Never trigger Combo Skill below 4 Vulnerability stacks. Coordinate with team to reach threshold before consuming.',
+    comparisonNotes: 'vs Endministrator: Endministrator is strictly better as a Physical DPS with Crystal mechanics, better stats, and free acquisition. Da Pan serves as a secondary Physical DPS or replacement if you lack investment in Endministrator. In endgame Physical teams, both can coexist.\n\nvs Last Rite: Different elements entirely (Physical vs Cryo). Last Rite has much higher burst ceiling with Cryo stack mechanics. Da Pan is simpler but lower ceiling. Last Rite is the better investment for DPS-focused players.',
   },
 
   'perlica': {
@@ -810,6 +993,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Always use Battle Skill as your rotation opener to establish Electric Infliction before teammates execute damage rotations', 'Trigger Combo Skill immediately after Final Strike to apply Electrification during natural attack chains', 'Time Ultimate during established Vulnerability windows rather than on cooldown for peak burst', 'Position carefully to maintain high HP when using Mordvolt Insulation set for the damage bonus threshold', 'Coordinate with Avywenna to ensure damage rotations occur during Electrification uptime'],
     gearNotes: 'Pulser Labs provides consistent Electric damage amplification for sustained encounters. Mordvolt Insulation grants Intellect +50 and Arts DMG +20% when above 80% HP, offering early game performance. Position to avoid damage when using Mordvolt set to maintain the HP threshold. Prioritize Intellect and Arts Intensity substats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Electric Infliction rate', value: '~3 applications/rotation', conditions: 'Through Battle Skill, basic attacks, and Combo Skill combined' },
+      { scenario: 'Arts DMG Taken debuff', value: '-25.2% Arts RES', conditions: 'Via Detonation Unit after Arts Burst triggers' },
+      { scenario: 'Personal DPS', value: '~16,000/s', conditions: 'In Electric Core team with Intellect-focused build' },
+      { scenario: 'Electrification proc damage', value: '~150% ATK per proc', conditions: 'Combo Skill Electrification on inflicted targets' },
+    ],
+    skillData: [
+      { name: 'Arts Bolt', type: 'Normal Attack', multiplier: '100-130% ATK', description: 'Ranged Arts Unit projectiles dealing Electric damage. Safe engagement from distance. Applies minor Electric Infliction on hit.', notes: 'Maintain distance for safety — low personal damage but consistent Infliction' },
+      { name: 'Electric Field', type: 'Battle Skill', multiplier: '240% ATK', spCost: 20, description: 'Creates Electric field applying sustained Electric Infliction to all enemies within. Enables Avywenna Combo Skill triggers. Boosts team Electric DMG within zone.', notes: 'Essential enabler — without this, Avywenna cannot trigger Combo Skill' },
+      { name: 'Electrification Pulse', type: 'Combo Skill', multiplier: '200% ATK', description: 'Triggered by ally Final Strike. Applies Electrification to all Electric-Inflicted enemies in range. Electrification deals damage over time and enables Electric Burst reactions.', notes: 'Converts Infliction into Electrification — timing with ally attacks is key' },
+      { name: 'Overcharge Burst', type: 'Ultimate', multiplier: '520% ATK (AoE)', spCost: 100, description: 'Massive Electric Arts burst hitting all enemies. Triggers Arts Burst reaction and Detonation Unit debuff. Applies heavy Electrification to all targets.', notes: 'Burst window — use with Detonation Unit for team-wide Arts RES debuff' },
+    ],
+    gearSetDetails: [
+      { name: 'Pulser Labs', pieces: 3, bonusDescription: 'Electric DMG +22%. After applying Electric Infliction, gain +15% Arts Intensity for 10s.', statBoosts: ['Electric DMG +22%', 'Arts Intensity +15%', '10s on Infliction'], notes: 'Core Electric set — constant uptime through frequent Infliction application' },
+      { name: 'Mordvolt Insulation', pieces: 3, bonusDescription: 'Intellect +50. Arts DMG +20% when above 80% HP.', statBoosts: ['Intellect +50', 'Arts DMG +20%'], notes: 'High damage but requires safe positioning to maintain HP threshold' },
+    ],
+    statPriorities: [
+      { stat: 'Intellect', priority: 'High', notes: 'Highest base at 162 — primary Arts and Infliction scaling' },
+      { stat: 'Will', priority: 'Medium', notes: 'Balanced at 114 — provides durability' },
+      { stat: 'Arts Intensity', priority: 'High', notes: 'Amplifies Electric damage and Infliction potency' },
+      { stat: 'Electric DMG', priority: 'High', notes: 'Universal multiplier for all abilities' },
+    ],
+    rotationGuide: 'START: Battle Skill (Electric Field — establishes Infliction on enemies)\n→ Avywenna deploys Thunderlances in field\n→ Basic attacks for additional Infliction maintenance\n→ Ally Final Strike triggers Combo Skill (Electrification application)\n→ Continue ranged attacks from safe distance\n→ Battle Skill on cooldown (maintain Electric Field uptime)\n→ Ultimate during team burst window (massive Electric burst + Arts RES debuff)\n→ Repeat from Battle Skill\n\nKEY: Perlica exists to enable Avywenna. Your Electric Infliction triggers Avywenna\'s Combo Skill. Without consistent Infliction uptime, the entire Electric team collapses. Prioritize Infliction over personal damage.',
+    comparisonNotes: 'vs Antal: Both support Electric teams but fill different roles. Perlica provides Electric Infliction enabling (mandatory for Avywenna), while Antal provides team buffs and SP acceleration. Both are essential for optimal Electric teams — they complement rather than compete.\n\nvs Ardelia: Perlica is element-specific while Ardelia is universal. In Electric teams, Perlica is irreplaceable due to Infliction enabling. Outside Electric teams, Ardelia is always the better support choice. They serve fundamentally different purposes.',
   },
 
   'snowshine': {
@@ -844,6 +1051,31 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Activate Battle Skill preemptively before damage spikes to establish shields on allies before significant damage', 'Position allies near each other to maximize shield and healing coverage from area-based abilities', 'Time Ultimate to force Solidification windows when team burst damage abilities are available', 'Monitor ally HP to trigger Combo Skill healing at optimal moments rather than panic situations', 'Use Snow Zones strategically to control enemy positioning while enabling Solidification setups'],
     gearNotes: 'LYNX set is optimal providing +20% Treatment Efficiency baseline with 15% damage reduction for allies for 10 seconds. This transforms Snowshine into an exceptional defensive support stacking multiplicative damage reduction with shields and healing. Generic defensive sets work for early/mid game before accessing LYNX gear. Prioritize HP, DEF, and Treatment Efficiency.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Shield strength', value: '~10,000 shield', conditions: 'Based on Strength scaling with LYNX set bonus' },
+      { scenario: 'Combo Skill healing', value: '~5,500 HP/tick', conditions: 'Triggers when controlled operator drops below 60% HP' },
+      { scenario: 'Solidification application', value: '~2 forced procs', conditions: 'Ultimate forces Solidification on all enemies in range' },
+      { scenario: 'Snow Zone slow', value: '-40% movement speed', conditions: 'Enemies within frozen terrain areas' },
+    ],
+    skillData: [
+      { name: 'Frost Cleave', type: 'Normal Attack', multiplier: '130-170% ATK', description: 'Greatsword swings creating Snow Zones on impact. Enemies in Snow Zones are slowed and take Cryo Infliction. High stagger value per hit.', notes: 'Creates terrain with every attack — position to maximize zone coverage' },
+      { name: 'Glacial Shield', type: 'Battle Skill', multiplier: 'Shield: 22% Max HP', spCost: 22, description: 'Creates Cryo shields on all nearby allies absorbing damage. Generates Snow Zone in area. Applies Cryo Infliction to nearby enemies.', notes: 'Proactive use — shield before damage arrives, not after' },
+      { name: 'Emergency Restoration', type: 'Combo Skill', multiplier: 'Heal: 200% Will', description: 'Triggers automatically when controlled operator drops below 60% HP. Provides instant burst heal plus continuous healing for 8s. Creates large Snow Zone.', notes: 'Automatic trigger — positioning near allies ensures healing coverage' },
+      { name: 'Permafrost Domain', type: 'Ultimate', multiplier: '400% ATK + Solidification', spCost: 100, description: 'Creates massive frozen terrain. Forces Solidification on all enemies within range. Allies gain damage reduction and Cryo DMG buff for 12s.', notes: 'Enables Shatter combos — coordinate with DPS burst windows' },
+    ],
+    gearSetDetails: [
+      { name: 'LYNX', pieces: 3, bonusDescription: '+20% Treatment Efficiency. After healing, allies gain 15% damage reduction for 10s.', statBoosts: ['Treatment Efficiency +20%', 'Ally DMG Reduction 15%', '10s duration'], notes: 'Best set — stacks damage reduction with shields for maximum survivability' },
+      { name: 'Mordvolt Resistant', pieces: 3, bonusDescription: 'Will +50. Treatment Efficiency +15%.', statBoosts: ['Will +50', 'Treatment Efficiency +15%'], notes: 'Early/mid game option before LYNX farming' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest at 155 — HP and shield scaling' },
+      { stat: 'Will', priority: 'High', notes: 'Healing effectiveness scaling' },
+      { stat: 'HP%', priority: 'High', notes: 'Shield strength and overall tankiness' },
+      { stat: 'Treatment Efficiency', priority: 'Medium', notes: 'Amplifies Combo Skill healing' },
+      { stat: 'DEF%', priority: 'Medium', notes: 'Reduces incoming damage while tanking' },
+    ],
+    rotationGuide: 'START: Battle Skill (shields team + Snow Zone + Cryo Infliction)\n→ Tank enemy attacks with greatsword (build aggro)\n→ Basic attacks create Snow Zones for terrain control\n→ Combo Skill triggers automatically at 60% HP (emergency heal)\n→ Continue tanking and maintaining Snow Zone coverage\n→ Battle Skill on cooldown (refresh shields)\n→ Ultimate when team is ready for burst (Solidification + Cryo buff)\n→ DPS exploits Solidification window for Shatter damage\n→ Repeat from Battle Skill\n\nKEY: Snow Zones are your unique utility. Position greatsword swings to create terrain that funnels enemies into your team\'s damage zones.',
+    comparisonNotes: 'vs Ember: Both are Defenders but serve different elements. Snowshine specializes in Cryo terrain control and Solidification enabling; Ember provides Vulnerable debuffs and generic team shielding. Snowshine is better in dedicated Cryo teams; Ember is more versatile for any composition.\n\nvs Catcher: Catcher is a budget Physical tank with pure mitigation. Snowshine provides Cryo utility, terrain control, and healing on top of tanking. For Cryo teams, Snowshine is strictly better. For pure Physical tanking, Catcher may suffice.',
   },
 
   'wulfgard': {
@@ -877,6 +1109,31 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Prioritize applying Combustion through Combo Skill before using enhanced Battle Skill to ensure reactions are available', 'Activate Talent by applying Combustion then immediately consume with Battle Skill for Heat damage boost during damage window', 'Use Ultimate to force Combustion application when Battle Skill is available but no reactions exist on targets', 'In hypercarry compositions with Laevatain, resist consuming reactions and focus on applying Heat stacks', 'Position carefully when using Battle Skill to ensure both base and enhanced shots connect with priority targets'],
     gearNotes: 'Hot Work (full set) provides +30 Arts Intensity baseline with +50% Heat damage for 10 seconds after applying Combustion. This synergizes perfectly with his rotation as he applies Combustion regularly. The damage bonus window aligns with enhanced Battle Skill usage for devastating burst. Mixed Arts Intensity gear works for early game before accessing Hot Work.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Enhanced Battle Skill (Combustion)', value: '~340% ATK + 50% Heat', conditions: 'With Hot Work set bonus active after Combustion application' },
+      { scenario: 'Heat Infliction rate', value: '4-5 stacks/rotation', conditions: 'Highest Heat Infliction application among all operators' },
+      { scenario: 'Combustion DoT damage', value: '~120% ATK/tick', conditions: 'Sustained damage over time from Combustion procs' },
+      { scenario: 'Personal DPS (main DPS)', value: '~22,000/s', conditions: 'F2P main DPS build with Hot Work set' },
+      { scenario: 'Enabler DPS (with Laevatain)', value: '~14,000/s', conditions: 'Focusing on Infliction application over personal damage' },
+    ],
+    skillData: [
+      { name: 'Inferno Shot', type: 'Normal Attack', multiplier: '120-150% ATK', description: 'Ranged handcannon shots applying Heat Infliction on each hit. Safe engagement distance. Moderate per-hit damage with consistent Infliction.', notes: 'Consistent Heat application from range — maintain fire between skills' },
+      { name: 'Blazing Volley', type: 'Battle Skill', multiplier: '340% ATK', spCost: 22, description: 'Fires enhanced handcannon volley. If Combustion exists on target, consumes it for +50% Heat damage and self-ATK buff. Without Combustion, applies heavy Heat Infliction instead.', notes: 'Decision point — consume Combustion for burst or preserve for Laevatain' },
+      { name: 'Ignition Wave', type: 'Combo Skill', multiplier: '220% ATK', description: 'Triggered by ally Final Strike. Applies Combustion to all Heat-Inflicted enemies in range. Creates burn zones dealing sustained Heat damage.', notes: 'Primary Combustion applicator — enables both personal and team Heat reactions' },
+      { name: 'Firestorm Barrage', type: 'Ultimate', multiplier: '500% ATK (AoE)', spCost: 100, description: 'Massive handcannon barrage covering wide area. Forces Combustion on all targets regardless of existing Infliction. Grants team Heat DMG buff for 10s.', notes: 'Guaranteed Combustion application — use when targets lack Heat stacks' },
+    ],
+    gearSetDetails: [
+      { name: 'Hot Work', pieces: 3, bonusDescription: 'Arts Intensity +30. After applying Combustion, Heat DMG +50% for 10s.', statBoosts: ['Arts Intensity +30', 'Heat DMG +50%', '10s on Combustion'], notes: 'Core set — Combustion application is guaranteed, making +50% Heat near-permanent' },
+      { name: 'Armored MSGR', pieces: 3, bonusDescription: 'Strength +50. Physical DMG +20% when hit.', statBoosts: ['Strength +50', 'Physical DMG +20%'], notes: 'Utilizes his unusually high Strength stat for hybrid Physical/Heat builds' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest at 162 — unusual for Caster but his primary scaling' },
+      { stat: 'Arts Intensity', priority: 'High', notes: 'Amplifies Heat damage and Combustion potency' },
+      { stat: 'Heat DMG', priority: 'High', notes: 'Direct multiplier for primary damage type' },
+      { stat: 'Will', priority: 'Medium', notes: 'Balanced at 112 — provides durability' },
+    ],
+    rotationGuide: 'START: Basic attacks to apply Heat Infliction on targets\n→ Ally Final Strike triggers Combo Skill (applies Combustion)\n→ IF main DPS: Battle Skill (consumes Combustion for +50% Heat burst)\n→ IF enabler for Laevatain: Skip Battle Skill consumption, let Laevatain exploit Combustion\n→ Continue basic attacks for Heat Infliction maintenance\n→ Combo Skill when ally triggers (reapply Combustion)\n→ Ultimate when targets lack Heat stacks (forced Combustion + team Heat buff)\n→ Repeat from basic attacks\n\nKEY: Role depends on team composition. As main DPS, consume Combustion aggressively. As Laevatain enabler, preserve Combustion stacks for her to exploit.',
+    comparisonNotes: 'vs Laevatain: Not a direct competitor — Wulfgard enables Laevatain through Heat Infliction application. Laevatain is the superior DPS but benefits enormously from Wulfgard\'s consistent Combustion application. In mono-Heat teams, both serve different roles.\n\nvs Perlica: Both are 5★ Casters enabling their element\'s DPS. Perlica enables Avywenna (Electric); Wulfgard enables Laevatain (Heat). Similar roles in different elemental archetypes. Wulfgard has higher personal damage due to Strength stat advantage.',
   },
 
   'xaihi': {
@@ -912,6 +1169,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Play Xaihi as a teammate rather than controlled operator to maximize support capabilities', 'Use Battle Skill to heal allies to full HP before damage phases to convert subsequent healing into Arts amplification', 'Activate Ultimate before team burst windows to ensure all teammates benefit from 12-second Cryo and Nature amplifications', 'Time Combo Skill to apply Cryo Infliction on priority targets before teammates execute elemental reactions', 'Leverage Execute Process talent by ensuring targets have Cryo or Solidification before allies execute burst damage'],
     gearNotes: 'Eternal Xiranite is optimal providing 16% damage boost to all teammates after applying amplification buffs. Individual pieces grant Will, Intellect, Ultimate Gain Efficiency, and Arts Intensity. Mordvolt Resistant is the early/mid game alternative emphasizing Will and Treatment Efficiency. Prioritize Will Boost, HP Boost, and healing-related substats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Healing per Battle Skill', value: '~7,200 HP', conditions: 'Will-focused build with Chivalric Virtues' },
+      { scenario: 'Cryo/Nature amplification', value: '+18% Cryo DMG, +15% Nature DMG', conditions: 'Ultimate buff active for 12s' },
+      { scenario: 'Arts amplification (overheal)', value: '+12% Arts DMG', conditions: 'When healing allies already at full HP' },
+      { scenario: 'Team DPS increase (overall)', value: '+20-30% effective team DPS', conditions: 'Combined healing + amplification + debuff value in Cryo teams' },
+    ],
+    skillData: [
+      { name: 'Frost Pulse', type: 'Normal Attack', multiplier: '90-120% ATK', description: 'Arts Unit ranged attacks applying minor Cryo Infliction. Low personal damage but consistent Cryo application from safe distance.', notes: 'Maintain Cryo uptime between skill cooldowns — stay at range' },
+      { name: 'Restorative Frost', type: 'Battle Skill', multiplier: 'Heal: 280% Will', spCost: 20, description: 'Targeted heal on lowest-HP ally. If ally is at full HP, converts excess healing into Arts amplification buff. Applies Cryo Infliction to nearby enemies.', notes: 'Core heal — also provides Arts amplification through overheal mechanic' },
+      { name: 'Cryo Affliction', type: 'Combo Skill', multiplier: '180% ATK', description: 'Triggered by ally Final Strike. Applies Cryo Infliction to priority target and nearby enemies. Triggers Execute Process talent for additional damage on Cryo-afflicted targets.', notes: 'Enables team elemental reactions — coordinate with DPS burst timing' },
+      { name: 'Rime Blessing', type: 'Ultimate', multiplier: 'Heal: 350% Will + 12s buffs', spCost: 100, description: 'Team-wide healing burst followed by 12s of Cryo DMG +18% and Nature DMG +15% amplification for all allies. Applies Solidification to enemies in range.', notes: 'Biggest team buff window — use before coordinated burst damage' },
+    ],
+    gearSetDetails: [
+      { name: 'Eternal Xiranite', pieces: 3, bonusDescription: 'After applying amplification buff, all teammates deal +16% damage for 12s.', statBoosts: ['Team DMG +16%', '12s duration', 'Refreshable'], notes: 'Best set — amplification buffs from Battle Skill and Ultimate constantly trigger this' },
+      { name: 'Mordvolt Resistant', pieces: 3, bonusDescription: 'Will +50. Treatment Efficiency +15%.', statBoosts: ['Will +50', 'Treatment Efficiency +15%'], notes: 'Early/mid game option maximizing healing output' },
+    ],
+    statPriorities: [
+      { stat: 'Will', priority: 'High', notes: 'Highest base at 150 — primary healing scaling' },
+      { stat: 'Intellect', priority: 'High', notes: 'Cryo Infliction potency and Arts damage' },
+      { stat: 'Treatment Efficiency', priority: 'High', notes: 'Direct healing multiplier' },
+      { stat: 'Ultimate Gain Efficiency', priority: 'Medium', notes: 'More frequent Rime Blessing uptime' },
+    ],
+    rotationGuide: 'START: Battle Skill (heal lowest-HP ally + Cryo Infliction)\n→ If ally full HP: Arts amplification buff applied instead\n→ Basic attacks for Cryo Infliction maintenance\n→ Ally Final Strike triggers Combo Skill (Cryo application + Execute Process)\n→ DPS attacks Cryo-afflicted targets during Execute Process window\n→ Battle Skill on cooldown (maintain healing + overheal buffs)\n→ Ultimate before major team burst phase (12s Cryo + Nature amplification)\n→ Team burst during amplification window\n→ Repeat from Battle Skill\n\nKEY: Xaihi is best played as a teammate (AI-controlled). Her automatic healing and buff application is more consistent than manual control. Focus on timing Ultimate for burst windows.',
+    comparisonNotes: 'vs Ardelia: The two premier supports in Endfield. Ardelia provides universal support (any team), higher raw healing, and Corrosion → Susceptibility conversion. Xaihi provides Cryo/Nature-specific amplification buffs and Execute Process damage amplification. In Cryo teams, Xaihi is superior. In mixed/non-Cryo teams, Ardelia wins. Some endgame teams run both for maximum support coverage.\n\nvs Gilberta: Different support archetypes. Gilberta provides CC and Defense reduction; Xaihi provides healing and damage amplification. They complement each other rather than compete. In Cryo teams, Xaihi is essential; Gilberta is a flexible addition.',
   },
 
   // ===== 4-STAR OPERATORS =====
@@ -947,6 +1228,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Focus on generating SP through stagger mechanics to enable faster team rotations', 'Apply Heat Infliction consistently to enable Laevatain\'s Melting Flame stack consumption', 'Time Combo Skill triggers to coincide with Laevatain\'s damage windows for maximum team output', 'Position aggressively to maintain attack pressure while generating SP through combat', 'In non-Heat teams, focus on SP generation utility over Heat application'],
     gearNotes: 'Æthertech provides team-wide support benefits with ATK scaling. Hot Work is an alternative for Heat-focused builds emphasizing Combustion synergy. Both sets work well, with the choice depending on whether you prioritize team support (Æthertech) or personal Heat damage (Hot Work).',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'SP generation per rotation', value: '+18-22 SP (team)', conditions: 'Through stagger-based SP talent on fast sword attacks' },
+      { scenario: 'Heat Infliction application', value: '~3 stacks/rotation', conditions: 'Fast sword attacks applying Heat consistently' },
+      { scenario: 'Personal DPS', value: '~14,000/s', conditions: 'As Heat enabler in Laevatain team' },
+      { scenario: 'Team DPS amplification', value: '+15-20% effective team DPS', conditions: 'Through SP acceleration and Heat Infliction enabling' },
+    ],
+    skillData: [
+      { name: 'Flame Slash', type: 'Normal Attack', multiplier: '110-140% ATK', description: 'Fast 4-hit sword combo applying Heat Infliction. High Agility (141) provides fastest attack speed among Heat operators. Each hit generates SP through stagger.', notes: 'Speed is Akekuri\'s key asset — maintain attack chains for maximum SP' },
+      { name: 'Blazing Rush', type: 'Battle Skill', multiplier: '280% ATK', spCost: 18, description: 'Dash strike applying heavy Heat Infliction and granting team SP generation buff for 8s. Fast cooldown enables frequent usage.', notes: 'Low SP cost and fast cooldown — use frequently for SP generation uptime' },
+      { name: 'Ember Chain', type: 'Combo Skill', multiplier: '220% ATK', description: 'Triggered by ally Final Strike. Creates Heat chain connecting to nearby Heat-Inflicted enemies. Each chain link deals additional Heat damage and generates SP.', notes: 'More enemies = more chains = more SP. Group enemies for maximum value' },
+      { name: 'Vanguard Blaze', type: 'Ultimate', multiplier: '420% ATK (AoE)', spCost: 100, description: 'AoE Heat burst applying Combustion to all enemies. Grants team +15% ATK buff for 10s. Generates massive SP burst for entire team.', notes: 'Team buff window — coordinate with Laevatain\'s burst rotation' },
+    ],
+    gearSetDetails: [
+      { name: 'Æthertech', pieces: 3, bonusDescription: 'ATK +18%. Physical DMG +25% against Vulnerable.', statBoosts: ['ATK +18%', 'Physical DMG +25% vs Vulnerable'], notes: 'Team-wide ATK support synergizing with Vanguard ATK buff' },
+      { name: 'Hot Work', pieces: 3, bonusDescription: 'Arts Intensity +30. Heat DMG +50% for 10s after Combustion.', statBoosts: ['Arts Intensity +30', 'Heat DMG +50%'], notes: 'Personal Heat damage focus for aggressive builds' },
+    ],
+    statPriorities: [
+      { stat: 'Agility', priority: 'High', notes: 'Highest at 141 — attack speed for faster SP generation' },
+      { stat: 'Strength', priority: 'Medium', notes: 'Balanced at 110 — decent personal damage' },
+      { stat: 'Heat DMG', priority: 'Medium', notes: 'Amplifies Heat Infliction and abilities' },
+      { stat: 'SP Recovery', priority: 'High', notes: 'Core function — accelerates team rotations' },
+    ],
+    rotationGuide: 'START: Battle Skill (Heat Infliction + team SP generation buff)\n→ Fast basic attack chain (SP generation through stagger + Heat Infliction)\n→ Ally Final Strike triggers Combo Skill (Heat chains + SP generation)\n→ Continue basic attacks during cooldowns\n→ Battle Skill on cooldown (maintain SP buff uptime)\n→ Laevatain consumes Heat stacks for Melting Flame\n→ Ultimate during team burst window (Combustion + ATK buff + SP burst)\n→ Repeat from Battle Skill\n\nKEY: Akekuri exists to fuel Laevatain. SP generation and Heat Infliction enable Laevatain\'s peak damage. As a 4-star with easy maxing, she provides exceptional value for investment.',
+    comparisonNotes: 'vs Pogranichnik: Both are Vanguards with SP generation but serve different elements. Pogranichnik enables Physical teams; Akekuri enables Heat teams. Neither competes for the same slot. Akekuri is more accessible as a 4-star.\n\nvs Arclight: Both are Vanguards. Akekuri serves Heat teams; Arclight serves Electric teams. Similar SP generation roles in different elemental archetypes. Akekuri is generally considered higher value due to Laevatain\'s dominance in meta.',
   },
 
   'antal': {
@@ -981,6 +1286,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Use lock-on functionality before Battle Skill to ensure Focus debuff lands on priority targets accurately', 'Cast Ultimate either at rotation start for sustained uptime or immediately before hypercarry executes peak damage', 'Trigger Combo Skill reactively when allies apply Arts Inflictions for incremental value', 'Focus entirely on enabling teammates rather than attempting personal damage rotations', 'In Heat teams, coordinate Ultimate timing with Laevatain\'s enhanced Battle Skill windows'],
     gearNotes: 'LYNX set provides healing enhancement and team damage reduction. Mordvolt Insulation grants Intellect +50 and Arts DMG +20% when above 80% HP for damage-focused support. The choice depends on whether your team needs additional survivability (LYNX) or Antal to contribute some personal damage (Mordvolt). Prioritize Intellect substats.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Focus debuff amplification', value: '+20% DMG taken (target)', conditions: 'Applied via Battle Skill on locked-on target' },
+      { scenario: 'Ultimate buff (Heat teams)', value: '+22% Heat DMG (team)', conditions: 'Ultimate active for 12s in Heat composition' },
+      { scenario: 'Ultimate buff (Electric teams)', value: '+22% Electric DMG (team)', conditions: 'Ultimate active for 12s in Electric composition' },
+      { scenario: 'Team DPS amplification', value: '+25-40% effective team DPS', conditions: 'Through Focus debuff + elemental DMG buff combined' },
+    ],
+    skillData: [
+      { name: 'Arts Volley', type: 'Normal Attack', multiplier: '90-120% ATK', description: 'Ranged Arts Unit attacks with modest damage. Applies minor Arts Infliction. Safe engagement from distance with consistent output.', notes: 'Low personal damage — focus on buff/debuff timing over attack chains' },
+      { name: 'Focus Lock', type: 'Battle Skill', multiplier: '200% ATK', spCost: 18, description: 'Applies Focus debuff on locked-on target, increasing damage taken by 20%. Also applies team-wide minor ATK buff for 6s. Fast cooldown for high uptime.', notes: 'Core debuff — lock onto boss before casting for guaranteed application' },
+      { name: 'Resonance Pulse', type: 'Combo Skill', multiplier: '180% ATK', description: 'Triggered by ally applying Arts Infliction. Creates resonance field that amplifies next Arts reaction damage by 30%. Brief AoE Arts damage.', notes: 'Reactive amplification — coordinate with Perlica or elemental reactions' },
+      { name: 'Amplification Field', type: 'Ultimate', multiplier: 'Team buff: +22% elemental DMG', spCost: 100, description: 'Creates field lasting 12s granting all allies +22% elemental DMG matching team\'s primary element. Also provides minor healing and Arts RES reduction on enemies.', notes: 'Biggest team buff — use before hypercarry burst window for maximum value' },
+    ],
+    gearSetDetails: [
+      { name: 'LYNX', pieces: 3, bonusDescription: '+20% Treatment Efficiency. After healing, allies gain 15% damage reduction for 10s.', statBoosts: ['Treatment Efficiency +20%', 'Ally DMG Reduction 15%'], notes: 'Defensive support option for teams needing additional survivability' },
+      { name: 'Mordvolt Insulation', pieces: 3, bonusDescription: 'Intellect +50. Arts DMG +20% when above 80% HP.', statBoosts: ['Intellect +50', 'Arts DMG +20%'], notes: 'Offensive support for maximizing personal damage contribution' },
+    ],
+    statPriorities: [
+      { stat: 'Intellect', priority: 'High', notes: 'Highest among 4★ at 165 — scales all support effects' },
+      { stat: 'Arts Intensity', priority: 'High', notes: 'Amplifies debuff and buff potency' },
+      { stat: 'Ultimate Gain Efficiency', priority: 'High', notes: 'More frequent Amplification Field uptime' },
+      { stat: 'Strength', priority: 'Low', notes: 'High base at 129 but not priority for support role' },
+    ],
+    rotationGuide: 'START: Lock-on priority target (boss)\n→ Battle Skill (Focus debuff — +20% DMG taken)\n→ Teammates attack Focus-debuffed target\n→ Ally applies Arts Infliction → Combo Skill triggers (Resonance amplification)\n→ Basic attacks during cooldowns for minor Infliction\n→ Battle Skill on cooldown (maintain Focus uptime)\n→ Ultimate before team burst window (12s elemental DMG buff)\n→ Hypercarry (Laevatain/Avywenna) executes burst during buff window\n→ Repeat from Battle Skill\n\nKEY: Antal is a force multiplier. Her value comes from making teammates deal 25-40% more damage through debuff + buff stacking. Personal damage is irrelevant — focus entirely on buff timing.',
+    comparisonNotes: 'vs Gilberta: Both are top-tier supports but Antal specializes in Heat/Electric teams while Gilberta is universal. Antal provides stronger elemental amplification within her element; Gilberta provides broader CC and DEF reduction. In Heat Meta team (Laevatain), Antal is preferred. In mixed teams, Gilberta wins.\n\nvs Ardelia: Different support archetypes. Ardelia heals and applies Susceptibility debuffs. Antal amplifies damage through Focus debuff and elemental buffs. Many top teams run both for maximum support coverage. No direct competition.',
   },
 
   'catcher': {
@@ -1013,6 +1342,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Activate Battle Skill immediately before taking damage to trigger counterattack mechanics and Vulnerable application', 'Position near vulnerable teammates during dangerous enemy mechanics to ensure Combo Skill shield coverage', 'Use Ultimate for Weaken application and Knockdown crowd control during dangerous enemy attacks', 'Focus on maintaining defensive uptime rather than attempting complex mechanical execution', 'Since Combo Skill only shields half the team, position near your most valuable operators'],
     gearNotes: 'Frontiers reduces Combo Skill cooldown by 15% and grants team 16% damage boost for 12 seconds after skill SP recovery. This transforms Catcher from pure defense into a hybrid support. Armored MSGR grants 50 Strength and 30% damage reduction when HP drops below 50% for early game defensive value.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Shield strength', value: '~6,500 shield', conditions: 'Combo Skill shields on nearest 2 allies' },
+      { scenario: 'Vulnerable application', value: '1-2 stacks/rotation', conditions: 'Through Battle Skill counterattack mechanic' },
+      { scenario: 'Weaken debuff', value: '-15% ATK (enemies)', conditions: 'Ultimate applies Weaken to all hit enemies' },
+      { scenario: 'Personal DPS', value: '~8,000/s', conditions: 'Minimal — focus is on defense' },
+    ],
+    skillData: [
+      { name: 'Guardian Strike', type: 'Normal Attack', multiplier: '130-170% ATK', description: 'Greatsword swings with high stagger. Slow attack speed but high per-hit damage. Generates aggro and builds Protection stacks.', notes: 'Slow but powerful — each hit staggers and draws enemy attention' },
+      { name: 'Counter Guard', type: 'Battle Skill', multiplier: '250% ATK (counter)', spCost: 20, description: 'Enters defensive stance. When hit, counterattacks applying Vulnerable and gaining Protection. Also grants brief damage reduction.', notes: 'Defensive counterattack — time with enemy attack patterns' },
+      { name: 'Protective Shield', type: 'Combo Skill', multiplier: 'Shield: 18% Max HP', description: 'Triggered by taking significant damage. Creates shields on nearest 2 allies based on Catcher\'s HP. Uncontrollable trigger timing.', notes: 'Automatic — cannot control which allies receive shields' },
+      { name: 'Fortress Slam', type: 'Ultimate', multiplier: '350% ATK (AoE)', spCost: 100, description: 'Heavy greatsword slam applying Weaken debuff (-15% ATK) and Knockdown to all enemies. Team gains damage reduction for 8s.', notes: 'Crowd control + damage reduction — use during dangerous enemy phases' },
+    ],
+    gearSetDetails: [
+      { name: 'Frontiers', pieces: 3, bonusDescription: 'Skill cooldown -15%. After SP recovery, team deals +16% damage for 12s.', statBoosts: ['Cooldown -15%', 'Team DMG +16%', '12s on SP recovery'], notes: 'Transforms Catcher into hybrid support — team damage boost on SP events' },
+      { name: 'Armored MSGR', pieces: 3, bonusDescription: 'Strength +50. DMG reduction +30% when below 50% HP.', statBoosts: ['Strength +50', 'DMG Reduction +30%'], notes: 'Pure defensive option for early game tanking' },
+    ],
+    statPriorities: [
+      { stat: 'Strength', priority: 'High', notes: 'Highest at 176 — HP and shield scaling' },
+      { stat: 'HP%', priority: 'High', notes: 'Shield strength based on Max HP' },
+      { stat: 'DEF%', priority: 'High', notes: 'Core tank stat for damage mitigation' },
+      { stat: 'Will', priority: 'Medium', notes: 'Balanced at 107 — minor healing contribution' },
+    ],
+    rotationGuide: 'START: Battle Skill (enter counter stance)\n→ Tank enemy attacks → counter triggers (Vulnerable + Protection)\n→ Basic attacks during cooldown (maintain aggro)\n→ Combo Skill triggers automatically when taking damage (shields 2 allies)\n→ Battle Skill on cooldown (maintain counter uptime)\n→ Ultimate during dangerous enemy mechanics (Weaken + Knockdown + team DR)\n→ Continue tanking while team deals damage\n→ Repeat from Battle Skill\n\nKEY: Catcher is a budget tank. He works for early game Physical teams but should be replaced by Ember or Snowshine when available. His uncontrollable Combo Skill is his biggest limitation.',
+    comparisonNotes: 'vs Ember: Ember is strictly better as a defender. She provides Vulnerable debuffs, controllable team shields, healing, and generic Combo Skill triggers. Catcher\'s uncontrollable shield targeting and lower utility make him a clear downgrade. Replace Catcher with Ember as soon as possible.\n\nvs Snowshine: Snowshine provides Cryo terrain control, healing, and Solidification enabling on top of tanking. Catcher offers only basic Physical tanking. For any team needing a defender, Snowshine or Ember are preferred.',
   },
 
   'estella': {
@@ -1046,6 +1399,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Apply Cryo Infliction with Battle Skill then ensure teammates trigger Solidification before executing Combo Skill', 'Execute Combo Skill against Solidified enemies to trigger both increased damage and Physical Susceptibility simultaneously', 'Deploy Ultimate after applying debuffs to capitalize on amplified damage rather than immediately', 'Coordinate with teammates to ensure Solidification persists until Combo Skill connects', 'Leverage polearm range to maintain safe positioning while contributing to Solidification setups'],
     gearNotes: 'Type 50 Yinglung (3-piece) provides 15% ATK increase with Combo Skill damage scaling after ally Battle Skills. Pair with Swordmancer TAC Gauntlets off-piece. Eternal Xiranite is the support-focused alternative maximizing debuff application. Aburrey\'s Legacy provides strong early game Skill DMG +24% with ATK buffs.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Combo Skill (Solidified target)', value: '~360% ATK', conditions: 'Increased damage against Solidified enemies + Physical Susceptibility application' },
+      { scenario: 'Physical Susceptibility debuff', value: '-12% Physical RES', conditions: 'Applied via Combo Skill on Solidified targets' },
+      { scenario: 'Personal DPS', value: '~12,000/s', conditions: 'In Cryo Budget team with Will-focused build' },
+      { scenario: 'Ultimate (Solidification trigger)', value: '~420% ATK', conditions: 'Forces Solidification for follow-up Shatter damage' },
+    ],
+    skillData: [
+      { name: 'Frost Lance', type: 'Normal Attack', multiplier: '110-145% ATK', description: 'Polearm thrusts applying Cryo Infliction on each hit. Decent range thanks to polearm weapon type. Will-based durability scaling.', notes: 'Consistent Cryo application — maintain attacks for Infliction buildup' },
+      { name: 'Ice Spear', type: 'Battle Skill', multiplier: '280% ATK', spCost: 20, description: 'Thrust applying heavy Cryo Infliction to target. If target has existing Cryo stacks, triggers Solidification. Grants minor Will-based shield to self.', notes: 'Solidification enabler — use on targets with existing Cryo Infliction' },
+      { name: 'Shatter Strike', type: 'Combo Skill', multiplier: '360% ATK', description: 'Triggered by ally Final Strike. Enhanced damage against Solidified targets. Applies Physical Susceptibility on Solidified enemies hit.', notes: 'Highest damage against Solidified targets — coordinate timing with Solidification windows' },
+      { name: 'Glacial Domain', type: 'Ultimate', multiplier: '420% ATK + Solidification', spCost: 100, description: 'Polearm sweep forcing Solidification on all Cryo-Inflicted enemies. Creates frozen terrain reducing enemy movement. Team gains Cryo DMG buff for 10s.', notes: 'Forces Solidification for team to exploit — use before burst damage windows' },
+    ],
+    gearSetDetails: [
+      { name: 'Type 50 Yinglung', pieces: 3, bonusDescription: 'ATK +15%. Combo Skill DMG +20% after ally Battle Skill.', statBoosts: ['ATK +15%', 'Combo Skill DMG +20%'], notes: 'Best option for Combo Skill burst damage against Solidified targets' },
+      { name: 'Eternal Xiranite', pieces: 3, bonusDescription: 'After applying amplification, teammates deal +16% damage for 12s.', statBoosts: ['Team DMG +16%', '12s duration'], notes: 'Support-focused alternative maximizing Physical Susceptibility value' },
+    ],
+    statPriorities: [
+      { stat: 'Will', priority: 'High', notes: 'Highest at 152 — primary stat for durability and some scaling' },
+      { stat: 'Intellect', priority: 'Medium', notes: 'Cryo Infliction potency and Arts damage' },
+      { stat: 'Strength', priority: 'Medium', notes: 'Balanced at 105 — Physical damage contribution' },
+      { stat: 'Cryo DMG', priority: 'Medium', notes: 'Amplifies all Cryo abilities' },
+    ],
+    rotationGuide: 'START: Basic attacks to apply Cryo Infliction on targets\n→ Battle Skill on Cryo-Inflicted target (triggers Solidification + self-shield)\n→ Ally Final Strike triggers Combo Skill (enhanced damage on Solidified targets + Physical Susceptibility)\n→ Team exploits Solidification and Physical Susceptibility window\n→ Continue basic attacks for Cryo maintenance\n→ Battle Skill on cooldown (more Solidification triggers)\n→ Ultimate when multiple enemies have Cryo Infliction (forced Solidification + Cryo buff)\n→ Repeat from basic attacks\n\nKEY: Estella bridges Cryo and Physical damage through Solidification + Physical Susceptibility. Her value increases in hybrid Cryo/Physical compositions.',
+    comparisonNotes: 'vs Chen Qianyu: Both are Guards but serve different elements and roles. Chen Qianyu is a Physical specialist with counter mechanics; Estella is a Cryo/Physical hybrid with Solidification enabling. Chen Qianyu is the better Guard overall, but Estella fills a unique niche in Shatter compositions.\n\nvs Alesh: Both support Cryo teams but differently. Alesh focuses on SP generation and pure Cryo enabling; Estella focuses on Solidification and Physical Susceptibility bridging. In dedicated Shatter teams, Estella provides more offensive value.',
   },
 
   'fluorite': {
@@ -1080,6 +1457,30 @@ export const OPERATOR_GUIDES: Record<string, OperatorGuide> = {
     gameplayTips: ['Wait until enemies have sufficient Cryo or Nature Inflictions before deploying Combo Skill to maximize the long cooldown value', 'Use Combo Skill immediately when available given the prohibitively long recharge time', 'Avoid triggering Battle Skill unless specifically coordinating Nature reactions, as it disrupts Cryo sequences', 'Deploy Improvised Explosives strategically for Slow effects and supplementary Nature Infliction', 'Be extremely careful when layering Nature and Cryo Inflictions together to avoid unintended Solidification'],
     gearNotes: 'Frontiers (4-piece) is essential to address the crippling 40-second Combo Skill cooldown. Without this set, her Combo Skill cycles too slowly for consistent value. MI Security is the damage-focused alternative with Crit Rate stacking. Mordvolt Insulation provides early game Intellect and Arts DMG when above 80% HP.',
     lastUpdated: '2025-02-19',
+    damageCalcs: [
+      { scenario: 'Combo Skill Infliction stacks', value: '+3-4 elemental stacks', conditions: 'Applied to all enemies in AoE — long 40s base cooldown' },
+      { scenario: 'Improvised Explosives (Ultimate)', value: '~280% ATK + Slow', conditions: 'Deploys explosive traps with Nature Infliction and movement slow' },
+      { scenario: 'Personal DPS', value: '~10,000/s', conditions: 'Low — Fluorite is an enabler, not a damage dealer' },
+      { scenario: 'Cryo team Infliction contribution', value: '+2-3 extra Cryo stacks/cycle', conditions: 'When supporting Last Rite or Yvonne Cryo consumption' },
+    ],
+    skillData: [
+      { name: 'Nature Shot', type: 'Normal Attack', multiplier: '90-120% ATK', description: 'Ranged handcannon shots applying minor Nature Infliction. Highest Agility among Casters (168) provides fast attack speed. Low damage but consistent Infliction.', notes: 'Fast ranged attacks maintain Infliction between skill cooldowns' },
+      { name: 'Corrosive Burst', type: 'Battle Skill', multiplier: '220% ATK', spCost: 18, description: 'Fires Nature burst applying heavy Nature Infliction. CAUTION: In Cryo teams, Nature Infliction can disrupt Cryo reaction sequences if improperly timed.', notes: 'AVOID in most Cryo compositions — Nature Infliction disrupts Cryo stacking' },
+      { name: 'Infliction Surge', type: 'Combo Skill', multiplier: '180% ATK (AoE)', cooldown: 40, description: 'Triggered by ally Final Strike. Applies 3-4 additional elemental Infliction stacks matching the dominant element on targets. 40-second base cooldown is exceptionally long.', notes: 'Core enabler ability — provides massive Infliction stacking per use despite long cooldown' },
+      { name: 'Improvised Explosives', type: 'Ultimate', multiplier: '280% ATK + traps', spCost: 100, description: 'Deploys explosive traps across battlefield applying Nature Infliction and movement Slow to enemies. Traps persist for 15s dealing sustained area damage.', notes: 'Zone control + supplementary Infliction — useful in sustained encounters' },
+    ],
+    gearSetDetails: [
+      { name: 'Frontiers', pieces: 3, bonusDescription: 'Skill cooldown -15%. After SP recovery, team deals +16% damage for 12s.', statBoosts: ['Cooldown -15%', 'Team DMG +16%', '12s on SP recovery'], notes: 'ESSENTIAL — reduces 40s Combo Skill cooldown to ~34s. Without this, Fluorite is barely functional' },
+      { name: 'MI Security', pieces: 3, bonusDescription: 'Crit Rate +15%. Crit DMG +25% after landing critical hit.', statBoosts: ['Crit Rate +15%', 'Crit DMG +25%'], notes: 'Damage-focused alternative — Agility 168 enables consistent crit fishing' },
+    ],
+    statPriorities: [
+      { stat: 'Agility', priority: 'High', notes: 'Highest at 168 — attack speed and Physical scaling (unusual for Caster)' },
+      { stat: 'Intellect', priority: 'Medium', notes: 'Arts damage and Infliction potency scaling' },
+      { stat: 'Cooldown Reduction', priority: 'High', notes: 'Critical for addressing 40s Combo Skill cooldown' },
+      { stat: 'Will', priority: 'Low', notes: 'Lowest at 92 — Fluorite is fragile, keep at range' },
+    ],
+    rotationGuide: 'START: Basic attacks for minor Infliction maintenance (DO NOT use Battle Skill in Cryo teams)\n→ Ally Final Strike triggers Combo Skill (massive Infliction stacking — 3-4 stacks applied)\n→ DPS consumes Infliction stacks for elemental reactions\n→ Continue basic attacks during 34-40s Combo Skill cooldown\n→ Ultimate when available (deploy traps for zone control + Nature Infliction)\n→ Wait for Combo Skill to recharge\n→ Next Combo Skill trigger → another Infliction surge\n→ Repeat\n\nKEY: Fluorite\'s entire value is her Combo Skill. The 40s cooldown means each use must count. DO NOT waste it on low-priority targets. In Cryo teams, AVOID Battle Skill — Nature Infliction disrupts Cryo reactions.',
+    comparisonNotes: 'vs Perlica: Both are Caster enablers but for different elements. Perlica enables Electric teams (Avywenna); Fluorite enables Cryo/Nature reaction teams (Last Rite, Yvonne). Perlica has much faster Infliction cycling; Fluorite has the long 40s cooldown problem. Perlica is generally considered more valuable.\n\nvs Ardelia: Different roles entirely. Ardelia is a premium universal support; Fluorite is a niche Infliction stacker. Ardelia provides healing + Susceptibility; Fluorite provides raw Infliction stacks. In Nature teams, both can coexist. In Cryo teams, Ardelia is always preferred unless specific Infliction stacking is needed.',
   },
 };
 

@@ -71,15 +71,124 @@ function StatBar({ label, value, max, color, icon }: { label: string; value: num
 
 function DossierSection({ title, icon, children, accent, id }: { title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string; id?: string }) {
   return (
-    <div id={id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+    <div id={id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden relative">
       <div
-        className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]"
+        className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] relative"
         style={accent ? { borderLeftWidth: '3px', borderLeftColor: accent } : {}}
       >
         <span style={{ color: accent || 'var(--color-accent)' }}>{icon}</span>
         <h2 className="text-base font-bold text-white uppercase tracking-wider font-tactical">{title}</h2>
+        {/* Corner diamond */}
+        <div className="absolute top-2 right-3 w-1.5 h-1.5 rotate-45 opacity-30" style={{ backgroundColor: accent || 'var(--color-accent)' }} />
       </div>
       <div className="p-5">{children}</div>
+    </div>
+  );
+}
+
+// SVG Radar chart for stat visualization
+function StatRadar({ strength, agility, intellect, will, color }: { strength: number; agility: number; intellect: number; will: number; color: string }) {
+  const max = 200;
+  const cx = 100, cy = 100, r = 70;
+  // 4 axes: top=Strength, right=Agility, bottom=Intellect, left=Will
+  const axes = [
+    { label: 'STR', value: strength, angle: -90 },
+    { label: 'AGI', value: agility, angle: 0 },
+    { label: 'INT', value: intellect, angle: 90 },
+    { label: 'WIL', value: will, angle: 180 },
+  ];
+  const toXY = (angle: number, radius: number) => ({
+    x: cx + radius * Math.cos((angle * Math.PI) / 180),
+    y: cy + radius * Math.sin((angle * Math.PI) / 180),
+  });
+  const statPoints = axes.map(a => toXY(a.angle, (a.value / max) * r));
+  const polygon = statPoints.map(p => `${p.x},${p.y}`).join(' ');
+
+  return (
+    <svg viewBox="0 0 200 200" className="w-full max-w-[200px] mx-auto">
+      {/* Grid rings */}
+      {[0.25, 0.5, 0.75, 1].map(scale => (
+        <polygon
+          key={scale}
+          points={axes.map(a => { const p = toXY(a.angle, r * scale); return `${p.x},${p.y}`; }).join(' ')}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={scale === 1 ? 1.5 : 0.5}
+          opacity={0.6}
+        />
+      ))}
+      {/* Axis lines */}
+      {axes.map(a => {
+        const p = toXY(a.angle, r);
+        return <line key={a.label} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--color-border)" strokeWidth={0.5} opacity={0.4} />;
+      })}
+      {/* Stat polygon */}
+      <polygon points={polygon} fill={`${color}25`} stroke={color} strokeWidth={2} />
+      {/* Stat dots */}
+      {statPoints.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={3} fill={color} />
+      ))}
+      {/* Labels */}
+      {axes.map(a => {
+        const p = toXY(a.angle, r + 18);
+        return (
+          <text key={a.label} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="var(--color-text-secondary)" fontSize="10" fontFamily="var(--font-mono)" fontWeight="bold">
+            {a.label}
+          </text>
+        );
+      })}
+      {/* Value labels */}
+      {axes.map((a, i) => {
+        const p = toXY(a.angle, (a.value / max) * r + 10);
+        return (
+          <text key={`v-${i}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="9" fontFamily="var(--font-mono)">
+            {a.value}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Stat comparison against role average
+function StatComparison({ char: c, allChars }: { char: typeof CHARACTERS[0]; allChars: typeof CHARACTERS }) {
+  const sameRole = allChars.filter(ch => ch.Role === c.Role && ch.Rarity >= c.Rarity - 1);
+  if (sameRole.length < 2) return null;
+  const avg = {
+    Strength: Math.round(sameRole.reduce((s, ch) => s + ch.Strength, 0) / sameRole.length),
+    Agility: Math.round(sameRole.reduce((s, ch) => s + ch.Agility, 0) / sameRole.length),
+    Intellect: Math.round(sameRole.reduce((s, ch) => s + ch.Intellect, 0) / sameRole.length),
+    Will: Math.round(sameRole.reduce((s, ch) => s + ch.Will, 0) / sameRole.length),
+  };
+  const stats = [
+    { label: 'STR', val: c.Strength, avg: avg.Strength, color: '#FF6B35' },
+    { label: 'AGI', val: c.Agility, avg: avg.Agility, color: '#00BFFF' },
+    { label: 'INT', val: c.Intellect, avg: avg.Intellect, color: '#9B59B6' },
+    { label: 'WIL', val: c.Will, avg: avg.Will, color: '#27AE60' },
+  ];
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="terminal-text-sm opacity-50">VS {c.Role.toUpperCase()} AVERAGE</span>
+        <span className="text-[10px] font-mono text-[var(--color-text-muted)]">({sameRole.length} operators)</span>
+      </div>
+      {stats.map(s => {
+        const diff = s.val - s.avg;
+        const pct = Math.round((diff / s.avg) * 100);
+        return (
+          <div key={s.label} className="flex items-center gap-2 text-xs">
+            <span className="w-8 font-mono text-[var(--color-text-muted)]">{s.label}</span>
+            <span className="w-8 font-mono text-white text-right">{s.val}</span>
+            <div className="flex-1 h-1.5 bg-[var(--color-surface-2)] overflow-hidden relative">
+              <div className="absolute h-full bg-[var(--color-border)]" style={{ width: `${(s.avg / 200) * 100}%` }} />
+              <div className="absolute h-full" style={{ width: `${(s.val / 200) * 100}%`, backgroundColor: s.color }} />
+            </div>
+            <span className={`w-12 font-mono text-right ${diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-[var(--color-text-muted)]'}`}>
+              {diff > 0 ? '+' : ''}{pct}%
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -128,6 +237,7 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
   const [communityBuilds, setCommunityBuilds] = useState<BlueprintEntry[]>([]);
   const [copiedBpId, setCopiedBpId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('profile');
+  const [showSplash, setShowSplash] = useState(false);
   const tabContentRef = useRef<HTMLDivElement>(null);
 
   // Load static guide + Strapi overlay
@@ -243,15 +353,19 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Back Navigation */}
-      <Link href="/characters" className="inline-flex items-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] text-sm mb-4 no-underline transition-colors">
-        <ArrowLeft size={16} /> <span className="font-tactical uppercase tracking-wider">Back to Operator Database</span>
-      </Link>
+      {/* Back Navigation — Dossier breadcrumb */}
+      <div className="flex items-center gap-3 mb-4">
+        <Link href="/characters" className="inline-flex items-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] text-sm no-underline transition-colors">
+          <ArrowLeft size={14} /> <span className="font-tactical uppercase tracking-wider text-xs">Operator Database</span>
+        </Link>
+        <ChevronRight size={12} className="text-[var(--color-text-muted)]" />
+        <span className="font-tactical uppercase tracking-wider text-xs text-[var(--color-accent)]">{char.Name}</span>
+      </div>
 
       {/* ==========================================
-          DOSSIER HEADER — Hero Banner
+          DOSSIER HEADER — Classified File Banner
           ========================================== */}
-      <div className="mb-6 clip-corner-tl overflow-hidden border border-[var(--color-border)] relative">
+      <div className="mb-6 clip-corner-tl overflow-hidden border-2 border-[var(--color-border)] relative" style={{ borderLeftColor: elementColor }}>
         {/* Banner Background */}
         {CHARACTER_BANNERS[char.Name] ? (
           <Image
@@ -259,89 +373,121 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
             alt={`${char.Name} banner`}
             width={1200}
             height={280}
-            className="w-full h-56 sm:h-64 object-cover"
+            className="w-full h-56 sm:h-72 object-cover"
             priority
           />
         ) : (
-          <div className="w-full h-56 sm:h-64" style={{ background: `linear-gradient(135deg, ${elementColor}30, var(--color-surface))` }} />
+          <div className="w-full h-56 sm:h-72" style={{ background: `linear-gradient(135deg, ${elementColor}30, var(--color-surface))` }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+
+        {/* Corner classification markers */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          <div className="w-2 h-2 rotate-45" style={{ backgroundColor: elementColor }} />
+          <span className="terminal-text-sm opacity-40">CLASSIFIED // RIOS-OPS-{String(char.id).padStart(3, '0')}</span>
+        </div>
+        <div className="absolute top-3 right-3 hidden sm:flex items-center gap-1.5">
+          <span className="terminal-text-sm opacity-40">CLEARANCE: LEVEL-3</span>
+          <div className="w-2 h-2 rotate-45" style={{ backgroundColor: elementColor }} />
+        </div>
+
+        {/* Redacted watermark — decorative */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none">
+          <span className="text-6xl sm:text-8xl font-bold font-tactical uppercase tracking-[0.3em] text-white/[0.03] rotate-[-15deg] block whitespace-nowrap">
+            DOSSIER
+          </span>
+        </div>
 
         {/* Dossier Content */}
         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
           {/* Terminal classification bar */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="diamond-sm diamond-accent" />
-            <span className="terminal-text-sm opacity-60">RIOS-OPS // DOSSIER // {char.Slug.toUpperCase()}</span>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4" style={{ backgroundColor: elementColor }} />
+            <span className="terminal-text-sm opacity-60">OPERATOR DOSSIER // {char.Slug.toUpperCase()} // FILE #{String(char.id).padStart(4, '0')}</span>
           </div>
 
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white font-tactical uppercase tracking-wide leading-tight">{char.Name}</h1>
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <h1 className="text-3xl sm:text-5xl font-bold text-white font-tactical uppercase tracking-wide leading-tight" style={{ textShadow: `0 0 40px ${elementColor}40` }}>{char.Name}</h1>
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
                 {/* Rarity Stars */}
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-0.5 px-2 py-1 bg-black/30 border border-white/5">
                   {Array.from({ length: char.Rarity }, (_, i) => (
-                    <Star key={i} size={16} fill={rarityColor} color={rarityColor} />
+                    <Star key={i} size={14} fill={rarityColor} color={rarityColor} />
                   ))}
                 </div>
                 {/* Role badge */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 border border-white/10">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 border border-white/10 clip-corner-tl">
                   {profIcon && <Image src={profIcon} alt={char.Role} width={18} height={18} className="w-[18px] h-[18px] opacity-90" />}
-                  <span className="text-white text-sm font-medium">{char.Role}</span>
+                  <span className="text-white text-sm font-medium font-tactical uppercase tracking-wider">{char.Role}</span>
                 </div>
                 {/* Element badge */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 border border-white/10">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: elementColor }} />
-                  <span className="text-sm font-medium" style={{ color: elementColor }}>{char.Element}</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 border clip-corner-tl" style={{ borderColor: `${elementColor}40` }}>
+                  <div className="w-2.5 h-2.5 rotate-45" style={{ backgroundColor: elementColor }} />
+                  <span className="text-sm font-medium font-tactical uppercase tracking-wider" style={{ color: elementColor }}>{char.Element}</span>
                 </div>
                 {/* Weapon badge */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 border border-white/10">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/40 border border-white/10 clip-corner-tl">
                   <Sword size={14} className="text-[var(--color-text-tertiary)]" />
-                  <span className="text-white text-sm">{char.WeaponType}</span>
+                  <span className="text-white text-sm font-tactical uppercase tracking-wider">{char.WeaponType}</span>
                 </div>
               </div>
             </div>
 
-            {/* Tier Badge - top right */}
+            {/* Tier Badge - top right with dossier stamp effect */}
             {guide && (
-              <div className="hidden sm:flex flex-col items-center px-4 py-2 clip-corner-tl" style={{ backgroundColor: `${TIER_COLORS[guide.ratings.overall]}15`, border: `1px solid ${TIER_COLORS[guide.ratings.overall]}40` }}>
-                <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-tactical">Overall Tier</span>
-                <span className="text-2xl font-bold font-mono mt-0.5" style={{ color: TIER_COLORS[guide.ratings.overall] }}>{guide.ratings.overall}</span>
+              <div className="hidden sm:flex flex-col items-center px-5 py-3 clip-corner-tl relative" style={{ backgroundColor: `${TIER_COLORS[guide.ratings.overall]}12`, border: `2px solid ${TIER_COLORS[guide.ratings.overall]}50` }}>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] font-tactical">ASSESSMENT</span>
+                <span className="text-3xl font-bold font-mono mt-0.5" style={{ color: TIER_COLORS[guide.ratings.overall] }}>{guide.ratings.overall}</span>
+                <span className="text-[8px] uppercase tracking-widest font-tactical mt-0.5" style={{ color: `${TIER_COLORS[guide.ratings.overall]}80` }}>TIER</span>
+                {/* Corner diamonds */}
+                <div className="absolute top-1 right-1 w-1.5 h-1.5 rotate-45" style={{ backgroundColor: TIER_COLORS[guide.ratings.overall] }} />
               </div>
             )}
           </div>
         </div>
+
+        {/* Bottom dossier stripe */}
+        <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${elementColor}, ${elementColor}40, transparent)` }} />
       </div>
 
       {/* ==========================================
-          TAB NAVIGATION BAR — Prydwen-style
+          DOSSIER FOLDER TABS — File tab design
           ========================================== */}
-      <div className="mb-6 border border-[var(--color-border)] bg-[var(--color-surface)] clip-corner-tl overflow-hidden">
-        <div className="flex">
+      <div className="mb-6">
+        {/* Tab buttons styled as folder tabs */}
+        <div className="flex gap-1">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-tactical uppercase tracking-wider transition-all duration-200 border-b-2 cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-tactical uppercase tracking-wider transition-all duration-200 cursor-pointer clip-corner-tl relative ${
                 activeTab === tab.id
-                  ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border-[var(--color-accent)]'
-                  : 'text-[var(--color-text-tertiary)] border-transparent hover:text-white hover:bg-[var(--color-surface-2)]'
+                  ? 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-border)] border-b-0 z-10'
+                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] border border-transparent hover:text-white hover:bg-[var(--color-surface)]'
               }`}
+              style={activeTab === tab.id ? { borderTopColor: elementColor, borderTopWidth: '2px' } : {}}
             >
               {tab.icon}
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
+              {activeTab === tab.id && (
+                <span className="absolute -bottom-px left-0 right-0 h-px bg-[var(--color-surface)]" />
+              )}
             </button>
           ))}
         </div>
-        {/* Terminal sub-bar */}
-        <div className="px-4 py-1.5 bg-[var(--color-surface-2)] border-t border-[var(--color-border)] flex items-center gap-2">
-          <span className="diamond-sm" />
+        {/* Terminal sub-bar under tabs */}
+        <div className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] border-t-0 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rotate-45" style={{ backgroundColor: elementColor }} />
           <span className="terminal-text-sm opacity-50">
-            SECTION: {TABS.find(t => t.id === activeTab)?.code} // OPERATOR: {char.Name.toUpperCase()} // CLEARANCE: LEVEL-3
+            {TABS.find(t => t.id === activeTab)?.code} // {char.Name.toUpperCase()} // FILE #{String(char.id).padStart(4, '0')}
           </span>
+          <div className="flex-1" />
+          {guide?.lastUpdated && (
+            <span className="terminal-text-sm opacity-30">UPDATED: {guide.lastUpdated}</span>
+          )}
         </div>
       </div>
 
@@ -355,19 +501,29 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left: Portrait + Stats */}
               <div className="space-y-6">
-                {/* Portrait */}
+                {/* Portrait with splash toggle */}
                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
                   <div
-                    className="aspect-square flex items-center justify-center relative"
+                    className={`${showSplash && splashUrl ? 'aspect-[3/4]' : 'aspect-square'} flex items-center justify-center relative cursor-pointer transition-all duration-300`}
                     style={{ background: `linear-gradient(135deg, ${elementColor}15, var(--color-surface))` }}
+                    onClick={() => splashUrl && setShowSplash(!showSplash)}
+                    title={splashUrl ? (showSplash ? 'Click for icon view' : 'Click for splash art') : undefined}
                   >
-                    {CHARACTER_ICONS[char.Name] ? (
+                    {showSplash && splashUrl ? (
+                      <Image src={splashUrl} alt={`${char.Name} splash art`} fill className="object-contain" sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+                    ) : CHARACTER_ICONS[char.Name] ? (
                       <Image src={CHARACTER_ICONS[char.Name]} alt={char.Name} width={220} height={220} className="w-56 h-56 object-contain" />
                     ) : (
                       <span className="text-8xl font-bold text-white/10">{char.Name[0]}</span>
                     )}
                     {/* Element corner accent */}
                     <div className="absolute top-3 right-3 w-3 h-3 rotate-45" style={{ backgroundColor: elementColor }} />
+                    {/* View toggle hint */}
+                    {splashUrl && (
+                      <div className="absolute bottom-2 right-2 text-[8px] font-mono text-[var(--color-text-muted)] bg-black/50 px-1.5 py-0.5">
+                        {showSplash ? 'ICON' : 'SPLASH'}
+                      </div>
+                    )}
                   </div>
                   {/* Quick Info Bar */}
                   <div className="px-4 py-3 bg-[var(--color-surface-2)] border-t border-[var(--color-border)]">
@@ -390,6 +546,11 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
                   </DossierSection>
                 )}
 
+                {/* Stat Radar */}
+                <DossierSection title="Stat Profile" icon={<Target size={18} />}>
+                  <StatRadar strength={char.Strength} agility={char.Agility} intellect={char.Intellect} will={char.Will} color={elementColor} />
+                </DossierSection>
+
                 {/* Attributes */}
                 <DossierSection title="Attributes (Lv.90)" icon={<Target size={18} />}>
                   <div className="space-y-3">
@@ -403,6 +564,10 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
                       <span className="text-[var(--color-text-muted)]">Total</span>
                       <span className="text-white font-mono font-bold">{char.Strength + char.Agility + char.Intellect + char.Will}</span>
                     </div>
+                  </div>
+                  {/* Role average comparison */}
+                  <div className="mt-4 pt-3 border-t border-[var(--color-border)]">
+                    <StatComparison char={char} allChars={CHARACTERS} />
                   </div>
                 </DossierSection>
               </div>
@@ -536,11 +701,36 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
               </DossierSection>
             )}
 
-            {/* Comparison Notes (enhanced) */}
+            {/* Comparison Notes (enhanced with visual cards) */}
             {guide.comparisonNotes && (
-              <DossierSection title="Operator Comparison" icon={<BarChart3 size={18} />}>
-                <div className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-line">
-                  {guide.comparisonNotes}
+              <DossierSection title="Operator Comparison" icon={<BarChart3 size={18} />} accent={elementColor}>
+                <div className="space-y-4">
+                  {guide.comparisonNotes.split('\n\n').map((block, i) => {
+                    const vsMatch = block.match(/^vs\s+([^:]+):/i);
+                    const comparedName = vsMatch ? vsMatch[1].trim() : null;
+                    const comparedChar = comparedName ? CHARACTERS.find(c => c.Name === comparedName) : null;
+                    const comparedIcon = comparedName ? CHARACTER_ICONS[comparedName] : null;
+                    return (
+                      <div key={i} className="p-4 bg-[var(--color-surface-2)] border-l-2 border-[var(--color-border)] clip-corner-tl">
+                        {comparedChar && (
+                          <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[var(--color-border)]">
+                            <div className="flex items-center gap-2 flex-1">
+                              {CHARACTER_ICONS[char.Name] && <Image src={CHARACTER_ICONS[char.Name]} alt={char.Name} width={28} height={28} className="w-7 h-7 object-contain" />}
+                              <span className="text-white text-sm font-semibold">{char.Name}</span>
+                            </div>
+                            <span className="text-[var(--color-text-muted)] text-xs font-mono">VS</span>
+                            <div className="flex items-center gap-2 flex-1 justify-end">
+                              <span className="text-white text-sm font-semibold">{comparedChar.Name}</span>
+                              {comparedIcon && <Image src={comparedIcon} alt={comparedChar.Name} width={28} height={28} className="w-7 h-7 object-contain" />}
+                            </div>
+                          </div>
+                        )}
+                        <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">
+                          {vsMatch ? block.substring(block.indexOf(':') + 1).trim() : block}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </DossierSection>
             )}
