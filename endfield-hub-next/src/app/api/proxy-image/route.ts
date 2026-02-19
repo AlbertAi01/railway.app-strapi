@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_HOSTS = ['endfield.wiki.gg', 'endfieldtools.dev'];
+const ALLOWED_HOSTS = ['endfield.wiki.gg', 'endfieldtools.dev', 'res.cloudinary.com', 'img.youtube.com'];
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url');

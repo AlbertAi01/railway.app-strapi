@@ -1088,10 +1088,59 @@ export default function CharacterCardPage() {
     if (!cardRef.current) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2, useCORS: true, allowTaint: true,
-        backgroundColor: null, width: 1200, height: 675,
+      // Clone the card and prepare images for html2canvas
+      const clone = cardRef.current.cloneNode(true) as HTMLElement;
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      document.body.appendChild(clone);
+
+      // Replace all images with simple img tags using unoptimized URLs
+      const images = clone.querySelectorAll('img');
+      const loadPromises: Promise<void>[] = [];
+      images.forEach(img => {
+        const src = img.src || img.getAttribute('src') || '';
+        // Get the actual source URL (strip Next.js optimization params)
+        let actualSrc = src;
+        if (src.includes('/_next/image')) {
+          const urlParam = new URL(src, window.location.origin).searchParams.get('url');
+          if (urlParam) actualSrc = decodeURIComponent(urlParam);
+        }
+        // Use proxy for external images to avoid CORS
+        if (actualSrc.startsWith('http') && !actualSrc.includes(window.location.host)) {
+          actualSrc = `/api/proxy-image?url=${encodeURIComponent(actualSrc)}`;
+        }
+        const newImg = document.createElement('img');
+        newImg.crossOrigin = 'anonymous';
+        newImg.style.cssText = img.style.cssText;
+        newImg.className = img.className;
+        newImg.width = img.width;
+        newImg.height = img.height;
+        newImg.alt = img.alt;
+        loadPromises.push(new Promise<void>((resolve) => {
+          newImg.onload = () => resolve();
+          newImg.onerror = () => resolve(); // Continue even if image fails
+          newImg.src = actualSrc;
+        }));
+        img.replaceWith(newImg);
       });
+
+      // Wait for all images to load
+      await Promise.all(loadPromises);
+      // Small delay for rendering
+      await new Promise(r => setTimeout(r, 100));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null,
+        width: 1200,
+        height: 675,
+      });
+
+      document.body.removeChild(clone);
+
       const link = document.createElement('a');
       link.download = `${char.Name.toLowerCase()}-showcase.${format}`;
       link.href = canvas.toDataURL(format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95);
@@ -1116,9 +1165,47 @@ export default function CharacterCardPage() {
     if (!cardRef.current) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2, useCORS: true, allowTaint: true, backgroundColor: null, width: 1200, height: 675,
+      const clone = cardRef.current.cloneNode(true) as HTMLElement;
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      document.body.appendChild(clone);
+
+      const images = clone.querySelectorAll('img');
+      const loadPromises: Promise<void>[] = [];
+      images.forEach(img => {
+        const src = img.src || img.getAttribute('src') || '';
+        let actualSrc = src;
+        if (src.includes('/_next/image')) {
+          const urlParam = new URL(src, window.location.origin).searchParams.get('url');
+          if (urlParam) actualSrc = decodeURIComponent(urlParam);
+        }
+        if (actualSrc.startsWith('http') && !actualSrc.includes(window.location.host)) {
+          actualSrc = `/api/proxy-image?url=${encodeURIComponent(actualSrc)}`;
+        }
+        const newImg = document.createElement('img');
+        newImg.crossOrigin = 'anonymous';
+        newImg.style.cssText = img.style.cssText;
+        newImg.className = img.className;
+        newImg.width = img.width;
+        newImg.height = img.height;
+        newImg.alt = img.alt;
+        loadPromises.push(new Promise<void>((resolve) => {
+          newImg.onload = () => resolve();
+          newImg.onerror = () => resolve();
+          newImg.src = actualSrc;
+        }));
+        img.replaceWith(newImg);
       });
+
+      await Promise.all(loadPromises);
+      await new Promise(r => setTimeout(r, 100));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2, useCORS: true, allowTaint: false, backgroundColor: null, width: 1200, height: 675,
+      });
+      document.body.removeChild(clone);
+
       canvas.toBlob(blob => {
         if (blob) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       });
@@ -1159,6 +1246,21 @@ export default function CharacterCardPage() {
               <button onClick={copyShareLink}
                 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[var(--color-text-secondary)] transition-all flex items-center gap-1">
                 {copied ? <><Check size={11} /> Copied!</> : <><Link2 size={11} /> Share</>}
+              </button>
+              <div className="w-px h-5 bg-[var(--color-border)] mx-1 hidden sm:block" />
+              <button onClick={() => {
+                const text = `Check out my ${char.Name} build on Zero Sanity!`;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeState(state)}`;
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=550,height=420');
+              }} className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[#1DA1F2] hover:text-[#1DA1F2] transition-all flex items-center gap-1" title="Share on X/Twitter">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </button>
+              <button onClick={() => {
+                const text = `Check out my ${char.Name} build!`;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeState(state)}`;
+                window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(text)}`, '_blank');
+              }} className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[#FF4500] hover:text-[#FF4500] transition-all flex items-center gap-1" title="Share on Reddit">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm6.066 13.27c.068.378.069.77 0 1.149-.607 3.44-4.268 6.08-8.066 6.08s-7.46-2.64-8.066-6.08a3.012 3.012 0 010-1.15C2.49 10.41 3.88 8.55 6.27 7.67a3.27 3.27 0 012.263.129 11.653 11.653 0 013.463-1.15l1.37-4.4a.501.501 0 01.595-.337l3.2.72a1.78 1.78 0 113.32-.078l-3.52-.79-1.25 4a11.565 11.565 0 013.106 1.05 3.27 3.27 0 012.257-.13c2.39.88 3.78 2.74 4.34 5.6zM8 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm8 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-8.25 2.75a.75.75 0 011.06 0c1.12 1.12 3.26 1.12 4.38 0a.75.75 0 111.06 1.06c-1.71 1.71-4.79 1.71-6.5 0a.75.75 0 010-1.06z"/></svg>
               </button>
               <button onClick={() => setState(defaultShowcaseState())}
                 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] hover:text-white transition-colors flex items-center gap-1 border border-[var(--color-border)] hover:border-[var(--color-text-secondary)]">
