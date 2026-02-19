@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 const tools = [
-  { name: 'Operator Database', desc: 'Browse all 23 operators with stats, skills, and combat data', path: '/characters', icon: 'Users', color: '#00B0FF' },
+  { name: 'Operator Database', desc: 'Browse all 23 operators with stats, skills, and combat data', path: '/characters', icon: 'Users', color: '#E8A624' },
   { name: 'Weapons Arsenal', desc: 'Complete weapon database with stats and passive effects', path: '/weapons', icon: 'Sword', color: '#FF6B35' },
   { name: 'Equipment Systems', desc: 'Equipment sets with bonuses and tactical recommendations', path: '/equipment', icon: 'Shield', color: '#00BFFF' },
   { name: 'Operator Development', desc: 'Plan ascension materials and track progress', path: '/ascension-planner', icon: 'Star', color: '#FFD700' },
@@ -21,7 +21,7 @@ const tools = [
   { name: 'Gear Analysis', desc: 'Calculate optimal equipment substats and probabilities', path: '/gear-artificing', icon: 'Wrench', color: '#69F0AE' },
   { name: 'AIC Factory Planner', desc: 'Design production chains for manufacturing', path: '/factory-planner', icon: 'Factory', color: '#FF6B35' },
   { name: 'Blueprint Registry', desc: 'Browse and share community factory blueprints', path: '/blueprints', icon: 'LayoutGrid', color: '#00BFFF' },
-  { name: 'Combat Assessment', desc: 'Create and share operator tier rankings', path: '/tier-list', icon: 'LayoutGrid', color: '#00B0FF' },
+  { name: 'Combat Assessment', desc: 'Create and share operator tier rankings', path: '/tier-list', icon: 'LayoutGrid', color: '#E8A624' },
   { name: 'Operator Card', desc: 'Generate tactical operator showcase cards', path: '/character-card', icon: 'Sparkles', color: '#F5A623', isNew: true },
   { name: 'Tactical Map', desc: 'Explore Valley IV and Wuling with markers', path: '/map', icon: 'Map', color: '#69F0AE' },
   { name: 'Headhunt Operations', desc: 'Track recruitment attempts and pity counter', path: '/headhunt-tracker', icon: 'Target', color: '#FF6B35', isNew: true },

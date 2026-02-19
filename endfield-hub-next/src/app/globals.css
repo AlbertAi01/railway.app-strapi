@@ -2,26 +2,26 @@
 @import "tailwindcss";
 
 @theme {
-  /* Primary Colors - Endfield Tactical */
+  /* Primary Colors - Endfield Tactical (warm amber/yellow) */
   --color-accent: #FFD429;
   --color-accent-hover: #FFE066;
-  --color-accent-secondary: #00B0FF;
+  --color-accent-secondary: #E8A624;
   --color-originium: #FF6B35;
   --color-accent-glow: rgba(255, 212, 41, 0.15);
 
-  /* Surfaces - Blue-tinted tactical dark */
-  --color-surface: #0F1923;
-  --color-surface-2: #152232;
-  --color-surface-3: #1C2D3F;
-  --color-border: #263850;
+  /* Surfaces - Warm amber-tinted Endfield dark */
+  --color-surface: #161310;
+  --color-surface-2: #1E1A15;
+  --color-surface-3: #28231B;
+  --color-border: #3A3228;
   --color-border-accent: #FFD429;
-  --color-surface-card: #121E2B;
+  --color-surface-card: #1A1612;
 
-  /* Text - WCAG AA compliant on dark surfaces */
-  --color-text-primary: #F0F4F8;
-  --color-text-secondary: #B0BEC5;
-  --color-text-tertiary: #78909C;
-  --color-text-muted: #546E7A;
+  /* Text - WCAG AA compliant on warm dark surfaces */
+  --color-text-primary: #F5F0E8;
+  --color-text-secondary: #C4B8A5;
+  --color-text-tertiary: #8C7F6E;
+  --color-text-muted: #6B5F50;
 
   /* Element Colors */
   --color-physical: #CFD8DC;
@@ -48,7 +48,7 @@
 
 body {
   margin: 0;
-  background-color: #0A1018;
+  background-color: #0E0C09;
   color: var(--color-text-primary);
   font-family: 'Exo 2', 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 15px;
@@ -69,10 +69,10 @@ body::before {
   bottom: 0;
   background-image: repeating-linear-gradient(
     0deg,
-    rgba(0, 176, 255, 0.012) 0px,
+    rgba(255, 212, 41, 0.012) 0px,
     transparent 1px,
     transparent 4px,
-    rgba(0, 176, 255, 0.012) 5px
+    rgba(255, 212, 41, 0.012) 5px
   );
   pointer-events: none;
   z-index: 9999;
@@ -264,7 +264,7 @@ body::before {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A1018;
+  background: #0E0C09;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -403,13 +403,13 @@ body::before {
 
 .rios-btn:hover {
   background: var(--color-accent);
-  color: #0A1018;
+  color: #0E0C09;
   box-shadow: 0 0 16px rgba(255, 212, 41, 0.25);
 }
 
 .rios-btn-primary {
   background: var(--color-accent);
-  color: #0A1018;
+  color: #0E0C09;
   border-color: var(--color-accent);
 }
 

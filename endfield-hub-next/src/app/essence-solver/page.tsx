@@ -9,10 +9,10 @@ import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 import {
   WEAPON_ESSENCES, FARMING_ZONES, PRIMARY_ATTRS, SECONDARY_STATS, SKILL_STATS,
-  findCompatibleWeapons, getBestZones,
-  computeOptimalPreEngrave, getWeaponLabel, rankZones, perfectDropChance, getWeaponZoneMatch,
+  findCompatibleWeapons, getBestZones, calculateDropChance,
+  computeOptimalPreEngrave, getWeaponLabel, rankZones, getWeaponZoneMatch,
   type PrimaryAttr, type SecondaryStat, type SkillStat, type WeaponEssence, type FarmingZone,
-  type PreEngraveConfig,
+  type PreEngraveConfig, type DropChanceBreakdown,
 } from '@/data/essences';
 
 const RARITY_COLORS: Record<number, string> = { 6: '#FF8C00', 5: '#C0A000', 4: '#9B59B6', 3: '#3498DB' };
@@ -48,6 +48,51 @@ function StatPill({ label, active, onClick, color }: { label: string; active: bo
   );
 }
 
+// Probability breakdown bar component
+function ProbabilityBar({ breakdown, compact }: { breakdown: DropChanceBreakdown; compact?: boolean }) {
+  const pPct = (breakdown.primaryChance * 100).toFixed(1);
+  const sPct = (breakdown.secondaryChance * 100).toFixed(1);
+  const kPct = (breakdown.skillChance * 100).toFixed(1);
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1.5 text-[9px] font-mono">
+        <span className="text-[var(--color-accent)]" title="Primary">{pPct}%</span>
+        <span className="text-[var(--color-text-muted)]">x</span>
+        <span className={breakdown.secondaryChance > 0 ? 'text-green-400' : 'text-red-400/70'} title="Secondary">{sPct}%</span>
+        <span className="text-[var(--color-text-muted)]">x</span>
+        <span className={breakdown.skillChance > 0 ? 'text-purple-400' : 'text-red-400/70'} title="Skill">{kPct}%</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="text-[8px] font-mono text-[var(--color-text-tertiary)] w-10 shrink-0">PRI</span>
+        <div className="flex-1 h-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+          <div className="h-full bg-[var(--color-accent)]" style={{ width: `${breakdown.primaryChance * 100}%` }} />
+        </div>
+        <span className="text-[9px] font-mono text-[var(--color-accent)] w-10 text-right">{pPct}%</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[8px] font-mono text-[var(--color-text-tertiary)] w-10 shrink-0">SEC</span>
+        <div className="flex-1 h-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+          <div className={`h-full ${breakdown.secondaryChance > 0 ? 'bg-green-500' : 'bg-red-500/30'}`} style={{ width: `${Math.min(breakdown.secondaryChance * 100, 100)}%` }} />
+        </div>
+        <span className={`text-[9px] font-mono w-10 text-right ${breakdown.secondaryChance > 0 ? 'text-green-400' : 'text-red-400/70'}`}>{sPct}%</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[8px] font-mono text-[var(--color-text-tertiary)] w-10 shrink-0">SKL</span>
+        <div className="flex-1 h-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+          <div className={`h-full ${breakdown.skillChance > 0 ? 'bg-purple-500' : 'bg-red-500/30'}`} style={{ width: `${Math.min(breakdown.skillChance * 100, 100)}%` }} />
+        </div>
+        <span className={`text-[9px] font-mono w-10 text-right ${breakdown.skillChance > 0 ? 'text-purple-400' : 'text-red-400/70'}`}>{kPct}%</span>
+      </div>
+    </div>
+  );
+}
+
 function WeaponCard({ weapon, matchInfo }: { weapon: WeaponEssence; matchInfo?: { matchCount: number; total: number; selectedPrimary?: PrimaryAttr | null; selectedSecondary?: SecondaryStat | null; selectedSkill?: SkillStat | null } }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const icon = WEAPON_ICONS[weapon.name];
@@ -65,7 +110,6 @@ function WeaponCard({ weapon, matchInfo }: { weapon: WeaponEssence; matchInfo?: 
       onMouseLeave={() => setShowTooltip(false)}
     >
       <div className="flex items-start gap-4 p-4">
-        {/* Weapon Type Badge */}
         <div className="relative w-20 h-20 shrink-0">
           <div className="w-full h-full bg-[var(--color-surface)] flex items-center justify-center overflow-hidden group-hover:bg-[var(--color-surface-2)] transition-colors">
             {icon ? (
@@ -74,7 +118,6 @@ function WeaponCard({ weapon, matchInfo }: { weapon: WeaponEssence; matchInfo?: 
               <Sword size={24} className="text-[var(--color-text-tertiary)]" />
             )}
           </div>
-          {/* Weapon Type Icon Badge */}
           <div className="absolute -top-1 -right-1 bg-[var(--color-accent)] text-black px-1.5 py-0.5 clip-corner-tl">
             <span className="text-[8px] font-mono font-bold uppercase tracking-wider">{weapon.type.substring(0, 3)}</span>
           </div>
@@ -111,7 +154,6 @@ function WeaponCard({ weapon, matchInfo }: { weapon: WeaponEssence; matchInfo?: 
           </div>
         </div>
       </div>
-      {/* Hover Tooltip */}
       {showTooltip && (
         <div className="absolute left-0 right-0 bottom-full mb-2 bg-[var(--color-surface)] border-2 border-[var(--color-accent)] clip-corner-tl p-3 z-50 shadow-lg shadow-[var(--color-accent)]/20">
           <div className="text-[10px] font-mono space-y-1">
@@ -168,7 +210,6 @@ function ZoneCard({ zone, weapons, expanded, onToggle }: { zone: FarmingZone; we
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-mono text-[var(--color-text-tertiary)]">TARGET: {zone.enemy}</span>
           </div>
-          {/* Compatibility Progress Bar */}
           <div className="mt-2 space-y-1">
             <div className="flex items-center justify-between text-[9px] font-mono">
               <span className="text-[var(--color-text-tertiary)]">PERFECT MATCH RATE</span>
@@ -268,13 +309,11 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
   const selected = selectedWeapons.map(n => WEAPON_ESSENCES.find(w => w.name === n)!).filter(Boolean);
   const priorityWeapon = selected[0] || null;
 
-  // Compute optimal pre-engrave configuration
   const preEngrave = useMemo<PreEngraveConfig | null>(() => {
     if (!priorityWeapon || selected.length === 0) return null;
     return computeOptimalPreEngrave(priorityWeapon, selected);
   }, [priorityWeapon, selected]);
 
-  // Compute weapon labels (Priority / Perfect / Average)
   const weaponLabels = useMemo(() => {
     if (!preEngrave || !priorityWeapon) return new Map<string, string>();
     const labels = new Map<string, string>();
@@ -284,23 +323,21 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
     return labels;
   }, [selected, preEngrave, priorityWeapon]);
 
-  // Count labels (Priority counts as Perfect for the header counter)
   const perfectCount = Array.from(weaponLabels.values()).filter(l => l === 'Perfect' || l === 'Priority').length;
   const averageCount = Array.from(weaponLabels.values()).filter(l => l === 'Average').length;
 
-  // Rank zones using the new weighted algorithm
   const zoneRankings = useMemo(() => {
     if (!priorityWeapon || selected.length === 0 || !preEngrave) return [];
     return rankZones(priorityWeapon, selected, preEngrave);
   }, [priorityWeapon, selected, preEngrave]);
 
-  // Compute perfect drop chances for the best zone
+  // Use the new calculateDropChance which returns full breakdowns
   const dropChances = useMemo(() => {
-    if (!preEngrave || zoneRankings.length === 0) return new Map<string, number>();
+    if (!preEngrave || zoneRankings.length === 0) return new Map<string, DropChanceBreakdown>();
     const bestZone = zoneRankings[0].zone;
-    const chances = new Map<string, number>();
+    const chances = new Map<string, DropChanceBreakdown>();
     for (const w of selected) {
-      chances.set(w.name, perfectDropChance(w, bestZone, preEngrave));
+      chances.set(w.name, calculateDropChance(w, bestZone, preEngrave));
     }
     return chances;
   }, [selected, preEngrave, zoneRankings]);
@@ -325,7 +362,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
           )}
         </div>
         <div className="p-4">
-          <p className="text-xs text-[var(--color-text-tertiary)] mb-3">Select the weapons you want to farm essences for. We&apos;ll calculate which zone gives you the best chance of getting useful essences.</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-3">Select the weapons you want to farm essences for. The first weapon is your priority -- we optimize pre-engrave and zone selection around it.</p>
 
           {selected.length > 0 && (
             <div className="flex flex-wrap gap-3 mb-4">
@@ -375,7 +412,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                       className="text-[var(--color-text-tertiary)] hover:text-red-400 transition-colors p-1 shrink-0"
                       title="Remove weapon"
                     >
-                      <span className="text-lg leading-none font-bold">×</span>
+                      <span className="text-lg leading-none font-bold">&times;</span>
                     </button>
                   </div>
                 );
@@ -496,7 +533,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                   <p className="text-[10px] text-[var(--color-text-tertiary)] italic font-mono">Primary attributes are available in all zones (1/3 chance each)</p>
                 </div>
                 <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-4">
-                  <h4 className="text-[var(--color-accent)] text-xs font-bold mb-3 font-mono">Fixed Stat</h4>
+                  <h4 className="text-[var(--color-accent)] text-xs font-bold mb-3 font-mono">Fixed Stat (Pre-Engrave)</h4>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs px-3 py-1.5 border font-mono ${preEngrave.fixedStatType === 'skill' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' : 'border-green-500/50 bg-green-500/10 text-green-400'}`}>
                       {preEngrave.fixedStat}
@@ -505,69 +542,84 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                       {preEngrave.fixedStatType}
                     </span>
                   </div>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] italic mt-2 font-mono">This stat is guaranteed on every essence you farm</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] italic mt-2 font-mono">This stat is guaranteed on every essence you farm (100% chance)</p>
                 </div>
               </div>
 
-              {/* Weapon Match Breakdown with Drop Chances */}
+              {/* Weapon Match Breakdown with Drop Chances + Probability Bars */}
               <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border)]">
-                  <span className="border-l-3 border-l-[var(--color-accent)] pl-2 text-xs font-mono font-bold text-white uppercase tracking-wider">Weapon Match Breakdown</span>
+                  <span className="border-l-3 border-l-[var(--color-accent)] pl-2 text-xs font-mono font-bold text-white uppercase tracking-wider">Probability Breakdown</span>
                   {zoneRankings.length > 0 && (
                     <span className="ml-auto text-[9px] font-mono text-[var(--color-text-tertiary)]">
-                      Perfect Essence Drop Chances ({zoneRankings[0].zone.name})
+                      Perfect Drop at {zoneRankings[0].zone.name}
                     </span>
                   )}
                 </div>
-                <div className="p-4 space-y-2">
+                <div className="p-4 space-y-3">
+                  {/* Legend */}
+                  <div className="flex items-center gap-4 text-[9px] font-mono text-[var(--color-text-tertiary)] pb-2 border-b border-[var(--color-border)]">
+                    <span>Formula: <span className="text-[var(--color-accent)]">Primary</span> <span className="text-[var(--color-text-muted)]">&times;</span> <span className="text-green-400">Secondary</span> <span className="text-[var(--color-text-muted)]">&times;</span> <span className="text-purple-400">Skill</span> = <span className="text-white">Perfect %</span></span>
+                  </div>
                   {selected.map((w) => {
                     const label = weaponLabels.get(w.name) || 'Average';
                     const lc = LABEL_COLORS[label] || LABEL_COLORS['Average'];
-                    const chance = dropChances.get(w.name) || 0;
-                    const chancePercent = (chance * 100).toFixed(1);
+                    const breakdown = dropChances.get(w.name);
+                    const chancePercent = breakdown ? breakdown.chance.toFixed(2) : '0.00';
                     return (
-                      <div key={w.name} className={`flex items-center gap-3 p-3 border clip-corner-tl transition-all hover:border-[var(--color-accent)] ${lc.bg} ${lc.border}`}>
-                        <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-[var(--color-surface)] relative">
-                          {WEAPON_ICONS[w.name] ? (
-                            <Image src={WEAPON_ICONS[w.name]} alt={w.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
-                          ) : <Sword size={20} className="text-[var(--color-text-tertiary)]" />}
-                          {label === 'Priority' && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF8C00] rounded-full flex items-center justify-center">
-                              <Star size={10} fill="#000" className="text-black" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-white text-xs sm:text-sm font-bold font-mono">{w.name}</p>
-                            <span className={`text-[8px] font-mono px-1.5 py-0.5 font-bold ${lc.bg} ${lc.text} border ${lc.border}`}>{label.toUpperCase()}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-accent)]/30 text-[var(--color-accent)] bg-[var(--color-accent)]/5 clip-corner-tl">
-                              {w.primaryAttr}
-                            </span>
-                            {w.secondaryStat && (
-                              <span className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${w.secondaryStat === preEngrave.fixedStat ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
-                                {w.secondaryStat}
-                              </span>
+                      <div key={w.name} className={`p-3 border clip-corner-tl transition-all hover:border-[var(--color-accent)] ${lc.bg} ${lc.border}`}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-[var(--color-surface)] relative">
+                            {WEAPON_ICONS[w.name] ? (
+                              <Image src={WEAPON_ICONS[w.name]} alt={w.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
+                            ) : <Sword size={20} className="text-[var(--color-text-tertiary)]" />}
+                            {label === 'Priority' && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF8C00] rounded-full flex items-center justify-center">
+                                <Star size={10} fill="#000" className="text-black" />
+                              </div>
                             )}
-                            <span className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${w.skillStat === preEngrave.fixedStat ? 'border-purple-500/50 text-purple-400 bg-purple-500/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
-                              {w.skillStat}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-white text-xs sm:text-sm font-bold font-mono">{w.name}</p>
+                              <span className={`text-[8px] font-mono px-1.5 py-0.5 font-bold ${lc.bg} ${lc.text} border ${lc.border}`}>{label.toUpperCase()}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 border border-[var(--color-accent)]/30 text-[var(--color-accent)] bg-[var(--color-accent)]/5 clip-corner-tl">
+                                {w.primaryAttr}
+                              </span>
+                              {w.secondaryStat && (
+                                <span className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${w.secondaryStat === preEngrave.fixedStat ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+                                  {w.secondaryStat}{w.secondaryStat === preEngrave.fixedStat ? ' (FIXED)' : ''}
+                                </span>
+                              )}
+                              <span className={`text-[9px] font-mono px-1.5 py-0.5 border clip-corner-tl ${w.skillStat === preEngrave.fixedStat ? 'border-purple-500/50 text-purple-400 bg-purple-500/10' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'}`}>
+                                {w.skillStat}{w.skillStat === preEngrave.fixedStat ? ' (FIXED)' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className={`text-lg font-mono font-bold block ${breakdown && breakdown.chance > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)]'}`}>
+                              {chancePercent}%
                             </span>
+                            <span className="text-[8px] font-mono text-[var(--color-text-tertiary)]">perfect drop</span>
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          <span className={`text-sm font-mono font-bold block ${chance > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)]'}`}>
-                            {chancePercent}%
-                          </span>
-                          <span className="text-[8px] font-mono text-[var(--color-text-tertiary)]">drop chance</span>
-                        </div>
+                        {/* Probability breakdown bars */}
+                        {breakdown && (
+                          <div className="ml-15 pl-15">
+                            <ProbabilityBar breakdown={breakdown} />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
-                  <p className="text-[9px] font-mono text-[var(--color-text-tertiary)] italic mt-2">
-                    Chance to get a perfect 3/3 essence with this pre-engrave at the best zone.
-                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-[var(--color-border)] text-[9px] font-mono text-[var(--color-text-tertiary)]">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[var(--color-accent)] inline-block"></span> Primary (33.3%)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 inline-block"></span> Secondary (zone pool)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-500 inline-block"></span> Skill (zone pool)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[var(--color-accent)] inline-block rotate-45"></span> Fixed = 100%</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -579,7 +631,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
               <MapPin size={16} className="text-[var(--color-accent)]" />
               Farming Zone Rankings
             </h3>
-            <p className="text-[10px] font-mono text-[var(--color-text-tertiary)] mt-1">Only showing zones compatible with your priority weapon. Priority weapon match is weighted 10x higher in scoring.</p>
+            <p className="text-[10px] font-mono text-[var(--color-text-tertiary)] mt-1">Only showing zones where your priority weapon can achieve a perfect 3/3 essence. Priority weapon is weighted 10x in scoring.</p>
           </div>
 
           {zoneRankings.length === 0 && (
@@ -591,10 +643,9 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
           )}
 
           {zoneRankings.map((ranking, idx) => {
-            const { zone, score, perfectCount: zPerfect, goodCount: zGood, weaponMatches } = ranking;
+            const { zone, score, perfectCount: zPerfect, goodCount: zGood, weaponMatches, weaponChances } = ranking;
             const isTopChoice = idx === 0;
 
-            // Group weapons by match level
             const perfectWeapons = weaponMatches.filter(m => m.level === 'perfect');
             const goodWeapons = weaponMatches.filter(m => m.level === 'good');
             const partialWeapons = weaponMatches.filter(m => m.level === 'partial');
@@ -623,18 +674,51 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                   </div>
                 </div>
 
-                {/* Weapon Breakdown grouped by match level */}
+                {/* Weapon Breakdown grouped by match level with probability */}
                 <div className="p-4 space-y-3">
                   {perfectWeapons.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-green-400 uppercase">
-                        <CheckCircle size={12} /> Perfect (3/3)
+                        <CheckCircle size={12} /> Perfect (3/3) — All Stats in Zone
                       </div>
                       <div className="space-y-1.5">
                         {perfectWeapons.map(m => {
-                          const wpnLabel = weaponLabels.get(m.weapon.name) || 'Average';
+                          const chance = weaponChances.get(m.weapon.name);
                           return (
                             <div key={m.weapon.name} className="flex items-center gap-3 p-2.5 bg-green-500/5 border border-green-500/20 clip-corner-tl">
+                              <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--color-surface)]">
+                                {WEAPON_ICONS[m.weapon.name] ? (
+                                  <Image src={WEAPON_ICONS[m.weapon.name]} alt={m.weapon.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
+                                ) : <Sword size={16} className="text-[var(--color-text-tertiary)]" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-white text-xs font-bold font-mono">{m.weapon.name}</p>
+                                  <span className="text-[8px] font-mono" style={{ color: RARITY_COLORS[m.weapon.rarity] }}>{m.weapon.rarity}★</span>
+                                </div>
+                                {chance && <ProbabilityBar breakdown={chance} compact />}
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-green-400 font-mono font-bold text-sm">{chance ? chance.chance.toFixed(2) : '0'}%</span>
+                                <span className="block text-[8px] font-mono text-[var(--color-text-tertiary)]">perfect</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {goodWeapons.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-yellow-400 uppercase">
+                        Good (2/3) — Partial Match
+                      </div>
+                      <div className="space-y-1.5">
+                        {goodWeapons.map(m => {
+                          const chance = weaponChances.get(m.weapon.name);
+                          return (
+                            <div key={m.weapon.name} className="flex items-center gap-3 p-2.5 bg-yellow-500/5 border border-yellow-500/20 clip-corner-tl">
                               <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--color-surface)]">
                                 {WEAPON_ICONS[m.weapon.name] ? (
                                   <Image src={WEAPON_ICONS[m.weapon.name]} alt={m.weapon.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
@@ -648,12 +732,12 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                                 <div className="flex flex-wrap gap-1 mt-1">
                                   {m.details.map((d, i) => (
                                     <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 ${d.matched ? 'text-green-400' : 'text-red-400/70'}`}>
-                                      {d.stat.replace(' Boost', '')}
+                                      {d.matched ? '✓' : '✗'} {d.stat.replace(' Boost', '')}
                                     </span>
                                   ))}
                                 </div>
                               </div>
-                              <span className="text-green-400 font-mono font-bold text-xs shrink-0">{m.matchCount}/{m.total}</span>
+                              <span className="text-yellow-400 font-mono font-bold text-xs shrink-0">{m.matchCount}/{m.total}</span>
                             </div>
                           );
                         })}
@@ -661,43 +745,10 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                     </div>
                   )}
 
-                  {goodWeapons.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-yellow-400 uppercase">
-                        Good (2/3)
-                      </div>
-                      <div className="space-y-1.5">
-                        {goodWeapons.map(m => (
-                          <div key={m.weapon.name} className="flex items-center gap-3 p-2.5 bg-yellow-500/5 border border-yellow-500/20 clip-corner-tl">
-                            <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--color-surface)]">
-                              {WEAPON_ICONS[m.weapon.name] ? (
-                                <Image src={WEAPON_ICONS[m.weapon.name]} alt={m.weapon.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
-                              ) : <Sword size={16} className="text-[var(--color-text-tertiary)]" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-white text-xs font-bold font-mono">{m.weapon.name}</p>
-                                <span className="text-[8px] font-mono" style={{ color: RARITY_COLORS[m.weapon.rarity] }}>{m.weapon.rarity}★</span>
-                              </div>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {m.details.map((d, i) => (
-                                  <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 ${d.matched ? 'text-green-400' : 'text-red-400/70'}`}>
-                                    {d.stat.replace(' Boost', '')}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <span className="text-yellow-400 font-mono font-bold text-xs shrink-0">{m.matchCount}/{m.total}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {partialWeapons.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2 text-[9px] font-mono font-bold text-[var(--color-text-tertiary)] uppercase">
-                        Partial (1/3)
+                        Partial (1/3) — Single Affix
                       </div>
                       <div className="space-y-1.5">
                         {partialWeapons.map(m => (
@@ -715,7 +766,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {m.details.map((d, i) => (
                                   <span key={i} className={`text-[9px] font-mono px-1.5 py-0.5 ${d.matched ? 'text-green-400' : 'text-red-400/70'}`}>
-                                    {d.stat.replace(' Boost', '')}
+                                    {d.matched ? '✓' : '✗'} {d.stat.replace(' Boost', '')}
                                   </span>
                                 ))}
                               </div>
@@ -746,7 +797,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                   {/* Zone Stat Pool */}
                   <details className="mt-2">
                     <summary className="text-[9px] font-mono text-[var(--color-text-tertiary)] cursor-pointer hover:text-white transition-colors">
-                      View zone stat pool
+                      View zone stat pool ({zone.secondaryStats.length} secondary, {zone.skillStats.length} skill)
                     </summary>
                     <div className="grid md:grid-cols-3 gap-3 mt-2">
                       <div>
@@ -758,7 +809,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                         </div>
                       </div>
                       <div>
-                        <p className="text-[8px] font-mono text-[var(--color-accent)] uppercase mb-1 font-bold">Secondary Stat</p>
+                        <p className="text-[8px] font-mono text-green-400 uppercase mb-1 font-bold">Secondary Stat (1/{zone.secondaryStats.length} = {(100/zone.secondaryStats.length).toFixed(1)}%)</p>
                         <div className="flex flex-wrap gap-1">
                           {zone.secondaryStats.map(s => (
                             <span key={s} className="text-[8px] font-mono px-1 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)]">{s.replace(' Boost', '')}</span>
@@ -766,7 +817,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
                         </div>
                       </div>
                       <div>
-                        <p className="text-[8px] font-mono text-[var(--color-accent)] uppercase mb-1 font-bold">Skill Stat</p>
+                        <p className="text-[8px] font-mono text-purple-400 uppercase mb-1 font-bold">Skill Stat (1/{zone.skillStats.length} = {(100/zone.skillStats.length).toFixed(1)}%)</p>
                         <div className="flex flex-wrap gap-1">
                           {zone.skillStats.map(s => (
                             <span key={s} className="text-[8px] font-mono px-1 py-0.5 border border-[var(--color-border)] text-[var(--color-text-tertiary)]">{s}</span>
@@ -977,7 +1028,7 @@ function EssenceChecker() {
               {partialMatches.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-yellow-500/10 border-l-3 border-l-yellow-500">
-                    <span className="text-yellow-400 text-lg leading-none">⚠</span>
+                    <span className="text-yellow-400 text-lg leading-none">&#9888;</span>
                     <span className="text-[10px] font-mono font-bold text-yellow-400 uppercase">Partial Matches ({partialMatches.length})</span>
                     <span className="text-[9px] font-mono text-[var(--color-text-tertiary)]">Some stats match</span>
                   </div>
@@ -1022,19 +1073,19 @@ function FarmingGuide() {
           </h3>
           <div className="space-y-2 text-[10px] font-mono text-[var(--color-text-tertiary)]">
             <div className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
               <span>Each zone drops unique secondary + skill stat combinations</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
               <span>Primary attributes available in ALL zones (1/3 chance)</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
               <span>Match 3/3 stats for perfect essence compatibility</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
               <span>Use pre-engrave to guarantee one stat per run</span>
             </div>
           </div>
@@ -1043,24 +1094,24 @@ function FarmingGuide() {
         <div className="bg-[var(--color-surface)] border-l-3 border-l-green-500 border border-[var(--color-border)] clip-corner-tl p-4">
           <h3 className="text-white text-xs font-mono font-bold mb-3 flex items-center gap-2 uppercase tracking-wider">
             <FlaskConical size={14} className="text-green-400" />
-            Essence System
+            Probability Math
           </h3>
           <div className="space-y-2 text-[10px] font-mono text-[var(--color-text-tertiary)]">
             <div className="flex items-start gap-2">
-              <span className="text-green-400 shrink-0">✓</span>
-              <span>Flawless (T5): +6 primary/secondary, +3 skill</span>
+              <span className="text-green-400 shrink-0">&#10003;</span>
+              <span>Perfect drop = Primary (33.3%) x Secondary (1/pool) x Skill (1/pool)</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-green-400 shrink-0">✓</span>
-              <span>Farm Lv.80 dungeons for best drop rates</span>
+              <span className="text-green-400 shrink-0">&#10003;</span>
+              <span>Pre-engrave sets one stat to 100%, improving odds significantly</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-green-400 shrink-0">✓</span>
-              <span>Dismantle extras for Essence Dust</span>
+              <span className="text-green-400 shrink-0">&#10003;</span>
+              <span>Smaller stat pools = higher individual probability per stat</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-green-400 shrink-0">✓</span>
-              <span>Perfect 3/3 essences unlock max potential</span>
+              <span className="text-green-400 shrink-0">&#10003;</span>
+              <span>Flawless (T5) essences only from Severe Energy Alluvium</span>
             </div>
           </div>
         </div>
@@ -1070,7 +1121,7 @@ function FarmingGuide() {
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
         <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
           <h3 className="text-white text-sm font-mono font-bold uppercase tracking-wider">Zone Comparison</h3>
-          <p className="text-[10px] font-mono text-[var(--color-text-tertiary)] mt-1">Quick reference for all farming locations</p>
+          <p className="text-[10px] font-mono text-[var(--color-text-tertiary)] mt-1">Quick reference for all farming locations and their stat pool sizes</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[10px] font-mono">
@@ -1079,8 +1130,8 @@ function FarmingGuide() {
                 <th className="px-4 py-2 text-left text-[var(--color-accent)] font-bold uppercase">Zone</th>
                 <th className="px-4 py-2 text-left text-[var(--color-accent)] font-bold uppercase">Region</th>
                 <th className="px-4 py-2 text-left text-[var(--color-accent)] font-bold uppercase">Enemy</th>
-                <th className="px-4 py-2 text-center text-[var(--color-accent)] font-bold uppercase">Secondary</th>
-                <th className="px-4 py-2 text-center text-[var(--color-accent)] font-bold uppercase">Skill</th>
+                <th className="px-4 py-2 text-center text-green-400 font-bold uppercase">Secondary</th>
+                <th className="px-4 py-2 text-center text-purple-400 font-bold uppercase">Skill</th>
                 <th className="px-4 py-2 text-center text-[var(--color-accent)] font-bold uppercase">Perfect Wpns</th>
               </tr>
             </thead>
@@ -1096,17 +1147,17 @@ function FarmingGuide() {
                     <td className="px-4 py-3 text-[var(--color-text-tertiary)]">{zone.region}</td>
                     <td className="px-4 py-3 text-[var(--color-text-tertiary)]">{zone.enemy}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-0.5 bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-accent)] clip-corner-tl">
-                        {zone.secondaryStats.length}
+                      <span className="px-2 py-0.5 bg-green-500/10 border border-green-500/30 text-green-400 clip-corner-tl">
+                        {zone.secondaryStats.length} <span className="text-[8px] text-[var(--color-text-tertiary)]">({(100/zone.secondaryStats.length).toFixed(1)}%)</span>
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-0.5 bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-accent)] clip-corner-tl">
-                        {zone.skillStats.length}
+                      <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/30 text-purple-400 clip-corner-tl">
+                        {zone.skillStats.length} <span className="text-[8px] text-[var(--color-text-tertiary)]">({(100/zone.skillStats.length).toFixed(1)}%)</span>
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-0.5 bg-green-500/10 border border-green-500/30 text-green-400 font-bold clip-corner-tl">
+                      <span className="px-2 py-0.5 bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-bold clip-corner-tl">
                         {perfectCount}
                       </span>
                     </td>
@@ -1137,40 +1188,40 @@ function FarmingGuide() {
       <div className="grid md:grid-cols-2 gap-4">
         <div className="p-4 bg-[var(--color-surface)] border-l-3 border-l-yellow-500 border border-[var(--color-border)] clip-corner-tl">
           <h3 className="font-bold font-mono text-white text-xs mb-3 uppercase flex items-center gap-2">
-            <span className="text-yellow-400">⚡</span> Pre-Engrave Strategy
+            <span className="text-yellow-400">&#9889;</span> Pre-Engrave Strategy
           </h3>
           <ul className="text-[10px] font-mono text-[var(--color-text-tertiary)] space-y-2">
             <li className="flex items-start gap-2">
               <span className="text-yellow-400 shrink-0">1.</span>
-              <span>Select your weapon&apos;s primary attribute</span>
+              <span>Choose the stat shared by most of your target weapons</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-400 shrink-0">2.</span>
-              <span>Farm zone with both secondary + skill stats</span>
+              <span>Fix it via pre-engrave (100% guarantee), leaving 2 random slots</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-400 shrink-0">3.</span>
-              <span>Guaranteed 1/3 match, roll for remaining 2/3</span>
+              <span>Farm a zone where both remaining stats are in the pool</span>
             </li>
           </ul>
         </div>
 
         <div className="p-4 bg-[var(--color-surface)] border-l-3 border-l-[var(--color-accent)] border border-[var(--color-border)] clip-corner-tl">
           <h3 className="font-bold font-mono text-white text-xs mb-3 uppercase flex items-center gap-2">
-            <span className="text-[var(--color-accent)]">✦</span> Efficiency Tips
+            <span className="text-[var(--color-accent)]">&#10022;</span> Efficiency Tips
           </h3>
           <ul className="text-[10px] font-mono text-[var(--color-text-tertiary)] space-y-2">
             <li className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
               <span>Prioritize zones matching multiple weapons</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
-              <span>Keep 2/3 essences as upgrade fodder</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
+              <span>Keep 2/3 essences as etching fodder</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-[var(--color-accent)] shrink-0">▸</span>
-              <span>Focus Flawless T5 for endgame builds</span>
+              <span className="text-[var(--color-accent)] shrink-0">&#9656;</span>
+              <span>Focus Flawless T5 for endgame builds (only from Severe Energy Alluvium)</span>
             </li>
           </ul>
         </div>
@@ -1189,7 +1240,6 @@ export default function EssenceSolverPage() {
   const { token } = useAuthStore();
   const loaded = useRef(false);
 
-  // Load saved state on mount
   useEffect(() => {
     if (loaded.current) return;
     loaded.current = true;
@@ -1215,7 +1265,6 @@ export default function EssenceSolverPage() {
     load();
   }, [token]);
 
-  // Save + debounced cloud sync whenever selectedWeapons changes
   const saveState = useCallback((weapons: string[]) => {
     const data = { selectedWeapons: weapons };
     localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
@@ -1279,7 +1328,7 @@ export default function EssenceSolverPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <p className="text-xs sm:text-sm text-[var(--color-text-tertiary)]">
-            Stop guessing in Severe Energy Alluvium. Get the optimal pre-engrave setup, find your best farming zone, and land more 3/3 essence matches.
+            Calculate exact drop probabilities for weapon essences. Optimize pre-engrave setup, find your best farming zone, and understand the math behind perfect 3/3 drops.
           </p>
           {token && (
             <div className="flex items-center gap-1.5 shrink-0">

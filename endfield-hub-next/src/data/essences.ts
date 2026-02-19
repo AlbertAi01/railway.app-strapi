@@ -1,4 +1,5 @@
 // Weapon essence stat data from EndfieldTools.dev game database
+// Probability engine reverse-engineered from endfieldtools.dev v1.9.3 source
 // Each weapon has 3 essence stat slots: Primary Attribute, Secondary Stat, Skill Stat
 // A "perfect" essence matches all 3 stats for a given weapon.
 
@@ -164,9 +165,9 @@ export const FARMING_ZONES: FarmingZone[] = [
   },
 ];
 
-// How many secondary stats and skill stats each zone has (for probability calculations)
-const ZONE_SECONDARY_COUNT = (zone: FarmingZone) => zone.secondaryStats.length;
-const ZONE_SKILL_COUNT = (zone: FarmingZone) => zone.skillStats.length;
+// =============================================
+// PROBABILITY ENGINE (matches endfieldtools.dev)
+// =============================================
 
 // Match scoring for a single weapon against a zone
 export type MatchLevel = 'perfect' | 'good' | 'partial' | 'none';
@@ -186,7 +187,7 @@ export interface WeaponZoneMatch {
 export function getWeaponZoneMatch(weapon: WeaponEssence, zone: FarmingZone): WeaponZoneMatch {
   const details: { stat: string; matched: boolean; type: 'primary' | 'secondary' | 'skill' }[] = [];
 
-  // Primary attributes available in ALL zones
+  // Primary attributes available in ALL zones (always 1/3 chance)
   details.push({ stat: weapon.primaryAttr, matched: true, type: 'primary' });
 
   const secondaryMatch = weapon.secondaryStat ? zone.secondaryStats.includes(weapon.secondaryStat) : true;
@@ -208,10 +209,7 @@ export function getWeaponZoneMatch(weapon: WeaponEssence, zone: FarmingZone): We
   return { weapon, zone, primaryMatch: true, secondaryMatch, skillMatch, matchCount, total, level, details };
 }
 
-// Determine the optimal fixed stat for pre-engrave.
-// The fixed stat should be the stat (secondary OR skill) from the priority weapon
-// that maximizes the number of "perfect" or "good" matches across ALL selected weapons
-// when combined with the best zone.
+// Pre-engrave configuration
 export type FixedStatType = 'secondary' | 'skill';
 
 export interface PreEngraveConfig {
@@ -220,18 +218,91 @@ export interface PreEngraveConfig {
   primaryAttrs: PrimaryAttr[];
 }
 
+// Probability breakdown for a single weapon at a zone
+export interface DropChanceBreakdown {
+  chance: number; // percentage (0-100)
+  primaryChance: number;
+  secondaryChance: number;
+  skillChance: number;
+}
+
+// Calculate exact drop probability for a weapon at a zone with optional pre-engrave
+// Formula: chance = primaryChance * secondaryChance * skillChance * 100
+// Matches endfieldtools.dev's calculation exactly
+export function calculateDropChance(
+  weapon: WeaponEssence,
+  zone: FarmingZone,
+  preEngrave?: PreEngraveConfig | null
+): DropChanceBreakdown {
+  // Primary: always 1/3 (3 primary attribute slots, need the right one)
+  const primaryChance = 1 / 3;
+
+  let secondaryChance: number;
+  let skillChance: number;
+
+  if (preEngrave) {
+    if (preEngrave.fixedStatType === 'skill') {
+      // Skill stat is pre-engraved (fixed)
+      // Skill chance: 1 if it matches the weapon's skill, 0 otherwise
+      skillChance = weapon.skillStat === preEngrave.fixedStat ? 1 : 0;
+      // Secondary must come from zone pool
+      if (!weapon.secondaryStat) {
+        secondaryChance = 1; // No secondary needed
+      } else if (zone.secondaryStats.includes(weapon.secondaryStat)) {
+        secondaryChance = 1 / zone.secondaryStats.length;
+      } else {
+        secondaryChance = 0; // Secondary not in zone
+      }
+    } else {
+      // Secondary stat is pre-engraved (fixed)
+      // Secondary chance: 1 if it matches, 0 otherwise
+      secondaryChance = weapon.secondaryStat === preEngrave.fixedStat ? 1 : 0;
+      // For weapons with no secondary: if fixed stat type is secondary but weapon has no secondary
+      if (!weapon.secondaryStat) {
+        secondaryChance = 0; // The pre-engrave doesn't help - weapon doesn't use secondary
+      }
+      // Skill must come from zone pool
+      if (zone.skillStats.includes(weapon.skillStat)) {
+        skillChance = 1 / zone.skillStats.length;
+      } else {
+        skillChance = 0; // Skill not in zone
+      }
+    }
+  } else {
+    // No pre-engrave - both random from zone pools
+    if (!weapon.secondaryStat) {
+      secondaryChance = 1; // No secondary needed
+    } else if (zone.secondaryStats.includes(weapon.secondaryStat)) {
+      secondaryChance = 1 / zone.secondaryStats.length;
+    } else {
+      secondaryChance = 0;
+    }
+
+    if (zone.skillStats.includes(weapon.skillStat)) {
+      skillChance = 1 / zone.skillStats.length;
+    } else {
+      skillChance = 0;
+    }
+  }
+
+  const chance = Math.round(primaryChance * secondaryChance * skillChance * 100 * 100) / 100;
+
+  return { chance, primaryChance, secondaryChance, skillChance };
+}
+
+// Determine the optimal fixed stat for pre-engrave.
+// Counts how many selected weapons share each potential fixed stat,
+// picks the one that maximizes compatibility across all selected weapons.
 export function computeOptimalPreEngrave(
   priorityWeapon: WeaponEssence,
   allWeapons: WeaponEssence[]
 ): PreEngraveConfig {
-  // Candidate fixed stats: the priority weapon's secondary stat and skill stat
   const candidates: { stat: string; type: FixedStatType }[] = [];
   if (priorityWeapon.secondaryStat) {
     candidates.push({ stat: priorityWeapon.secondaryStat, type: 'secondary' });
   }
   candidates.push({ stat: priorityWeapon.skillStat, type: 'skill' });
 
-  // For each candidate, count how many weapons share that stat
   let bestCandidate = candidates[0];
   let bestScore = -1;
 
@@ -243,8 +314,6 @@ export function computeOptimalPreEngrave(
       } else {
         if (w.skillStat === candidate.stat) score += 10;
       }
-      // Also consider cross-type: a skill stat locked means the zone
-      // secondary stat can still match other weapons' secondary needs
     }
     if (score > bestScore) {
       bestScore = score;
@@ -252,17 +321,15 @@ export function computeOptimalPreEngrave(
     }
   }
 
-  // Collect unique primary attributes across all selected weapons
   const primarySet = new Set<PrimaryAttr>();
   for (const w of allWeapons) {
     primarySet.add(w.primaryAttr);
   }
-  const primaryAttrs = Array.from(primarySet);
 
   return {
     fixedStat: bestCandidate.stat,
     fixedStatType: bestCandidate.type,
-    primaryAttrs,
+    primaryAttrs: Array.from(primarySet),
   };
 }
 
@@ -274,7 +341,6 @@ export function getWeaponLabel(
 ): 'Priority' | 'Perfect' | 'Average' {
   if (isPriority) return 'Priority';
 
-  // A weapon is "Perfect" if it shares the fixed stat with priority
   const hasFixedStat = config.fixedStatType === 'secondary'
     ? weapon.secondaryStat === config.fixedStat
     : weapon.skillStat === config.fixedStat;
@@ -282,8 +348,7 @@ export function getWeaponLabel(
   return hasFixedStat ? 'Perfect' : 'Average';
 }
 
-// Zone scoring algorithm (matches EndfieldTools.dev's weighted approach)
-// Priority weapon is weighted 10x higher
+// Zone ranking with full probability data
 export interface ZoneRanking {
   zone: FarmingZone;
   score: number;
@@ -292,14 +357,15 @@ export interface ZoneRanking {
   partialCount: number;
   weaponMatches: WeaponZoneMatch[];
   priorityMatch: WeaponZoneMatch;
+  weaponChances: Map<string, DropChanceBreakdown>;
 }
 
+// Rank zones using weighted scoring + actual probability calculations
 export function rankZones(
   priorityWeapon: WeaponEssence,
   allWeapons: WeaponEssence[],
   config: PreEngraveConfig
 ): ZoneRanking[] {
-  // Only consider zones where the priority weapon can get a perfect 3/3
   const rankings: ZoneRanking[] = [];
 
   for (const zone of FARMING_ZONES) {
@@ -313,16 +379,12 @@ export function rankZones(
     if (!fixedStatAvailable) continue;
 
     // For priority weapon, check if all non-fixed stats are also available
-    // The fixed stat is guaranteed, primary is always available,
-    // so we need the remaining stat to be in the zone's pool
     let priorityCanBePerfect = true;
     if (config.fixedStatType === 'skill') {
-      // Fixed = skill stat, so we need the secondary stat to be in zone
       if (priorityWeapon.secondaryStat && !zone.secondaryStats.includes(priorityWeapon.secondaryStat)) {
         priorityCanBePerfect = false;
       }
     } else {
-      // Fixed = secondary stat, so we need the skill stat to be in zone
       if (!zone.skillStats.includes(priorityWeapon.skillStat)) {
         priorityCanBePerfect = false;
       }
@@ -331,6 +393,8 @@ export function rankZones(
     if (!priorityCanBePerfect) continue;
 
     const weaponMatches = allWeapons.map(w => getWeaponZoneMatch(w, zone));
+    const weaponChances = new Map<string, DropChanceBreakdown>();
+
     let score = 0;
     let perfectCount = 0;
     let goodCount = 0;
@@ -340,6 +404,9 @@ export function rankZones(
       const m = weaponMatches[i];
       const isPriority = m.weapon.name === priorityWeapon.name;
       const weight = isPriority ? 10 : 1;
+
+      // Calculate actual probability for each weapon
+      weaponChances.set(m.weapon.name, calculateDropChance(m.weapon, zone, config));
 
       if (m.level === 'perfect') {
         score += 3 * weight;
@@ -361,41 +428,12 @@ export function rankZones(
       partialCount,
       weaponMatches,
       priorityMatch,
+      weaponChances,
     });
   }
 
   rankings.sort((a, b) => b.score - a.score);
   return rankings;
-}
-
-// Calculate the probability of getting a perfect 3/3 essence drop
-// Given the pre-engrave config and zone
-export function perfectDropChance(
-  weapon: WeaponEssence,
-  zone: FarmingZone,
-  config: PreEngraveConfig
-): number {
-  // Fixed stat: guaranteed (probability = 1)
-  // Primary attribute: 1/5 chance (5 possible primary attrs, 1/3 shown but actually 1/5 for specific)
-  // Actually: primary attributes available at 1/3 chance each (3 shown per essence)
-  // The remaining stat depends on zone pool size
-
-  const primaryProb = 1 / 3; // 1 out of 3 possible primaries per essence
-
-  if (config.fixedStatType === 'skill') {
-    // Skill is fixed. Need: primary (1/3) + secondary from zone pool
-    if (!weapon.secondaryStat) return primaryProb; // No secondary needed
-    const secInZone = zone.secondaryStats.includes(weapon.secondaryStat);
-    if (!secInZone) return 0;
-    const secProb = 1 / ZONE_SECONDARY_COUNT(zone);
-    return primaryProb * secProb;
-  } else {
-    // Secondary is fixed. Need: primary (1/3) + skill from zone pool
-    const skillInZone = zone.skillStats.includes(weapon.skillStat);
-    if (!skillInZone) return 0;
-    const skillProb = 1 / ZONE_SKILL_COUNT(zone);
-    return primaryProb * skillProb;
-  }
 }
 
 // Legacy helpers (kept for checker tab compatibility)
