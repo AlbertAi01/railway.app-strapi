@@ -77,6 +77,18 @@ export default {
       }
     }
 
+    // Headhunt record: public read access to global-stats, leaderboard, find, findOne
+    const headhuntPublicActions = [
+      'api::headhunt-record.headhunt-record.find',
+      'api::headhunt-record.headhunt-record.findOne',
+      'api::headhunt-record.headhunt-record.globalStats',
+      'api::headhunt-record.headhunt-record.leaderboard',
+    ];
+    for (const action of headhuntPublicActions) {
+      if (await ensurePermission(publicRole.id, action)) created++;
+      if (await ensurePermission(authenticatedRole.id, action)) created++;
+    }
+
     // Authenticated-only write permissions
     const authWritePermissions = [
       'api::blueprint.blueprint.create',
@@ -87,6 +99,8 @@ export default {
       'api::user-datum.user-datum.create',
       'api::user-datum.user-datum.update',
       'api::user-datum.user-datum.delete',
+      'api::headhunt-record.headhunt-record.submit',
+      'api::headhunt-record.headhunt-record.myHistory',
       'plugin::users-permissions.user.update',
     ];
 

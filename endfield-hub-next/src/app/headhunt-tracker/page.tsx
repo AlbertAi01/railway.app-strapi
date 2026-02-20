@@ -2,58 +2,195 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { Target, Plus, Trash2, TrendingUp, Download, Share2, Upload, Clock, BarChart3, Trophy, ChevronDown, Cloud, CloudOff, Loader2, X } from 'lucide-react';
+import { Target, TrendingUp, Download, Share2, Upload, Clock, BarChart3, Trophy, Cloud, CloudOff, Loader2, X, Users, FileText, AlertCircle, ChevronDown, Trash2, Copy, Check, Link } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import html2canvas from 'html2canvas';
 import { CHARACTERS, WEAPONS } from '@/lib/data';
 import { CHARACTER_ICONS, WEAPON_ICONS } from '@/lib/assets';
 import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud, saveLocal, loadLocal } from '@/lib/userSync';
+import api from '@/lib/api';
 
+// ─── Types ───────────────────────────────────────────────────
 interface Pull {
   id: string;
   timestamp: number;
   rarity: number;
+  name: string;
   item: string;
   banner: string;
   icon?: string;
   type?: 'character' | 'weapon' | 'material';
+  date?: string;
 }
 
 interface HeadhuntData {
+  version: 2;
   pulls: Pull[];
   pityCounters: Record<string, number>;
 }
 
+// Legacy v1 format (old "Record Pull" system)
+interface LegacyHeadhuntData {
+  pulls: Array<{
+    id: string;
+    timestamp: number;
+    rarity: number;
+    item: string;
+    banner: string;
+    icon?: string;
+    type?: 'character' | 'weapon' | 'material';
+  }>;
+  pityCounters: Record<string, number>;
+}
+
+interface GlobalStatsData {
+  totalPulls: number;
+  contributors: number;
+  sixStarRate: number;
+  fiveStarRate: number;
+  fourStarRate: number;
+  totalSixStar: number;
+  totalFiveStar: number;
+  mostPulledSixStar: Array<{ name: string; count: number }>;
+  mostPulledFiveStar: Array<{ name: string; count: number }>;
+  bannerBreakdown: Array<{
+    banner: string;
+    totalPulls: number;
+    sixStarRate: number;
+    fiveStarRate: number;
+    userCount: number;
+  }>;
+}
+
+interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  totalPulls: number;
+  sixStarCount: number;
+  fiveStarCount: number;
+  sixStarRate: number;
+  bannerCount: number;
+}
+
+interface LeaderboardData {
+  sort: string;
+  totalPlayers: number;
+  totalPulls: number;
+  overallSixStarRate: number;
+  entries: LeaderboardEntry[];
+}
+
+// ─── Constants ───────────────────────────────────────────────
 const BANNERS = [
-  { id: 'basic', name: 'Basic Headhunting', color: '#888' },
-  { id: 'limited-1', name: 'Scars of the Forge', color: '#ff6b35', featured: 'Laevatain' },
-  { id: 'limited-2', name: 'Hues of Passion', color: '#e74c9e', featured: 'Ardelia' },
-  { id: 'limited-3', name: 'Rime of the Depths', color: '#4fc3f7', featured: 'Last Rite' },
-  { id: 'weapon', name: 'Weapon Banner', color: '#a855f7' },
+  { id: 'basic', name: 'Basic Headhunting', color: '#888', type: 'standard' as const },
+  { id: 'scars-of-the-forge', name: 'Scars of the Forge', color: '#ff6b35', featured: 'Laevatain', type: 'operator' as const },
+  { id: 'hues-of-passion', name: 'Hues of Passion', color: '#e74c9e', featured: 'Ardelia', type: 'operator' as const },
+  { id: 'rime-of-the-depths', name: 'Rime of the Depths', color: '#4fc3f7', featured: 'Last Rite', type: 'operator' as const },
+  { id: 'the-floaty-messenger', name: 'The Floaty Messenger', color: '#7c3aed', featured: 'Gilberta', type: 'operator' as const },
+  { id: 'arsenal-issue', name: 'Arsenal Issue', color: '#a855f7', type: 'weapon' as const },
 ];
 
-const RARITIES = [3, 4, 5, 6];
+const RARITY_COLORS: Record<number, string> = {
+  6: 'text-orange-400',
+  5: 'text-purple-400',
+  4: 'text-blue-400',
+  3: 'text-gray-400',
+};
 
-type Tab = 'record' | 'history' | 'stats';
+const RARITY_BG: Record<number, string> = {
+  6: 'bg-orange-900/15 border-orange-500/30',
+  5: 'bg-purple-900/15 border-purple-500/30',
+  4: 'bg-blue-900/10 border-blue-500/20',
+  3: 'bg-[var(--color-surface)] border-[var(--color-border)]',
+};
+
+type Tab = 'import' | 'history' | 'global' | 'leaderboard';
 
 const LOCAL_KEY = 'zerosanity-headhunt';
 
+const POWERSHELL_SCRIPT = `# Endfield Gacha URL Extractor
+# Run this in PowerShell after opening the gacha history page in-game
+
+$logPath = "$env:USERPROFILE\\AppData\\LocalLow\\Gryphline\\Endfield\\HGWebview.log"
+if (Test-Path $logPath) {
+    $content = Get-Content $logPath -Raw
+    $match = [regex]::Match($content, 'https://[^\\s"]+gacha[^\\s"]+')
+    if ($match.Success) {
+        $url = $match.Value
+        Set-Clipboard $url
+        Write-Host "URL copied to clipboard!" -ForegroundColor Green
+        Write-Host $url
+    } else {
+        Write-Host "No gacha URL found. Open the gacha history in-game first." -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "Log file not found. Is Endfield installed?" -ForegroundColor Red
+}`;
+
+// ─── Helper: Migrate legacy data ────────────────────────────
+function migrateLegacyData(legacy: LegacyHeadhuntData): HeadhuntData {
+  const bannerIdMap: Record<string, string> = {
+    'Standard': 'basic',
+    'basic': 'basic',
+    'Limited': 'scars-of-the-forge',
+    'limited-1': 'scars-of-the-forge',
+    'limited-2': 'hues-of-passion',
+    'limited-3': 'rime-of-the-depths',
+    'Weapon': 'arsenal-issue',
+    'weapon': 'arsenal-issue',
+  };
+
+  return {
+    version: 2,
+    pulls: (legacy.pulls || []).map(p => ({
+      ...p,
+      name: p.item,
+      banner: bannerIdMap[p.banner] || p.banner,
+    })),
+    pityCounters: Object.fromEntries(
+      Object.entries(legacy.pityCounters || {}).map(([k, v]) => [bannerIdMap[k] || k, v])
+    ),
+  };
+}
+
+// ─── Component ───────────────────────────────────────────────
 export default function HeadhuntTrackerPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('record');
+  const [activeTab, setActiveTab] = useState<Tab>('import');
   const [pulls, setPulls] = useState<Pull[]>([]);
-  const [selectedBanner, setSelectedBanner] = useState('basic');
   const [pityCounters, setPityCounters] = useState<Record<string, number>>({});
-  const [isExporting, setIsExporting] = useState(false);
-  const statsRef = useRef<HTMLDivElement>(null);
-  const [selectedRarity, setSelectedRarity] = useState<number>(6);
-  const [selectedType, setSelectedType] = useState<'character' | 'weapon'>('character');
-  const [customItemName, setCustomItemName] = useState('');
+
+  // Import tab state
+  const [importUrl, setImportUrl] = useState('');
+  const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [importMessage, setImportMessage] = useState('');
+  const [showPowerShell, setShowPowerShell] = useState(false);
+  const [copiedScript, setCopiedScript] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualBanner, setManualBanner] = useState('basic');
+  const [manualRarity, setManualRarity] = useState(6);
+  const [manualType, setManualType] = useState<'character' | 'weapon'>('character');
+  const [manualItemName, setManualItemName] = useState('');
+
+  // History tab state
   const [historyBannerFilter, setHistoryBannerFilter] = useState<string>('all');
   const [historyRarityFilter, setHistoryRarityFilter] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [showBulkAdd, setShowBulkAdd] = useState(false);
-  const [bulkCount, setBulkCount] = useState(10);
+
+  // Global stats tab state
+  const [globalStats, setGlobalStats] = useState<GlobalStatsData | null>(null);
+  const [globalLoading, setGlobalLoading] = useState(false);
+  const [globalBannerFilter, setGlobalBannerFilter] = useState('all');
+
+  // Leaderboard tab state
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardSort, setLeaderboardSort] = useState<'pulls' | 'lucky'>('pulls');
+  const [leaderboardBannerFilter, setLeaderboardBannerFilter] = useState('all');
+
+  // Misc
+  const [isExporting, setIsExporting] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   // Cloud sync
   const { user, token } = useAuthStore();
@@ -61,7 +198,7 @@ export default function HeadhuntTrackerPage() {
   const syncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadDone = useRef(false);
 
-  // Load data on mount
+  // ─── Load data on mount ──────────────────────────────────
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
@@ -71,9 +208,13 @@ export default function HeadhuntTrackerPage() {
 
       if (token) {
         setSyncStatus('syncing');
-        const cloud = await loadFromCloud('headhuntTracker', token) as HeadhuntData | null;
-        if (cloud && cloud.pulls) {
-          data = cloud;
+        const cloud = await loadFromCloud('headhuntTracker', token) as (HeadhuntData | LegacyHeadhuntData | null);
+        if (cloud) {
+          if ('version' in cloud && cloud.version === 2) {
+            data = cloud as HeadhuntData;
+          } else if (cloud && 'pulls' in cloud) {
+            data = migrateLegacyData(cloud as LegacyHeadhuntData);
+          }
           setSyncStatus('synced');
         } else {
           setSyncStatus('idle');
@@ -81,25 +222,29 @@ export default function HeadhuntTrackerPage() {
       }
 
       if (!data) {
-        // Migrate from old localStorage keys
-        const oldPulls = localStorage.getItem('endfield-pulls');
-        const oldPity = localStorage.getItem('endfield-pity');
-        if (oldPulls) {
-          try {
-            const p = JSON.parse(oldPulls);
-            const c = oldPity ? JSON.parse(oldPity) : {};
-            // Map old banner names to new IDs
-            const mappedPulls = (p as Pull[]).map(pull => ({
-              ...pull,
-              banner: mapOldBannerName(pull.banner),
-            }));
-            data = { pulls: mappedPulls, pityCounters: c };
-          } catch { /* ignore */ }
+        // Try new local key
+        const local = loadLocal('headhunt') as (HeadhuntData | LegacyHeadhuntData | null);
+        if (local) {
+          if ('version' in local && (local as HeadhuntData).version === 2) {
+            data = local as HeadhuntData;
+          } else if (local && 'pulls' in local) {
+            data = migrateLegacyData(local as LegacyHeadhuntData);
+          }
         }
 
+        // Try old localStorage keys
         if (!data) {
-          const local = loadLocal('headhunt') as HeadhuntData | null;
-          if (local) data = local;
+          const oldPulls = localStorage.getItem('endfield-pulls');
+          const oldPity = localStorage.getItem('endfield-pity');
+          if (oldPulls) {
+            try {
+              const legacy: LegacyHeadhuntData = {
+                pulls: JSON.parse(oldPulls),
+                pityCounters: oldPity ? JSON.parse(oldPity) : {},
+              };
+              data = migrateLegacyData(legacy);
+            } catch { /* ignore */ }
+          }
         }
       }
 
@@ -112,12 +257,10 @@ export default function HeadhuntTrackerPage() {
     loadData();
   }, [token]);
 
+  // ─── Save data ───────────────────────────────────────────
   const saveData = useCallback((newPulls: Pull[], newPity: Record<string, number>) => {
-    const data: HeadhuntData = { pulls: newPulls, pityCounters: newPity };
+    const data: HeadhuntData = { version: 2, pulls: newPulls, pityCounters: newPity };
     saveLocal('headhunt', data);
-    // Also save to old keys for backwards compat
-    localStorage.setItem('endfield-pulls', JSON.stringify(newPulls));
-    localStorage.setItem('endfield-pity', JSON.stringify(newPity));
 
     if (token) {
       if (syncTimeout.current) clearTimeout(syncTimeout.current);
@@ -133,151 +276,89 @@ export default function HeadhuntTrackerPage() {
     }
   }, [token]);
 
-  function mapOldBannerName(name: string): string {
-    const map: Record<string, string> = {
-      'Standard': 'basic',
-      'Limited': 'limited-1',
-      'Weapon': 'weapon',
-    };
-    return map[name] || name;
-  }
+  // ─── Submit pulls to backend ─────────────────────────────
+  const submitToBackend = useCallback(async (pullsToSubmit: Pull[]) => {
+    if (!token) return;
 
-  const getBannerName = (id: string) => BANNERS.find(b => b.id === id)?.name || id;
-  const getBannerColor = (id: string) => BANNERS.find(b => b.id === id)?.color || '#888';
+    // Group pulls by banner
+    const bannerGroups: Record<string, Pull[]> = {};
+    for (const pull of pullsToSubmit) {
+      if (!bannerGroups[pull.banner]) bannerGroups[pull.banner] = [];
+      bannerGroups[pull.banner].push(pull);
+    }
 
-  const addPull = (rarity: number, item: string, icon?: string, type?: 'character' | 'weapon' | 'material') => {
+    for (const [bannerId, bannerPulls] of Object.entries(bannerGroups)) {
+      const bannerDef = BANNERS.find(b => b.id === bannerId);
+      if (!bannerDef) continue;
+
+      try {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        await api.post('/headhunt-records/submit', {
+          banner: bannerDef.name,
+          bannerType: bannerDef.type,
+          pulls: bannerPulls.map(p => ({
+            name: p.name || p.item,
+            rarity: p.rarity,
+            date: p.date || new Date(p.timestamp).toISOString(),
+            itemType: p.type,
+          })),
+          importSource: 'manual',
+        });
+      } catch {
+        console.warn(`Failed to submit pulls for banner ${bannerId}`);
+      }
+    }
+  }, [token]);
+
+  // ─── Add a single pull ───────────────────────────────────
+  const addPull = useCallback((rarity: number, itemName: string, banner: string, icon?: string, type?: 'character' | 'weapon' | 'material') => {
     const newPull: Pull = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       timestamp: Date.now(),
       rarity,
-      item,
-      banner: selectedBanner,
+      name: itemName,
+      item: itemName,
+      banner,
       icon,
       type,
+      date: new Date().toISOString(),
     };
 
     const newPulls = [newPull, ...pulls];
     const newPity = { ...pityCounters };
     if (rarity === 6) {
-      newPity[selectedBanner] = 0;
+      newPity[banner] = 0;
     } else {
-      newPity[selectedBanner] = (newPity[selectedBanner] || 0) + 1;
+      newPity[banner] = (newPity[banner] || 0) + 1;
     }
 
     setPulls(newPulls);
     setPityCounters(newPity);
     saveData(newPulls, newPity);
-  };
+    if (token) submitToBackend([newPull]);
+  }, [pulls, pityCounters, saveData, submitToBackend, token]);
 
-  const addCustomPull = () => {
-    if (!customItemName.trim()) return;
+  const addManualPull = () => {
+    if (!manualItemName.trim()) return;
 
     let icon: string | undefined;
-    let type: 'character' | 'weapon' | 'material' = 'material';
+    let type: 'character' | 'weapon' | 'material' = manualType === 'character' ? 'character' : 'weapon';
 
-    if (selectedType === 'character') {
-      const char = CHARACTERS.find(c => c.Name.toLowerCase() === customItemName.toLowerCase());
-      if (char) {
-        icon = CHARACTER_ICONS[char.Name];
-        type = 'character';
-      }
+    if (manualType === 'character') {
+      const char = CHARACTERS.find(c => c.Name.toLowerCase() === manualItemName.toLowerCase());
+      if (char) icon = CHARACTER_ICONS[char.Name];
     } else {
-      const weapon = WEAPONS.find(w => w.Name.toLowerCase() === customItemName.toLowerCase());
-      if (weapon) {
-        icon = WEAPON_ICONS[weapon.Name];
-        type = 'weapon';
-      }
+      const weapon = WEAPONS.find(w => w.Name.toLowerCase() === manualItemName.toLowerCase());
+      if (weapon) icon = WEAPON_ICONS[weapon.Name];
     }
 
-    addPull(selectedRarity, customItemName, icon, type);
-    setCustomItemName('');
+    addPull(manualRarity, manualItemName, manualBanner, icon, type);
+    setManualItemName('');
   };
 
-  const addBulkPulls = () => {
-    const newPulls = [...pulls];
-    const newPity = { ...pityCounters };
-
-    for (let i = 0; i < bulkCount; i++) {
-      // Simulate gacha rates
-      const rand = Math.random() * 100;
-      let rarity: number;
-      let item: string;
-      let icon: string | undefined;
-      let type: 'character' | 'weapon' | 'material' = 'material';
-
-      const currentPity = newPity[selectedBanner] || 0;
-      const softPityBonus = currentPity >= 50 ? (currentPity - 49) * 2 : 0;
-
-      if (rand < 1.76 + softPityBonus) {
-        rarity = 6;
-        const chars6 = CHARACTERS.filter(c => c.Rarity === 6);
-        const picked = chars6[Math.floor(Math.random() * chars6.length)];
-        item = picked.Name;
-        icon = CHARACTER_ICONS[picked.Name];
-        type = 'character';
-        newPity[selectedBanner] = 0;
-      } else if (rand < 1.76 + softPityBonus + 13.15) {
-        rarity = 5;
-        const isChar = Math.random() > 0.5;
-        if (isChar) {
-          const chars5 = CHARACTERS.filter(c => c.Rarity === 5);
-          const picked = chars5[Math.floor(Math.random() * chars5.length)];
-          item = picked.Name;
-          icon = CHARACTER_ICONS[picked.Name];
-          type = 'character';
-        } else {
-          const wpns5 = WEAPONS.filter(w => w.Rarity === 5);
-          const picked = wpns5[Math.floor(Math.random() * wpns5.length)];
-          item = picked.Name;
-          icon = WEAPON_ICONS[picked.Name];
-          type = 'weapon';
-        }
-        newPity[selectedBanner] = (newPity[selectedBanner] || 0) + 1;
-      } else if (rand < 60) {
-        rarity = 4;
-        const chars4 = CHARACTERS.filter(c => c.Rarity === 4);
-        if (chars4.length > 0) {
-          const picked = chars4[Math.floor(Math.random() * chars4.length)];
-          item = picked.Name;
-          icon = CHARACTER_ICONS[picked.Name];
-          type = 'character';
-        } else {
-          item = '4-Star Item';
-        }
-        newPity[selectedBanner] = (newPity[selectedBanner] || 0) + 1;
-      } else {
-        rarity = 3;
-        item = '3-Star Material';
-        newPity[selectedBanner] = (newPity[selectedBanner] || 0) + 1;
-      }
-
-      newPulls.unshift({
-        id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
-        timestamp: Date.now() - (bulkCount - i) * 1000,
-        rarity,
-        item,
-        banner: selectedBanner,
-        icon,
-        type,
-      });
-    }
-
-    setPulls(newPulls);
-    setPityCounters(newPity);
-    saveData(newPulls, newPity);
-    setShowBulkAdd(false);
-  };
-
-  const getAvailableItems = () => {
-    if (selectedType === 'character') {
-      return CHARACTERS.filter(c => c.Rarity === selectedRarity);
-    }
-    return WEAPONS.filter(w => w.Rarity === selectedRarity);
-  };
-
+  // ─── Delete a pull ───────────────────────────────────────
   const deletePull = (id: string) => {
     const newPulls = pulls.filter(p => p.id !== id);
-    // Recalculate pity
     const newPity: Record<string, number> = {};
     BANNERS.forEach(banner => {
       const bannerPulls = newPulls.filter(p => p.banner === banner.id).sort((a, b) => b.timestamp - a.timestamp);
@@ -304,15 +385,75 @@ export default function HeadhuntTrackerPage() {
     saveData([], newPity);
   };
 
-  // Stats calculations
+  // ─── Fetch global stats ──────────────────────────────────
+  const fetchGlobalStats = useCallback(async () => {
+    setGlobalLoading(true);
+    try {
+      const { data } = await api.get(`/headhunt-records/global-stats${globalBannerFilter !== 'all' ? `?banner=${encodeURIComponent(BANNERS.find(b => b.id === globalBannerFilter)?.name || '')}` : ''}`);
+      setGlobalStats(data.data);
+    } catch {
+      // Fall back to personal stats
+      const personal = getStatsForBanner('all');
+      setGlobalStats({
+        totalPulls: personal.total,
+        contributors: pulls.length > 0 ? 1 : 0,
+        sixStarRate: parseFloat(personal.sixStarRate),
+        fiveStarRate: parseFloat(personal.fiveStarRate),
+        fourStarRate: parseFloat(personal.fourStarRate),
+        totalSixStar: personal.sixStar,
+        totalFiveStar: personal.fiveStar,
+        mostPulledSixStar: getMostPulled(6),
+        mostPulledFiveStar: getMostPulled(5),
+        bannerBreakdown: BANNERS.map(b => {
+          const s = getStatsForBanner(b.id);
+          return {
+            banner: b.name,
+            totalPulls: s.total,
+            sixStarRate: parseFloat(s.sixStarRate),
+            fiveStarRate: parseFloat(s.fiveStarRate),
+            userCount: s.total > 0 ? 1 : 0,
+          };
+        }).filter(b => b.totalPulls > 0),
+      });
+    }
+    setGlobalLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalBannerFilter, pulls]);
+
+  // ─── Fetch leaderboard ───────────────────────────────────
+  const fetchLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    try {
+      const params = new URLSearchParams({ sort: leaderboardSort });
+      if (leaderboardBannerFilter !== 'all') {
+        params.set('banner', BANNERS.find(b => b.id === leaderboardBannerFilter)?.name || '');
+      }
+      const { data } = await api.get(`/headhunt-records/leaderboard?${params.toString()}`);
+      setLeaderboardData(data.data);
+    } catch {
+      setLeaderboardData(null);
+    }
+    setLeaderboardLoading(false);
+  }, [leaderboardSort, leaderboardBannerFilter]);
+
+  // Fetch data when tabs change
+  useEffect(() => {
+    if (activeTab === 'global') fetchGlobalStats();
+  }, [activeTab, fetchGlobalStats]);
+
+  useEffect(() => {
+    if (activeTab === 'leaderboard') fetchLeaderboard();
+  }, [activeTab, fetchLeaderboard]);
+
+  // ─── Stats calculations (local) ─────────────────────────
   const getStatsForBanner = useCallback((bannerId: string | 'all') => {
     const filtered = bannerId === 'all' ? pulls : pulls.filter(p => p.banner === bannerId);
     const total = filtered.length;
     const sixStar = filtered.filter(p => p.rarity === 6);
     const fiveStar = filtered.filter(p => p.rarity === 5);
     const fourStar = filtered.filter(p => p.rarity === 4);
+    const threeStar = filtered.filter(p => p.rarity === 3);
 
-    // Calculate avg pulls between 6-stars
     let avgPity = 0;
     if (sixStar.length > 0) {
       const sorted = [...filtered].sort((a, b) => a.timestamp - b.timestamp);
@@ -330,36 +471,32 @@ export default function HeadhuntTrackerPage() {
       avgPity = gapCount > 0 ? Math.round(totalGaps / gapCount) : 0;
     }
 
-    // Count unique 6-stars
-    const unique6 = new Set(sixStar.map(p => p.item)).size;
-
     return {
       total,
       sixStar: sixStar.length,
       fiveStar: fiveStar.length,
       fourStar: fourStar.length,
-      threeStar: filtered.filter(p => p.rarity === 3).length,
+      threeStar: threeStar.length,
       sixStarRate: total > 0 ? ((sixStar.length / total) * 100).toFixed(2) : '0.00',
       fiveStarRate: total > 0 ? ((fiveStar.length / total) * 100).toFixed(2) : '0.00',
       fourStarRate: total > 0 ? ((fourStar.length / total) * 100).toFixed(2) : '0.00',
       avgPity,
-      unique6,
     };
   }, [pulls]);
 
-  // Most pulled 6-stars
-  const mostPulled6Stars = useMemo(() => {
-    const counts: Record<string, { count: number; icon?: string }> = {};
-    pulls.filter(p => p.rarity === 6).forEach(p => {
-      if (!counts[p.item]) counts[p.item] = { count: 0, icon: p.icon };
-      counts[p.item].count++;
+  const getMostPulled = useCallback((rarity: number) => {
+    const counts: Record<string, number> = {};
+    pulls.filter(p => p.rarity === rarity).forEach(p => {
+      const n = p.name || p.item;
+      counts[n] = (counts[n] || 0) + 1;
     });
     return Object.entries(counts)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 10);
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }));
   }, [pulls]);
 
-  // History filtered pulls
+  // ─── History filtered ────────────────────────────────────
   const historyPulls = useMemo(() => {
     let filtered = pulls;
     if (historyBannerFilter !== 'all') {
@@ -371,13 +508,30 @@ export default function HeadhuntTrackerPage() {
     return filtered;
   }, [pulls, historyBannerFilter, historyRarityFilter]);
 
+  // ─── Import / Export ─────────────────────────────────────
+  const handleUrlImport = async () => {
+    if (!importUrl.trim()) return;
+    setImportStatus('loading');
+    setImportMessage('Attempting to fetch gacha history from URL...');
+
+    // The actual game API is only accessible via the game client, so
+    // we show an instructional message
+    setTimeout(() => {
+      setImportStatus('error');
+      setImportMessage(
+        'Direct URL import requires the game client\'s authentication token which cannot be proxied through a web browser. ' +
+        'Please use JSON file import instead, or use the manual entry form below.'
+      );
+    }, 2000);
+  };
+
   const exportHistoryJSON = () => {
-    const data = JSON.stringify({ pulls, pityCounters }, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
+    const data: HeadhuntData = { version: 2, pulls, pityCounters };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `zerosanity-headhunt-history-${Date.now()}.json`;
+    a.download = `zerosanity-headhunt-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -392,25 +546,49 @@ export default function HeadhuntTrackerPage() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const data = JSON.parse(ev.target?.result as string);
-          if (data.pulls && Array.isArray(data.pulls)) {
-            const merged = [...data.pulls, ...pulls];
-            // Deduplicate by id
-            const seen = new Set<string>();
-            const deduped = merged.filter(p => {
-              if (seen.has(p.id)) return false;
-              seen.add(p.id);
-              return true;
-            }).sort((a, b) => b.timestamp - a.timestamp);
+          const raw = JSON.parse(ev.target?.result as string);
 
-            const newPity = data.pityCounters || pityCounters;
-            setPulls(deduped);
-            setPityCounters(newPity);
-            saveData(deduped, newPity);
-            alert(`Imported ${data.pulls.length} pulls successfully!`);
+          let incoming: HeadhuntData;
+          if (raw.version === 2) {
+            incoming = raw;
+          } else if (raw.pulls && Array.isArray(raw.pulls)) {
+            incoming = migrateLegacyData(raw);
+          } else {
+            throw new Error('Unrecognized format');
           }
+
+          // Merge with existing (deduplicate by id)
+          const merged = [...incoming.pulls, ...pulls];
+          const seen = new Set<string>();
+          const deduped = merged.filter(p => {
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+          }).sort((a, b) => b.timestamp - a.timestamp);
+
+          // Recalculate pity
+          const newPity: Record<string, number> = {};
+          BANNERS.forEach(banner => {
+            const bannerPulls = deduped.filter(p => p.banner === banner.id).sort((a, b) => b.timestamp - a.timestamp);
+            let counter = 0;
+            for (const pull of bannerPulls) {
+              if (pull.rarity === 6) break;
+              counter++;
+            }
+            newPity[banner.id] = counter;
+          });
+
+          setPulls(deduped);
+          setPityCounters(newPity);
+          saveData(deduped, newPity);
+
+          if (token) submitToBackend(incoming.pulls);
+
+          setImportStatus('success');
+          setImportMessage(`Imported ${incoming.pulls.length} pulls successfully! (${deduped.length} total after dedup)`);
         } catch {
-          alert('Invalid JSON file');
+          setImportStatus('error');
+          setImportMessage('Invalid JSON file. Expected Zero Sanity or endfieldtools format.');
         }
       };
       reader.readAsText(file);
@@ -455,10 +633,20 @@ export default function HeadhuntTrackerPage() {
     }
   };
 
+  const getBannerName = (id: string) => BANNERS.find(b => b.id === id)?.name || id;
+  const getBannerColor = (id: string) => BANNERS.find(b => b.id === id)?.color || '#888';
+
+  const getAvailableItems = (rarity: number, type: 'character' | 'weapon') => {
+    if (type === 'character') return CHARACTERS.filter(c => c.Rarity === rarity);
+    return WEAPONS.filter(w => w.Rarity === rarity);
+  };
+
+  // ─── Tabs ────────────────────────────────────────────────
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'record', label: 'Record Pull', icon: <Plus size={16} /> },
+    { id: 'import', label: 'Import', icon: <Upload size={16} /> },
     { id: 'history', label: 'My History', icon: <Clock size={16} /> },
-    { id: 'stats', label: 'Statistics', icon: <BarChart3 size={16} /> },
+    { id: 'global', label: 'Global Stats', icon: <BarChart3 size={16} /> },
+    { id: 'leaderboard', label: 'Leaderboard', icon: <Trophy size={16} /> },
   ];
 
   const allStats = getStatsForBanner('all');
@@ -473,7 +661,6 @@ export default function HeadhuntTrackerPage() {
             code="RIOS-HH-001"
             icon={<Target size={32} />}
           />
-          {/* Sync status */}
           {user && (
             <div className="flex items-center gap-2 text-xs">
               {syncStatus === 'syncing' && <><Loader2 size={16} className="animate-spin text-[var(--color-accent)]" /><span className="text-[var(--color-text-muted)]">Syncing...</span></>}
@@ -501,7 +688,6 @@ export default function HeadhuntTrackerPage() {
             </button>
           ))}
           <div className="flex-1" />
-          {/* Action buttons */}
           <div className="flex gap-2 pb-1">
             <button onClick={importHistoryJSON} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors" title="Import JSON">
               <Upload size={18} />
@@ -515,235 +701,308 @@ export default function HeadhuntTrackerPage() {
           </div>
         </div>
 
-        {/* ===== RECORD TAB ===== */}
-        {activeTab === 'record' && (
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="space-y-6">
-              {/* Record Pull Form */}
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Record Pull</h2>
+        {/* ===== IMPORT TAB ===== */}
+        {activeTab === 'import' && (
+          <div className="space-y-6 max-w-4xl">
+            {/* URL Import Section */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+              <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <Link size={18} className="text-[var(--color-accent)]" />
+                Import from Game URL
+              </h2>
+              <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                Extract your gacha history URL from the game client and paste it below.
+              </p>
 
-                <div className="space-y-4">
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  placeholder="Paste gacha history URL here..."
+                  className="flex-1 px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
+                />
+                <button
+                  onClick={handleUrlImport}
+                  disabled={!importUrl.trim() || importStatus === 'loading'}
+                  className="px-4 py-2 bg-[var(--color-accent)] text-black font-bold text-sm clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50"
+                >
+                  {importStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Import'}
+                </button>
+              </div>
+
+              {importMessage && (
+                <div className={`text-sm p-3 clip-corner-tl ${
+                  importStatus === 'success' ? 'bg-green-900/20 border border-green-500/30 text-green-400' :
+                  importStatus === 'error' ? 'bg-red-900/20 border border-red-500/30 text-red-400' :
+                  'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]'
+                }`}>
+                  {importStatus === 'error' && <AlertCircle size={14} className="inline mr-1.5 -mt-0.5" />}
+                  {importMessage}
+                </div>
+              )}
+
+              {/* PowerShell Script */}
+              <button
+                onClick={() => setShowPowerShell(!showPowerShell)}
+                className="mt-4 flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-white transition-colors"
+              >
+                <ChevronDown size={14} className={`transition-transform ${showPowerShell ? 'rotate-180' : ''}`} />
+                How to get the gacha URL (PowerShell script)
+              </button>
+
+              {showPowerShell && (
+                <div className="mt-3 space-y-3">
+                  <div className="text-sm text-[var(--color-text-muted)] space-y-2">
+                    <p><strong className="text-white">Step 1:</strong> Open the gacha history page in Endfield (Headhunt &gt; History)</p>
+                    <p><strong className="text-white">Step 2:</strong> Open PowerShell and run this script:</p>
+                  </div>
+                  <div className="relative">
+                    <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-4 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre max-h-60">
+                      {POWERSHELL_SCRIPT}
+                    </pre>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(POWERSHELL_SCRIPT);
+                        setCopiedScript(true);
+                        setTimeout(() => setCopiedScript(false), 2000);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors"
+                    >
+                      {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    <strong className="text-white">Step 3:</strong> The URL will be copied to your clipboard. Paste it in the field above.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* JSON Import Section */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+              <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <FileText size={18} className="text-[var(--color-accent)]" />
+                Import / Export JSON
+              </h2>
+              <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                Import your pull history from a JSON file, or export your current data for backup.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={importHistoryJSON}
+                  className="flex-1 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors text-white font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <Upload size={16} />
+                  Import JSON File
+                </button>
+                <button
+                  onClick={exportHistoryJSON}
+                  disabled={pulls.length === 0}
+                  className="flex-1 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-30"
+                >
+                  <Download size={16} />
+                  Export JSON File
+                </button>
+              </div>
+            </div>
+
+            {/* Manual Entry Fallback */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+              <button
+                onClick={() => setShowManualEntry(!showManualEntry)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <TrendingUp size={18} className="text-[var(--color-accent)]" />
+                    Manual Entry
+                  </h2>
+                  <p className="text-sm text-[var(--color-text-muted)]">Manually record individual pulls</p>
+                </div>
+                <ChevronDown size={18} className={`text-[var(--color-text-muted)] transition-transform ${showManualEntry ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showManualEntry && (
+                <div className="mt-4 space-y-4 border-t border-[var(--color-border)] pt-4">
+                  {/* Banner Selection */}
                   <div>
                     <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Banner</label>
-                    <div className="space-y-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                       {BANNERS.map(banner => (
                         <button
                           key={banner.id}
-                          onClick={() => setSelectedBanner(banner.id)}
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2 ${
-                            selectedBanner === banner.id
+                          onClick={() => setManualBanner(banner.id)}
+                          className={`text-left px-3 py-2 text-sm transition-colors flex items-center gap-2 ${
+                            manualBanner === banner.id
                               ? 'bg-[var(--color-accent)]/10 border-l-2 text-white'
                               : 'hover:bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]'
                           }`}
-                          style={selectedBanner === banner.id ? { borderLeftColor: banner.color } : {}}
+                          style={manualBanner === banner.id ? { borderLeftColor: banner.color } : {}}
                         >
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: banner.color }} />
-                          <span className="truncate">{banner.name}</span>
-                          {banner.featured && <span className="text-[12px] text-[var(--color-text-muted)] ml-auto">{banner.featured}</span>}
+                          <span className="truncate text-xs">{banner.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Rarity</label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {RARITIES.map(rarity => (
-                        <button
-                          key={rarity}
-                          onClick={() => setSelectedRarity(rarity)}
-                          className={`py-2 clip-corner-tl font-bold transition-colors text-sm ${
-                            selectedRarity === rarity
-                              ? rarity === 6 ? 'bg-orange-500 text-white'
-                              : rarity === 5 ? 'bg-purple-500 text-white'
-                              : rarity === 4 ? 'bg-blue-500 text-white'
-                              : 'bg-[var(--color-accent)] text-black'
-                              : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-secondary)]'
-                          }`}
-                        >
-                          {rarity}★
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Rarity */}
+                    <div>
+                      <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Rarity</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[6, 5, 4, 3].map(rarity => (
+                          <button
+                            key={rarity}
+                            onClick={() => setManualRarity(rarity)}
+                            className={`py-2 clip-corner-tl font-bold transition-colors text-sm ${
+                              manualRarity === rarity
+                                ? rarity === 6 ? 'bg-orange-500 text-white'
+                                : rarity === 5 ? 'bg-purple-500 text-white'
+                                : rarity === 4 ? 'bg-blue-500 text-white'
+                                : 'bg-gray-500 text-white'
+                                : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)]'
+                            }`}
+                          >
+                            {rarity}★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Type */}
+                    <div>
+                      <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Type</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['character', 'weapon'] as const).map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setManualType(t)}
+                            className={`py-2 clip-corner-tl font-medium text-sm transition-colors capitalize ${
+                              manualType === t
+                                ? 'bg-[var(--color-accent)] text-black'
+                                : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)]'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Type</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(['character', 'weapon'] as const).map(t => (
-                        <button
-                          key={t}
-                          onClick={() => setSelectedType(t)}
-                          className={`py-2 clip-corner-tl font-medium text-sm transition-colors capitalize ${
-                            selectedType === t
-                              ? 'bg-[var(--color-accent)] text-black'
-                              : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-secondary)]'
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
+                  {/* Item Name */}
                   <div>
                     <label className="block text-sm font-bold mb-2 text-[var(--color-text-muted)] uppercase tracking-wider">Item Name</label>
                     <input
                       type="text"
-                      value={customItemName}
-                      onChange={(e) => setCustomItemName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addCustomPull()}
+                      value={manualItemName}
+                      onChange={(e) => setManualItemName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addManualPull()}
                       placeholder="Enter or select item..."
                       className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white text-sm mb-2"
-                      list="items-datalist"
+                      list="manual-items-datalist"
                     />
-                    <datalist id="items-datalist">
-                      {getAvailableItems().map(item => (
+                    <datalist id="manual-items-datalist">
+                      {getAvailableItems(manualRarity, manualType).map(item => (
                         <option key={item.id} value={item.Name} />
                       ))}
                     </datalist>
                     <button
-                      onClick={addCustomPull}
-                      disabled={!customItemName.trim()}
-                      className="w-full py-3 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={addManualPull}
+                      disabled={!manualItemName.trim()}
+                      className="w-full py-3 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
-                      <Plus className="w-4 h-4 inline mr-2" />
                       Add Pull
                     </button>
-                  </div>
-
-                  {/* Quick add & Bulk add */}
-                  <div className="border-t border-[var(--color-border)] pt-4">
-                    <button
-                      onClick={() => setShowBulkAdd(!showBulkAdd)}
-                      className="w-full py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] hover:text-white hover:border-[var(--color-accent)] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ChevronDown size={14} className={`transition-transform ${showBulkAdd ? 'rotate-180' : ''}`} />
-                      Simulate Multi-Pull
-                    </button>
-
-                    {showBulkAdd && (
-                      <div className="mt-3 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                        <p className="text-xs text-[var(--color-text-tertiary)] mb-2">Simulate pulls with gacha rates (1.76% 6★, 13.15% 5★)</p>
-                        <div className="flex gap-2">
-                          {[1, 10, 50].map(n => (
-                            <button
-                              key={n}
-                              onClick={() => setBulkCount(n)}
-                              className={`flex-1 py-1.5 text-sm font-bold transition-colors ${
-                                bulkCount === n ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)]'
-                              }`}
-                            >
-                              {n}x
-                            </button>
-                          ))}
-                        </div>
-                        <button
-                          onClick={addBulkPulls}
-                          className="w-full mt-2 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm transition-colors"
-                        >
-                          Simulate {bulkCount} Pull{bulkCount > 1 ? 's' : ''}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Pity Counter & Quick Stats */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Pity Counters */}
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
-                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[var(--color-accent)]" />
-                  Pity Counter
-                </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {BANNERS.map(banner => {
-                    const pity = pityCounters[banner.id] || 0;
-                    const isSoftPity = pity >= 50;
-                    return (
-                      <div key={banner.id} className="bg-[var(--color-surface-2)] p-4 clip-corner-tl">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: banner.color }} />
-                            <span className="font-medium text-white text-sm">{banner.name}</span>
-                          </div>
-                          <span className={`text-2xl font-bold ${isSoftPity ? 'text-red-400' : 'text-[var(--color-accent)]'}`}>
-                            {pity}
-                          </span>
-                        </div>
-                        <div className="w-full bg-[var(--color-surface-2)] h-1.5 overflow-hidden">
-                          <div
-                            className={`h-full transition-all ${isSoftPity ? 'bg-red-500' : ''}`}
-                            style={{
-                              width: `${Math.min((pity / 100) * 100, 100)}%`,
-                              backgroundColor: isSoftPity ? undefined : banner.color,
-                            }}
-                          />
-                        </div>
-                        <p className="text-[12px] mt-1 text-[var(--color-text-muted)]">
-                          {isSoftPity ? 'Soft pity active!' : `${100 - pity} to guarantee`}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Quick stats */}
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
-                <h2 className="text-lg font-bold text-white mb-4">Quick Stats (All Banners)</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
-                    <p className="text-2xl font-bold text-white">{allStats.total}</p>
-                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">Total Pulls</p>
-                  </div>
-                  <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
-                    <p className="text-2xl font-bold text-orange-400">{allStats.sixStar}</p>
-                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">6★ Pulls</p>
-                  </div>
-                  <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
-                    <p className="text-2xl font-bold text-[var(--color-accent)]">{allStats.sixStarRate}%</p>
-                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">6★ Rate</p>
-                  </div>
-                  <div className="bg-[var(--color-surface-2)] p-3 clip-corner-tl text-center">
-                    <p className="text-2xl font-bold text-purple-400">{allStats.fiveStarRate}%</p>
-                    <p className="text-[12px] text-[var(--color-text-muted)] uppercase">5★ Rate</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent 6-stars */}
-              {pulls.filter(p => p.rarity === 6).length > 0 && (
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Trophy size={18} className="text-orange-400" />
-                    Recent 6★ Pulls
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {pulls.filter(p => p.rarity === 6).slice(0, 8).map(pull => (
-                      <div key={pull.id} className="flex items-center gap-2 bg-orange-900/20 border border-orange-500/30 px-3 py-1.5 clip-corner-tl">
-                        {pull.icon && (
-                          <Image src={pull.icon} alt={pull.item} width={24} height={24} className="w-6 h-6 object-contain" unoptimized />
-                        )}
-                        <span className="text-sm text-orange-300 font-medium">{pull.item}</span>
-                        <span className="text-[12px] text-[var(--color-text-muted)]">{getBannerName(pull.banner)}</span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Login prompt if not logged in */}
+            {!user && (
+              <div className="bg-amber-900/15 border border-amber-500/30 clip-corner-tl p-4 flex items-start gap-3">
+                <AlertCircle size={20} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-amber-300 font-bold">Login required for cloud sync</p>
+                  <p className="text-xs text-amber-400/80 mt-1">
+                    Your data is saved locally. Log in to sync across devices and contribute to global stats.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ===== HISTORY TAB ===== */}
+        {/* ===== MY HISTORY TAB ===== */}
         {activeTab === 'history' && (
           <div>
+            {/* Pity Counters */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 mb-6">
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[var(--color-accent)]" />
+                Pity Counter
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {BANNERS.map(banner => {
+                  const pity = pityCounters[banner.id] || 0;
+                  const isSoftPity = pity >= 50;
+                  return (
+                    <div key={banner.id} className="bg-[var(--color-surface-2)] p-3 clip-corner-tl">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: banner.color }} />
+                        <span className="font-medium text-white text-xs truncate">{banner.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-2xl font-bold ${isSoftPity ? 'text-red-400' : 'text-[var(--color-accent)]'}`}>
+                          {pity}
+                        </span>
+                        <span className="text-[10px] text-[var(--color-text-muted)]">/120</span>
+                      </div>
+                      <div className="w-full bg-[var(--color-surface)] h-1 mt-1 overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${isSoftPity ? 'bg-red-500' : ''}`}
+                          style={{
+                            width: `${Math.min((pity / 120) * 100, 100)}%`,
+                            backgroundColor: isSoftPity ? undefined : banner.color,
+                          }}
+                        />
+                      </div>
+                      <p className="text-[10px] mt-1 text-[var(--color-text-muted)]">
+                        {isSoftPity ? 'Soft pity!' : `${120 - pity} to guarantee`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 text-center">
+                <p className="text-2xl font-bold text-white">{allStats.total}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Total Pulls</p>
+              </div>
+              <div className="bg-[var(--color-surface)] border border-orange-500/20 clip-corner-tl p-3 text-center">
+                <p className="text-2xl font-bold text-orange-400">{allStats.sixStar}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">6★ Pulls</p>
+              </div>
+              <div className="bg-[var(--color-surface)] border border-purple-500/20 clip-corner-tl p-3 text-center">
+                <p className="text-2xl font-bold text-purple-400">{allStats.fiveStar}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">5★ Pulls</p>
+              </div>
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 text-center">
+                <p className="text-2xl font-bold text-[var(--color-accent)]">{allStats.sixStarRate}%</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">6★ Rate</p>
+              </div>
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-3 text-center">
+                <p className="text-2xl font-bold text-purple-400">{allStats.fiveStarRate}%</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">5★ Rate</p>
+              </div>
+            </div>
+
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <button
@@ -763,28 +1022,26 @@ export default function HeadhuntTrackerPage() {
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: banner.color }} />
-                  {banner.name}
+                  <span className="hidden sm:inline">{banner.name}</span>
+                  <span className="sm:hidden">{banner.name.split(' ').slice(0, 2).join(' ')}</span>
                 </button>
               ))}
 
               <div className="w-px h-6 bg-[var(--color-border)]" />
 
-              <button
-                onClick={() => setHistoryRarityFilter(historyRarityFilter === 6 ? null : 6)}
-                className={`px-3 py-1.5 text-xs font-bold transition-colors ${
-                  historyRarityFilter === 6 ? 'bg-orange-500 text-white' : 'bg-[var(--color-surface)] text-orange-400 hover:bg-orange-500/10'
-                }`}
-              >
-                6★ Only
-              </button>
-              <button
-                onClick={() => setHistoryRarityFilter(historyRarityFilter === 5 ? null : 5)}
-                className={`px-3 py-1.5 text-xs font-bold transition-colors ${
-                  historyRarityFilter === 5 ? 'bg-purple-500 text-white' : 'bg-[var(--color-surface)] text-purple-400 hover:bg-purple-500/10'
-                }`}
-              >
-                5★ Only
-              </button>
+              {[6, 5, 4].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setHistoryRarityFilter(historyRarityFilter === r ? null : r)}
+                  className={`px-3 py-1.5 text-xs font-bold transition-colors ${
+                    historyRarityFilter === r
+                      ? r === 6 ? 'bg-orange-500 text-white' : r === 5 ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
+                      : `bg-[var(--color-surface)] ${r === 6 ? 'text-orange-400' : r === 5 ? 'text-purple-400' : 'text-blue-400'}`
+                  }`}
+                >
+                  {r}★ Only
+                </button>
+              ))}
 
               <div className="flex-1" />
               <span className="text-sm text-[var(--color-text-muted)]">{historyPulls.length} pulls</span>
@@ -801,13 +1058,7 @@ export default function HeadhuntTrackerPage() {
                 {historyPulls.map((pull, index) => (
                   <div
                     key={pull.id}
-                    className={`flex items-center justify-between p-3 clip-corner-tl transition-colors ${
-                      pull.rarity === 6
-                        ? 'bg-orange-900/15 border border-orange-500/30 hover:border-orange-500/50'
-                        : pull.rarity === 5
-                        ? 'bg-purple-900/15 border border-purple-500/30 hover:border-purple-500/50'
-                        : 'bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/30'
-                    }`}
+                    className={`flex items-center justify-between p-3 clip-corner-tl transition-colors border ${RARITY_BG[pull.rarity] || RARITY_BG[3]} hover:brightness-110`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="text-sm text-[var(--color-text-muted)] w-8 text-right">#{historyPulls.length - index}</div>
@@ -817,7 +1068,7 @@ export default function HeadhuntTrackerPage() {
                             pull.rarity === 5 ? 'rgba(168, 85, 247, 0.1)' :
                             'rgba(59, 130, 246, 0.1)'
                         }}>
-                          <Image src={pull.icon} alt={pull.item} width={40} height={40} className="w-full h-full object-contain" unoptimized />
+                          <Image src={pull.icon} alt={pull.name || pull.item} width={40} height={40} className="w-full h-full object-contain" unoptimized />
                         </div>
                       ) : (
                         <div className="w-10 h-10 bg-[var(--color-surface-2)] flex items-center justify-center text-sm text-[var(--color-text-muted)]">
@@ -826,12 +1077,8 @@ export default function HeadhuntTrackerPage() {
                       )}
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className={`font-bold text-sm ${
-                            pull.rarity === 6 ? 'text-orange-400' :
-                            pull.rarity === 5 ? 'text-purple-400' :
-                            pull.rarity === 4 ? 'text-blue-400' : 'text-[var(--color-text-secondary)]'
-                          }`}>
-                            {pull.item}
+                          <span className={`font-bold text-sm ${RARITY_COLORS[pull.rarity] || 'text-gray-400'}`}>
+                            {pull.name || pull.item}
                           </span>
                           <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-border)] clip-corner-tl">{pull.rarity}★</span>
                           {pull.type && (
@@ -864,21 +1111,21 @@ export default function HeadhuntTrackerPage() {
               <div className="text-center py-16 text-[var(--color-text-muted)]">
                 <Target size={48} className="mx-auto mb-4 opacity-30" />
                 <p>No pull history yet</p>
-                <p className="text-sm mt-1">Record your pulls in the Record tab to see them here</p>
+                <p className="text-sm mt-1">Import your pulls in the Import tab to see them here</p>
               </div>
             )}
           </div>
         )}
 
-        {/* ===== STATS TAB ===== */}
-        {activeTab === 'stats' && (
+        {/* ===== GLOBAL STATS TAB ===== */}
+        {activeTab === 'global' && (
           <div ref={statsRef} className="space-y-6">
-            {/* Banner selector for stats */}
+            {/* Banner filter */}
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setHistoryBannerFilter('all')}
+                onClick={() => setGlobalBannerFilter('all')}
                 className={`px-3 py-1.5 text-xs font-bold clip-corner-tl transition-colors ${
-                  historyBannerFilter === 'all' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                  globalBannerFilter === 'all' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
                 }`}
               >
                 All Banners
@@ -886,20 +1133,19 @@ export default function HeadhuntTrackerPage() {
               {BANNERS.map(banner => (
                 <button
                   key={banner.id}
-                  onClick={() => setHistoryBannerFilter(banner.id)}
+                  onClick={() => setGlobalBannerFilter(banner.id)}
                   className={`px-3 py-1.5 text-xs font-bold clip-corner-tl transition-colors flex items-center gap-1.5 ${
-                    historyBannerFilter === banner.id ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                    globalBannerFilter === banner.id ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: banner.color }} />
-                  {banner.name}
+                  <span className="hidden sm:inline">{banner.name}</span>
                 </button>
               ))}
-
               <div className="flex-1" />
               <button
                 onClick={exportSummaryAsImage}
-                disabled={isExporting || pulls.length === 0}
+                disabled={isExporting}
                 className="px-3 py-1.5 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] transition-colors flex items-center gap-1.5 disabled:opacity-30"
               >
                 <Download size={12} />
@@ -907,121 +1153,266 @@ export default function HeadhuntTrackerPage() {
               </button>
             </div>
 
-            {(() => {
-              const stats = getStatsForBanner(historyBannerFilter);
-              return (
-                <>
-                  {/* Main stats cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
-                      <p className="text-3xl font-bold text-white">{stats.total}</p>
-                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">Total Pulls</p>
-                    </div>
-                    <div className="bg-[var(--color-surface)] border border-orange-500/30 clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
-                      <p className="text-3xl font-bold text-orange-400">{stats.sixStarRate}%</p>
-                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">6★ Rate ({stats.sixStar})</p>
-                    </div>
-                    <div className="bg-[var(--color-surface)] border border-purple-500/30 clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
-                      <p className="text-3xl font-bold text-purple-400">{stats.fiveStarRate}%</p>
-                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">5★ Rate ({stats.fiveStar})</p>
-                    </div>
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 text-center shadow-[var(--shadow-card)]">
-                      <p className="text-3xl font-bold text-[var(--color-accent)]">{stats.avgPity || '--'}</p>
-                      <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">Avg Pulls/6★</p>
-                    </div>
+            {globalLoading ? (
+              <div className="text-center py-16">
+                <Loader2 size={32} className="mx-auto mb-4 animate-spin text-[var(--color-accent)]" />
+                <p className="text-[var(--color-text-muted)]">Loading global statistics...</p>
+              </div>
+            ) : globalStats ? (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 text-center">
+                    <p className="text-3xl font-bold text-white">{globalStats.totalPulls.toLocaleString()}</p>
+                    <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">Total Pulls</p>
                   </div>
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 text-center">
+                    <p className="text-3xl font-bold text-[var(--color-accent)]">{globalStats.contributors}</p>
+                    <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1 flex items-center justify-center gap-1">
+                      <Users size={12} /> Contributors
+                    </p>
+                  </div>
+                  <div className="bg-[var(--color-surface)] border border-orange-500/30 clip-corner-tl p-5 text-center">
+                    <p className="text-3xl font-bold text-orange-400">{globalStats.sixStarRate}%</p>
+                    <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">6★ Rate</p>
+                  </div>
+                  <div className="bg-[var(--color-surface)] border border-purple-500/30 clip-corner-tl p-5 text-center">
+                    <p className="text-3xl font-bold text-purple-400">{globalStats.fiveStarRate}%</p>
+                    <p className="text-sm text-[var(--color-text-muted)] uppercase mt-1">5★ Rate</p>
+                  </div>
+                </div>
 
-                  {/* Rarity distribution bar */}
-                  {stats.total > 0 && (
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-                      <h3 className="text-sm font-bold text-white mb-4">Rarity Distribution</h3>
-                      <div className="flex h-8 w-full overflow-hidden clip-corner-tl">
-                        {stats.sixStar > 0 && (
-                          <div className="bg-orange-500 flex items-center justify-center text-[10px] font-bold text-white" style={{ width: `${(stats.sixStar / stats.total) * 100}%`, minWidth: stats.sixStar > 0 ? '30px' : 0 }}>
-                            {stats.sixStar > 0 && `${stats.sixStarRate}%`}
-                          </div>
-                        )}
-                        {stats.fiveStar > 0 && (
-                          <div className="bg-purple-500 flex items-center justify-center text-[10px] font-bold text-white" style={{ width: `${(stats.fiveStar / stats.total) * 100}%`, minWidth: stats.fiveStar > 0 ? '30px' : 0 }}>
-                            {stats.fiveStar > 0 && `${stats.fiveStarRate}%`}
-                          </div>
-                        )}
-                        {stats.fourStar > 0 && (
-                          <div className="bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white" style={{ width: `${(stats.fourStar / stats.total) * 100}%`, minWidth: stats.fourStar > 0 ? '30px' : 0 }}>
-                            {stats.fourStar > 0 && `${stats.fourStarRate}%`}
-                          </div>
-                        )}
-                        {stats.threeStar > 0 && (
-                          <div className="bg-gray-600 flex items-center justify-center text-[10px] font-bold text-white flex-1">
-                            {((stats.threeStar / stats.total) * 100).toFixed(1)}%
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 mt-3 text-[10px] text-[var(--color-text-tertiary)]">
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-orange-500" /> 6★ ({stats.sixStar})</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-500" /> 5★ ({stats.fiveStar})</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-500" /> 4★ ({stats.fourStar})</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-gray-600" /> 3★ ({stats.threeStar})</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Most Pulled 6-Stars */}
-                  {mostPulled6Stars.length > 0 && (
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-                      <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                        <Trophy size={16} className="text-orange-400" />
-                        Most Pulled 6★
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                        {mostPulled6Stars.map(([name, data]) => (
-                          <div key={name} className="bg-[var(--color-surface-2)] border border-orange-500/20 p-3 clip-corner-tl text-center">
-                            {data.icon ? (
+                {/* Most Pulled 6-Stars */}
+                {globalStats.mostPulledSixStar.length > 0 && (
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                      <Trophy size={16} className="text-orange-400" />
+                      Most Pulled 6★
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      {globalStats.mostPulledSixStar.map((item) => {
+                        const icon = CHARACTER_ICONS[item.name] || WEAPON_ICONS[item.name];
+                        return (
+                          <div key={item.name} className="bg-[var(--color-surface-2)] border border-orange-500/20 p-3 clip-corner-tl text-center">
+                            {icon ? (
                               <div className="w-14 h-14 mx-auto mb-2 overflow-hidden">
-                                <Image src={data.icon} alt={name} width={56} height={56} className="w-full h-full object-contain" unoptimized />
+                                <Image src={icon} alt={item.name} width={56} height={56} className="w-full h-full object-contain" unoptimized />
                               </div>
                             ) : (
-                              <div className="w-14 h-14 mx-auto mb-2 bg-orange-500/10 flex items-center justify-center text-xs text-orange-400">{name[0]}</div>
+                              <div className="w-14 h-14 mx-auto mb-2 bg-orange-500/10 flex items-center justify-center text-xs text-orange-400">{item.name[0]}</div>
                             )}
-                            <p className="text-xs text-orange-300 font-bold truncate">{name}</p>
-                            <p className="text-lg font-bold text-white">x{data.count}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Per-banner breakdown */}
-                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-                    <h3 className="text-sm font-bold text-white mb-4">Per-Banner Breakdown</h3>
-                    <div className="space-y-2">
-                      {BANNERS.map(banner => {
-                        const bStats = getStatsForBanner(banner.id);
-                        if (bStats.total === 0) return null;
-                        return (
-                          <div key={banner.id} className="flex items-center gap-3 bg-[var(--color-surface-2)] p-3 clip-corner-tl">
-                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: banner.color }} />
-                            <span className="text-sm text-white font-medium flex-1 min-w-0 truncate">{banner.name}</span>
-                            <span className="text-xs text-[var(--color-text-tertiary)]">{bStats.total} pulls</span>
-                            <span className="text-xs text-orange-400 font-bold">{bStats.sixStar} 6★</span>
-                            <span className="text-xs text-purple-400">{bStats.fiveStar} 5★</span>
-                            <span className="text-xs text-[var(--color-accent)]">{bStats.sixStarRate}%</span>
+                            <p className="text-xs text-orange-300 font-bold truncate">{item.name}</p>
+                            <p className="text-lg font-bold text-white">x{item.count}</p>
                           </div>
                         );
                       })}
                     </div>
                   </div>
+                )}
 
-                  {stats.total === 0 && (
-                    <div className="text-center py-16 text-[var(--color-text-muted)]">
-                      <BarChart3 size={48} className="mx-auto mb-4 opacity-30" />
-                      <p>No data to display</p>
-                      <p className="text-sm mt-1">Record some pulls first to see your statistics</p>
+                {/* Most Pulled 5-Stars */}
+                {globalStats.mostPulledFiveStar.length > 0 && (
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                      <Trophy size={16} className="text-purple-400" />
+                      Most Pulled 5★
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      {globalStats.mostPulledFiveStar.slice(0, 10).map((item) => {
+                        const icon = CHARACTER_ICONS[item.name] || WEAPON_ICONS[item.name];
+                        return (
+                          <div key={item.name} className="bg-[var(--color-surface-2)] border border-purple-500/20 p-3 clip-corner-tl text-center">
+                            {icon ? (
+                              <div className="w-14 h-14 mx-auto mb-2 overflow-hidden">
+                                <Image src={icon} alt={item.name} width={56} height={56} className="w-full h-full object-contain" unoptimized />
+                              </div>
+                            ) : (
+                              <div className="w-14 h-14 mx-auto mb-2 bg-purple-500/10 flex items-center justify-center text-xs text-purple-400">{item.name[0]}</div>
+                            )}
+                            <p className="text-xs text-purple-300 font-bold truncate">{item.name}</p>
+                            <p className="text-lg font-bold text-white">x{item.count}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </>
-              );
-            })()}
+                  </div>
+                )}
+
+                {/* Statistics by Banner */}
+                {globalStats.bannerBreakdown.length > 0 && (
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
+                    <h3 className="text-sm font-bold text-white mb-4">Statistics by Banner</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {globalStats.bannerBreakdown.map((b) => {
+                        const bannerDef = BANNERS.find(bn => bn.name === b.banner);
+                        return (
+                          <div key={b.banner} className="bg-[var(--color-surface-2)] p-4 clip-corner-tl border-l-2" style={{ borderLeftColor: bannerDef?.color || '#888' }}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bannerDef?.color || '#888' }} />
+                              <span className="text-sm font-bold text-white truncate">{b.banner}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-[var(--color-text-muted)]">Pulls:</span>
+                                <span className="ml-1 text-white font-bold">{b.totalPulls.toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-[var(--color-text-muted)]">Users:</span>
+                                <span className="ml-1 text-white font-bold">{b.userCount}</span>
+                              </div>
+                              <div>
+                                <span className="text-[var(--color-text-muted)]">6★ Rate:</span>
+                                <span className="ml-1 text-orange-400 font-bold">{b.sixStarRate}%</span>
+                              </div>
+                              <div>
+                                <span className="text-[var(--color-text-muted)]">5★ Rate:</span>
+                                <span className="ml-1 text-purple-400 font-bold">{b.fiveStarRate}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {globalStats.totalPulls === 0 && (
+                  <div className="text-center py-16 text-[var(--color-text-muted)]">
+                    <BarChart3 size={48} className="mx-auto mb-4 opacity-30" />
+                    <p>No global data yet</p>
+                    <p className="text-sm mt-1">Be the first to contribute by importing your pulls!</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-16 text-[var(--color-text-muted)]">
+                <BarChart3 size={48} className="mx-auto mb-4 opacity-30" />
+                <p>Could not load global statistics</p>
+                <p className="text-sm mt-1">
+                  <button onClick={fetchGlobalStats} className="text-[var(--color-accent)] hover:underline">Try again</button>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== LEADERBOARD TAB ===== */}
+        {activeTab === 'leaderboard' && (
+          <div className="space-y-6">
+            {/* Sort tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setLeaderboardSort('pulls')}
+                className={`px-4 py-2 text-sm font-bold clip-corner-tl transition-colors ${
+                  leaderboardSort === 'pulls' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                }`}
+              >
+                Most Pulls
+              </button>
+              <button
+                onClick={() => setLeaderboardSort('lucky')}
+                className={`px-4 py-2 text-sm font-bold clip-corner-tl transition-colors ${
+                  leaderboardSort === 'lucky' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                }`}
+              >
+                Luckiest Players
+              </button>
+
+              <div className="w-px h-6 bg-[var(--color-border)]" />
+
+              <button
+                onClick={() => setLeaderboardBannerFilter('all')}
+                className={`px-3 py-1.5 text-xs font-bold transition-colors ${
+                  leaderboardBannerFilter === 'all' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                }`}
+              >
+                All
+              </button>
+              {BANNERS.map(banner => (
+                <button
+                  key={banner.id}
+                  onClick={() => setLeaderboardBannerFilter(banner.id)}
+                  className={`px-3 py-1.5 text-xs font-bold transition-colors flex items-center gap-1 ${
+                    leaderboardBannerFilter === banner.id ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: banner.color }} />
+                  <span className="hidden sm:inline">{banner.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {leaderboardLoading ? (
+              <div className="text-center py-16">
+                <Loader2 size={32} className="mx-auto mb-4 animate-spin text-[var(--color-accent)]" />
+                <p className="text-[var(--color-text-muted)]">Loading leaderboard...</p>
+              </div>
+            ) : leaderboardData ? (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+                    <p className="text-2xl font-bold text-[var(--color-accent)]">{leaderboardData.totalPlayers}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] uppercase flex items-center justify-center gap-1">
+                      <Users size={12} /> Players
+                    </p>
+                  </div>
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-4 text-center">
+                    <p className="text-2xl font-bold text-white">{leaderboardData.totalPulls.toLocaleString()}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] uppercase">Total Pulls</p>
+                  </div>
+                  <div className="bg-[var(--color-surface)] border border-orange-500/20 clip-corner-tl p-4 text-center">
+                    <p className="text-2xl font-bold text-orange-400">{leaderboardData.overallSixStarRate}%</p>
+                    <p className="text-xs text-[var(--color-text-muted)] uppercase">6★ Rate</p>
+                  </div>
+                </div>
+
+                {/* Leaderboard Table */}
+                {leaderboardData.entries.length > 0 ? (
+                  <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
+                    <div className="grid grid-cols-[3rem_1fr_5rem_4rem_4rem_4rem] sm:grid-cols-[3rem_1fr_6rem_5rem_5rem_5rem] gap-2 px-4 py-2 bg-[var(--color-surface-2)] text-[10px] uppercase text-[var(--color-text-muted)] font-bold">
+                      <span>#</span>
+                      <span>Player</span>
+                      <span className="text-right">Pulls</span>
+                      <span className="text-right">6★</span>
+                      <span className="text-right">5★</span>
+                      <span className="text-right">Rate</span>
+                    </div>
+                    {leaderboardData.entries.map((entry) => (
+                      <div
+                        key={entry.rank}
+                        className={`grid grid-cols-[3rem_1fr_5rem_4rem_4rem_4rem] sm:grid-cols-[3rem_1fr_6rem_5rem_5rem_5rem] gap-2 px-4 py-3 border-t border-[var(--color-border)] items-center ${
+                          entry.rank <= 3 ? 'bg-amber-900/5' : ''
+                        }`}
+                      >
+                        <span className={`font-bold ${entry.rank === 1 ? 'text-yellow-400' : entry.rank === 2 ? 'text-gray-300' : entry.rank === 3 ? 'text-amber-600' : 'text-[var(--color-text-muted)]'}`}>
+                          {entry.rank}
+                        </span>
+                        <span className="text-sm text-white font-medium truncate">{entry.username}</span>
+                        <span className="text-sm text-right text-white font-bold">{entry.totalPulls.toLocaleString()}</span>
+                        <span className="text-sm text-right text-orange-400 font-bold">{entry.sixStarCount}</span>
+                        <span className="text-sm text-right text-purple-400">{entry.fiveStarCount}</span>
+                        <span className="text-sm text-right text-[var(--color-accent)]">{entry.sixStarRate}%</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 text-[var(--color-text-muted)]">
+                    <Trophy size={48} className="mx-auto mb-4 opacity-30" />
+                    <p>No leaderboard data yet</p>
+                    <p className="text-sm mt-1">Be the first on the board by importing your pulls!</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-16 text-[var(--color-text-muted)]">
+                <Trophy size={48} className="mx-auto mb-4 opacity-30" />
+                <p>Could not load leaderboard</p>
+                <p className="text-sm mt-1">
+                  <button onClick={fetchLeaderboard} className="text-[var(--color-accent)] hover:underline">Try again</button>
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

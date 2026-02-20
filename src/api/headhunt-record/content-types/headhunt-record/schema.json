@@ -1,0 +1,74 @@
+{
+  "kind": "collectionType",
+  "collectionName": "headhunt_records",
+  "info": {
+    "singularName": "headhunt-record",
+    "pluralName": "headhunt-records",
+    "displayName": "Headhunt Record",
+    "description": "Individual user pull records for headhunt tracking and global stats"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "owner": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "Banner": {
+      "type": "string",
+      "required": true
+    },
+    "BannerType": {
+      "type": "enumeration",
+      "enum": ["operator", "weapon", "standard"],
+      "required": true
+    },
+    "Pulls": {
+      "type": "json",
+      "required": true
+    },
+    "TotalPulls": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    },
+    "SixStarCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "FiveStarCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "FourStarCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "ThreeStarCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "SixStarNames": {
+      "type": "json"
+    },
+    "FiveStarNames": {
+      "type": "json"
+    },
+    "ImportSource": {
+      "type": "enumeration",
+      "enum": ["url", "json", "manual"],
+      "default": "manual"
+    },
+    "Region": {
+      "type": "enumeration",
+      "enum": ["Asia", "NA / EU", "CN"],
+      "required": false
+    },
+    "LastImportedAt": {
+      "type": "datetime"
+    }
+  }
+}
