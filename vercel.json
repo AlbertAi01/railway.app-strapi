@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "installCommand": "cd endfield-hub-next && npm install",
+  "buildCommand": "cd endfield-hub-next && npm run build",
+  "outputDirectory": "endfield-hub-next/.next",
   "headers": [
     {
       "source": "/(.*)",
