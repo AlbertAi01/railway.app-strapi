@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import Image from 'next/image';
 import { fetchBlueprints, createBlueprint } from '@/lib/api';
-import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
+import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, getBlueprintUpvoteCount, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function Blueprints() {
@@ -149,7 +149,7 @@ export default function Blueprints() {
     if (categoryFilter && bp.category !== categoryFilter) return false;
     if (complexityFilter && bp.complexity !== complexityFilter) return false;
     return true;
-  }).sort((a, b) => b.Upvotes - a.Upvotes);
+  }).sort((a, b) => getBlueprintUpvoteCount(b.id) - getBlueprintUpvoteCount(a.id));
 
   const categories: Category[] = ['Production', 'Processing', 'Power', 'Complete Chain', 'Compact'];
   const complexities: Complexity[] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
@@ -527,7 +527,7 @@ export default function Blueprints() {
                   </div>
                   <div className="flex items-center gap-1 text-[#FFE500] flex-shrink-0 ml-3">
                     <ThumbsUp size={16} />
-                    <span className="text-base font-semibold">{bp.Upvotes}</span>
+                    <span className="text-base font-semibold">{getBlueprintUpvoteCount(bp.id)}</span>
                   </div>
                 </div>
 

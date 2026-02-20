@@ -151,6 +151,104 @@ export function getYouTubeThumbnail(url: string): string | null {
   return null;
 }
 
+// ===== LIKES STORE (localStorage, deduplicated) =====
+const LIKES_KEY = 'endfield-build-likes'; // { [buildId]: number } - like counts
+const LIKED_KEY = 'endfield-build-liked'; // string[] - IDs user has liked
+
+export function getBuildLikes(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const data = localStorage.getItem(LIKES_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch { return {}; }
+}
+
+function saveBuildLikes(likes: Record<string, number>): void {
+  localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+}
+
+export function getLikedBuildIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(LIKED_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+export function isBuildLiked(buildId: string): boolean {
+  return getLikedBuildIds().includes(buildId);
+}
+
+export function toggleLikeBuild(buildId: string): { liked: boolean; count: number } {
+  const likedIds = getLikedBuildIds();
+  const likes = getBuildLikes();
+  const currentCount = likes[buildId] || 0;
+  const idx = likedIds.indexOf(buildId);
+
+  if (idx >= 0) {
+    // Unlike
+    likedIds.splice(idx, 1);
+    likes[buildId] = Math.max(0, currentCount - 1);
+    localStorage.setItem(LIKED_KEY, JSON.stringify(likedIds));
+    saveBuildLikes(likes);
+    return { liked: false, count: likes[buildId] };
+  } else {
+    // Like
+    likedIds.push(buildId);
+    likes[buildId] = currentCount + 1;
+    localStorage.setItem(LIKED_KEY, JSON.stringify(likedIds));
+    saveBuildLikes(likes);
+    return { liked: true, count: likes[buildId] };
+  }
+}
+
+export function getBuildLikeCount(buildId: string): number {
+  return getBuildLikes()[buildId] || 0;
+}
+
+// ===== VIEWS STORE (sessionStorage for dedup, localStorage for counts) =====
+const VIEWS_KEY = 'endfield-build-views'; // { [buildId]: number } - view counts
+const VIEWED_SESSION_KEY = 'endfield-build-viewed'; // sessionStorage: string[] - IDs viewed this session
+
+export function getBuildViews(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const data = localStorage.getItem(VIEWS_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch { return {}; }
+}
+
+function saveBuildViews(views: Record<string, number>): void {
+  localStorage.setItem(VIEWS_KEY, JSON.stringify(views));
+}
+
+/** Record a view for a build. Returns the new count. Only increments once per session. */
+export function recordBuildView(buildId: string): number {
+  if (typeof window === 'undefined') return 0;
+
+  // Check if already viewed this session
+  let viewedThisSession: string[] = [];
+  try {
+    const data = sessionStorage.getItem(VIEWED_SESSION_KEY);
+    viewedThisSession = data ? JSON.parse(data) : [];
+  } catch { /* ignore */ }
+
+  const views = getBuildViews();
+
+  if (!viewedThisSession.includes(buildId)) {
+    viewedThisSession.push(buildId);
+    sessionStorage.setItem(VIEWED_SESSION_KEY, JSON.stringify(viewedThisSession));
+    views[buildId] = (views[buildId] || 0) + 1;
+    saveBuildViews(views);
+  }
+
+  return views[buildId] || 0;
+}
+
+export function getBuildViewCount(buildId: string): number {
+  return getBuildViews()[buildId] || 0;
+}
+
 // ===== FAVORITES STORE (localStorage) =====
 const FAVORITES_KEY = 'endfield-build-favorites';
 
@@ -227,8 +325,8 @@ export const SAMPLE_BUILDS: Build[] = [
     notes: 'The premiere Heat DPS build for endgame boss encounters and single-target content.',
     shortDescription: 'Maximize Laevatain burst damage with Umbral Torch and Yinglung set. Best-in-class Heat DPS for boss content and Challenger Gauntlet.',
     isPublic: true,
-    likes: 7,
-    views: 43,
+    likes: 0,
+    views: 0,
     createdAt: Date.now() - 86400000 * 45,
     updatedAt: Date.now() - 86400000 * 7,
     author: 'Operator-IX',
@@ -320,8 +418,8 @@ The main challenge with this build is the significant investment required to unl
     notes: 'An unconventional but powerful ranged DPS build utilizing Wulfgard\'s handcannon for explosive AoE damage.',
     shortDescription: 'Wulfgard ranged artillery build focusing on handcannon AoE explosions. Unconventional but devastatingly effective in multi-target scenarios.',
     isPublic: true,
-    likes: 4,
-    views: 28,
+    likes: 0,
+    views: 0,
     createdAt: Date.now() - 86400000 * 32,
     updatedAt: Date.now() - 86400000 * 12,
     author: 'DocHolst',
@@ -398,8 +496,8 @@ However, for players who master the mechanics, Wulfgard Artillery offers unique 
     notes: 'Budget-friendly Heat DPS build that performs well above its rarity, perfect for new players.',
     shortDescription: 'F2P-friendly 4-star Heat DPS that punches way above its weight. Perfect for new players building their first team.',
     isPublic: true,
-    likes: 9,
-    views: 67,
+    likes: 0,
+    views: 0,
     createdAt: Date.now() - 86400000 * 28,
     updatedAt: Date.now() - 86400000 * 5,
     author: 'SanityZero',
@@ -478,8 +576,8 @@ The main limitation of this build is the inevitable stat disadvantage against tr
     notes: 'The gold standard for healing, capable of keeping any team alive through the hardest content.',
     shortDescription: 'The undisputed best healer in Endfield. Chivalric Virtues + LYNX for maximum sustain and team buffs. Essential for endgame.',
     isPublic: true,
-    likes: 6,
-    views: 51,
+    likes: 0,
+    views: 0,
     createdAt: Date.now() - 86400000 * 38,
     updatedAt: Date.now() - 86400000 * 9,
     author: 'Nightingale-2049',
@@ -603,8 +701,8 @@ What elevates Ardelia from merely excellent to absolutely essential is her Ultim
     notes: 'Coordinated Heat team comp designed for maximum Combustion burst damage and speedrun potential.',
     shortDescription: 'The ultimate Heat team. Laevatain carry with Wulfgard/Akekuri Combustion setup and Gilberta buffs. Sub-90s Colossus clears.',
     isPublic: true,
-    likes: 3,
-    views: 19,
+    likes: 0,
+    views: 0,
     createdAt: Date.now() - 86400000 * 21,
     updatedAt: Date.now() - 86400000 * 3,
     author: 'Operator-IX',
@@ -680,8 +778,8 @@ The composition's primary weakness lies in its specialization creating vulnerabi
     notes: 'Turn the free story operator into a nearly unkillable frontline tank for any team composition.',
     shortDescription: 'Free story operator built as an unkillable shield tank. Zero gacha investment required. Perfect starter tank for all content.',
     isPublic: true,
-    likes: 2,
-    views: 12,
+    likes: 0,
+    views: 0,
     createdAt: Date.now() - 86400000 * 50,
     updatedAt: Date.now() - 86400000 * 2,
     author: 'F2P-Enjoyer',

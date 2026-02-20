@@ -18,6 +18,8 @@ import { GEAR_SETS } from '@/data/gear';
 import {
   SAMPLE_BUILDS, getYouTubeEmbedUrl, getYouTubeThumbnail,
   isBuildFavorited, toggleFavoriteBuild, getMyBuilds,
+  isBuildLiked, toggleLikeBuild, getBuildLikeCount,
+  recordBuildView, getBuildViewCount,
 } from '@/data/builds';
 import type { Build } from '@/data/builds';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
@@ -29,6 +31,9 @@ export default function BuildDetailPage() {
   const [build, setBuild] = useState<Build | null>(null);
   const [copied, setCopied] = useState(false);
   const [favorited, setFavorited] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [viewCount, setViewCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'loadout' | 'guide'>('overview');
   const [showVideo, setShowVideo] = useState(false);
 
@@ -44,17 +49,11 @@ export default function BuildDetailPage() {
     if (foundBuild) {
       setBuild(foundBuild);
       setFavorited(isBuildFavorited(id));
-      // Increment views for non-sample builds
-      if (!SAMPLE_BUILDS.find(b => b.id === id)) {
-        const saved = localStorage.getItem('endfield-my-builds');
-        if (saved) {
-          try {
-            const myBuilds: Build[] = JSON.parse(saved);
-            const updated = myBuilds.map(b => b.id === id ? { ...b, views: b.views + 1 } : b);
-            localStorage.setItem('endfield-my-builds', JSON.stringify(updated));
-          } catch { /* ignore */ }
-        }
-      }
+      setLiked(isBuildLiked(id));
+      setLikeCount(getBuildLikeCount(id));
+      // Record view (deduplicated per session)
+      const newViewCount = recordBuildView(id);
+      setViewCount(newViewCount);
     } else {
       router.push('/builds');
     }
@@ -90,6 +89,13 @@ export default function BuildDetailPage() {
     if (!build) return;
     const isFav = toggleFavoriteBuild(build.id);
     setFavorited(isFav);
+  };
+
+  const handleToggleLike = () => {
+    if (!build) return;
+    const result = toggleLikeBuild(build.id);
+    setLiked(result.liked);
+    setLikeCount(result.count);
   };
 
   if (!build) {
@@ -230,8 +236,14 @@ export default function BuildDetailPage() {
               </div>
               <div className="flex flex-col items-end gap-1 text-sm shrink-0">
                 <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1"><Heart size={14} className="text-red-400" /> {build.likes.toLocaleString()}</span>
-                  <span className="flex items-center gap-1"><Eye size={14} /> {build.views.toLocaleString()}</span>
+                  <button
+                    onClick={handleToggleLike}
+                    className={`flex items-center gap-1 transition-colors ${liked ? 'text-red-400' : 'text-[var(--color-text-tertiary)] hover:text-red-400'}`}
+                    title={liked ? 'Remove like' : 'Like this build'}
+                  >
+                    <Heart size={14} className={liked ? 'fill-current' : ''} /> {likeCount.toLocaleString()}
+                  </button>
+                  <span className="flex items-center gap-1 text-[var(--color-text-tertiary)]"><Eye size={14} /> {viewCount.toLocaleString()}</span>
                 </div>
                 <div className="text-xs text-[var(--color-text-tertiary)]">by {build.author || 'Community'}</div>
                 <div className="text-xs text-[var(--color-text-tertiary)] flex items-center gap-1">

@@ -44,6 +44,61 @@ export interface BlueprintEntry {
   submittedAt?: string;
 }
 
+// ===== UPVOTE STORE (localStorage, deduplicated) =====
+const UPVOTES_KEY = 'endfield-bp-upvotes'; // { [bpId]: number } - upvote counts
+const UPVOTED_KEY = 'endfield-bp-upvoted'; // number[] - IDs user has upvoted
+
+export function getBlueprintUpvotes(): Record<number, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const data = localStorage.getItem(UPVOTES_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch { return {}; }
+}
+
+function saveBlueprintUpvotes(upvotes: Record<number, number>): void {
+  localStorage.setItem(UPVOTES_KEY, JSON.stringify(upvotes));
+}
+
+export function getUpvotedBlueprintIds(): number[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(UPVOTED_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+export function isBlueprintUpvoted(bpId: number): boolean {
+  return getUpvotedBlueprintIds().includes(bpId);
+}
+
+export function toggleUpvoteBlueprint(bpId: number): { upvoted: boolean; count: number } {
+  const upvotedIds = getUpvotedBlueprintIds();
+  const upvotes = getBlueprintUpvotes();
+  const currentCount = upvotes[bpId] || 0;
+  const idx = upvotedIds.indexOf(bpId);
+
+  if (idx >= 0) {
+    // Remove upvote
+    upvotedIds.splice(idx, 1);
+    upvotes[bpId] = Math.max(0, currentCount - 1);
+    localStorage.setItem(UPVOTED_KEY, JSON.stringify(upvotedIds));
+    saveBlueprintUpvotes(upvotes);
+    return { upvoted: false, count: upvotes[bpId] };
+  } else {
+    // Upvote
+    upvotedIds.push(bpId);
+    upvotes[bpId] = currentCount + 1;
+    localStorage.setItem(UPVOTED_KEY, JSON.stringify(upvotedIds));
+    saveBlueprintUpvotes(upvotes);
+    return { upvoted: true, count: upvotes[bpId] };
+  }
+}
+
+export function getBlueprintUpvoteCount(bpId: number): number {
+  return getBlueprintUpvotes()[bpId] || 0;
+}
+
 // localStorage persistence for user-submitted blueprints
 const STORAGE_KEY = 'endfield-user-blueprints';
 

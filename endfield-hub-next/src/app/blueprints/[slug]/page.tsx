@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, ThumbsUp, Copy, Check, Zap, Grid3X3, Package, TrendingUp, Download } from 'lucide-react';
-import { SCRAPED_BLUEPRINTS, type BlueprintEntry } from '@/data/blueprints';
+import { SCRAPED_BLUEPRINTS, isBlueprintUpvoted, toggleUpvoteBlueprint, getBlueprintUpvoteCount, type BlueprintEntry } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function BlueprintDetail() {
@@ -13,6 +13,8 @@ export default function BlueprintDetail() {
   const slug = params.slug as string;
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [countUp, setCountUp] = useState<Record<string, number>>({});
+  const [upvoted, setUpvoted] = useState(false);
+  const [upvoteCount, setUpvoteCount] = useState(0);
 
   const blueprint = useMemo(() => {
     return SCRAPED_BLUEPRINTS.find(bp => bp.slug === slug);
@@ -42,6 +44,20 @@ export default function BlueprintDetail() {
 
     return related;
   }, [blueprint]);
+
+  // Initialize upvote state
+  useEffect(() => {
+    if (!blueprint) return;
+    setUpvoted(isBlueprintUpvoted(blueprint.id));
+    setUpvoteCount(getBlueprintUpvoteCount(blueprint.id));
+  }, [blueprint]);
+
+  const handleUpvote = () => {
+    if (!blueprint) return;
+    const result = toggleUpvoteBlueprint(blueprint.id);
+    setUpvoted(result.upvoted);
+    setUpvoteCount(result.count);
+  };
 
   // Animated counter effect for production rates
   useEffect(() => {
@@ -154,9 +170,17 @@ export default function BlueprintDetail() {
                 </div>
 
                 {/* Upvote Button */}
-                <button className="flex items-center gap-2 bg-[var(--color-surface)]/80 backdrop-blur-sm border border-[var(--color-border)] px-4 py-3 clip-corner-tl hover:border-[var(--color-accent)] transition-colors">
-                  <ThumbsUp size={20} className="text-[#FFE500]" />
-                  <span className="text-white font-semibold text-lg">{blueprint.Upvotes}</span>
+                <button
+                  onClick={handleUpvote}
+                  className={`flex items-center gap-2 bg-[var(--color-surface)]/80 backdrop-blur-sm border px-4 py-3 clip-corner-tl transition-colors ${
+                    upvoted
+                      ? 'border-[#FFE500] bg-[#FFE500]/10'
+                      : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                  }`}
+                  title={upvoted ? 'Remove upvote' : 'Upvote this blueprint'}
+                >
+                  <ThumbsUp size={20} className={upvoted ? 'text-[#FFE500] fill-current' : 'text-[#FFE500]'} />
+                  <span className="text-white font-semibold text-lg">{upvoteCount}</span>
                 </button>
               </div>
             </div>

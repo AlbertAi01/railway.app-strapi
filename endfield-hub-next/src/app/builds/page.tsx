@@ -21,6 +21,7 @@ import {
   MAX_PARTNERS, MAX_SHORT_DESC, SAMPLE_BUILDS, getYouTubeThumbnail,
   getFavoriteBuildIds, toggleFavoriteBuild, isBuildFavorited,
   getMyBuilds, saveMyBuilds,
+  isBuildLiked, toggleLikeBuild, getBuildLikeCount, getBuildViewCount,
 } from '@/data/builds';
 import { TIER_COLORS } from '@/data/gear';
 import type { Build, BuildCharacter, BuildGuide, RecommendedPartner, BrowseFilter, BuildEquipmentSlot } from '@/data/builds';
@@ -118,7 +119,7 @@ export default function BuildsPage() {
         b.shortDescription?.toLowerCase().includes(q)
       );
     }
-    if (browseFilter === 'popular') builds = [...builds].sort((a, b) => b.likes - a.likes);
+    if (browseFilter === 'popular') builds = [...builds].sort((a, b) => getBuildLikeCount(b.id) - getBuildLikeCount(a.id));
     if (browseFilter === 'latest') builds = [...builds].sort((a, b) => b.createdAt - a.createdAt);
     return builds;
   }, [allBuilds, browseFilter, searchQuery, filterTag]);
@@ -1313,6 +1314,22 @@ function BuildCard({ build, isFavorited, onToggleFavorite, onDuplicate, formatTi
   formatTimeAgo: (ts: number) => string;
 }) {
   const ytThumb = build.youtubeUrl ? getYouTubeThumbnail(build.youtubeUrl) : null;
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const viewCount = getBuildViewCount(build.id);
+
+  useEffect(() => {
+    setLiked(isBuildLiked(build.id));
+    setLikeCount(getBuildLikeCount(build.id));
+  }, [build.id]);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = toggleLikeBuild(build.id);
+    setLiked(result.liked);
+    setLikeCount(result.count);
+  };
 
   return (
     <div className={`bg-[var(--color-surface)] border clip-corner-tl overflow-hidden transition-all border-[var(--color-border)] hover:border-[var(--color-accent)]/50`}>
@@ -1375,9 +1392,15 @@ function BuildCard({ build, isFavorited, onToggleFavorite, onDuplicate, formatTi
               )}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-0.5 text-[10px] text-[var(--color-text-tertiary)] shrink-0">
-            <span className="flex items-center gap-1"><Heart size={10} className="text-red-400" /> {build.likes.toLocaleString()}</span>
-            <span className="flex items-center gap-1"><Eye size={10} /> {build.views.toLocaleString()}</span>
+          <div className="flex flex-col items-end gap-0.5 text-[10px] shrink-0">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-1 transition-colors ${liked ? 'text-red-400' : 'text-[var(--color-text-tertiary)] hover:text-red-400'}`}
+              title={liked ? 'Remove like' : 'Like this build'}
+            >
+              <Heart size={10} className={liked ? 'fill-current' : ''} /> {likeCount.toLocaleString()}
+            </button>
+            <span className="flex items-center gap-1 text-[var(--color-text-tertiary)]"><Eye size={10} /> {viewCount.toLocaleString()}</span>
           </div>
         </div>
 
