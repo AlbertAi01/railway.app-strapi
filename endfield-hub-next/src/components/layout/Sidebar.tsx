@@ -36,7 +36,7 @@ const navigation: NavItem[] = [
       { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={16} /> },
       { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={16} /> },
       { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={16} /> },
-      { label: 'Operator Card', path: '/character-card', icon: <Sparkles size={16} /> },
+      { label: 'Operator Card (BETA)', path: '/character-card', icon: <Sparkles size={16} /> },
     ],
   },
 

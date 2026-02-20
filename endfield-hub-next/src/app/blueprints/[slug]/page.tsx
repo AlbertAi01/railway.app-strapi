@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, ThumbsUp, Copy, Check, Zap, Grid3X3, Package, TrendingUp, Download } from 'lucide-react';
-import { SCRAPED_BLUEPRINTS, isBlueprintUpvoted, toggleUpvoteBlueprint, getBlueprintUpvoteCount, type BlueprintEntry } from '@/data/blueprints';
+import { SCRAPED_BLUEPRINTS, getUserBlueprints, isBlueprintUpvoted, toggleUpvoteBlueprint, getBlueprintUpvoteCount, type BlueprintEntry } from '@/data/blueprints';
+import { fetchBlueprintBySlug } from '@/lib/api';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
 export default function BlueprintDetail() {
@@ -15,10 +16,58 @@ export default function BlueprintDetail() {
   const [countUp, setCountUp] = useState<Record<string, number>>({});
   const [upvoted, setUpvoted] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(0);
+  const [strapiBp, setStrapiBp] = useState<BlueprintEntry | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const blueprint = useMemo(() => {
+  // First check static data
+  const staticBlueprint = useMemo(() => {
     return SCRAPED_BLUEPRINTS.find(bp => bp.slug === slug);
   }, [slug]);
+
+  // Also check localStorage submissions
+  const localBlueprint = useMemo(() => {
+    if (staticBlueprint) return null;
+    return getUserBlueprints().find(bp => bp.slug === slug);
+  }, [slug, staticBlueprint]);
+
+  // If not found locally, try Strapi
+  useEffect(() => {
+    if (staticBlueprint || localBlueprint) return;
+    setLoading(true);
+    fetchBlueprintBySlug(slug).then(data => {
+      if (data) {
+        const attrs = data.attributes || data;
+        const title = attrs.Title || '';
+        const mapped: BlueprintEntry = {
+          id: data.id || 0,
+          Title: title,
+          Description: attrs.Description || '',
+          ImportString: attrs.ImportString || '',
+          Upvotes: attrs.Upvotes || 0,
+          Region: attrs.Region || 'NA / EU',
+          Author: attrs.Author || 'Anonymous',
+          Tags: Array.isArray(attrs.Tags) ? attrs.Tags : [],
+          operators: Array.isArray(attrs.Operators) ? attrs.Operators : [],
+          slug: attrs.Slug || slug,
+          detailDescription: attrs.DetailDescription || attrs.Description || '',
+          outputsPerMin: Array.isArray(attrs.OutputsData) ? attrs.OutputsData : [],
+          importCodes: Array.isArray(attrs.ImportCodes) ? attrs.ImportCodes : attrs.ImportString ? [{ region: attrs.Region || 'NA / EU', code: attrs.ImportString }] : [],
+          complexity: attrs.Complexity || 'Beginner',
+          category: attrs.Category || 'Production',
+          previewImage: attrs.PreviewImage || undefined,
+          productName: attrs.ProductName || undefined,
+          buildingCount: attrs.BuildingCount || undefined,
+          gridSize: attrs.GridSize || undefined,
+          netPower: attrs.NetPower || undefined,
+          status: 'approved',
+        };
+        setStrapiBp(mapped);
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [slug, staticBlueprint, localBlueprint]);
+
+  const blueprint = staticBlueprint || localBlueprint || strapiBp;
 
   const relatedBlueprints = useMemo(() => {
     if (!blueprint) return [];
@@ -94,11 +143,21 @@ export default function BlueprintDetail() {
   };
 
   if (!blueprint) {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="diamond-spinner mx-auto mb-4" />
+            <p className="terminal-text text-[var(--color-accent)]">LOADING BLUEPRINT DATA...</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Blueprint Not Found</h1>
-          <p className="text-[var(--color-text-secondary)] mb-6">The blueprint you're looking for doesn't exist.</p>
+          <p className="text-[var(--color-text-secondary)] mb-6">The blueprint you're looking for doesn't exist or hasn't been approved yet.</p>
           <Link
             href="/blueprints"
             className="inline-flex items-center gap-2 bg-[var(--color-accent)] text-black px-6 py-3 clip-corner-tl font-semibold hover:bg-[var(--color-accent)]/90 transition-colors"
@@ -128,8 +187,59 @@ export default function BlueprintDetail() {
 
   const CategoryIcon = categoryIcons[blueprint.category];
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://www.zerosanity.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Factory Blueprints',
+        item: 'https://www.zerosanity.app/blueprints',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: blueprint.Title,
+        item: `https://www.zerosanity.app/blueprints/${blueprint.slug}`,
+      },
+    ],
+  };
+
+  const creativeWorkSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: blueprint.Title,
+    description: blueprint.Description,
+    author: {
+      '@type': 'Person',
+      name: blueprint.Author,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Zero Sanity',
+      url: 'https://www.zerosanity.app',
+    },
+    url: `https://www.zerosanity.app/blueprints/${blueprint.slug}`,
+    ...(blueprint.previewImage && { image: blueprint.previewImage }),
+    keywords: blueprint.Tags.join(', '),
+    genre: 'Gaming Guide',
+    about: {
+      '@type': 'VideoGame',
+      name: 'Arknights: Endfield',
+    },
+  };
+
   return (
     <div className="pb-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(creativeWorkSchema) }} />
       {/* Back Navigation */}
       <Link
         href="/blueprints"
@@ -150,6 +260,8 @@ export default function BlueprintDetail() {
               className="object-cover"
               sizes="100vw"
               unoptimized
+              priority
+              placeholder="empty"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent" />
 
@@ -215,6 +327,7 @@ export default function BlueprintDetail() {
                     height={40}
                     className="object-contain"
                     unoptimized
+                    loading="lazy"
                   />
                 </div>
               )}
@@ -402,6 +515,8 @@ export default function BlueprintDetail() {
                       className="object-cover group-hover:scale-105 transition-transform"
                       sizes="300px"
                       unoptimized
+                      loading="lazy"
+                      placeholder="empty"
                     />
                   </div>
                 )}

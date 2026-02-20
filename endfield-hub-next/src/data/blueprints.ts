@@ -121,6 +121,21 @@ export function removeUserBlueprint(id: number): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 }
 
+/** Update status of a user submission in localStorage */
+export function updateUserBlueprintStatus(slug: string, status: BlueprintStatus): void {
+  const existing = getUserBlueprints();
+  const updated = existing.map(bp => bp.slug === slug ? { ...bp, status } : bp);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
+/** Remove all approved submissions from localStorage (they're now public) */
+export function removeApprovedSubmissions(): BlueprintEntry[] {
+  const existing = getUserBlueprints();
+  const pending = existing.filter(bp => bp.status !== 'approved');
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
+  return pending;
+}
+
 // Find blueprints tagged with a specific operator (by slug or name)
 export function getBlueprintsForOperator(operatorName: string): BlueprintEntry[] {
   const nameLower = operatorName.toLowerCase();

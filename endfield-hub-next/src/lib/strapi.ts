@@ -14,6 +14,15 @@ async function strapiGet<T>(path: string, revalidate = 3600): Promise<T> {
   const url = `${STRAPI_URL}/api${path}`;
   try {
     const res = await fetch(url, { next: { revalidate, tags: [pathToTag(path)] } });
+    if (res.status === 400 && path.includes('filters[Status]')) {
+      // Status field may not exist on this content type yet — retry without Status filter
+      const fallbackPath = path.replace(/&filters\[Status\]\[\$eq\]=[^&]*/g, '');
+      const fallbackUrl = `${STRAPI_URL}/api${fallbackPath}`;
+      const fallbackRes = await fetch(fallbackUrl, { next: { revalidate, tags: [pathToTag(path)] } });
+      if (!fallbackRes.ok) throw new Error(`Strapi ${fallbackRes.status}: ${fallbackUrl}`);
+      const json: StrapiResponse<T> = await fallbackRes.json();
+      return json.data;
+    }
     if (!res.ok) throw new Error(`Strapi ${res.status}: ${url}`);
     const json: StrapiResponse<T> = await res.json();
     return json.data;
@@ -45,11 +54,11 @@ export async function getEquipmentSets() {
 }
 
 export async function getGuides() {
-  return strapiGet<Record<string, unknown>[]>('/guides?populate=*&pagination[pageSize]=100&sort=createdAt:desc');
+  return strapiGet<Record<string, unknown>[]>('/guides?populate=*&pagination[pageSize]=100&sort=createdAt:desc&filters[Status][$eq]=approved');
 }
 
 export async function getBlueprints() {
-  return strapiGet<Record<string, unknown>[]>('/blueprints?populate=*&pagination[pageSize]=100&sort=Upvotes:desc');
+  return strapiGet<Record<string, unknown>[]>('/blueprints?populate=*&pagination[pageSize]=100&sort=Upvotes:desc&filters[Status][$eq]=approved');
 }
 
 export async function getRecipes() {

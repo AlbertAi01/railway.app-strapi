@@ -25,7 +25,7 @@ const tools: { name: string; desc: string; path: string; icon: string; color: st
   { name: 'Community Builds', desc: 'Browse, create, and share operator build guides', path: '/builds', icon: 'Hammer', color: '#FF8A65' },
   { name: 'Team Builder', desc: 'Plan and optimize squad compositions', path: '/team-builder', icon: 'Puzzle', color: '#CE93D8' },
   { name: 'Combat Assessment', desc: 'Create and share operator tier rankings', path: '/tier-list', icon: 'LayoutGrid', color: '#E8A624' },
-  { name: 'Operator Card', desc: 'Generate tactical operator showcase cards', path: '/character-card', icon: 'Sparkles', color: '#F5A623' },
+  { name: 'Operator Card (BETA)', desc: 'Generate tactical operator showcase cards', path: '/character-card', icon: 'Sparkles', color: '#F5A623' },
   { name: 'Tactical Map', desc: 'Explore Valley IV and Wuling with markers', path: '/map', icon: 'Map', color: '#69F0AE' },
   { name: 'Headhunt Operations', desc: 'Track recruitment attempts and pity counter', path: '/headhunt-tracker', icon: 'Target', color: '#FF6B35' },
   { name: 'Achievement Registry', desc: 'Track mission completion and rewards', path: '/achievements', icon: 'Trophy', color: '#FFD700' },
@@ -49,11 +49,11 @@ export default function Home() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Zero Sanity',
-    url: 'https://zerosanity.app',
+    url: 'https://www.zerosanity.app',
     description: 'Comprehensive Arknights: Endfield community toolkit with 17+ free tools.',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://zerosanity.app/characters?q={search_term_string}',
+      target: 'https://www.zerosanity.app/characters?q={search_term_string}',
       'query-input': 'required name=search_term_string',
     },
   };

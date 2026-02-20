@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, startTransition } from 'react';
 import Image from 'next/image';
 import { CHARACTERS, WEAPONS } from '@/lib/data';
 import { CHARACTER_ICONS, CHARACTER_SPLASH, PROFESSION_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS, CHARACTER_GACHA } from '@/lib/assets';
@@ -9,7 +9,7 @@ import type { Element, WeaponType, Character, Weapon } from '@/types/game';
 import { Download, Search, X, Sword, Zap, Crosshair, Flame, FilePlus2, Copy, Link2, Check, Shield, Heart, Swords, Target, Sparkles, Sun, Palette } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { WEAPON_DATA, getAtkAtLevel, type WeaponData } from '@/data/weapons';
-import { WEAPON_ESSENCES } from '@/data/essences';
+import { WEAPON_ESSENCES, getEssenceStatValue, formatEssenceValue, getEssenceTierLabel, type WeaponEssence } from '@/data/essences';
 import { GEAR_SETS, STANDALONE_GEAR, TIER_COLORS, type GearPiece, type GearSet } from '@/data/gear';
 import { OPERATOR_STATS, getOperatorStatsAtLevel, getTalentAttributeBonus } from '@/data/operator-stats';
 
@@ -451,7 +451,7 @@ function CharacterPickerModal({ open, onClose, onSelect, currentName }: {
         <div className="p-4 space-y-3 border-b border-[var(--color-border)]">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search operators..."
+            <input type="text" value={search} onChange={e => startTransition(() => setSearch(e.target.value))} placeholder="Search operators..."
               className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -514,7 +514,7 @@ function WeaponPickerModal({ open, onClose, onSelect, weaponType, currentName }:
         <div className="p-3 border-b border-[var(--color-border)]">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search weapons..."
+            <input type="text" value={search} onChange={e => startTransition(() => setSearch(e.target.value))} placeholder="Search weapons..."
               className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
           </div>
         </div>
@@ -574,7 +574,7 @@ function EquipmentPickerModal({ open, onClose, onSelect, slotType, currentPieceN
         <div className="p-3 border-b border-[var(--color-border)]">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${slotType.toLowerCase()} pieces...`}
+            <input type="text" value={search} onChange={e => startTransition(() => setSearch(e.target.value))} placeholder={`Search ${slotType.toLowerCase()} pieces...`}
               className="w-full pl-9 pr-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
           </div>
         </div>
@@ -661,8 +661,8 @@ function getDossierTimestamp(): string {
 }
 
 // ──────────── CARD CANVAS (the exported image) ────────────
-// Art-forward operator showcase — character art dominates the left,
-// semi-transparent data panel on the right. Inspired by Enka.Network / StarDB.
+// Cinematic operator showcase — art-forward left panel with diagonal divider,
+// dense data panel right. Weapon passive skill, essence stat values, set bonuses.
 // 1200x675 (16:9) — optimized for Twitter/Discord/Reddit embeds.
 
 function CardCanvas({ state, theme, char, weapon, colorScheme }: {
@@ -703,10 +703,13 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
   const schemeConfig = COLOR_SCHEMES[colorScheme] || COLOR_SCHEMES.auto;
   const brightnessFilter = state.brightness !== 1.0 ? `brightness(${state.brightness})` : undefined;
   const ac = schemeConfig.tint || theme.primary; // accent color
+  const timestamp = getDossierTimestamp();
 
   // Panel widths
-  const DATA_W = 520; // right data panel
-  const ART_W = 1200 - DATA_W; // left art area = 680
+  const DATA_W = 510; // right data panel
+  const ART_W = 1200 - DATA_W; // left art area = 690
+  // Diagonal cut: the data panel's left edge cuts from top-left to bottom, creating an angular divider
+  const DIAG_OFFSET = 50; // how much the diagonal cuts in
 
   return (
     <div style={{
@@ -716,168 +719,208 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
 
       {/* ═══ FULL-BLEED CHARACTER ART ═══ */}
       {(splashUrl || gachaUrl) && (
-        <div style={{ position: 'absolute', left: 0, top: 0, width: ART_W + 80, height: '100%', zIndex: 1 }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, width: ART_W + 100, height: '100%', zIndex: 1 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={splashUrl || gachaUrl || ''} alt={char.Name} style={{
             width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%',
-            filter: 'brightness(0.85) contrast(1.05)',
+            filter: 'brightness(0.9) contrast(1.08) saturate(1.1)',
           }} />
-          {/* Fade to black on right edge */}
+          {/* Diagonal fade to data panel */}
           <div style={{
-            position: 'absolute', top: 0, right: 0, width: 200, height: '100%',
-            background: 'linear-gradient(to right, transparent, #080a0f)',
+            position: 'absolute', top: 0, right: 0, width: 240, height: '100%',
+            background: `linear-gradient(to right, transparent 0%, #080a0f 100%)`,
           }} />
-          {/* Fade to black on bottom */}
+          {/* Bottom vignette */}
           <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 200,
-            background: 'linear-gradient(to top, #080a0fEE, #080a0f88, transparent)',
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 250,
+            background: 'linear-gradient(to top, #080a0fF0, #080a0f80, transparent)',
           }} />
-          {/* Fade to black on top for header */}
+          {/* Top vignette */}
           <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: 80,
-            background: 'linear-gradient(to bottom, #080a0fCC, transparent)',
+            position: 'absolute', top: 0, left: 0, right: 0, height: 100,
+            background: 'linear-gradient(to bottom, #080a0fBB, transparent)',
           }} />
         </div>
       )}
 
-      {/* Element glow behind character */}
+      {/* Element glow orb behind character */}
       <div style={{
-        position: 'absolute', left: ART_W / 2 - 150, top: '30%', width: 300, height: 300,
+        position: 'absolute', left: ART_W / 2 - 200, top: '20%', width: 400, height: 400,
         borderRadius: '50%', zIndex: 0,
-        background: `radial-gradient(circle, ${theme.glow} 0%, transparent 70%)`, opacity: 0.3,
+        background: `radial-gradient(circle, ${theme.glow} 0%, transparent 60%)`, opacity: 0.25,
       }} />
 
       {/* Scanline overlay */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 2, opacity: 0.015, pointerEvents: 'none',
-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 4px)',
+        position: 'absolute', inset: 0, zIndex: 2, opacity: 0.012, pointerEvents: 'none',
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px)',
       }} />
 
-      {/* ═══ TOP-LEFT: LEVEL BADGE ═══ */}
+      {/* ═══ TOP-LEFT: LEVEL BADGE + BREAKTHROUGH ═══ */}
       <div style={{
         position: 'absolute', top: 16, left: 20, zIndex: 15,
         display: 'flex', alignItems: 'flex-end', gap: 10,
       }}>
+        {/* Level diamond badge */}
         <div style={{
-          width: 62, height: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          background: `linear-gradient(135deg, ${ac}EE, ${theme.accent}DD)`,
+          width: 66, height: 66, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: `linear-gradient(135deg, ${ac}EE, ${theme.accent}CC)`,
           border: `2px solid ${ac}`,
-          clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
+          clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)',
+          boxShadow: `0 0 20px ${ac}30`,
         }}>
-          <span style={{ fontSize: 30, fontWeight: 900, color: '#080a0f', lineHeight: 1, fontFamily: F }}>{state.level}</span>
-          <span style={{ fontSize: 8, fontWeight: 700, color: '#080a0f', opacity: 0.6, letterSpacing: 2 }}>LEVEL</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: '#080a0f', lineHeight: 1, fontFamily: F }}>{state.level}</span>
+          <span style={{ fontSize: 7, fontWeight: 700, color: '#080a0f', opacity: 0.6, letterSpacing: 2.5, textTransform: 'uppercase' }}>LEVEL</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, paddingBottom: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, paddingBottom: 3 }}>
+          {/* Potential + Affinity badges */}
           <div style={{
-            padding: '2px 8px', background: 'rgba(8,10,15,0.85)', border: `1px solid ${ac}40`,
-            fontSize: 9, color: '#ccc', letterSpacing: 1.5, fontWeight: 600,
+            padding: '2px 8px', background: 'rgba(8,10,15,0.88)', border: `1px solid ${ac}30`,
+            fontSize: 9, color: '#bbb', letterSpacing: 1.5, fontWeight: 600,
+            backdropFilter: 'blur(4px)',
           }}>
             POT <span style={{ color: ac, fontWeight: 800 }}>{state.potential}</span>
-            <span style={{ color: '#555', margin: '0 4px' }}>|</span>
+            <span style={{ color: '#444', margin: '0 5px' }}>|</span>
             AFF <span style={{ color: ac, fontWeight: 800 }}>{state.affinity}</span>
           </div>
-          <div style={{ display: 'flex', gap: 2 }}>
+          {/* Breakthrough segmented bar */}
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {Array.from({ length: 5 }, (_, i) => (
               <div key={i} style={{
-                width: 18, height: 4,
-                backgroundColor: i <= state.charBreakthrough ? ac : '#333',
-                opacity: i <= state.charBreakthrough ? 1 : 0.5,
+                width: 20, height: 5,
+                background: i <= state.charBreakthrough
+                  ? `linear-gradient(90deg, ${ac}CC, ${ac})`
+                  : 'rgba(255,255,255,0.06)',
+                boxShadow: i <= state.charBreakthrough ? `0 0 4px ${ac}40` : 'none',
               }} />
             ))}
-            <span style={{ fontSize: 9, color: ac, fontWeight: 800, marginLeft: 4 }}>{CHAR_BREAKTHROUGH_LABELS[state.charBreakthrough]}</span>
+            <span style={{ fontSize: 9, color: ac, fontWeight: 800, marginLeft: 5, letterSpacing: 1 }}>
+              {CHAR_BREAKTHROUGH_LABELS[state.charBreakthrough]}
+            </span>
           </div>
         </div>
       </div>
 
+      {/* ═══ TOP-LEFT: CLASSIFICATION LABEL ═══ */}
+      <div style={{
+        position: 'absolute', top: 18, left: ART_W - 60, zIndex: 15,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2,
+      }}>
+        <span style={{ fontSize: 7, color: '#444', letterSpacing: 2, fontWeight: 600 }}>{operatorID}</span>
+        <span style={{ fontSize: 7, color: '#333', letterSpacing: 1.5 }}>{timestamp}</span>
+      </div>
+
       {/* ═══ BOTTOM-LEFT: NAME PLATE ═══ */}
       <div style={{
-        position: 'absolute', bottom: 36, left: 20, zIndex: 15,
+        position: 'absolute', bottom: 40, left: 20, zIndex: 15,
         maxWidth: ART_W - 40,
       }}>
-        {/* Name */}
+        {/* Operator Name — large cinematic typography */}
         <div style={{
-          fontSize: 42, fontWeight: 900, color: '#fff', fontFamily: F,
-          letterSpacing: 4, textTransform: 'uppercase', lineHeight: 1,
-          textShadow: '0 2px 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)',
+          fontSize: 46, fontWeight: 900, color: '#fff', fontFamily: F,
+          letterSpacing: 5, textTransform: 'uppercase', lineHeight: 0.95,
+          textShadow: `0 2px 24px rgba(0,0,0,0.9), 0 0 60px rgba(0,0,0,0.5), 0 0 2px ${ac}30`,
         }}>
           {char.Name}
         </div>
 
-        {/* Showcase name */}
+        {/* Showcase name subtitle */}
         {state.name && (
           <div style={{
-            fontSize: 13, color: ac, fontWeight: 600, letterSpacing: 2,
-            textTransform: 'uppercase', marginTop: 4, fontFamily: F,
-            textShadow: '0 1px 8px rgba(0,0,0,0.6)',
+            fontSize: 13, color: ac, fontWeight: 600, letterSpacing: 3,
+            textTransform: 'uppercase', marginTop: 5, fontFamily: F,
+            textShadow: `0 1px 10px rgba(0,0,0,0.7)`,
           }}>
-            {state.name}
+            &laquo; {state.name} &raquo;
           </div>
         )}
 
         {/* Rarity + Element + Role */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
           <div style={{ display: 'flex', gap: 2 }}>
             {Array.from({ length: char.Rarity }, (_, i) => (
-              <span key={i} style={{ color: RARITY_COLORS[char.Rarity], fontSize: 14, textShadow: `0 0 6px ${RARITY_COLORS[char.Rarity]}60` }}>★</span>
+              <span key={i} style={{
+                color: RARITY_COLORS[char.Rarity], fontSize: 15,
+                textShadow: `0 0 8px ${RARITY_COLORS[char.Rarity]}80`,
+              }}>&#9733;</span>
             ))}
           </div>
-          <div style={{ width: 1, height: 14, background: '#555' }} />
+          <div style={{ width: 1, height: 16, background: '#555' }} />
           {roleIcon && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={roleIcon} alt={char.Role} style={{ width: 16, height: 16, opacity: 0.9, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }} />
+            <img src={roleIcon} alt={char.Role} style={{
+              width: 18, height: 18, opacity: 0.9,
+              filter: `drop-shadow(0 1px 3px rgba(0,0,0,0.5)) drop-shadow(0 0 4px ${ac}30)`,
+            }} />
           )}
-          <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>
+          <span style={{ fontSize: 12, color: ac, textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>
             {char.Element} / {char.Role}
           </span>
         </div>
 
         {/* User info */}
         {state.username && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-            <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>{state.username}</span>
-            {state.userCode && <span style={{ fontSize: 9, color: '#555' }}>#{state.userCode}</span>}
-            {state.server && <span style={{ fontSize: 9, color: '#555' }}>[{state.server}]</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <div style={{ width: 6, height: 6, background: ac, transform: 'rotate(45deg)', opacity: 0.6 }} />
+            <span style={{ fontSize: 11, color: '#999', fontWeight: 600, letterSpacing: 0.5 }}>{state.username}</span>
+            {state.userCode && <span style={{ fontSize: 10, color: '#555' }}>#{state.userCode}</span>}
+            {state.server && (
+              <span style={{ fontSize: 9, color: '#444', padding: '1px 5px', background: 'rgba(8,10,15,0.7)', border: '1px solid #222' }}>
+                {state.server}
+              </span>
+            )}
           </div>
         )}
       </div>
 
+      {/* ═══ DIAGONAL DIVIDER LINE ═══ */}
+      <svg style={{ position: 'absolute', left: ART_W - DIAG_OFFSET, top: 0, width: DIAG_OFFSET + 4, height: 675, zIndex: 11, pointerEvents: 'none' }}>
+        <line x1={DIAG_OFFSET} y1="0" x2="0" y2="675" stroke={ac} strokeWidth="1.5" strokeOpacity="0.25" />
+        <line x1={DIAG_OFFSET + 3} y1="0" x2="3" y2="675" stroke={ac} strokeWidth="0.5" strokeOpacity="0.1" />
+      </svg>
+
       {/* ═══ RIGHT DATA PANEL ═══ */}
       <div style={{
         position: 'absolute', right: 0, top: 0, width: DATA_W, height: '100%', zIndex: 10,
-        background: 'rgba(8,10,15,0.88)',
-        borderLeft: `1px solid ${ac}15`,
+        background: 'rgba(8,10,15,0.92)',
+        borderLeft: `1px solid ${ac}10`,
         display: 'flex', flexDirection: 'column',
-        padding: '14px 18px 10px',
+        padding: '12px 16px 8px',
       }}>
 
         {/* ── Stats Section ── */}
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 3, height: 14, background: ac }} />
-            <span style={{ fontSize: 12, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>STATS</span>
-            <div style={{ flex: 1, height: 1, background: `${ac}20` }} />
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+            <div style={{ width: 3, height: 14, background: ac, boxShadow: `0 0 6px ${ac}40` }} />
+            <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>COMBAT STATS</span>
+            <div style={{ flex: 1, height: 1, background: `${ac}18` }} />
+            <span style={{ fontSize: 7, color: '#444', letterSpacing: 1 }}>{eliteLabel}</span>
           </div>
 
-          {/* HP / ATK / DEF row */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          {/* HP / ATK / DEF row with enhanced bars */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
             {[
-              { label: 'HP', value: stats.HP, max: 12000, color: '#EF4444' },
-              { label: 'ATK', value: stats.ATK, max: 800, color: '#F5A623' },
-              { label: 'DEF', value: stats.DEF, max: 500, color: '#3B82F6' },
+              { label: 'HP', value: stats.HP, max: 12000, color: '#EF4444', icon: '♥' },
+              { label: 'ATK', value: stats.ATK, max: 800, color: '#F5A623', icon: '⚔' },
+              { label: 'DEF', value: stats.DEF, max: 500, color: '#3B82F6', icon: '◆' },
             ].map(s => (
               <div key={s.label} style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-                  <span style={{ fontSize: 9, color: s.color, letterSpacing: 1.5, fontWeight: 700 }}>{s.label}</span>
-                  <span style={{ fontSize: 16, color: '#fff', fontWeight: 800, fontFamily: FM, lineHeight: 1 }}>{s.value.toLocaleString()}</span>
+                  <span style={{ fontSize: 8, color: s.color, letterSpacing: 2, fontWeight: 800 }}>{s.label}</span>
+                  <span style={{ fontSize: 17, color: '#fff', fontWeight: 800, fontFamily: FM, lineHeight: 1 }}>{s.value.toLocaleString()}</span>
                 </div>
-                <div style={{ height: 3, background: '#1a1e28' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, (s.value / s.max) * 100)}%`, background: `linear-gradient(to right, ${s.color}60, ${s.color})` }} />
+                <div style={{ height: 4, background: '#111520', position: 'relative' }}>
+                  <div style={{
+                    height: '100%', width: `${Math.min(100, (s.value / s.max) * 100)}%`,
+                    background: `linear-gradient(90deg, ${s.color}50, ${s.color})`,
+                    boxShadow: `0 0 6px ${s.color}30`,
+                  }} />
                 </div>
               </div>
             ))}
           </div>
 
-          {/* STR / AGI / INT / WILL + Crit */}
+          {/* STR / AGI / INT / WILL as hexagonal stat display + Crit */}
           <div style={{ display: 'flex', gap: 4 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 3, flex: 1 }}>
               {[
@@ -885,26 +928,35 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                 { label: 'AGI', value: stats.AGI, color: '#00BFFF' },
                 { label: 'INT', value: stats.INT, color: '#C084FC' },
                 { label: 'WILL', value: stats.WILL, color: '#34D399' },
-              ].map(s => (
-                <div key={s.label} style={{
-                  textAlign: 'center', padding: '5px 0',
-                  background: 'rgba(16,20,28,0.7)', borderBottom: `2px solid ${s.color}50`,
-                }}>
-                  <div style={{ fontSize: 8, color: s.color, fontWeight: 800, letterSpacing: 1.5, marginBottom: 2 }}>{s.label}</div>
-                  <div style={{ fontSize: 18, color: '#eee', fontWeight: 700, fontFamily: FM, lineHeight: 1 }}>{s.value}</div>
-                </div>
-              ))}
+              ].map(s => {
+                // Highlight if this is the operator's main attribute
+                const opData = OPERATOR_STATS[char.Name];
+                const isMain = opData && s.label.toLowerCase() === (opData.mainAttribute === 'wil' ? 'will' : opData.mainAttribute);
+                return (
+                  <div key={s.label} style={{
+                    textAlign: 'center', padding: '4px 0',
+                    background: isMain ? `${s.color}0A` : 'rgba(12,16,24,0.8)',
+                    borderBottom: `2px solid ${isMain ? s.color : s.color + '40'}`,
+                    borderLeft: isMain ? `2px solid ${s.color}40` : 'none',
+                  }}>
+                    <div style={{ fontSize: 7, color: s.color, fontWeight: 800, letterSpacing: 2, marginBottom: 2 }}>
+                      {s.label}{isMain ? ' ★' : ''}
+                    </div>
+                    <div style={{ fontSize: 18, color: isMain ? '#fff' : '#ddd', fontWeight: 700, fontFamily: FM, lineHeight: 1 }}>{s.value}</div>
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: 90 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: 85 }}>
               {[
                 { label: 'CRIT%', value: `${stats['CRIT Rate']}%` },
                 { label: 'CDMG%', value: `${stats['CRIT DMG']}%` },
               ].map(s => (
                 <div key={s.label} style={{
-                  flex: 1, padding: '3px 6px', background: 'rgba(16,20,28,0.7)',
-                  borderBottom: `2px solid ${ac}40`, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                  flex: 1, padding: '3px 6px', background: 'rgba(12,16,24,0.8)',
+                  borderBottom: `2px solid ${ac}30`, display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 }}>
-                  <div style={{ fontSize: 7, color: '#666', letterSpacing: 1, fontWeight: 700 }}>{s.label}</div>
+                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 1.5, fontWeight: 700 }}>{s.label}</div>
                   <div style={{ fontSize: 14, color: ac, fontWeight: 800, fontFamily: FM, lineHeight: 1.1 }}>{s.value}</div>
                 </div>
               ))}
@@ -913,37 +965,39 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         </div>
 
         {/* ── Skills ── */}
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <div style={{ width: 3, height: 12, background: ac }} />
-            <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>SKILLS</span>
-            <div style={{ flex: 1, height: 1, background: `${ac}20` }} />
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+            <div style={{ width: 3, height: 12, background: ac, boxShadow: `0 0 4px ${ac}30` }} />
+            <span style={{ fontSize: 10, color: ac, textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>SKILLS</span>
+            <div style={{ flex: 1, height: 1, background: `${ac}18` }} />
             {/* Talents inline */}
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 3 }}>
               {state.talentStates.map((t, i) => (
                 <span key={i} style={{
-                  padding: '1px 6px', fontSize: 8, fontWeight: 700, letterSpacing: 0.5,
-                  color: t === 'locked' ? '#444' : t === 'base' ? '#888' : ac,
-                  background: t === 'upgrade' ? `${ac}12` : 'rgba(16,20,28,0.7)',
-                  border: `1px solid ${t === 'upgrade' ? ac + '40' : '#222'}`,
+                  padding: '1px 5px', fontSize: 7, fontWeight: 700, letterSpacing: 0.5,
+                  color: t === 'locked' ? '#333' : t === 'base' ? '#777' : ac,
+                  background: t === 'upgrade' ? `${ac}10` : 'rgba(12,16,24,0.7)',
+                  border: `1px solid ${t === 'upgrade' ? ac + '35' : '#1a1e28'}`,
                 }}>
-                  T{i+1}:{t === 'locked' ? 'OFF' : t === 'base' ? 'α' : 'β'}
+                  T{i+1}:{t === 'locked' ? 'OFF' : t === 'base' ? '\u03B1' : '\u03B2'}
                 </span>
               ))}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 3 }}>
             {SKILL_TYPES.map(sk => {
               const lvl = state.skillLevels[sk.key as keyof typeof state.skillLevels];
               const isMax = lvl >= 9;
               return (
                 <div key={sk.key} style={{
-                  textAlign: 'center', padding: '6px 0',
-                  background: isMax ? `${ac}0D` : 'rgba(16,20,28,0.7)',
-                  borderBottom: `2px solid ${isMax ? ac : '#282e38'}`,
+                  textAlign: 'center', padding: '5px 0',
+                  background: isMax ? `${ac}0B` : 'rgba(12,16,24,0.8)',
+                  borderBottom: `2px solid ${isMax ? ac : '#1e2430'}`,
+                  position: 'relative',
                 }}>
-                  <div style={{ fontSize: 8, color: isMax ? ac : '#666', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 700, marginBottom: 2 }}>{sk.short}</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: isMax ? ac : '#ddd', fontFamily: F, lineHeight: 1 }}>{lvl}</div>
+                  <div style={{ fontSize: 7, color: isMax ? ac : '#555', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, marginBottom: 1 }}>{sk.short}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: isMax ? ac : '#ccc', fontFamily: F, lineHeight: 1 }}>{lvl}</div>
+                  {isMax && <div style={{ position: 'absolute', top: 2, right: 3, width: 4, height: 4, background: ac, transform: 'rotate(45deg)', opacity: 0.6 }} />}
                 </div>
               );
             })}
@@ -952,47 +1006,84 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
 
         {/* ── Weapon ── */}
         {weapon && (
-          <div style={{ marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 3, height: 12, background: '#F5A623' }} />
-              <span style={{ fontSize: 11, color: '#F5A623', textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>WEAPON</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(245,166,35,0.15)' }} />
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+              <div style={{ width: 3, height: 12, background: '#F5A623', boxShadow: '0 0 4px rgba(245,166,35,0.3)' }} />
+              <span style={{ fontSize: 10, color: '#F5A623', textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>WEAPON</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(245,166,35,0.12)' }} />
             </div>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px',
-              background: 'rgba(16,20,28,0.8)', border: `1px solid ${ac}12`,
+              display: 'flex', alignItems: 'stretch', gap: 10, padding: '6px 8px',
+              background: 'rgba(12,16,24,0.85)', border: `1px solid rgba(245,166,35,0.08)`,
             }}>
               {weaponIcon && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={weaponIcon} alt={weapon.Name} style={{ width: 44, height: 44, objectFit: 'contain' }} />
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, color: '#fff', fontWeight: 700, fontFamily: F, letterSpacing: 1 }}>{weapon.Name}</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
-                  <span style={{ fontSize: 10, color: RARITY_COLORS[weapon.Rarity] }}>{'★'.repeat(weapon.Rarity)}</span>
-                  <span style={{ fontSize: 10, color: '#888' }}>Lv.{state.weaponLevel}</span>
-                  <span style={{ fontSize: 10, color: '#888' }}>{WEAPON_BREAKTHROUGH_LABELS[state.weaponBreakthrough]}</span>
-                  <span style={{ fontSize: 10, color: '#888' }}>P{state.weaponPotential}</span>
-                  {weaponAtk != null && <span style={{ fontSize: 10, color: '#F5A623', fontWeight: 700 }}>ATK {weaponAtk}</span>}
+                <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(245,166,35,0.03)' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={weaponIcon} alt={weapon.Name} style={{ width: 42, height: 42, objectFit: 'contain' }} />
                 </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: 14, color: '#fff', fontWeight: 700, fontFamily: F, letterSpacing: 1, lineHeight: 1.1 }}>{weapon.Name}</div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 3 }}>
+                  <span style={{ fontSize: 9, color: RARITY_COLORS[weapon.Rarity] }}>{'★'.repeat(weapon.Rarity)}</span>
+                  <span style={{ fontSize: 9, color: '#777' }}>Lv.{state.weaponLevel}</span>
+                  <span style={{ fontSize: 9, color: '#777' }}>{WEAPON_BREAKTHROUGH_LABELS[state.weaponBreakthrough]}</span>
+                  <span style={{ fontSize: 9, color: '#777' }}>P{state.weaponPotential}</span>
+                  {weaponAtk != null && <span style={{ fontSize: 9, color: '#F5A623', fontWeight: 700 }}>ATK {weaponAtk}</span>}
+                </div>
+                {/* Weapon attributes inline */}
+                {weaponData && (
+                  <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap' }}>
+                    {weaponData.PassiveAttribute && (
+                      <span style={{ fontSize: 7, color: '#aaa', padding: '1px 4px', background: 'rgba(245,166,35,0.05)', border: '1px solid rgba(245,166,35,0.12)' }}>
+                        {weaponData.PassiveAttribute.label} +{weaponData.PassiveAttribute.value}{weaponData.PassiveAttribute.isPercentage ? '%' : ''}
+                      </span>
+                    )}
+                    {weaponData.SpecialAttribute && (
+                      <span style={{ fontSize: 7, color: '#aaa', padding: '1px 4px', background: 'rgba(245,166,35,0.05)', border: '1px solid rgba(245,166,35,0.12)' }}>
+                        {weaponData.SpecialAttribute.label} +{weaponData.SpecialAttribute.value}{weaponData.SpecialAttribute.isPercentage ? '%' : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+            {/* Weapon passive skill text — truncated to 2 lines */}
+            {weaponData?.SkillName && (
+              <div style={{
+                marginTop: 3, padding: '3px 8px',
+                background: 'rgba(245,166,35,0.03)', borderLeft: '2px solid rgba(245,166,35,0.25)',
+              }}>
+                <div style={{ fontSize: 8, color: '#F5A623', fontWeight: 700, letterSpacing: 1, marginBottom: 1 }}>
+                  {weaponData.SkillName}
+                </div>
+                {weaponData.SkillDescription && (
+                  <div style={{
+                    fontSize: 7, color: '#777', lineHeight: 1.3,
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const,
+                  }}>
+                    {weaponData.SkillDescription}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── Equipment ── */}
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <div style={{ width: 3, height: 12, background: ac }} />
-            <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>EQUIPMENT</span>
-            <div style={{ flex: 1, height: 1, background: `${ac}20` }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+            <div style={{ width: 3, height: 12, background: ac, boxShadow: `0 0 4px ${ac}30` }} />
+            <span style={{ fontSize: 10, color: ac, textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>EQUIPMENT</span>
+            <div style={{ flex: 1, height: 1, background: `${ac}18` }} />
             {activeSets.length > 0 && activeSets.map(([name, count]) => (
-              <span key={name} style={{ fontSize: 8, color: ac, fontWeight: 700, padding: '1px 6px', background: `${ac}10`, border: `1px solid ${ac}30` }}>
+              <span key={name} style={{ fontSize: 7, color: ac, fontWeight: 700, padding: '1px 5px', background: `${ac}0A`, border: `1px solid ${ac}25` }}>
                 {name} ({count}pc)
               </span>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 3 }}>
             {equippedPieces.map((ep, i) => {
               const slotLabel = equipSlots[i].label;
               const slotType: 'Body' | 'Hand' | 'EDC' = i < 2 ? (i === 0 ? 'Body' : 'Hand') : 'EDC';
@@ -1000,12 +1091,12 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
               if (!ep) {
                 return (
                   <div key={i} style={{
-                    padding: '8px 4px', background: 'rgba(16,20,28,0.4)', border: '1px dashed #1e2430',
+                    padding: '6px 4px', background: 'rgba(12,16,24,0.4)', border: '1px dashed #1a1e28',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    minHeight: 80, gap: 4,
+                    minHeight: 74, gap: 3,
                   }}>
-                    <span style={{ fontSize: 8, color: '#333', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 8, color: '#222' }}>EMPTY</span>
+                    <span style={{ fontSize: 7, color: '#2a2e38', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 7, color: '#1e2228' }}>EMPTY</span>
                   </div>
                 );
               }
@@ -1013,48 +1104,48 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
               const artLevel = ep.artifice || 0;
               return (
                 <div key={i} style={{
-                  padding: '6px 4px', background: 'rgba(16,20,28,0.7)',
-                  borderBottom: `2px solid ${tc}60`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  padding: '5px 3px', background: 'rgba(12,16,24,0.8)',
+                  borderBottom: `2px solid ${tc}50`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
                   overflow: 'hidden', position: 'relative',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 2px' }}>
-                    <span style={{ fontSize: 7, color: '#555', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 7, color: tc, fontWeight: 700 }}>{ep.piece.tier}</span>
+                    <span style={{ fontSize: 6, color: '#444', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 6, color: tc, fontWeight: 700 }}>{ep.piece.tier}</span>
                   </div>
-                  <div style={{ position: 'relative', width: 40, height: 40 }}>
+                  <div style={{ position: 'relative', width: 38, height: 38 }}>
                     {ep.piece.icon ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 36, height: 36, objectFit: 'contain', position: 'absolute', top: 2, left: 2 }} />
+                      <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 34, height: 34, objectFit: 'contain', position: 'absolute', top: 2, left: 2 }} />
                     ) : (
-                      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tc}10`, position: 'absolute', top: 2, left: 2 }}>
-                        <span style={{ fontSize: 14, color: tc, fontWeight: 900 }}>{ep.piece.tier}</span>
+                      <div style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tc}08`, position: 'absolute', top: 2, left: 2 }}>
+                        <span style={{ fontSize: 13, color: tc, fontWeight: 900 }}>{ep.piece.tier}</span>
                       </div>
                     )}
                     {/* Artifice ring indicator around icon */}
                     {artLevel > 0 && (() => {
                       const totalSegs = maxArt;
-                      const r = 19;
-                      const strokeW = 2.5;
+                      const r = 18;
+                      const strokeW = 2;
                       const gapDeg = 8;
                       const availDeg = 360 - totalSegs * gapDeg;
                       const segDeg = availDeg / totalSegs;
                       return (
-                        <svg width={40} height={40} viewBox="0 0 40 40" style={{ position: 'absolute', top: 0, left: 0 }}>
+                        <svg width={38} height={38} viewBox="0 0 38 38" style={{ position: 'absolute', top: 0, left: 0 }}>
                           {Array.from({ length: totalSegs }, (_, si) => {
                             const start = -90 + si * (segDeg + gapDeg);
                             const end = start + segDeg;
                             const filled = si < artLevel;
                             const toRad = (d: number) => (d * Math.PI) / 180;
-                            const x1 = 20 + r * Math.cos(toRad(start));
-                            const y1 = 20 + r * Math.sin(toRad(start));
-                            const x2 = 20 + r * Math.cos(toRad(end));
-                            const y2 = 20 + r * Math.sin(toRad(end));
+                            const x1 = 19 + r * Math.cos(toRad(start));
+                            const y1 = 19 + r * Math.sin(toRad(start));
+                            const x2 = 19 + r * Math.cos(toRad(end));
+                            const y2 = 19 + r * Math.sin(toRad(end));
                             return (
                               <path key={si}
                                 d={`M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`}
                                 fill="none"
-                                stroke={filled ? ac : 'rgba(255,255,255,0.08)'}
+                                stroke={filled ? ac : 'rgba(255,255,255,0.05)'}
                                 strokeWidth={strokeW}
                                 strokeLinecap="butt"
                               />
@@ -1064,7 +1155,7 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                       );
                     })()}
                   </div>
-                  <div style={{ fontSize: 7, color: '#bbb', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 2px' }}>
+                  <div style={{ fontSize: 6.5, color: '#aaa', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 1px' }}>
                     {ep.piece.name}
                   </div>
                   {artLevel > 0 && (
@@ -1075,80 +1166,132 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
             })}
           </div>
 
-          {/* Equipment stats detail */}
+          {/* Equipment stats detail — compact 2-column */}
           {equippedPieces.filter(Boolean).length > 0 && (
-            <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <div style={{ marginTop: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
               {equippedPieces.filter(Boolean).flatMap((ep) =>
                 ep!.piece.stats.map((st, si) => ({ ...st, key: `${ep!.piece.name}-${si}` }))
               ).slice(0, 8).map((st) => (
-                <div key={st.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 5px', background: 'rgba(16,20,28,0.35)' }}>
-                  <span style={{ fontSize: 7, color: '#555' }}>{st.name}</span>
-                  <span style={{ fontSize: 7, color: '#888', fontWeight: 600, fontFamily: FM }}>{st.value}</span>
+                <div key={st.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 4px', background: 'rgba(12,16,24,0.3)' }}>
+                  <span style={{ fontSize: 6.5, color: '#444' }}>{st.name}</span>
+                  <span style={{ fontSize: 6.5, color: '#777', fontWeight: 600, fontFamily: FM }}>{st.value}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Essence levels */}
-          {state.essenceLevels.some(l => l > 1) && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-              <span style={{ fontSize: 8, color: '#555', letterSpacing: 1, fontWeight: 600 }}>ESSENCE</span>
-              {state.essenceLevels.map((l, i) => (
-                <span key={i} style={{ fontSize: 9, color: l > 1 ? ac : '#555', fontWeight: 700 }}>
-                  E{i+1}:{l}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* Essence Bonuses — enhanced with actual stat values */}
+          {weapon && state.essenceLevels.some(l => l > 0) && (() => {
+            const essence = WEAPON_ESSENCES.find(e => e.name === weapon.Name);
+            if (!essence) return null;
+            const tier = getEssenceTierLabel(weapon.Rarity);
+            const slots = [
+              {
+                label: `${essence.primaryAttr}`,
+                tier: `[${tier}]`,
+                level: state.essenceLevels[0],
+                statValue: formatEssenceValue(essence.primaryAttr, weapon.Rarity, state.essenceLevels[0]),
+              },
+              ...(essence.secondaryStat ? [{
+                label: `${essence.secondaryStat}`,
+                tier: `[${tier}]`,
+                level: state.essenceLevels[1],
+                statValue: formatEssenceValue(essence.secondaryStat, weapon.Rarity, state.essenceLevels[1]),
+              }] : []),
+              {
+                label: weaponData?.SkillName || `${essence.skillStat}`,
+                tier: '',
+                level: state.essenceLevels[essence.secondaryStat ? 2 : 1],
+                statValue: `Lv.${state.essenceLevels[essence.secondaryStat ? 2 : 1]}`,
+              },
+            ];
+            return (
+              <div style={{ marginTop: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                  <div style={{ width: 3, height: 10, background: '#F5A623', boxShadow: '0 0 4px rgba(245,166,35,0.2)' }} />
+                  <span style={{ fontSize: 9, color: '#F5A623', textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>ESSENCE</span>
+                  <div style={{ flex: 1, height: 1, background: 'rgba(245,166,35,0.10)' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  {slots.map((slot, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{
+                        fontSize: 7, color: '#777', fontWeight: 600, minWidth: 100,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {slot.label} <span style={{ color: '#444' }}>{slot.tier}</span>
+                      </span>
+                      <div style={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
+                        {Array.from({ length: 9 }, (_, j) => (
+                          <div key={j} style={{
+                            flex: 1, height: 4,
+                            background: j < slot.level
+                              ? `linear-gradient(90deg, #F5A623${j < slot.level - 1 ? '90' : 'FF'}, #F5A623)`
+                              : '#111520',
+                          }} />
+                        ))}
+                      </div>
+                      <span style={{
+                        fontSize: 8, fontWeight: 800, fontFamily: FM, minWidth: 50, textAlign: 'right',
+                        color: slot.level >= 9 ? '#F5A623' : slot.level > 0 ? '#999' : '#333',
+                      }}>
+                        {slot.statValue}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Footer inside panel ── */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderTop: `1px solid ${ac}15`, paddingTop: 6, marginTop: 6,
+          borderTop: `1px solid ${ac}10`, paddingTop: 5, marginTop: 5,
         }}>
-          <span style={{ fontSize: 8, color: '#444', letterSpacing: 1 }}>{operatorID}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 5, height: 5, background: ac, transform: 'rotate(45deg)', opacity: 0.4 }} />
+            <span style={{ fontSize: 7, color: '#333', letterSpacing: 1.5, fontWeight: 600 }}>RIOS-CARD-001</span>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {charIcon && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={charIcon} alt={char.Name} style={{ width: 16, height: 16, objectFit: 'contain', opacity: 0.6 }} />
+              <img src={charIcon} alt={char.Name} style={{ width: 14, height: 14, objectFit: 'contain', opacity: 0.5 }} />
             )}
-            <span style={{ fontSize: 8, color: '#555', fontWeight: 700, letterSpacing: 0.5 }}>{char.Element} {char.Role}</span>
+            <span style={{ fontSize: 7, color: '#444', fontWeight: 700, letterSpacing: 0.5 }}>{char.Element} {char.Role}</span>
           </div>
-          <span style={{ fontSize: 8, color: '#444', letterSpacing: 1 }}>{eliteLabel}</span>
+          <span style={{ fontSize: 7, color: '#333', letterSpacing: 1 }}>{operatorID}</span>
         </div>
       </div>
 
-      {/* ═══ BOTTOM BAR ═══ */}
+      {/* ═══ BOTTOM BAR with art-side info ═══ */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, width: ART_W, height: 32, zIndex: 20,
+        position: 'absolute', bottom: 0, left: 0, width: ART_W, height: 30, zIndex: 20,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 20px',
       }}>
-        {/* Rarity element badge */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.7" />
+            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.6" />
           </svg>
-          <span style={{ fontSize: 9, color: '#666', letterSpacing: 1.5, fontWeight: 600, textTransform: 'uppercase' }}>
-            {char.Rarity}★ {char.Element}
+          <span style={{ fontSize: 8, color: '#555', letterSpacing: 2, fontWeight: 600, textTransform: 'uppercase' }}>
+            {char.Rarity}&#9733; {char.Element}
           </span>
         </div>
       </div>
 
       {/* ═══ WATERMARK ═══ */}
       <div style={{
-        position: 'absolute', bottom: 8, right: 18, zIndex: 20,
+        position: 'absolute', bottom: 6, right: 16, zIndex: 20,
         display: 'flex', alignItems: 'center', gap: 5,
       }}>
         <svg width="12" height="12" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.5" />
+          <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.4" />
           <path d="M32 7 L57 32 L32 57 L7 32 Z" fill="#080a0f" />
-          <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.6" />
+          <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.5" />
         </svg>
-        <span style={{ fontSize: 8, color: '#444', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>ZeroSanity.app</span>
+        <span style={{ fontSize: 7, color: '#3a3a3a', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase' }}>ZeroSanity.app</span>
       </div>
     </div>
   );
@@ -1366,8 +1509,24 @@ export default function CharacterCardPage() {
     }
   }, []);
 
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Operator Card Generator - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/character-card',
+    description: 'Generate tactical operator showcase cards for Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       {/* ════════════════════════════════════════════
           CARD PREVIEW — FULL WIDTH, MAXIMUM SIZE
           ════════════════════════════════════════════ */}
@@ -1376,7 +1535,7 @@ export default function CharacterCardPage() {
           {/* Header */}
           <div className="flex items-center gap-2 mb-2">
             <div className="w-0.5 h-5" style={{ background: 'var(--color-accent)' }} />
-            <h1 className="text-sm font-black uppercase tracking-wider font-tactical text-[var(--color-text-primary)]">Operator Card</h1>
+            <h1 className="text-sm font-black uppercase tracking-wider font-tactical text-[var(--color-text-primary)]">Operator Card <span className="text-[var(--color-accent)] text-[10px] font-mono">(BETA)</span></h1>
             <span className="text-[10px] text-[var(--color-text-muted)] font-mono hidden sm:inline">RIOS-CARD-001</span>
           </div>
 
@@ -1663,6 +1822,65 @@ export default function CharacterCardPage() {
                 </div>
               </div>
             </div>
+
+            {/* Essence Bonuses (3 slots) */}
+            {weapon && (() => {
+              const essence = WEAPON_ESSENCES.find(e => e.name === weapon.Name);
+              if (!essence) return null;
+              const tier = getEssenceTierLabel(weapon.Rarity);
+              const slots = [
+                { label: `${essence.primaryAttr} [${tier}]`, shortLabel: essence.primaryAttr.replace(' Boost', '') },
+                ...(essence.secondaryStat ? [{ label: `${essence.secondaryStat} [${tier}]`, shortLabel: essence.secondaryStat.replace(' Boost', '') }] : []),
+                { label: (WEAPON_DATA.find(w => w.Name === weapon.Name)?.SkillName) || `${essence.skillStat}`, shortLabel: essence.skillStat },
+              ];
+              return (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-[#F5A623] uppercase tracking-wider font-tactical">Weapon Essence Bonuses</h3>
+                  <p className="text-[10px] text-[var(--color-text-muted)] -mt-1.5">
+                    3 matching slots for this weapon. Perfect match = all 3 affixes aligned.
+                  </p>
+                  {slots.map((slot, i) => {
+                    const currentLevel = state.essenceLevels[i] || 1;
+                    const statValue = i < 2
+                      ? formatEssenceValue(
+                          i === 0 ? essence.primaryAttr : (essence.secondaryStat || essence.primaryAttr),
+                          weapon.Rarity, currentLevel)
+                      : `Lv.${currentLevel}`;
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[200px]" title={slot.label}>{slot.label}</span>
+                          <span className="text-xs text-[#F5A623] font-bold font-mono">{statValue}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          {Array.from({ length: 9 }, (_, j) => j + 1).map(lv => (
+                            <button key={lv} onClick={() => {
+                              const newLevels = [...state.essenceLevels];
+                              newLevels[i] = lv;
+                              updateState({ essenceLevels: newLevels });
+                            }}
+                              className={`flex-1 h-6 text-[10px] font-bold border transition-colors ${
+                                currentLevel === lv
+                                  ? 'border-[#F5A623] bg-[#F5A623] text-black'
+                                  : currentLevel > lv
+                                    ? 'border-[#F5A623]/40 bg-[#F5A623]/10 text-[#F5A623]'
+                                    : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-text-secondary)]'
+                              }`}>{lv}</button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Matching info */}
+                  <div className="p-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]">
+                    <span className="text-[#F5A623] font-bold">Matching Affixes:</span>{' '}
+                    <span className="text-white">{essence.primaryAttr}</span> +{' '}
+                    {essence.secondaryStat && <><span className="text-white">{essence.secondaryStat}</span> + </>}
+                    <span className="text-white">{essence.skillStat}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 

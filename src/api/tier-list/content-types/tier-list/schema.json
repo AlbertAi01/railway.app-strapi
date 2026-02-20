@@ -43,6 +43,11 @@
     "IsOfficial": {
       "type": "boolean",
       "default": false
+    },
+    "Status": {
+      "type": "enumeration",
+      "enum": ["approved", "pending", "rejected"],
+      "default": "pending"
     }
   }
 }

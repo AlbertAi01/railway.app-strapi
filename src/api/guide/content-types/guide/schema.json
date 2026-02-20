@@ -57,6 +57,11 @@
       "enum": ["Beginner", "Intermediate", "Advanced"],
       "default": "Beginner"
     },
+    "Status": {
+      "type": "enumeration",
+      "enum": ["approved", "pending", "rejected"],
+      "default": "pending"
+    },
     "IsVerified": {
       "type": "boolean",
       "default": false

@@ -1,5 +1,23 @@
 import { revalidateTag } from 'next/cache';
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+
+// Rate limit: max 30 revalidation webhook calls per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
 
 /**
  * Strapi webhook endpoint for on-demand ISR revalidation.
@@ -12,8 +30,23 @@ import { NextRequest, NextResponse } from 'next/server';
  * The webhook body from Strapi includes the model name, which we map to a cache tag.
  */
 export async function POST(request: NextRequest) {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
+
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ message: 'Too many requests' }, { status: 429 });
+  }
+
   const secret = request.headers.get('x-revalidation-secret');
-  if (secret !== process.env.REVALIDATION_SECRET) {
+  const expected = process.env.REVALIDATION_SECRET;
+  if (
+    !secret ||
+    !expected ||
+    secret.length !== expected.length ||
+    !timingSafeEqual(Buffer.from(secret), Buffer.from(expected))
+  ) {
     return NextResponse.json({ message: 'Invalid secret' }, { status: 401 });
   }
 

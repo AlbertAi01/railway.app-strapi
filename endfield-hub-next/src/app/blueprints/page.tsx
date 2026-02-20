@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, startTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff, Filter, Zap, Package, AlertTriangle, Clock, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import Image from 'next/image';
-import { fetchBlueprints, createBlueprint } from '@/lib/api';
-import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, getBlueprintUpvoteCount, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
+import { fetchBlueprints, createBlueprint, fetchUserBlueprintStatuses } from '@/lib/api';
+import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, updateUserBlueprintStatus, removeApprovedSubmissions, getBlueprintUpvoteCount, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import AnswerNugget from '@/components/seo/AnswerNugget';
 
 function BlueprintsContent() {
   const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ function BlueprintsContent() {
   const [showMySubmissions, setShowMySubmissions] = useState(searchParams.get('view') === 'my');
   const [blueprints, setBlueprints] = useState<BlueprintEntry[]>(SCRAPED_BLUEPRINTS);
   const [userSubmissions, setUserSubmissions] = useState<BlueprintEntry[]>([]);
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const isAuthenticated = !!user;
 
   // Blueprint submission form state
@@ -69,30 +70,29 @@ function BlueprintsContent() {
     saveUserBlueprint(newBp);
     setUserSubmissions(getUserBlueprints());
 
-    // Submit to Strapi backend with proper API client (includes auth token)
+    // Submit through Next.js API route (validates auth server-side, enforces pending status)
     let strapiSuccess = false;
     try {
-      await createBlueprint({
-        Title: newBp.Title,
-        Description: newBp.Description || 'User-submitted blueprint.',
-        DetailDescription: newBp.detailDescription || newBp.Description || '',
-        ImportString: newBp.ImportString,
-        ImportCodes: newBp.importCodes,
-        Region: newBp.Region,
-        Author: newBp.Author,
-        Tags: newBp.Tags,
-        Operators: newBp.operators || [],
-        PreviewImage: newBp.previewImage || '',
-        ProductName: newBp.productName || '',
-        Category: newBp.category || 'Production',
-        Complexity: newBp.complexity || 'Beginner',
-        Status: 'pending',
-        SubmittedAt: new Date().toISOString(),
-        OutputsData: newBp.outputsPerMin || [],
-      });
-      strapiSuccess = true;
+      if (token) {
+        await createBlueprint({
+          Title: newBp.Title,
+          Description: newBp.Description || 'User-submitted blueprint.',
+          DetailDescription: newBp.detailDescription || newBp.Description || '',
+          ImportString: newBp.ImportString,
+          ImportCodes: newBp.importCodes,
+          Region: newBp.Region,
+          Tags: newBp.Tags,
+          Operators: newBp.operators || [],
+          PreviewImage: newBp.previewImage || '',
+          ProductName: newBp.productName || '',
+          Category: newBp.category || 'Production',
+          Complexity: newBp.complexity || 'Beginner',
+          OutputsData: newBp.outputsPerMin || [],
+        }, token);
+        strapiSuccess = true;
+      }
     } catch (err) {
-      console.warn('Strapi blueprint submission failed:', err);
+      console.warn('Blueprint submission failed:', err);
     }
 
     // Clear form and show success
@@ -112,6 +112,26 @@ function BlueprintsContent() {
     // Load user submissions from localStorage
     setUserSubmissions(getUserBlueprints());
 
+    // Sync submission statuses from Strapi — if any are approved, remove from localStorage
+    if (user?.username) {
+      fetchUserBlueprintStatuses(user.username).then(statuses => {
+        const localSubs = getUserBlueprints();
+        let changed = false;
+        for (const remote of statuses) {
+          const local = localSubs.find(bp => bp.slug === remote.slug || bp.Title.toLowerCase() === remote.title.toLowerCase());
+          if (local && local.status !== remote.status) {
+            updateUserBlueprintStatus(local.slug, remote.status as 'approved' | 'pending' | 'rejected');
+            changed = true;
+          }
+        }
+        if (changed) {
+          // Remove approved submissions — they're now in the public registry
+          const remaining = removeApprovedSubmissions();
+          setUserSubmissions(remaining);
+        }
+      }).catch(() => {});
+    }
+
     // Also try to load from Strapi
     fetchBlueprints()
       .then((data) => {
@@ -129,12 +149,18 @@ function BlueprintsContent() {
               Author: ((attrs as Record<string, unknown>).Author as string) || 'guest',
               Tags: Array.isArray((attrs as Record<string, unknown>).Tags) ? ((attrs as Record<string, unknown>).Tags as string[]) : [],
               operators: Array.isArray((attrs as Record<string, unknown>).Operators) ? ((attrs as Record<string, unknown>).Operators as string[]) : [],
-              slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-              detailDescription: ((attrs as Record<string, unknown>).Description as string) || 'User-submitted blueprint.',
-              outputsPerMin: [],
-              importCodes: [],
-              complexity: 'Intermediate' as Complexity,
-              category: 'Production' as Category,
+              slug: ((attrs as Record<string, unknown>).Slug as string) || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              detailDescription: ((attrs as Record<string, unknown>).DetailDescription as string) || ((attrs as Record<string, unknown>).Description as string) || 'User-submitted blueprint.',
+              outputsPerMin: Array.isArray((attrs as Record<string, unknown>).OutputsData) ? ((attrs as Record<string, unknown>).OutputsData as { name: string; rate: number }[]) : [],
+              importCodes: Array.isArray((attrs as Record<string, unknown>).ImportCodes) ? ((attrs as Record<string, unknown>).ImportCodes as { region: string; code: string }[]) : [],
+              complexity: ((attrs as Record<string, unknown>).Complexity as Complexity) || 'Intermediate',
+              category: ((attrs as Record<string, unknown>).Category as Category) || 'Production',
+              previewImage: ((attrs as Record<string, unknown>).PreviewImage as string) || undefined,
+              productName: ((attrs as Record<string, unknown>).ProductName as string) || undefined,
+              productIcon: ((attrs as Record<string, unknown>).ProductIcon as string) || undefined,
+              buildingCount: ((attrs as Record<string, unknown>).BuildingCount as number) || undefined,
+              gridSize: ((attrs as Record<string, unknown>).GridSize as string) || undefined,
+              netPower: ((attrs as Record<string, unknown>).NetPower as number) || undefined,
               status: 'approved' as const,
             };
           });
@@ -144,7 +170,7 @@ function BlueprintsContent() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   const filtered = blueprints.filter(bp => {
     const tags = bp.Tags || [];
@@ -164,12 +190,30 @@ function BlueprintsContent() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Blueprint Registry - Zero Sanity',
+    'description': 'Community-shared factory blueprints for Arknights: Endfield\'s AIC production system. Copy import codes directly into your game for optimized production chains.',
+    'url': 'https://www.zerosanity.app/blueprints',
+    'mainEntity': {
+      '@type': 'ItemList',
+      'numberOfItems': blueprints.length,
+      'itemListElement': blueprints.slice(0, 50).map((bp, i) => ({
+        '@type': 'ListItem',
+        'position': i + 1,
+        'name': bp.Title,
+        'url': `https://www.zerosanity.app/blueprints/${bp.slug}`,
+      })),
+    },
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <div className="flex items-center justify-between mb-8">
         <div>
           <RIOSHeader title="Blueprint Registry" category="LOGISTICS" code="RIOS-BP-001" icon={<LayoutGrid size={32} />} />
-          <p className="text-[var(--color-text-muted)] text-base mt-2">Community factory blueprints for Arknights: Endfield</p>
         </div>
         <div className="flex items-center gap-2">
           {userSubmissions.length > 0 && (
@@ -202,6 +246,11 @@ function BlueprintsContent() {
           )}
         </div>
       </div>
+
+      <AnswerNugget
+        text="Community-shared factory blueprints for Arknights: Endfield's AIC production system. Copy import codes directly into your game."
+        lastUpdated="2026-02-20"
+      />
 
       {/* ──── My Submissions Panel ──── */}
       {showMySubmissions && userSubmissions.length > 0 && (
@@ -385,7 +434,7 @@ function BlueprintsContent() {
               type="text"
               placeholder="Search blueprints by name or tags..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => startTransition(() => setSearch(e.target.value))}
               className="w-full bg-[var(--color-surface)] border border-[#333] clip-corner-tl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
             />
           </div>
@@ -496,6 +545,7 @@ function BlueprintsContent() {
                     className="object-cover group-hover:scale-105 transition-transform"
                     sizes="192px"
                     unoptimized
+                    placeholder="empty"
                   />
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--color-text-muted)]">
@@ -512,6 +562,7 @@ function BlueprintsContent() {
                       height={32}
                       className="object-contain"
                       unoptimized
+                      loading="lazy"
                     />
                   </div>
                 )}
