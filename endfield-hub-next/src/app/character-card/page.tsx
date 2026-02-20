@@ -58,13 +58,13 @@ function getAffixCount(slotType: 'Body' | 'Hand' | 'EDC'): number {
   return slotType === 'EDC' ? 2 : 3;
 }
 
-/** Hexagon artifice indicator — segments fill as upgrades succeed.
+/** Hexagon artifice indicator — per-affix segments with independent fill.
  *  Each affix has 3 upgrade segments. Body/Hand have 3 affixes (9 total), EDC has 2 (6 total). */
-function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
-  level: number; maxLevel: number; size?: number; accentColor?: string;
+function ArtificeHexagon({ affixLevels, maxLevel, size = 48, accentColor }: {
+  affixLevels: number[]; maxLevel: number; size?: number; accentColor?: string;
 }) {
-  const totalSegments = maxLevel;
   const affixCount = maxLevel / 3;
+  const totalLevel = affixLevels.reduce((s, v) => s + v, 0);
   const cx = size / 2;
   const cy = size / 2;
   const outerR = size / 2 - 2;
@@ -80,14 +80,14 @@ function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
   const degPerSeg = (degPerAffix - 2 * segGap) / 3;
 
   const paths: React.ReactElement[] = [];
-  let segIndex = 0;
 
   for (let a = 0; a < affixCount; a++) {
+    const affixLevel = affixLevels[a] || 0;
     const affixStart = startAngle + a * (degPerAffix + gapAngle);
     for (let s = 0; s < 3; s++) {
       const sStart = affixStart + s * (degPerSeg + segGap);
       const sEnd = sStart + degPerSeg;
-      const filled = segIndex < level;
+      const filled = s < affixLevel;
 
       const toRad = (deg: number) => (deg * Math.PI) / 180;
       const x1o = cx + outerR * Math.cos(toRad(sStart));
@@ -117,7 +117,6 @@ function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
           stroke={filled ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.03)'}
           strokeWidth={0.5} />
       );
-      segIndex++;
     }
   }
 
@@ -125,9 +124,9 @@ function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {paths}
       <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central"
-        fill={level > 0 ? (accentColor || '#4FC3F7') : '#555'}
+        fill={totalLevel > 0 ? (accentColor || '#4FC3F7') : '#555'}
         fontSize={size * 0.28} fontWeight="800" fontFamily="'Share Tech Mono', monospace">
-        {level > 0 ? `+${level}` : '0'}
+        {totalLevel > 0 ? `+${totalLevel}` : '0'}
       </text>
     </svg>
   );
@@ -136,7 +135,29 @@ function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
 interface EquipmentSlotState {
   setName: string;
   pieceName: string;
-  artifice: number;
+  artifice: number[];  // per-affix upgrade levels, e.g. [2, 0, 3] — each 0-3
+}
+
+/** Sum total artifice level from per-affix array */
+function getTotalArtifice(artifice: number | number[]): number {
+  if (typeof artifice === 'number') return artifice;
+  return artifice.reduce((sum, v) => sum + v, 0);
+}
+
+/** Normalize artifice to array format (handles legacy single number) */
+function normalizeArtifice(artifice: number | number[], affixCount: number): number[] {
+  if (Array.isArray(artifice)) {
+    const result = Array.from({ length: affixCount }, (_, i) => artifice[i] || 0);
+    return result.map(v => Math.max(0, Math.min(3, v)));
+  }
+  const result: number[] = [];
+  let remaining = artifice;
+  for (let i = 0; i < affixCount; i++) {
+    const fill = Math.min(3, remaining);
+    result.push(fill);
+    remaining -= fill;
+  }
+  return result;
 }
 
 // ──────────── Computed Stats ────────────
@@ -362,7 +383,7 @@ interface ShowcaseState {
 }
 
 function defaultEquipSlot(): EquipmentSlotState {
-  return { setName: '', pieceName: '', artifice: 0 };
+  return { setName: '', pieceName: '', artifice: [] };
 }
 
 function defaultShowcaseState(): ShowcaseState {
@@ -410,10 +431,10 @@ function decodeState(encoded: string): ShowcaseState | null {
       weaponLevel: d.wl || 80, weaponBreakthrough: d.wb || 3, weaponPotential: d.wp || 0,
       essenceLevels: d.el || [1, 1, 1], username: d.u || '', userCode: d.uc || '', server: d.sv || '',
       skillLevels: { basic: d.sk?.[0] || 1, normal: d.sk?.[1] || 1, combo: d.sk?.[2] || 1, ultimate: d.sk?.[3] || 1 },
-      equipBody: { setName: d.eb?.[0] || '', pieceName: d.eb?.[1] || '', artifice: d.eb?.[2] || 0 },
-      equipHand: { setName: d.eh?.[0] || '', pieceName: d.eh?.[1] || '', artifice: d.eh?.[2] || 0 },
-      equipEdc1: { setName: d.e1?.[0] || '', pieceName: d.e1?.[1] || '', artifice: d.e1?.[2] || 0 },
-      equipEdc2: { setName: d.e2?.[0] || '', pieceName: d.e2?.[1] || '', artifice: d.e2?.[2] || 0 },
+      equipBody: { setName: d.eb?.[0] || '', pieceName: d.eb?.[1] || '', artifice: Array.isArray(d.eb?.[2]) ? d.eb[2] : normalizeArtifice(d.eb?.[2] || 0, 3) },
+      equipHand: { setName: d.eh?.[0] || '', pieceName: d.eh?.[1] || '', artifice: Array.isArray(d.eh?.[2]) ? d.eh[2] : normalizeArtifice(d.eh?.[2] || 0, 3) },
+      equipEdc1: { setName: d.e1?.[0] || '', pieceName: d.e1?.[1] || '', artifice: Array.isArray(d.e1?.[2]) ? d.e1[2] : normalizeArtifice(d.e1?.[2] || 0, 2) },
+      equipEdc2: { setName: d.e2?.[0] || '', pieceName: d.e2?.[1] || '', artifice: Array.isArray(d.e2?.[2]) ? d.e2[2] : normalizeArtifice(d.e2?.[2] || 0, 2) },
       talentStates: (d.ts || [0, 0]).map((t: number) => t === 0 ? 'locked' : t === 1 ? 'base' : 'upgrade') as TalentState[],
       brightness: d.br ?? 1.0,
       colorScheme: (d.cs || 'auto') as ColorScheme,
@@ -806,8 +827,8 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         position: 'absolute', top: 18, left: ART_W - 60, zIndex: 15,
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2,
       }}>
-        <span style={{ fontSize: 7, color: '#444', letterSpacing: 2, fontWeight: 600 }}>{operatorID}</span>
-        <span style={{ fontSize: 7, color: '#333', letterSpacing: 1.5 }}>{timestamp}</span>
+        <span style={{ fontSize: 7, color: '#999', letterSpacing: 2, fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{operatorID}</span>
+        <span style={{ fontSize: 7, color: '#777', letterSpacing: 1.5, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{timestamp}</span>
       </div>
 
       {/* ═══ BOTTOM-LEFT: NAME PLATE ═══ */}
@@ -862,10 +883,10 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         {state.username && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
             <div style={{ width: 6, height: 6, background: ac, transform: 'rotate(45deg)', opacity: 0.6 }} />
-            <span style={{ fontSize: 11, color: '#999', fontWeight: 600, letterSpacing: 0.5 }}>{state.username}</span>
-            {state.userCode && <span style={{ fontSize: 10, color: '#555' }}>#{state.userCode}</span>}
+            <span style={{ fontSize: 11, color: '#ccc', fontWeight: 600, letterSpacing: 0.5, textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{state.username}</span>
+            {state.userCode && <span style={{ fontSize: 10, color: '#aaa', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>#{state.userCode}</span>}
             {state.server && (
-              <span style={{ fontSize: 9, color: '#444', padding: '1px 5px', background: 'rgba(8,10,15,0.7)', border: '1px solid #222' }}>
+              <span style={{ fontSize: 9, color: '#999', padding: '1px 5px', background: 'rgba(8,10,15,0.7)', border: '1px solid #333' }}>
                 {state.server}
               </span>
             )}
@@ -882,31 +903,31 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
       {/* ═══ RIGHT DATA PANEL ═══ */}
       <div style={{
         position: 'absolute', right: 0, top: 0, width: DATA_W, height: '100%', zIndex: 10,
-        background: 'rgba(8,10,15,0.92)',
+        background: 'rgba(8,10,15,0.94)',
         borderLeft: `1px solid ${ac}10`,
         display: 'flex', flexDirection: 'column',
-        padding: '12px 16px 8px',
+        padding: '14px 16px 8px',
       }}>
 
         {/* ── Stats Section ── */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <div style={{ width: 3, height: 14, background: ac, boxShadow: `0 0 6px ${ac}40` }} />
             <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>COMBAT STATS</span>
             <div style={{ flex: 1, height: 1, background: `${ac}18` }} />
-            <span style={{ fontSize: 7, color: '#444', letterSpacing: 1 }}>{eliteLabel}</span>
+            <span style={{ fontSize: 8, color: '#999', letterSpacing: 1, fontWeight: 600 }}>{eliteLabel}</span>
           </div>
 
           {/* HP / ATK / DEF row with enhanced bars */}
-          <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             {[
               { label: 'HP', value: stats.HP, max: 12000, color: '#EF4444', icon: '♥' },
               { label: 'ATK', value: stats.ATK, max: 800, color: '#F5A623', icon: '⚔' },
               { label: 'DEF', value: stats.DEF, max: 500, color: '#3B82F6', icon: '◆' },
             ].map(s => (
               <div key={s.label} style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-                  <span style={{ fontSize: 8, color: s.color, letterSpacing: 2, fontWeight: 800 }}>{s.label}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                  <span style={{ fontSize: 9, color: s.color, letterSpacing: 2, fontWeight: 800, textShadow: `0 0 6px ${s.color}40` }}>{s.label}</span>
                   <span style={{ fontSize: 17, color: '#fff', fontWeight: 800, fontFamily: FM, lineHeight: 1 }}>{s.value.toLocaleString()}</span>
                 </div>
                 <div style={{ height: 4, background: '#111520', position: 'relative' }}>
@@ -934,15 +955,15 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                 const isMain = opData && s.label.toLowerCase() === (opData.mainAttribute === 'wil' ? 'will' : opData.mainAttribute);
                 return (
                   <div key={s.label} style={{
-                    textAlign: 'center', padding: '4px 0',
+                    textAlign: 'center', padding: '5px 0',
                     background: isMain ? `${s.color}0A` : 'rgba(12,16,24,0.8)',
                     borderBottom: `2px solid ${isMain ? s.color : s.color + '40'}`,
                     borderLeft: isMain ? `2px solid ${s.color}40` : 'none',
                   }}>
-                    <div style={{ fontSize: 7, color: s.color, fontWeight: 800, letterSpacing: 2, marginBottom: 2 }}>
-                      {s.label}{isMain ? ' ★' : ''}
+                    <div style={{ fontSize: 8, color: s.color, fontWeight: 800, letterSpacing: 2, marginBottom: 2, textShadow: `0 0 4px ${s.color}30` }}>
+                      {s.label}{isMain ? ' \u2605' : ''}
                     </div>
-                    <div style={{ fontSize: 18, color: isMain ? '#fff' : '#ddd', fontWeight: 700, fontFamily: FM, lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontSize: 18, color: isMain ? '#fff' : '#e0e0e0', fontWeight: 700, fontFamily: FM, lineHeight: 1 }}>{s.value}</div>
                   </div>
                 );
               })}
@@ -956,7 +977,7 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                   flex: 1, padding: '3px 6px', background: 'rgba(12,16,24,0.8)',
                   borderBottom: `2px solid ${ac}30`, display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 }}>
-                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 1.5, fontWeight: 700 }}>{s.label}</div>
+                  <div style={{ fontSize: 8, color: '#999', letterSpacing: 1.5, fontWeight: 700 }}>{s.label}</div>
                   <div style={{ fontSize: 14, color: ac, fontWeight: 800, fontFamily: FM, lineHeight: 1.1 }}>{s.value}</div>
                 </div>
               ))}
@@ -965,8 +986,8 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         </div>
 
         {/* ── Skills ── */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <div style={{ width: 3, height: 12, background: ac, boxShadow: `0 0 4px ${ac}30` }} />
             <span style={{ fontSize: 10, color: ac, textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700, fontFamily: F }}>SKILLS</span>
             <div style={{ flex: 1, height: 1, background: `${ac}18` }} />
@@ -975,9 +996,9 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
               {state.talentStates.map((t, i) => (
                 <span key={i} style={{
                   padding: '1px 5px', fontSize: 7, fontWeight: 700, letterSpacing: 0.5,
-                  color: t === 'locked' ? '#333' : t === 'base' ? '#777' : ac,
+                  color: t === 'locked' ? '#666' : t === 'base' ? '#aaa' : ac,
                   background: t === 'upgrade' ? `${ac}10` : 'rgba(12,16,24,0.7)',
-                  border: `1px solid ${t === 'upgrade' ? ac + '35' : '#1a1e28'}`,
+                  border: `1px solid ${t === 'upgrade' ? ac + '35' : '#2a2e38'}`,
                 }}>
                   T{i+1}:{t === 'locked' ? 'OFF' : t === 'base' ? '\u03B1' : '\u03B2'}
                 </span>
@@ -995,8 +1016,8 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                   borderBottom: `2px solid ${isMax ? ac : '#1e2430'}`,
                   position: 'relative',
                 }}>
-                  <div style={{ fontSize: 7, color: isMax ? ac : '#555', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, marginBottom: 1 }}>{sk.short}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: isMax ? ac : '#ccc', fontFamily: F, lineHeight: 1 }}>{lvl}</div>
+                  <div style={{ fontSize: 8, color: isMax ? ac : '#999', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, marginBottom: 1 }}>{sk.short}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: isMax ? ac : '#ddd', fontFamily: F, lineHeight: 1 }}>{lvl}</div>
                   {isMax && <div style={{ position: 'absolute', top: 2, right: 3, width: 4, height: 4, background: ac, transform: 'rotate(45deg)', opacity: 0.6 }} />}
                 </div>
               );
@@ -1026,21 +1047,21 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                 <div style={{ fontSize: 14, color: '#fff', fontWeight: 700, fontFamily: F, letterSpacing: 1, lineHeight: 1.1 }}>{weapon.Name}</div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 3 }}>
                   <span style={{ fontSize: 9, color: RARITY_COLORS[weapon.Rarity] }}>{'★'.repeat(weapon.Rarity)}</span>
-                  <span style={{ fontSize: 9, color: '#777' }}>Lv.{state.weaponLevel}</span>
-                  <span style={{ fontSize: 9, color: '#777' }}>{WEAPON_BREAKTHROUGH_LABELS[state.weaponBreakthrough]}</span>
-                  <span style={{ fontSize: 9, color: '#777' }}>P{state.weaponPotential}</span>
+                  <span style={{ fontSize: 9, color: '#bbb' }}>Lv.{state.weaponLevel}</span>
+                  <span style={{ fontSize: 9, color: '#bbb' }}>{WEAPON_BREAKTHROUGH_LABELS[state.weaponBreakthrough]}</span>
+                  <span style={{ fontSize: 9, color: '#bbb' }}>P{state.weaponPotential}</span>
                   {weaponAtk != null && <span style={{ fontSize: 9, color: '#F5A623', fontWeight: 700 }}>ATK {weaponAtk}</span>}
                 </div>
                 {/* Weapon attributes inline */}
                 {weaponData && (
                   <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap' }}>
                     {weaponData.PassiveAttribute && (
-                      <span style={{ fontSize: 7, color: '#aaa', padding: '1px 4px', background: 'rgba(245,166,35,0.05)', border: '1px solid rgba(245,166,35,0.12)' }}>
+                      <span style={{ fontSize: 7, color: '#ccc', padding: '1px 4px', background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.18)' }}>
                         {weaponData.PassiveAttribute.label} +{weaponData.PassiveAttribute.value}{weaponData.PassiveAttribute.isPercentage ? '%' : ''}
                       </span>
                     )}
                     {weaponData.SpecialAttribute && (
-                      <span style={{ fontSize: 7, color: '#aaa', padding: '1px 4px', background: 'rgba(245,166,35,0.05)', border: '1px solid rgba(245,166,35,0.12)' }}>
+                      <span style={{ fontSize: 7, color: '#ccc', padding: '1px 4px', background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.18)' }}>
                         {weaponData.SpecialAttribute.label} +{weaponData.SpecialAttribute.value}{weaponData.SpecialAttribute.isPercentage ? '%' : ''}
                       </span>
                     )}
@@ -1059,7 +1080,7 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                 </div>
                 {weaponData.SkillDescription && (
                   <div style={{
-                    fontSize: 7, color: '#777', lineHeight: 1.3,
+                    fontSize: 7, color: '#aaa', lineHeight: 1.3,
                     overflow: 'hidden', display: '-webkit-box',
                     WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const,
                   }}>
@@ -1091,17 +1112,19 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
               if (!ep) {
                 return (
                   <div key={i} style={{
-                    padding: '6px 4px', background: 'rgba(12,16,24,0.4)', border: '1px dashed #1a1e28',
+                    padding: '6px 4px', background: 'rgba(12,16,24,0.4)', border: '1px dashed #2a3040',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     minHeight: 74, gap: 3,
                   }}>
-                    <span style={{ fontSize: 7, color: '#2a2e38', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 7, color: '#1e2228' }}>EMPTY</span>
+                    <span style={{ fontSize: 7, color: '#556', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 7, color: '#445' }}>EMPTY</span>
                   </div>
                 );
               }
               const tc = TIER_COLORS[ep.piece.tier];
-              const artLevel = ep.artifice || 0;
+              const affixCount = getAffixCount(slotType);
+              const artArr = normalizeArtifice(ep.artifice, affixCount);
+              const artTotal = artArr.reduce((s, v) => s + v, 0);
               return (
                 <div key={i} style={{
                   padding: '5px 3px', background: 'rgba(12,16,24,0.8)',
@@ -1110,8 +1133,8 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                   overflow: 'hidden', position: 'relative',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 2px' }}>
-                    <span style={{ fontSize: 6, color: '#444', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 6, color: tc, fontWeight: 700 }}>{ep.piece.tier}</span>
+                    <span style={{ fontSize: 7, color: '#999', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 7, color: tc, fontWeight: 700 }}>{ep.piece.tier}</span>
                   </div>
                   <div style={{ position: 'relative', width: 38, height: 38 }}>
                     {ep.piece.icon ? (
@@ -1122,44 +1145,63 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                         <span style={{ fontSize: 13, color: tc, fontWeight: 900 }}>{ep.piece.tier}</span>
                       </div>
                     )}
-                    {/* Artifice ring indicator around icon */}
-                    {artLevel > 0 && (() => {
+                    {/* Artifice ring indicator — per-affix segments with group gaps */}
+                    {artTotal > 0 && (() => {
                       const totalSegs = maxArt;
                       const r = 18;
                       const strokeW = 2;
-                      const gapDeg = 8;
-                      const availDeg = 360 - totalSegs * gapDeg;
+                      const groupGapDeg = 12; // larger gap between affix groups
+                      const segGapDeg = 3;    // small gap between segments within an affix
+                      const totalGroupGap = affixCount * groupGapDeg;
+                      const totalSegGap = affixCount * 2 * segGapDeg; // 2 gaps per group (between 3 segs)
+                      const availDeg = 360 - totalGroupGap - totalSegGap;
                       const segDeg = availDeg / totalSegs;
+                      let segIndex = 0;
                       return (
                         <svg width={38} height={38} viewBox="0 0 38 38" style={{ position: 'absolute', top: 0, left: 0 }}>
-                          {Array.from({ length: totalSegs }, (_, si) => {
-                            const start = -90 + si * (segDeg + gapDeg);
-                            const end = start + segDeg;
-                            const filled = si < artLevel;
-                            const toRad = (d: number) => (d * Math.PI) / 180;
-                            const x1 = 19 + r * Math.cos(toRad(start));
-                            const y1 = 19 + r * Math.sin(toRad(start));
-                            const x2 = 19 + r * Math.cos(toRad(end));
-                            const y2 = 19 + r * Math.sin(toRad(end));
-                            return (
-                              <path key={si}
-                                d={`M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`}
-                                fill="none"
-                                stroke={filled ? ac : 'rgba(255,255,255,0.05)'}
-                                strokeWidth={strokeW}
-                                strokeLinecap="butt"
-                              />
-                            );
+                          {artArr.map((affixLevel, ai) => {
+                            const segs = [];
+                            for (let si = 0; si < 3; si++) {
+                              const angleOffset = -90;
+                              let cumAngle = 0;
+                              // Sum angles for all previous segments
+                              for (let pi = 0; pi < segIndex; pi++) {
+                                cumAngle += segDeg;
+                                const piAffix = Math.floor(pi / 3);
+                                const piSeg = pi % 3;
+                                if (piSeg < 2) cumAngle += segGapDeg;
+                                if (piSeg === 2 && pi < totalSegs - 1) cumAngle += groupGapDeg;
+                              }
+                              const start = angleOffset + cumAngle;
+                              const end = start + segDeg;
+                              const filled = si < affixLevel;
+                              const toRad = (d: number) => (d * Math.PI) / 180;
+                              const x1 = 19 + r * Math.cos(toRad(start));
+                              const y1 = 19 + r * Math.sin(toRad(start));
+                              const x2 = 19 + r * Math.cos(toRad(end));
+                              const y2 = 19 + r * Math.sin(toRad(end));
+                              segs.push(
+                                <path key={`${ai}-${si}`}
+                                  d={`M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`}
+                                  fill="none"
+                                  stroke={filled ? ac : 'rgba(255,255,255,0.05)'}
+                                  strokeWidth={strokeW}
+                                  strokeLinecap="butt"
+                                />
+                              );
+                              segIndex++;
+                            }
+                            return segs;
                           })}
                         </svg>
                       );
                     })()}
                   </div>
-                  <div style={{ fontSize: 6.5, color: '#aaa', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 1px' }}>
+                  <div style={{ fontSize: 7, color: '#ccc', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 1px' }}>
                     {ep.piece.name}
                   </div>
-                  {artLevel > 0 && (
-                    <span style={{ fontSize: 7, color: ac, fontWeight: 800 }}>+{artLevel}</span>
+                  {artTotal > 0 && (
+                    <span style={{ fontSize: 7, color: ac, fontWeight: 800 }}>+{artTotal}</span>
                   )}
                 </div>
               );
@@ -1173,8 +1215,8 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                 ep!.piece.stats.map((st, si) => ({ ...st, key: `${ep!.piece.name}-${si}` }))
               ).slice(0, 8).map((st) => (
                 <div key={st.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 4px', background: 'rgba(12,16,24,0.3)' }}>
-                  <span style={{ fontSize: 6.5, color: '#444' }}>{st.name}</span>
-                  <span style={{ fontSize: 6.5, color: '#777', fontWeight: 600, fontFamily: FM }}>{st.value}</span>
+                  <span style={{ fontSize: 7, color: '#888' }}>{st.name}</span>
+                  <span style={{ fontSize: 7, color: '#bbb', fontWeight: 600, fontFamily: FM }}>{st.value}</span>
                 </div>
               ))}
             </div>
@@ -1216,10 +1258,10 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                   {slots.map((slot, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <span style={{
-                        fontSize: 7, color: '#777', fontWeight: 600, minWidth: 100,
+                        fontSize: 7, color: '#bbb', fontWeight: 600, minWidth: 100,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
-                        {slot.label} <span style={{ color: '#444' }}>{slot.tier}</span>
+                        {slot.label} <span style={{ color: '#888' }}>{slot.tier}</span>
                       </span>
                       <div style={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
                         {Array.from({ length: 9 }, (_, j) => (
@@ -1233,7 +1275,7 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                       </div>
                       <span style={{
                         fontSize: 8, fontWeight: 800, fontFamily: FM, minWidth: 50, textAlign: 'right',
-                        color: slot.level >= 9 ? '#F5A623' : slot.level > 0 ? '#999' : '#333',
+                        color: slot.level >= 9 ? '#F5A623' : slot.level > 0 ? '#ccc' : '#666',
                       }}>
                         {slot.statValue}
                       </span>
@@ -1251,17 +1293,17 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
           borderTop: `1px solid ${ac}10`, paddingTop: 5, marginTop: 5,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 5, height: 5, background: ac, transform: 'rotate(45deg)', opacity: 0.4 }} />
-            <span style={{ fontSize: 7, color: '#333', letterSpacing: 1.5, fontWeight: 600 }}>RIOS-CARD-001</span>
+            <div style={{ width: 5, height: 5, background: ac, transform: 'rotate(45deg)', opacity: 0.5 }} />
+            <span style={{ fontSize: 7, color: '#777', letterSpacing: 1.5, fontWeight: 600 }}>RIOS-CARD-001</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {charIcon && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={charIcon} alt={char.Name} style={{ width: 14, height: 14, objectFit: 'contain', opacity: 0.5 }} />
+              <img src={charIcon} alt={char.Name} style={{ width: 14, height: 14, objectFit: 'contain', opacity: 0.6 }} />
             )}
-            <span style={{ fontSize: 7, color: '#444', fontWeight: 700, letterSpacing: 0.5 }}>{char.Element} {char.Role}</span>
+            <span style={{ fontSize: 7, color: '#999', fontWeight: 700, letterSpacing: 0.5 }}>{char.Element} {char.Role}</span>
           </div>
-          <span style={{ fontSize: 7, color: '#333', letterSpacing: 1 }}>{operatorID}</span>
+          <span style={{ fontSize: 7, color: '#777', letterSpacing: 1 }}>{operatorID}</span>
         </div>
       </div>
 
@@ -1270,12 +1312,13 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         position: 'absolute', bottom: 0, left: 0, width: ART_W, height: 30, zIndex: 20,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 20px',
+        background: 'linear-gradient(to top, rgba(8,10,15,0.85), transparent)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.6" />
+            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.7" />
           </svg>
-          <span style={{ fontSize: 8, color: '#555', letterSpacing: 2, fontWeight: 600, textTransform: 'uppercase' }}>
+          <span style={{ fontSize: 8, color: '#bbb', letterSpacing: 2, fontWeight: 600, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
             {char.Rarity}&#9733; {char.Element}
           </span>
         </div>
@@ -1283,15 +1326,15 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
 
       {/* ═══ WATERMARK ═══ */}
       <div style={{
-        position: 'absolute', bottom: 6, right: 16, zIndex: 20,
+        position: 'absolute', bottom: 10, left: ART_W - 30, zIndex: 20,
         display: 'flex', alignItems: 'center', gap: 5,
       }}>
         <svg width="12" height="12" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.4" />
+          <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.5" />
           <path d="M32 7 L57 32 L32 57 L7 32 Z" fill="#080a0f" />
-          <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.5" />
+          <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.6" />
         </svg>
-        <span style={{ fontSize: 7, color: '#3a3a3a', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase' }}>ZeroSanity.app</span>
+        <span style={{ fontSize: 7, color: '#888', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>ZeroSanity.app</span>
       </div>
     </div>
   );
@@ -1372,7 +1415,7 @@ export default function CharacterCardPage() {
 
   const handleEquipSelect = useCallback((piece: GearPiece, setName: string, target: string) => {
     updateState({
-      [target]: { setName, pieceName: piece.name, artifice: 0 },
+      [target]: { setName, pieceName: piece.name, artifice: [] },
     });
   }, [updateState]);
 
@@ -1928,66 +1971,96 @@ export default function CharacterCardPage() {
                     )}
                   </button>
 
-                  {/* Artifice section with hex indicator */}
-                  {slot.pieceName && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Artifice</label>
-                        <span className="text-[10px] font-mono text-[var(--color-accent)]">+{slot.artifice}/{maxArt}</span>
-                      </div>
+                  {/* Artifice section — per-affix clickable grid */}
+                  {slot.pieceName && (() => {
+                    const artArr = normalizeArtifice(slot.artifice, affixCount);
+                    const artTotal = artArr.reduce((s, v) => s + v, 0);
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Artifice</label>
+                            <span className="text-[10px] font-mono text-[var(--color-accent)]">+{artTotal}/{maxArt}</span>
+                          </div>
+                          {artTotal > 0 && (
+                            <button
+                              onClick={() => updateState({ [slotKey]: { ...slot, artifice: Array(affixCount).fill(0) } })}
+                              className="text-[9px] text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
+                            >Reset</button>
+                          )}
+                        </div>
 
-                      {/* Hex indicator + affix breakdown with real stat names */}
-                      <div className="flex items-center gap-3">
-                        <ArtificeHexagon level={slot.artifice} maxLevel={maxArt} size={56} accentColor="var(--color-accent)" />
-                        <div className="flex-1 space-y-1">
-                          {Array.from({ length: affixCount }, (_, affixIdx) => {
-                            const affixBase = affixIdx * 3;
-                            const affixFilled = Math.max(0, Math.min(3, slot.artifice - affixBase));
-                            // Use actual stat name from gear piece data
-                            const affixName = piece?.stats[affixIdx]?.name || `A${affixIdx + 1}`;
-                            // Abbreviate long stat names for the compact label
-                            const shortName = affixName
-                              .replace('Strength', 'STR').replace('Agility', 'AGI')
-                              .replace('Intellect', 'INT').replace('Will', 'WIL')
-                              .replace('Arts Intensity', 'Arts')
-                              .replace('Physical DMG', 'Phys%').replace('Combo Skill DMG', 'Cmb%')
-                              .replace('Normal Skill DMG', 'Nrm%').replace('Ultimate SP Gain', 'UltSP')
-                              .replace('Battle Skill DMG', 'Btl%').replace('Crit Rate', 'CR%')
-                              .replace('Crit DMG', 'CD%').replace('DMG to Broken', 'Brk%')
-                              .replace('HP', 'HP').replace('ATK', 'ATK').replace('DEF', 'DEF');
-                            return (
-                              <div key={affixIdx} className="flex items-center gap-1.5">
-                                <span className="text-[9px] text-[var(--color-text-muted)] font-mono w-10 flex-shrink-0 truncate" title={affixName}>{shortName}</span>
-                                <div className="flex gap-0.5 flex-1">
-                                  {[0, 1, 2].map(seg => (
-                                    <button key={seg}
-                                      onClick={() => {
-                                        const newLevel = affixBase + seg + 1;
-                                        updateState({ [slotKey]: { ...slot, artifice: slot.artifice === newLevel ? newLevel - 1 : newLevel } });
-                                      }}
-                                      className="h-2 flex-1 transition-colors"
-                                      style={{
-                                        backgroundColor: seg < affixFilled ? 'var(--color-accent)' : 'var(--color-surface-2)',
-                                        border: `1px solid ${seg < affixFilled ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                                      }}
-                                      title={`${affixName} upgrade ${seg + 1}/3`}
-                                    />
-                                  ))}
+                        {/* Hex indicator + per-affix independent grid */}
+                        <div className="flex items-start gap-3">
+                          <ArtificeHexagon affixLevels={artArr} maxLevel={maxArt} size={56} accentColor="var(--color-accent)" />
+                          <div className="flex-1 space-y-1.5">
+                            {Array.from({ length: affixCount }, (_, affixIdx) => {
+                              const affixLevel = artArr[affixIdx];
+                              // Use actual stat name from gear piece data
+                              const affixName = piece?.stats[affixIdx]?.name || `Affix ${affixIdx + 1}`;
+                              // Abbreviate long stat names for the compact label
+                              const shortName = affixName
+                                .replace('Strength', 'STR').replace('Agility', 'AGI')
+                                .replace('Intellect', 'INT').replace('Will', 'WIL')
+                                .replace('Arts Intensity', 'Arts')
+                                .replace('Physical DMG', 'Phys%').replace('Combo Skill DMG', 'Cmb%')
+                                .replace('Normal Skill DMG', 'Nrm%').replace('Ultimate SP Gain', 'UltSP')
+                                .replace('Battle Skill DMG', 'Btl%').replace('Crit Rate', 'CR%')
+                                .replace('Crit DMG', 'CD%').replace('DMG to Broken', 'Brk%')
+                                .replace('HP', 'HP').replace('ATK', 'ATK').replace('DEF', 'DEF');
+                              return (
+                                <div key={affixIdx}>
+                                  <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-[9px] text-[var(--color-text-muted)] font-mono truncate" title={affixName}>{shortName}</span>
+                                    <span className="text-[9px] font-mono text-[var(--color-accent)]">{affixLevel}/3</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {[0, 1, 2].map(seg => {
+                                      const isFilled = seg < affixLevel;
+                                      return (
+                                        <button key={seg}
+                                          onClick={() => {
+                                            const newArt = [...artArr];
+                                            if (isFilled && seg === affixLevel - 1) {
+                                              // Clicking the last filled segment toggles it off
+                                              newArt[affixIdx] = seg;
+                                            } else {
+                                              // Clicking sets level to seg+1
+                                              newArt[affixIdx] = seg + 1;
+                                            }
+                                            updateState({ [slotKey]: { ...slot, artifice: newArt } });
+                                          }}
+                                          className="h-4 flex-1 transition-all cursor-pointer hover:brightness-125"
+                                          style={{
+                                            backgroundColor: isFilled ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                                            border: `1px solid ${isFilled ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                                            opacity: isFilled ? 1 : 0.6,
+                                          }}
+                                          title={`${affixName} — click to ${isFilled && seg === affixLevel - 1 ? 'remove' : 'set'} upgrade ${seg + 1}/3`}
+                                        />
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Quick actions: fill all / clear all */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => updateState({ [slotKey]: { ...slot, artifice: Array(affixCount).fill(3) } })}
+                            className="flex-1 text-[9px] py-1 border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors uppercase tracking-wider font-bold"
+                          >Max All</button>
+                          <button
+                            onClick={() => updateState({ [slotKey]: { ...slot, artifice: Array(affixCount).fill(0) } })}
+                            className="flex-1 text-[9px] py-1 border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-text-secondary)] transition-colors uppercase tracking-wider font-bold"
+                          >Clear All</button>
                         </div>
                       </div>
-
-                      {/* Quick-set slider */}
-                      <input
-                        type="range" min={0} max={maxArt} value={slot.artifice}
-                        onChange={e => updateState({ [slotKey]: { ...slot, artifice: Number(e.target.value) } })}
-                        className="w-full h-1 bg-[var(--color-border)] appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[var(--color-accent)] [&::-webkit-slider-thumb]:cursor-pointer"
-                      />
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })}

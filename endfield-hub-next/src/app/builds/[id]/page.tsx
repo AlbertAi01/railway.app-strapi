@@ -51,10 +51,11 @@ export default function BuildDetailPage() {
       setBuild(foundBuild);
       setFavorited(isBuildFavorited(id));
       setLiked(isBuildLiked(id));
-      setLikeCount(getBuildLikeCount(id));
+      const storedLikes = getBuildLikeCount(id);
+      setLikeCount(storedLikes || foundBuild.likes || 0);
       // Record view (deduplicated per session)
       const newViewCount = recordBuildView(id);
-      setViewCount(newViewCount);
+      setViewCount(newViewCount || foundBuild.views || 0);
     } else {
       router.push('/builds');
     }

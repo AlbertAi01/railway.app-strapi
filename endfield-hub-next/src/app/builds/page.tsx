@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Users, Plus, Search, X, Heart, Eye, Trash2, Edit3, Copy,
   Shield, Sword as SwordIcon, Star, BookOpen, ChevronRight,
@@ -34,10 +34,27 @@ type ViewMode = 'browse' | 'create' | 'my-builds';
 function BuildsPageContent() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') as ViewMode | null;
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    initialView && ['browse', 'create', 'my-builds'].includes(initialView) ? initialView : 'browse'
-  );
+  const router = useRouter();
+
+  // Derive viewMode from URL — searchParams is the single source of truth
+  const urlView = searchParams.get('view');
+  const resolvedView: ViewMode = (urlView === 'create' || urlView === 'my-builds') ? urlView : 'browse';
+  const [viewMode, setViewMode] = useState<ViewMode>(resolvedView);
+
+  // Sync viewMode whenever URL query params change (sidebar navigation, back/forward)
+  const searchString = searchParams.toString();
+  useEffect(() => {
+    const v = new URLSearchParams(searchString).get('view');
+    const target: ViewMode = (v === 'create' || v === 'my-builds') ? v : 'browse';
+    setViewMode(target);
+  }, [searchString]);
+
+  // Navigate to a view and update the URL to keep sidebar highlighting in sync
+  const navigateView = useCallback((view: ViewMode) => {
+    setViewMode(view);
+    router.replace(view === 'browse' ? '/builds' : `/builds?view=${view}`, { scroll: false });
+  }, [router]);
+
   const [browseFilter, setBrowseFilter] = useState<BrowseFilter>('popular');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('char') || '');
   const [filterTag, setFilterTag] = useState('');
@@ -370,7 +387,7 @@ function BuildsPageContent() {
       saveBuildsAndUpdate([...myBuilds, newBuild]);
     }
     resetForm();
-    setViewMode('my-builds');
+    navigateView('my-builds');
   };
 
   const editBuild = (build: Build) => {
@@ -393,7 +410,7 @@ function BuildsPageContent() {
       setGuideDifficulty(build.guide.difficulty || '');
       setShowGuideSection(true);
     }
-    setViewMode('create');
+    navigateView('create');
   };
 
   const deleteBuild = (id: string) => {
@@ -466,7 +483,10 @@ function BuildsPageContent() {
           ].map(tab => (
             <button
               key={tab.key}
-              onClick={() => { if (tab.key === 'create') resetForm(); setViewMode(tab.key); }}
+              onClick={() => {
+                if (tab.key === 'create') resetForm();
+                navigateView(tab.key);
+              }}
               className={`px-4 py-2.5 text-sm font-bold flex items-center gap-2 transition-colors border-b-2 -mb-[1px] ${
                 viewMode === tab.key
                   ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -578,7 +598,7 @@ function BuildsPageContent() {
                   <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
                     <Plus size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
                     <p className="text-[var(--color-text-tertiary)] mb-4">You haven&apos;t created any builds yet.</p>
-                    <button onClick={() => { setViewMode('create'); resetForm(); }}
+                    <button onClick={() => { navigateView('create'); resetForm(); }}
                       className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold clip-corner-tl">
                       Create Your First Build
                     </button>
@@ -659,7 +679,7 @@ function BuildsPageContent() {
                   <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
                     <Bookmark size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
                     <p className="text-[var(--color-text-tertiary)] mb-4">No favorited builds yet. Browse builds and bookmark ones you like.</p>
-                    <button onClick={() => setViewMode('browse')}
+                    <button onClick={() => navigateView('browse')}
                       className="px-6 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl">
                       Browse Builds
                     </button>
@@ -1031,7 +1051,7 @@ function BuildsPageContent() {
                 className="px-8 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-green-600/30 disabled:cursor-not-allowed text-white font-bold text-sm clip-corner-tl transition-colors flex items-center gap-2">
                 {editingBuildId ? <><Edit3 size={14} /> Save Changes</> : <><Plus size={14} /> Create Build</>}
               </button>
-              <button onClick={() => { resetForm(); setViewMode('browse'); }}
+              <button onClick={() => { resetForm(); navigateView('browse'); }}
                 className="px-6 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-white text-sm clip-corner-tl transition-colors">
                 Cancel
               </button>
@@ -1347,12 +1367,15 @@ function BuildCard({ build, isFavorited, onToggleFavorite, onDuplicate, formatTi
   const ytThumb = build.youtubeUrl ? getYouTubeThumbnail(build.youtubeUrl) : null;
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-  const viewCount = getBuildViewCount(build.id);
+  const [viewCount, setViewCount] = useState(0);
 
   useEffect(() => {
     setLiked(isBuildLiked(build.id));
-    setLikeCount(getBuildLikeCount(build.id));
-  }, [build.id]);
+    const storedLikes = getBuildLikeCount(build.id);
+    setLikeCount(storedLikes || build.likes || 0);
+    const storedViews = getBuildViewCount(build.id);
+    setViewCount(storedViews || build.views || 0);
+  }, [build.id, build.likes, build.views]);
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
