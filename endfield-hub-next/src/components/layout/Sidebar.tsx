@@ -22,31 +22,38 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
-  // ── MAIN ──
-  { label: 'Home', path: '/', icon: <Home size={18} />, section: 'MAIN' },
+  // ── Top-level ──
+  { label: 'Home', path: '/', icon: <Home size={18} /> },
 
-  // ── DATABASE: Quick-reference browsing ──
-  { label: 'Operators', path: '/characters', icon: <Users size={18} />, section: 'DATABASE' },
-  { label: 'Weapons', path: '/weapons', icon: <Sword size={18} />, section: 'DATABASE' },
-  { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={18} />, section: 'DATABASE' },
-  { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={18} />, section: 'DATABASE' },
-
-  // ── PLANNER: Optimization & planning tools ──
-  { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={18} />, section: 'PLANNER' },
-  { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={18} />, section: 'PLANNER' },
-  { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={18} />, section: 'PLANNER' },
-
-  // ── CREATE: User-generated content & creative tools ──
-  { label: 'Operator Card', path: '/character-card', icon: <Sparkles size={18} />, section: 'CREATE' },
-  { label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={18} />, isNew: true, section: 'CREATE' },
+  // ── CHARACTERS: Everything operator/entity-related, mirroring EndfieldTools ──
+  // This groups all character data, equipment, and planning tools that revolve
+  // around building a single operator — the core gameplay loop.
   {
-    label: 'Community Builds', path: '/builds', icon: <Hammer size={18} />, isNew: true, section: 'CREATE',
+    label: 'Characters', path: '/characters', icon: <Users size={18} />,
     children: [
-      { label: 'Browse Builds', path: '/builds', icon: <Hammer size={16} /> },
+      { label: 'Weapons', path: '/weapons', icon: <Sword size={16} /> },
+      { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={16} /> },
+      { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={16} /> },
+      { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={16} /> },
+      { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={16} /> },
+      { label: 'Operator Card', path: '/character-card', icon: <Sparkles size={16} /> },
     ],
   },
+
+  // ── BUILDS: Community builds, tier lists, team planning ──
+  // Grouped because they all involve sharing/comparing operator configurations.
   {
-    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />, section: 'CREATE',
+    label: 'Builds', path: '/builds', icon: <Hammer size={18} />, isNew: true,
+    children: [
+      { label: 'Browse Builds', path: '/builds', icon: <Hammer size={16} /> },
+      { label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={16} /> },
+      { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={16} /> },
+    ],
+  },
+
+  // ── FACTORY PLANNER: Production & crafting — standalone major tool ──
+  {
+    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />,
     children: [
       { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
       { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={16} /> },
@@ -54,14 +61,20 @@ const navigation: NavItem[] = [
     ],
   },
 
-  // ── TRACKER: Progress & exploration ──
-  { label: 'Interactive Map', path: '/map', icon: <Map size={18} />, section: 'TRACKER' },
+  // ── INTERACTIVE MAP: Exploration maps ──
+  {
+    label: 'Interactive Map', path: '/map', icon: <Map size={18} />,
+    children: [
+      { label: 'Valley IV', path: '/map/valley-iv', icon: <Map size={16} /> },
+      { label: 'Wuling', path: '/map/wuling', icon: <Map size={16} /> },
+    ],
+  },
+
+  // ── Standalone tools (flat, no section headers — game-contextual placement) ──
   { label: 'Headhunt Tracker', path: '/headhunt-tracker', icon: <Target size={18} />, section: 'TRACKER' },
   { label: 'Achievements', path: '/achievements', icon: <Trophy size={18} />, section: 'TRACKER' },
+  { label: 'Guides', path: '/guides', icon: <BookOpen size={18} />, section: 'TRACKER' },
   { label: 'Summon Simulator', path: '/summon-simulator', icon: <Dice6 size={18} />, section: 'TRACKER' },
-
-  // ── COMMUNITY: Learning & engagement ──
-  { label: 'Guides', path: '/guides', icon: <BookOpen size={18} />, section: 'COMMUNITY' },
 ];
 
 export default function Sidebar() {
@@ -94,22 +107,32 @@ export default function Sidebar() {
 
   const isActive = (path: string) => pathname === path;
 
-  // Group items by section
+  // Check if any child path matches the current route (for parent highlighting)
+  const isParentActive = (item: NavItem) => {
+    if (pathname === item.path || pathname.startsWith(item.path + '/')) return true;
+    if (item.children) {
+      return item.children.some(c => pathname === c.path || pathname.startsWith(c.path + '/'));
+    }
+    return false;
+  };
+
+  // Group items by section — items without a section go into an implicit '' group
   const sections: { label: string; items: NavItem[] }[] = [];
   let currentSection = '';
   navigation.forEach(item => {
-    if (item.section && item.section !== currentSection) {
-      currentSection = item.section;
+    const sec = item.section || '';
+    if (sec !== currentSection || sections.length === 0) {
+      currentSection = sec;
       sections.push({ label: currentSection, items: [] });
     }
-    sections[sections.length - 1]?.items.push(item);
+    sections[sections.length - 1].items.push(item);
   });
 
   const renderNav = () => (
     <nav className="flex flex-col gap-0.5 px-2">
       {sections.map((section, si) => (
         <div key={section.label}>
-          {si > 0 && (
+          {si > 0 && section.label && (
             <div className="flex items-center gap-2 px-3 pt-4 pb-1.5">
               <div className="h-px flex-1 bg-[var(--color-border)]" />
               <span className="text-[10px] font-bold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">{section.label}</span>
@@ -123,12 +146,12 @@ export default function Sidebar() {
                   <button
                     onClick={() => toggleExpand(item.label)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold transition-all rounded-sm ${
-                      pathname.startsWith(item.path)
+                      isParentActive(item)
                         ? 'text-[var(--color-accent)] bg-[var(--color-accent)]/8'
                         : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]'
                     }`}
                   >
-                    <span className={`flex-shrink-0 ${pathname.startsWith(item.path) ? 'text-[var(--color-accent)]' : ''}`}>{item.icon}</span>
+                    <span className={`flex-shrink-0 ${isParentActive(item) ? 'text-[var(--color-accent)]' : ''}`}>{item.icon}</span>
                     <span className="flex-1 text-left">{item.label}</span>
                     {item.isNew && (
                       <span className="text-[9px] bg-[var(--color-accent)] text-black px-1.5 py-0.5 font-bold leading-none">NEW</span>
