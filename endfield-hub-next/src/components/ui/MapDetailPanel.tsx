@@ -353,7 +353,7 @@ export default function MapDetailPanel({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`${iconBase}/${getEntityIcon(poi.type)}.png`}
-                  alt=""
+                  alt={poi.type}
                   className="w-10 h-10 object-contain"
                   draggable={false}
                 />
@@ -628,7 +628,7 @@ export default function MapDetailPanel({
                       {uploadedImages.map((img, idx) => (
                         <div key={idx} className="relative w-16 h-16 border border-[var(--color-border)]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <img src={img} alt={`Uploaded photo ${idx + 1}`} className="w-full h-full object-cover" />
                           <button
                             onClick={() => removeUploadedImage(idx)}
                             className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center"
@@ -710,7 +710,7 @@ export default function MapDetailPanel({
                                       className="w-24 h-24 border border-[var(--color-border)] hover:border-[var(--color-accent)] overflow-hidden transition-colors"
                                     >
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img src={src} alt="" className="w-full h-full object-cover" />
+                                      <img src={src} alt={`Community screenshot ${idx + 1}`} className="w-full h-full object-cover" />
                                     </button>
                                   ))}
                                 </div>
@@ -850,7 +850,7 @@ export default function MapDetailPanel({
         >
           <div className="relative max-w-3xl max-h-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={screenshotPreview} alt="" className="max-w-full max-h-[80vh] object-contain border-2 border-[var(--color-border)]" />
+            <img src={screenshotPreview} alt="Screenshot preview" className="max-w-full max-h-[80vh] object-contain border-2 border-[var(--color-border)]" />
             <button
               onClick={() => setScreenshotPreview(null)}
               className="absolute top-2 right-2 w-8 h-8 bg-black/60 border border-[var(--color-border)] flex items-center justify-center text-white hover:border-[var(--color-accent)]"

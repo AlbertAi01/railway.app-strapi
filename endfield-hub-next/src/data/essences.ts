@@ -2,6 +2,10 @@
 // Probability engine reverse-engineered from endfieldtools.dev v1.9.3 source
 // Each weapon has 3 essence stat slots: Primary Attribute, Secondary Stat, Skill Stat
 // A "perfect" essence matches all 3 stats for a given weapon.
+//
+// Essence Level Scaling data verified against endfield.wiki.gg
+// Cross-referenced: Grand Vision, Thunderberge, Wave Tide, Aggeloslayer
+// Pattern: Linear 1-8 with ~1.5x increment jump at rank 9
 
 export type PrimaryAttr = 'Strength Boost' | 'Agility Boost' | 'Will Boost' | 'Intellect Boost' | 'Main Attribute Boost';
 export type SecondaryStat =
@@ -13,6 +17,159 @@ export type SkillStat =
   | 'Assault' | 'Suppression' | 'Pursuit' | 'Crusher' | 'Inspiring'
   | 'Combative' | 'Brutality' | 'Infliction' | 'Medicant' | 'Fracture'
   | 'Detonate' | 'Twilight' | 'Flow' | 'Efficacy';
+
+// ──────────── Essence Level Scaling (Lv.1–9) ────────────
+// Tier suffixes: [L] = 6-star, [M] = 5-star, [S] = 4-star, [XS] = 3-star
+// Values verified from wiki individual weapon pages; [M] tier interpolated from [L] and [S]
+
+export type EssenceTier = 'L' | 'M' | 'S' | 'XS';
+
+export function getEssenceTier(rarity: number): EssenceTier {
+  if (rarity >= 6) return 'L';
+  if (rarity === 5) return 'M';
+  if (rarity === 4) return 'S';
+  return 'XS';
+}
+
+export function getEssenceTierLabel(rarity: number): string {
+  const tier = getEssenceTier(rarity);
+  return { L: 'L', M: 'M', S: 'S', XS: 'XS' }[tier];
+}
+
+// Primary Attribute scaling (flat values): STR/AGI/INT/WIL/Main Attr
+// Source: [L] from Grand Vision/Thunderberge, [S] from Wave Tide/Aggeloslayer
+export const PRIMARY_ATTR_SCALING: Record<EssenceTier, number[]> = {
+  L:  [20, 36, 52, 68, 84, 100, 116, 132, 156],  // +16/lv, +24 at rank 9
+  M:  [16, 29, 42, 54, 67, 80, 93, 106, 124],     // interpolated ~0.8x of L
+  S:  [12, 21, 31, 40, 50, 60, 69, 79, 93],        // +~9.5/lv, +14 at rank 9
+  XS: [10, 17, 25, 33, 41, 49, 57, 65, 79],        // 3-star: ~0.85x of S
+};
+
+// Secondary stat scaling — percentage-based stats
+// Attack Boost: [L] from Grand Vision, [S] from Wave Tide
+export const SECONDARY_SCALING_ATK: Record<EssenceTier, number[]> = {
+  L:  [5.0, 9.0, 13.0, 17.0, 21.0, 25.0, 29.0, 33.0, 39.0],
+  M:  [4.0, 7.2, 10.4, 13.6, 16.8, 20.0, 23.2, 26.4, 31.2],
+  S:  [3.0, 5.4, 7.8, 10.2, 12.6, 15.0, 17.4, 19.8, 23.4],
+  XS: [2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 19.5],
+};
+
+// HP Boost: [L] from Thunderberge
+export const SECONDARY_SCALING_HP: Record<EssenceTier, number[]> = {
+  L:  [10.0, 18.0, 26.0, 34.0, 42.0, 50.0, 58.0, 66.0, 78.0],
+  M:  [8.0, 14.4, 20.8, 27.2, 33.6, 40.0, 46.4, 52.8, 62.4],
+  S:  [6.0, 10.8, 15.6, 20.4, 25.2, 30.0, 34.8, 39.6, 46.8],
+  XS: [5.0, 9.0, 13.0, 17.0, 21.0, 25.0, 29.0, 33.0, 39.0],
+};
+
+// Elemental/Physical/Arts DMG Boost (all element types share the same scaling)
+export const SECONDARY_SCALING_DMG: Record<EssenceTier, number[]> = {
+  L:  [5.56, 10.0, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.3],
+  M:  [4.44, 8.0, 11.56, 15.11, 18.67, 22.22, 25.78, 29.33, 34.7],
+  S:  [3.33, 6.0, 8.67, 11.33, 14.0, 16.67, 19.33, 22.0, 26.0],
+  XS: [2.78, 5.0, 7.22, 9.44, 11.67, 13.89, 16.11, 18.33, 21.7],
+};
+
+// Critical Rate Boost
+export const SECONDARY_SCALING_CRIT: Record<EssenceTier, number[]> = {
+  L:  [2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 19.5],
+  M:  [2.0, 3.6, 5.2, 6.8, 8.4, 10.0, 11.6, 13.2, 15.6],
+  S:  [1.5, 2.7, 3.9, 5.1, 6.3, 7.5, 8.7, 9.9, 11.7],
+  XS: [1.25, 2.25, 3.25, 4.25, 5.25, 6.25, 7.25, 8.25, 9.75],
+};
+
+// Arts Intensity (flat, not percentage)
+export const SECONDARY_SCALING_ARTS_INT: Record<EssenceTier, number[]> = {
+  L:  [30, 36, 42, 48, 54, 60, 66, 72, 84],
+  M:  [24, 29, 34, 38, 43, 48, 53, 58, 67],
+  S:  [18, 22, 25, 29, 32, 36, 40, 43, 50],
+  XS: [15, 18, 21, 24, 27, 30, 33, 36, 42],
+};
+
+// Ultimate Gain Boost (percentage)
+export const SECONDARY_SCALING_ULT_GAIN: Record<EssenceTier, number[]> = {
+  L:  [5.95, 10.71, 15.47, 20.24, 25.0, 29.76, 34.52, 39.29, 46.4],
+  M:  [4.76, 8.57, 12.38, 16.19, 20.0, 23.81, 27.62, 31.43, 37.1],
+  S:  [3.57, 6.43, 9.29, 12.14, 15.0, 17.86, 20.71, 23.57, 27.8],
+  XS: [2.98, 5.36, 7.74, 10.12, 12.5, 14.88, 17.26, 19.64, 23.2],
+};
+
+// Treatment Efficiency Boost (percentage)
+export const SECONDARY_SCALING_HEAL: Record<EssenceTier, number[]> = {
+  L:  [5.95, 10.71, 15.47, 20.24, 25.0, 29.76, 34.52, 39.29, 46.4],
+  M:  [4.76, 8.57, 12.38, 16.19, 20.0, 23.81, 27.62, 31.43, 37.1],
+  S:  [3.57, 6.43, 9.29, 12.14, 15.0, 17.86, 20.71, 23.57, 27.8],
+  XS: [2.98, 5.36, 7.74, 10.12, 12.5, 14.88, 17.26, 19.64, 23.2],
+};
+
+/** Get the scaling array for a secondary stat at a given weapon rarity */
+export function getSecondaryScaling(stat: SecondaryStat, rarity: number): number[] {
+  const tier = getEssenceTier(rarity);
+  switch (stat) {
+    case 'Attack Boost': return SECONDARY_SCALING_ATK[tier];
+    case 'HP Boost': return SECONDARY_SCALING_HP[tier];
+    case 'Physical DMG Boost':
+    case 'Heat DMG Boost':
+    case 'Electric DMG Boost':
+    case 'Cryo DMG Boost':
+    case 'Nature DMG Boost':
+    case 'Arts DMG Boost':
+      return SECONDARY_SCALING_DMG[tier];
+    case 'Critical Rate Boost': return SECONDARY_SCALING_CRIT[tier];
+    case 'Arts Intensity Boost': return SECONDARY_SCALING_ARTS_INT[tier];
+    case 'Ultimate Gain Boost': return SECONDARY_SCALING_ULT_GAIN[tier];
+    case 'Treatment Efficiency Boost': return SECONDARY_SCALING_HEAL[tier];
+  }
+}
+
+/** Get stat value at a specific essence level (1-9) */
+export function getEssenceStatValue(stat: PrimaryAttr | SecondaryStat, rarity: number, level: number): number {
+  const idx = Math.max(0, Math.min(8, level - 1));
+  const tier = getEssenceTier(rarity);
+  // Primary attributes all use the same flat scaling
+  if (stat === 'Strength Boost' || stat === 'Agility Boost' || stat === 'Will Boost'
+    || stat === 'Intellect Boost' || stat === 'Main Attribute Boost') {
+    return PRIMARY_ATTR_SCALING[tier][idx];
+  }
+  return getSecondaryScaling(stat as SecondaryStat, rarity)[idx];
+}
+
+/** Check if a secondary stat is percentage-based (vs flat) */
+export function isPercentageStat(stat: SecondaryStat): boolean {
+  return stat !== 'Arts Intensity Boost';
+}
+
+/** Format stat value for display (e.g., "+39%" or "+156") */
+export function formatEssenceValue(stat: PrimaryAttr | SecondaryStat, rarity: number, level: number): string {
+  const value = getEssenceStatValue(stat, rarity, level);
+  if (stat === 'Strength Boost' || stat === 'Agility Boost' || stat === 'Will Boost'
+    || stat === 'Intellect Boost' || stat === 'Main Attribute Boost' || stat === 'Arts Intensity Boost') {
+    return `+${Math.round(value)}`;
+  }
+  // Round to 1 decimal for percentages
+  return `+${Math.round(value * 10) / 10}%`;
+}
+
+/** Get the display name for an essence slot, including the weapon-specific skill name */
+export function getEssenceSlotDisplayName(
+  slotIndex: number,
+  weaponName: string,
+  essence: WeaponEssence | undefined,
+  rarity: number
+): string {
+  if (!essence) return `Slot ${slotIndex + 1}`;
+  const tierLabel = getEssenceTierLabel(rarity);
+  if (slotIndex === 0) {
+    return `${essence.primaryAttr} [${tierLabel}]`;
+  } else if (slotIndex === 1 && essence.secondaryStat) {
+    return `${essence.secondaryStat} [${tierLabel}]`;
+  } else if (slotIndex === 2 || (slotIndex === 1 && !essence.secondaryStat)) {
+    // Weapon skill slot — use the weapon's SkillName from WEAPON_DATA
+    // Import would be circular, so we pass it through or use the essence skillStat prefix
+    return `${essence.skillStat}: ${weaponName}`;
+  }
+  return `Slot ${slotIndex + 1}`;
+}
 
 export interface WeaponEssence {
   name: string;

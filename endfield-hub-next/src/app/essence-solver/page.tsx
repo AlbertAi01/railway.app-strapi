@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, startTransition } from 'react';
 import Image from 'next/image';
 import { Star, FlaskConical, Search, MapPin, Sword, CheckCircle, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
@@ -433,7 +433,7 @@ function FarmingOptimizer({ selectedWeapons, setSelectedWeapons }: { selectedWea
           {showPicker && (
             <div className="mt-3 p-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl space-y-3">
               <input
-                type="text" placeholder="Search weapons..." value={search} onChange={e => setSearch(e.target.value)}
+                type="text" placeholder="Search weapons..." value={search} onChange={e => startTransition(() => setSearch(e.target.value))}
                 className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-xs font-mono"
               />
               <div className="flex flex-wrap gap-1.5">
@@ -1291,8 +1291,24 @@ export default function EssenceSolverPage() {
     });
   }, [saveState]);
 
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Essence Solver - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/essence-solver',
+    description: 'Optimize weapon essence usage with zero waste for Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;

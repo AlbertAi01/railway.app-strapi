@@ -14,6 +14,7 @@ import RIOSHeader from '@/components/ui/RIOSHeader';
 import { CHARACTERS, WEAPONS } from '@/lib/data';
 import { CHARACTER_BANNERS, CHARACTER_ICONS, WEAPON_ICONS, EQUIPMENT_ICONS, PROFESSION_ICONS } from '@/lib/assets';
 import { WEAPON_DATA } from '@/data/weapons';
+import { WEAPON_ESSENCES, getEssenceTierLabel } from '@/data/essences';
 import { GEAR_SETS } from '@/data/gear';
 import {
   SAMPLE_BUILDS, getYouTubeEmbedUrl, getYouTubeThumbnail,
@@ -636,6 +637,31 @@ export default function BuildDetailPage() {
                                   </div>
                                 )}
                               </div>
+                              {(() => {
+                                const essence = WEAPON_ESSENCES.find(e => e.name === bc.weapon);
+                                if (essence) {
+                                  const tierLabel = getEssenceTierLabel(essence.rarity);
+                                  return (
+                                    <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                                      <div className="text-[10px] text-[var(--color-text-tertiary)] uppercase mb-1.5">Essence Slots:</div>
+                                      <div className="flex flex-wrap gap-1.5 text-[10px]">
+                                        <div className="px-2 py-1 bg-[var(--color-surface)]/50 text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                                          {essence.primaryAttr} [{tierLabel}]
+                                        </div>
+                                        {essence.secondaryStat && (
+                                          <div className="px-2 py-1 bg-[var(--color-surface)]/50 text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                                            {essence.secondaryStat} [{tierLabel}]
+                                          </div>
+                                        )}
+                                        <div className="px-2 py-1 bg-[var(--color-surface)]/50 text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                                          {essence.skillStat}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -887,9 +913,33 @@ export default function BuildDetailPage() {
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {bc.weapon && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-2)]">
-                          {weaponIcon && <Image src={weaponIcon} alt={bc.weapon} width={20} height={20} className="object-contain" unoptimized />}
-                          <span className="text-xs text-white">{bc.weapon}</span>
+                        <div className="flex-col gap-2">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-2)]">
+                            {weaponIcon && <Image src={weaponIcon} alt={bc.weapon} width={20} height={20} className="object-contain" unoptimized />}
+                            <span className="text-xs text-white">{bc.weapon}</span>
+                          </div>
+                          {(() => {
+                            const essence = WEAPON_ESSENCES.find(e => e.name === bc.weapon);
+                            if (essence) {
+                              const tierLabel = getEssenceTierLabel(essence.rarity);
+                              return (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  <div className="px-1.5 py-0.5 bg-[var(--color-surface)] text-[9px] text-[var(--color-text-tertiary)] border border-[var(--color-border)]">
+                                    {essence.primaryAttr} [{tierLabel}]
+                                  </div>
+                                  {essence.secondaryStat && (
+                                    <div className="px-1.5 py-0.5 bg-[var(--color-surface)] text-[9px] text-[var(--color-text-tertiary)] border border-[var(--color-border)]">
+                                      {essence.secondaryStat} [{tierLabel}]
+                                    </div>
+                                  )}
+                                  <div className="px-1.5 py-0.5 bg-[var(--color-surface)] text-[9px] text-[var(--color-text-tertiary)] border border-[var(--color-border)]">
+                                    {essence.skillStat}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       )}
                       {bc.equipmentPieces && bc.equipmentPieces.length > 0 ? (

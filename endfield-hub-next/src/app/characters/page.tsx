@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, startTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Filter, Users } from 'lucide-react';
@@ -9,6 +9,7 @@ import { CHARACTERS, ELEMENTS, ROLES, WEAPON_TYPES } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Element, Role, WeaponType } from '@/types/game';
 import { CHARACTER_ICONS } from '@/lib/assets';
+import AnswerNugget from '@/components/seo/AnswerNugget';
 
 export default function Characters() {
   const [search, setSearch] = useState('');
@@ -40,8 +41,27 @@ export default function Characters() {
     </button>
   );
 
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Operator Database - Zero Sanity',
+    'description': 'Browse all 23 playable operators in Arknights: Endfield. Filter by element, role, and rarity to find detailed stats, skills, builds, and team compositions for every character.',
+    'url': 'https://www.zerosanity.app/characters',
+    'mainEntity': {
+      '@type': 'ItemList',
+      'numberOfItems': CHARACTERS.length,
+      'itemListElement': CHARACTERS.map((char, i) => ({
+        '@type': 'ListItem',
+        'position': i + 1,
+        'name': char.Name,
+        'url': `https://www.zerosanity.app/characters/${char.Slug}`,
+      })),
+    },
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <RIOSHeader
         title="Operator Database"
         category="PERSONNEL"
@@ -50,13 +70,18 @@ export default function Characters() {
         subtitle={`${filtered.length} operators indexed`}
       />
 
+      <AnswerNugget
+        text="Browse all 23 playable operators in Arknights: Endfield. Filter by element, role, and rarity to find detailed stats, skills, builds, and team compositions for every character."
+        lastUpdated="2026-02-20"
+      />
+
       <div className="relative mb-5">
         <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
         <input
           type="text"
           placeholder="Search operators..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => startTransition(() => setSearch(e.target.value))}
           className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl pl-12 pr-4 py-3 text-[var(--color-text-primary)] text-[15px] focus:outline-none focus:border-[var(--color-accent)] shadow-[var(--shadow-card)] transition-colors"
         />
       </div>

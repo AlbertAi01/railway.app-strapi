@@ -6,6 +6,8 @@ import { Search, Shield } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import { GEAR_SETS, TIER_COLORS } from '@/data/gear';
 import { EQUIPMENT_ICONS } from '@/lib/assets';
+import AnswerNugget from '@/components/seo/AnswerNugget';
+import RelatedTools from '@/components/seo/RelatedTools';
 
 function SetIcon({ src, name, tierColor }: { src: string; name: string; tierColor: string }) {
   const [failed, setFailed] = useState(false);
@@ -21,13 +23,36 @@ export default function Equipment() {
     !search || s.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Equipment Systems - Zero Sanity',
+    'description': 'Equipment sets and individual gear pieces for Arknights: Endfield. View set bonuses, stat breakdowns, and recommendations for each operator role.',
+    'url': 'https://www.zerosanity.app/equipment',
+    'mainEntity': {
+      '@type': 'ItemList',
+      'numberOfItems': GEAR_SETS.length,
+      'itemListElement': GEAR_SETS.map((set, i) => ({
+        '@type': 'ListItem',
+        'position': i + 1,
+        'name': set.name,
+      })),
+    },
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <RIOSHeader
         title="Equipment Systems"
         category="EQUIPMENT"
         code="RIOS-EQ-001"
         icon={<Shield size={32} />}
+      />
+
+      <AnswerNugget
+        text="Equipment sets and individual gear pieces for Arknights: Endfield. View set bonuses, stat breakdowns, and recommendations for each operator role."
+        lastUpdated="2026-02-20"
       />
 
       <div className="relative mb-8">
@@ -110,6 +135,14 @@ export default function Equipment() {
           );
         })}
       </div>
+
+      <RelatedTools
+        tools={[
+          { name: 'Gear Artificing', path: '/gear-artificing', desc: 'Optimize and reroll equipment stats' },
+          { name: 'Characters', path: '/characters', desc: 'See which operators benefit from each set' },
+          { name: 'Community Builds', path: '/builds', desc: 'Browse community equipment builds' },
+        ]}
+      />
     </div>
   );
 }

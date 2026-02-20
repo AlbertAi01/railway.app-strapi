@@ -1015,8 +1015,24 @@ export default function AscensionPlannerPage() {
     );
   }
 
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Operator Development Planner - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/ascension-planner',
+    description: 'Plan ascension materials and track progress for Arknights: Endfield operators',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       <div className="max-w-7xl mx-auto">
         <RIOSHeader title="Operator Development" category="DEVELOPMENT" code="RIOS-ASC-001" icon={<Star size={28} />} />
 

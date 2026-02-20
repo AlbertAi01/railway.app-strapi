@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, startTransition } from 'react';
 import Image from 'next/image';
 import { Wrench, Search, X } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
@@ -246,7 +246,7 @@ function GearPickerModal({
               type="text"
               placeholder="Search"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => startTransition(() => setSearch(e.target.value))}
               autoFocus
               className="w-full pl-10 pr-3 py-2.5 bg-[var(--color-surface-2)] border border-[var(--color-accent)] focus:outline-none text-white text-sm"
             />
@@ -349,8 +349,24 @@ export default function GearArtificingPage() {
     setCurrentLevel(0);
   };
 
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Gear Artificing Solver - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/gear-artificing',
+    description: 'Calculate optimal equipment substats and probabilities for Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       <div className="max-w-4xl mx-auto">
         <RIOSHeader
           title="Gear Artificing Solver"

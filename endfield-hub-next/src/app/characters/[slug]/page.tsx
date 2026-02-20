@@ -20,6 +20,8 @@ import { getOperatorGuide, TIER_COLORS } from '@/data/guides';
 import type { TierRating, OperatorGuide } from '@/data/guides';
 import { fetchOperatorGuide, fetchBlueprints } from '@/lib/api';
 import { SCRAPED_BLUEPRINTS, getBlueprintsForOperator, type BlueprintEntry } from '@/data/blueprints';
+import AnswerNugget from '@/components/seo/AnswerNugget';
+import RelatedTools from '@/components/seo/RelatedTools';
 
 // =============================================
 // Tab definitions
@@ -351,8 +353,34 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
     tabContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://www.zerosanity.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Operator Database',
+        item: 'https://www.zerosanity.app/characters',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: char.Name,
+        item: `https://www.zerosanity.app/characters/${char.Slug}`,
+      },
+    ],
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {/* Back Navigation — Dossier breadcrumb */}
       <div className="flex items-center gap-3 mb-4">
         <Link href="/characters" className="inline-flex items-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] text-sm no-underline transition-colors">
@@ -492,6 +520,14 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
       </div>
 
       {/* ==========================================
+          ANSWER NUGGET
+          ========================================== */}
+      <AnswerNugget
+        text={`${char.Name} is a ${char.Rarity}-star ${char.Element} ${char.Role} operator in Arknights: Endfield wielding a ${char.WeaponType}. ${char.Description} Use the tools below to plan builds, compare stats, and optimize gear.`}
+        lastUpdated="2026-02-20"
+      />
+
+      {/* ==========================================
           TAB CONTENT
           ========================================== */}
       <div ref={tabContentRef}>
@@ -510,9 +546,9 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
                     title={splashUrl ? (showSplash ? 'Click for icon view' : 'Click for splash art') : undefined}
                   >
                     {showSplash && splashUrl ? (
-                      <Image src={splashUrl} alt={`${char.Name} splash art`} fill className="object-contain" sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+                      <Image src={splashUrl} alt={`${char.Name} splash art`} fill className="object-contain" sizes="(max-width: 768px) 100vw, 33vw" unoptimized priority />
                     ) : CHARACTER_ICONS[char.Name] ? (
-                      <Image src={CHARACTER_ICONS[char.Name]} alt={char.Name} width={220} height={220} className="w-56 h-56 object-contain" />
+                      <Image src={CHARACTER_ICONS[char.Name]} alt={char.Name} width={220} height={220} className="w-56 h-56 object-contain" priority />
                     ) : (
                       <span className="text-8xl font-bold text-white/10">{char.Name[0]}</span>
                     )}
@@ -1094,6 +1130,19 @@ export default function CharacterDetail({ params }: { params: Promise<{ slug: st
           </div>
         )}
       </div>
+
+      {/* ==========================================
+          RELATED TOOLS
+          ========================================== */}
+      <RelatedTools
+        tools={[
+          { name: 'Tier List', path: '/tier-list', desc: 'See how this operator ranks in the current meta' },
+          { name: 'Team Builder', path: '/team-builder', desc: 'Build teams featuring this operator' },
+          { name: 'Community Builds', path: `/builds?char=${encodeURIComponent(char.Name)}`, desc: 'Browse community builds for this operator' },
+          { name: 'Gear Artificing', path: '/gear-artificing', desc: 'Optimize equipment for this operator' },
+          { name: 'Ascension Planner', path: '/ascension-planner', desc: 'Plan materials for upgrades' },
+        ]}
+      />
 
       {/* ==========================================
           STRUCTURED DATA (SEO / GEO)

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': 'https://www.zerosanity.app',
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });

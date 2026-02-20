@@ -27,6 +27,7 @@ import { TIER_COLORS } from '@/data/gear';
 import type { Build, BuildCharacter, BuildGuide, RecommendedPartner, BrowseFilter, BuildEquipmentSlot } from '@/data/builds';
 import type { GearPiece } from '@/data/gear';
 import { useAuthStore } from '@/store/authStore';
+import RelatedTools from '@/components/seo/RelatedTools';
 
 type ViewMode = 'browse' | 'create' | 'my-builds';
 
@@ -441,8 +442,17 @@ function BuildsPageContent() {
   const getCharElement = (name: string) => CHARACTERS.find(c => c.Name === name)?.Element;
   const getCharRarity = (name: string) => CHARACTERS.find(c => c.Name === name)?.Rarity || 4;
 
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Community Builds - Zero Sanity',
+    'description': 'Create, share, and discover operator builds and team compositions for Arknights: Endfield. Browse community-created builds with detailed equipment, weapons, and strategy guides.',
+    'url': 'https://www.zerosanity.app/builds',
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <div className="max-w-6xl mx-auto">
         <RIOSHeader title="Community Builds" category="COMMUNITY" code="RIOS-BLD-001" icon={<Users size={28} />}
           subtitle="Create, share, and discover operator builds and team compositions" />
@@ -1283,6 +1293,16 @@ function BuildsPageContent() {
           </div>
         </PickerModal>
       )}
+
+      {/* Related Tools - shown on all views */}
+      <RelatedTools
+        tools={[
+          { name: 'Tier List', path: '/tier-list', desc: 'See meta rankings for all operators' },
+          { name: 'Team Builder', path: '/team-builder', desc: 'Interactive team composition tool' },
+          { name: 'Characters', path: '/characters', desc: 'Browse all operators and their stats' },
+          { name: 'Gear Artificing', path: '/gear-artificing', desc: 'Optimize equipment for your builds' },
+        ]}
+      />
     </div>
   );
 }

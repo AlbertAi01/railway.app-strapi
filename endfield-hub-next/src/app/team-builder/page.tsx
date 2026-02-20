@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, startTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -137,13 +137,15 @@ export default function TeamBuilderPage() {
   }, [search, elementFilter, roleFilter, weaponFilter, rarityFilter]);
 
   const addToTeam = useCallback((char: Character) => {
-    setTeam(prev => {
-      if (prev.some(c => c?.id === char.id)) return prev;
-      const idx = prev.findIndex(c => c === null);
-      if (idx === -1) return prev;
-      const next = [...prev];
-      next[idx] = char;
-      return next;
+    startTransition(() => {
+      setTeam(prev => {
+        if (prev.some(c => c?.id === char.id)) return prev;
+        const idx = prev.findIndex(c => c === null);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        next[idx] = char;
+        return next;
+      });
     });
   }, []);
 
@@ -202,8 +204,24 @@ export default function TeamBuilderPage() {
     return counts;
   }, [activeChars]);
 
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Team Builder - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/team-builder',
+    description: 'Plan and optimize squad compositions for Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       {/* RIOS Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
@@ -407,7 +425,7 @@ export default function TeamBuilderPage() {
             <input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => startTransition(() => setSearch(e.target.value))}
               placeholder="Search characters..."
               className="w-full pl-9 pr-8 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-white text-sm font-body focus:border-[var(--color-accent)] focus:outline-none transition-colors"
             />

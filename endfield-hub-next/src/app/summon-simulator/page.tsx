@@ -325,8 +325,24 @@ export default function SummonSimulatorPage() {
   }, [bannerType]);
 
   // ─── Render ──────────────────────────────────────────────────────
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Summon Simulator - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/summon-simulator',
+    description: 'Simulate headhunt operations with verified rates for Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       <div className="max-w-5xl mx-auto">
         <RIOSHeader title="Summon/Headhunt Simulator" category="SIMULATION" code="RIOS-SIM-001" icon={<Dice6 size={28} />} />
 

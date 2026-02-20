@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
+import JsonLd from '@/components/seo/JsonLd';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zerosanity.app';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://zerosanity.app'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Zero Sanity - Arknights: Endfield Toolkit',
     template: '%s | Zero Sanity',
@@ -21,11 +24,16 @@ export const metadata: Metadata = {
     'toolkit',
     'wiki',
   ],
+  category: 'gaming',
+  creator: 'Zero Sanity',
+  verification: {
+    google: '',
+  },
   openGraph: {
     title: 'Zero Sanity - Arknights: Endfield Toolkit',
     description:
       'Comprehensive Arknights: Endfield community toolkit. Factory blueprints, character builds, tier lists, headhunt tracker, and more.',
-    url: 'https://zerosanity.app',
+    url: SITE_URL,
     siteName: 'Zero Sanity',
     type: 'website',
     locale: 'en_US',
@@ -49,9 +57,19 @@ export const metadata: Metadata = {
     apple: '/icon.png',
   },
   alternates: {
-    canonical: 'https://zerosanity.app',
+    canonical: SITE_URL,
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
 };
 
 function AutoDeployOverlay() {
@@ -79,9 +97,20 @@ function AutoDeployOverlay() {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Zero Sanity',
+    url: SITE_URL,
+    logo: `${SITE_URL}/icon.svg`,
+    description: 'Free community toolkit for Arknights: Endfield',
+    sameAs: [],
+  };
+
   return (
     <html lang="en">
       <body>
+        <JsonLd data={organizationSchema} />
         <AutoDeployOverlay />
         <div className="min-h-screen bg-[#0E0C09]">
           <Sidebar />

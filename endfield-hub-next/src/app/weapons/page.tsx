@@ -10,6 +10,8 @@ import { RARITY_COLORS } from '@/types/game';
 import type { WeaponType } from '@/types/game';
 import { WEAPON_ICONS } from '@/lib/assets';
 import { WEAPON_TYPES } from '@/lib/data';
+import { WEAPON_ESSENCES, getEssenceTierLabel, formatEssenceValue } from '@/data/essences';
+import AnswerNugget from '@/components/seo/AnswerNugget';
 const RARITY_FILTERS = [6, 5, 4, 3] as const;
 
 function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
@@ -189,6 +191,63 @@ function WeaponCard({ weapon, isExpanded, onToggle }: { weapon: WeaponData; isEx
               )}
             </div>
           )}
+
+          {/* Essence Matching Slots */}
+          {(() => {
+            const essence = WEAPON_ESSENCES.find(e => e.name === weapon.Name);
+            if (!essence) return null;
+            const tier = getEssenceTierLabel(weapon.Rarity);
+            return (
+              <div className="p-4 bg-[var(--color-surface-2)] clip-corner-tl">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield size={18} className="text-[#F5A623]" />
+                  <span className="text-white text-sm font-semibold uppercase tracking-wider">Essence Matching Slots</span>
+                  <span className="text-[10px] text-[var(--color-text-muted)] font-mono ml-auto">Tier [{tier}]</span>
+                </div>
+                <div className="space-y-2">
+                  {/* Primary Attribute */}
+                  <div className="flex items-center justify-between p-2 bg-[var(--color-surface)] border border-[var(--color-border)]">
+                    <div>
+                      <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider block">Slot 1 — Primary Attribute</span>
+                      <span className="text-sm text-white font-medium">{essence.primaryAttr} [{tier}]</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-[var(--color-text-muted)] block">Lv.1 → Lv.9</span>
+                      <span className="text-sm font-mono text-[var(--color-accent)]">
+                        {formatEssenceValue(essence.primaryAttr, weapon.Rarity, 1)} → {formatEssenceValue(essence.primaryAttr, weapon.Rarity, 9)}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Secondary Stat */}
+                  {essence.secondaryStat && (
+                    <div className="flex items-center justify-between p-2 bg-[var(--color-surface)] border border-[var(--color-border)]">
+                      <div>
+                        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider block">Slot 2 — Secondary Stat</span>
+                        <span className="text-sm text-white font-medium">{essence.secondaryStat} [{tier}]</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-[var(--color-text-muted)] block">Lv.1 → Lv.9</span>
+                        <span className="text-sm font-mono text-[var(--color-accent)]">
+                          {formatEssenceValue(essence.secondaryStat, weapon.Rarity, 1)} → {formatEssenceValue(essence.secondaryStat, weapon.Rarity, 9)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Weapon Skill */}
+                  <div className="flex items-center justify-between p-2 bg-[var(--color-surface)] border border-[var(--color-border)]">
+                    <div>
+                      <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider block">Slot 3 — Weapon Skill</span>
+                      <span className="text-sm text-white font-medium">{weapon.SkillName || essence.skillStat}</span>
+                    </div>
+                    <span className="text-sm font-mono text-[#F5A623]">Lv.1 → Lv.9</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-2">
+                  Perfect essence: all 3 slots match this weapon. Farm for <span className="text-[#F5A623] font-medium">{essence.primaryAttr}</span> + <span className="text-[#F5A623] font-medium">{essence.secondaryStat || 'N/A'}</span> + <span className="text-[#F5A623] font-medium">{essence.skillStat}</span>.
+                </p>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
@@ -216,13 +275,36 @@ export default function Weapons() {
     byStar: RARITY_FILTERS.map(r => ({ r, count: WEAPON_DATA.filter(w => w.Rarity === r).length })),
   }), [filtered]);
 
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Weapons Arsenal - Zero Sanity',
+    'description': 'Complete database of all weapons in Arknights: Endfield including Swords, Greatswords, Polearms, Handcannons, and Arts Units. Compare stats and find the best weapon for your operator.',
+    'url': 'https://www.zerosanity.app/weapons',
+    'mainEntity': {
+      '@type': 'ItemList',
+      'numberOfItems': WEAPON_DATA.length,
+      'itemListElement': WEAPON_DATA.map((weapon, i) => ({
+        '@type': 'ListItem',
+        'position': i + 1,
+        'name': weapon.Name,
+      })),
+    },
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <RIOSHeader
         title="Weapons Arsenal"
         category="ARMORY"
         code="RIOS-WPN-001"
         icon={<Sword size={32} />}
+      />
+
+      <AnswerNugget
+        text="Complete database of all weapons in Arknights: Endfield including Swords, Greatswords, Polearms, Handcannons, and Arts Units. Compare stats and find the best weapon for your operator."
+        lastUpdated="2026-02-20"
       />
 
       {/* Summary bar */}

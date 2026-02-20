@@ -651,8 +651,24 @@ export default function HeadhuntTrackerPage() {
 
   const allStats = getStatsForBanner('all');
 
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Headhunt Tracker - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/headhunt-tracker',
+    description: 'Track recruitment attempts and pity counter for Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <RIOSHeader

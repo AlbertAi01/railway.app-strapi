@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Search, BookOpen, ChevronLeft, Sword, Shield, Zap, FlaskConical, MapPin, Factory, Users, Crosshair, Star, Gem, ArrowRight } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import AnswerNugget from '@/components/seo/AnswerNugget';
 
 interface Guide {
   id: number;
@@ -246,13 +247,35 @@ export default function GuidesPage() {
     });
   };
 
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Intelligence Briefings - Zero Sanity',
+    'description': 'In-depth verified guides covering all aspects of Arknights: Endfield including combat mechanics, operator roles, elements, progression, team building, and factory production.',
+    'url': 'https://www.zerosanity.app/guides',
+    'mainEntity': {
+      '@type': 'ItemList',
+      'numberOfItems': GUIDES.length,
+      'itemListElement': GUIDES.map((guide, i) => ({
+        '@type': 'ListItem',
+        'position': i + 1,
+        'name': guide.title,
+      })),
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-secondary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <RIOSHeader title="Intelligence Briefings" category="INTEL" code="RIOS-GDE-001" icon={<BookOpen size={28} />} />
 
         {!selectedGuide ? (
           <div className="space-y-6">
+            <AnswerNugget
+              text="In-depth verified guides covering all aspects of Arknights: Endfield including combat mechanics, operator roles, elements, progression, and factory production."
+              lastUpdated="2026-02-20"
+            />
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] w-4 h-4" />

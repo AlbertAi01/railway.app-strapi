@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useReducer, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useReducer, useCallback, useMemo, startTransition } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 import {
@@ -1952,7 +1952,7 @@ export default function FactoryPlannerPage() {
                   type="text"
                   placeholder="Search buildings..."
                   value={state.searchQuery}
-                  onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', query: e.target.value })}
+                  onChange={(e) => startTransition(() => dispatch({ type: 'SET_SEARCH_QUERY', query: e.target.value }))}
                   className="w-full pl-8 pr-3 py-1.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 />
               </div>

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Wrench, BookOpen, Users, Grid3x3, TrendingUp, Zap, AlertCircle, MessageSquare } from 'lucide-react';
+import RelatedTools from '@/components/seo/RelatedTools';
 
 export const metadata: Metadata = {
   title: 'Factory Planner - Zero Sanity',
@@ -8,8 +9,24 @@ export const metadata: Metadata = {
 };
 
 export default function FactoryPlannerLandingPage() {
+  const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'AIC Factory Planner - Zero Sanity',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zerosanity.app/factory-planner',
+    description: 'Design production chains for manufacturing in Arknights: Endfield',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
   return (
     <div className="min-h-screen text-[var(--color-text-primary)]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }} />
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Header Section */}
         <div className="mb-12">
@@ -135,6 +152,14 @@ export default function FactoryPlannerLandingPage() {
             </div>
           </div>
         </div>
+
+        {/* Related Tools */}
+        <RelatedTools
+          tools={[
+            { name: 'Browse Blueprints', path: '/blueprints', desc: 'Community-shared factory layouts' },
+            { name: 'Recipes', path: '/recipes', desc: 'Complete recipe database' },
+          ]}
+        />
       </div>
     </div>
   );

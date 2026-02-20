@@ -1,0 +1,46 @@
+{
+  "kind": "singleType",
+  "collectionName": "default_tier_list",
+  "info": {
+    "singularName": "default-tier-list",
+    "pluralName": "default-tier-lists",
+    "displayName": "Default Tier List",
+    "description": "Official default tier list used as the base for user customization"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "tierSS": {
+      "type": "json",
+      "required": true
+    },
+    "tierS": {
+      "type": "json",
+      "required": true
+    },
+    "tierA": {
+      "type": "json",
+      "required": true
+    },
+    "tierB": {
+      "type": "json",
+      "required": true
+    },
+    "tierC": {
+      "type": "json",
+      "required": true
+    },
+    "tierD": {
+      "type": "json",
+      "required": true
+    },
+    "lastUpdated": {
+      "type": "datetime"
+    },
+    "description": {
+      "type": "richtext"
+    }
+  }
+}
