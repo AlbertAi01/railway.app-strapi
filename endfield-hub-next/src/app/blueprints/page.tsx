@@ -86,7 +86,7 @@ export default function Blueprints() {
         Complexity: newBp.complexity || 'Beginner',
         Status: 'pending',
         SubmittedAt: new Date().toISOString(),
-        OutputsPerMin: newBp.outputsPerMin || [],
+        OutputsData: newBp.outputsPerMin || [],
       });
       strapiSuccess = true;
     } catch (err) {

@@ -87,6 +87,9 @@
       "type": "integer"
     },
     "OutputsPerMin": {
+      "type": "decimal"
+    },
+    "OutputsData": {
       "type": "json"
     },
     "FacilityCount": {
