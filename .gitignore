@@ -117,6 +117,26 @@ yarn-error.log
 ############################
 
 coverage
+test-results
+test-screenshots
+screenshots
+playwright.config.ts
+*.test.js
+*.test.ts
+
+############################
+# Temp / analysis artifacts
+############################
+
+tmp/
+**/tmp/
+*_report.md
+*_analysis.md
+*_analysis_report.md
+investigate-*.js
+screenshot_*.js
+test-factory-planner.js
+endfield_character_*.json
 
 ############################
 # Strapi
