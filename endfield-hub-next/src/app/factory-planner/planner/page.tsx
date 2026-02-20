@@ -1589,7 +1589,7 @@ export default function FactoryPlannerPage() {
       </div>
 
       {/* ─── Toolbar Row: ALL tools in one row ─── */}
-      <div className="bg-[#111318] border-b border-[var(--color-border)] px-2 py-1 flex items-center gap-1 flex-shrink-0 overflow-x-auto">
+      <div className="bg-[#111318] border-b border-[var(--color-border)] px-2 py-1 flex items-center gap-1 flex-shrink-0 overflow-visible">
         {/* File menu */}
         <div className="relative" data-menu>
           <ToolbarButton onClick={() => dispatch({ type: 'TOGGLE_FILE_MENU' })} title="Save/load menu">
