@@ -64,25 +64,30 @@ const navigation: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuthStore();
 
-  // Auto-expand parent if a child route is active
-  useEffect(() => {
-    const autoExpand: Record<string, boolean> = {};
+  // Default all expandable sections to open; respect sessionStorage overrides
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {};
     navigation.forEach(item => {
-      if (item.children?.some(child => pathname === child.path || pathname.startsWith(child.path + '/'))) {
-        autoExpand[item.label] = true;
-      }
+      if (item.children) defaults[item.label] = true;
     });
-    if (Object.keys(autoExpand).length > 0) {
-      setExpanded(prev => ({ ...prev, ...autoExpand }));
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('zs-nav-expanded');
+        if (stored) return { ...defaults, ...JSON.parse(stored) };
+      } catch { /* ignore */ }
     }
-  }, [pathname]);
+    return defaults;
+  });
 
   const toggleExpand = (label: string) => {
-    setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
+    setExpanded(prev => {
+      const next = { ...prev, [label]: !prev[label] };
+      try { sessionStorage.setItem('zs-nav-expanded', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
   };
 
   const isActive = (path: string) => pathname === path;

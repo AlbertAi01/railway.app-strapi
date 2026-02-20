@@ -83,8 +83,8 @@ export const GEAR_SETS: GearSet[] = [
       { id: nextId(), name: 'Bonekrusha Poncho', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Will', value: '+87' }, { name: 'Strength', value: '+58' }, { name: 'Combo Skill DMG', value: '+20.7%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_body_01.png` },
       { id: nextId(), name: 'Bonekrusha Heavy Armor', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Agility', value: '+87' }, { name: 'Intellect', value: '+58' }, { name: 'Ultimate SP Gain', value: '+12.3%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_body_02.png` },
       { id: nextId(), name: 'Bonekrusha Poncho T1', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Will', value: '+87' }, { name: 'Agility', value: '+58' }, { name: 'Ultimate SP Gain', value: '+12.3%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_body_03.png` },
-      { id: nextId(), name: 'Bonekrusha Figurine', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Will', value: '+32' }, { name: 'Agility', value: '+21' }, { name: 'Normal Skill DMG', value: '+41.4%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_edc_01.png` },
-      { id: nextId(), name: 'Bonekrusha Figurine T1', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Will', value: '+32' }, { name: 'Intellect', value: '+21' }, { name: 'Combo Skill DMG', value: '+41.4%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_edc_02.png` },
+      { id: nextId(), name: 'Bonekrusha Figurine', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Will', value: '+32' }, { name: 'Agility', value: '+21' }, { name: 'Normal Skill DMG', value: '+41.4%' }], icon: '/equipment-icons/bonekrusha-figurine.png' },
+      { id: nextId(), name: 'Bonekrusha Figurine T1', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Will', value: '+32' }, { name: 'Intellect', value: '+21' }, { name: 'Combo Skill DMG', value: '+41.4%' }], icon: '/equipment-icons/bonekrusha-figurine-t1.png' },
       { id: nextId(), name: 'Bonekrusha Mask', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Agility', value: '+32' }, { name: 'Strength', value: '+21' }, { name: 'DMG to Broken', value: '+41.4%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_edc_03.png` },
       { id: nextId(), name: 'Bonekrusha Mask T1', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Agility', value: '+32' }, { name: 'Strength', value: '+21' }, { name: 'Crit Rate', value: '+10.3%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_edc_04.png` },
       { id: nextId(), name: 'Bonekrusha Heavy Armor T1', setName: 'Bonekrusha', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Agility', value: '+87' }, { name: 'Strength', value: '+58' }, { name: 'Combo Skill DMG', value: '+20.7%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_attri01_body_04.png` },
@@ -100,7 +100,7 @@ export const GEAR_SETS: GearSet[] = [
       { id: nextId(), name: 'Eternal Xiranite Power Core T1', setName: 'Eternal Xiranite', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Intellect', value: '+32' }, { name: 'Will', value: '+21' }, { name: 'Heal Output', value: '+20.7%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_usp02_edc_02.png` },
       { id: nextId(), name: 'Eternal Xiranite Power Core', setName: 'Eternal Xiranite', tier: 'T4', level: 70, def: 21, stats: [{ name: 'Intellect', value: '+32' }, { name: 'Strength', value: '+21' }, { name: 'Ultimate SP Gain', value: '+24.6%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_usp02_edc_03.png` },
       { id: nextId(), name: 'Eternal Xiranite Gloves', setName: 'Eternal Xiranite', tier: 'T4', level: 70, def: 42, stats: [{ name: 'Intellect', value: '+65' }, { name: 'Strength', value: '+43' }, { name: 'Ultimate SP Gain', value: '+20.5%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_usp02_hand_01.png` },
-      { id: nextId(), name: 'Eternal Xiranite Gloves T1', setName: 'Eternal Xiranite', tier: 'T4', level: 70, def: 42, stats: [{ name: 'Intellect', value: '+65' }, { name: 'Will', value: '+43' }, { name: 'Ultimate SP Gain', value: '+20.5%' }], icon: `${CDN}/itemicon/item_equip_t4_suit_usp02_hand_02.png` },
+      { id: nextId(), name: 'Eternal Xiranite Gloves T1', setName: 'Eternal Xiranite', tier: 'T4', level: 70, def: 42, stats: [{ name: 'Intellect', value: '+65' }, { name: 'Will', value: '+43' }, { name: 'Ultimate SP Gain', value: '+20.5%' }], icon: '/equipment-icons/eternal-xiranite-gloves-t1.png' },
       { id: nextId(), name: 'Eternal Xiranite Armor', setName: 'Eternal Xiranite', tier: 'T4', level: 70, def: 56, stats: [{ name: 'Will', value: '+87' }, { name: 'Intellect', value: '+58' }, { name: 'Arts Intensity', value: '+21' }], icon: `${CDN}/itemicon/item_equip_t4_suit_usp02_body_01.png` },
     ],
   },
@@ -404,26 +404,6 @@ export const STANDALONE_GEAR: GearPiece[] = [
   { id: nextId(), name: 'Basic Gauntlets', setName: null, tier: 'T0', level: 10, def: 6, stats: [{ name: 'Strength', value: '+11' }, { name: 'Agility', value: '+7' }, { name: 'HP', value: '+77.2%' }] },
   { id: nextId(), name: 'Basic Gloves', setName: null, tier: 'T0', level: 10, def: 6, stats: [{ name: 'Intellect', value: '+11' }, { name: 'Will', value: '+7' }, { name: 'HP', value: '+77.2%' }] },
 ];
-
-// CDN file patterns known to be missing (CDN returns HTML 200 instead of image)
-// These will be stripped so components fall back to placeholder icons
-const BROKEN_CDN_PATTERNS = [
-  'attri01_edc_01',  // Bonekrusha Figurine
-  'attri01_edc_02',  // Bonekrusha Figurine T1
-  'usp02_hand_02',   // Eternal Xiranite Gloves T1
-];
-
-function isIconBroken(icon?: string): boolean {
-  if (!icon) return false;
-  const filename = icon.split('/').pop() || '';
-  return BROKEN_CDN_PATTERNS.some(pattern => filename.includes(pattern));
-}
-
-// Strip broken icons so consumers get clean data
-GEAR_SETS.forEach(set => {
-  if (set.icon && isIconBroken(set.icon)) set.icon = undefined;
-  set.pieces.forEach(p => { if (isIconBroken(p.icon)) p.icon = undefined; });
-});
 
 // Helper: Get all gear pieces (from sets + standalone)
 export function getAllGearPieces(): GearPiece[] {
