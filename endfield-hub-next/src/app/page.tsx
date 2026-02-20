@@ -5,6 +5,7 @@ import {
   LayoutGrid, Map, Target, Trophy, Dice6, BookOpen, Sparkles, Crosshair
 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import EventCalendar from '@/components/home/EventCalendar';
 
 export const metadata: Metadata = {
   title: 'Zero Sanity - Arknights: Endfield Toolkit',
@@ -111,6 +112,11 @@ export default function Home() {
               </Link>
             );
           })}
+        </div>
+
+        {/* Event Calendar & Redeem Codes */}
+        <div className="mt-10">
+          <EventCalendar />
         </div>
 
         {/* FAQ */}

@@ -79,7 +79,7 @@ function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
   const degPerAffix = availableDeg / affixCount;
   const degPerSeg = (degPerAffix - 2 * segGap) / 3;
 
-  const paths: JSX.Element[] = [];
+  const paths: React.ReactElement[] = [];
   let segIndex = 0;
 
   for (let a = 0; a < affixCount; a++) {
