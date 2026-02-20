@@ -5,14 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Filter, Users } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
-import { CHARACTERS } from '@/lib/data';
+import { CHARACTERS, ELEMENTS, ROLES, WEAPON_TYPES } from '@/lib/data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/types/game';
 import type { Element, Role, WeaponType } from '@/types/game';
 import { CHARACTER_ICONS } from '@/lib/assets';
-
-const ELEMENTS: Element[] = ['Physical', 'Heat', 'Cryo', 'Electric', 'Nature'];
-const ROLES: Role[] = ['Guard', 'Defender', 'Supporter', 'Caster', 'Vanguard', 'Assault'];
-const WEAPON_TYPES: WeaponType[] = ['Greatsword', 'Polearm', 'Handcannon', 'Sword', 'Arts Unit'];
 
 export default function Characters() {
   const [search, setSearch] = useState('');

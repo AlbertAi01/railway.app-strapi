@@ -350,35 +350,3 @@ export const MATERIAL_ID_TO_NAME: Record<string, string> = {
   'item_weapon_sword_4': 'Sword Fragment IV',
 };
 
-// Helper to get character icon with fallback
-export function getCharacterIcon(name: string): string | null {
-  return CHARACTER_ICONS[name] || null;
-}
-
-export function getCharacterGacha(name: string): string | null {
-  return CHARACTER_GACHA[name] || null;
-}
-
-export function getCharacterBanner(name: string): string | null {
-  return CHARACTER_BANNERS[name] || null;
-}
-
-export function getCharacterSplash(name: string): string | null {
-  return CHARACTER_SPLASH[name] || null;
-}
-
-export function getWeaponIcon(name: string): string | null {
-  return WEAPON_ICONS[name] || null;
-}
-
-export function getEquipmentIcon(name: string): string | null {
-  return EQUIPMENT_ICONS[name] || null;
-}
-
-export function getMaterialIcon(name: string): string | null {
-  return MATERIAL_ICONS[name] || null;
-}
-
-export function getMaterialName(itemId: string): string {
-  return MATERIAL_ID_TO_NAME[itemId] || itemId;
-}

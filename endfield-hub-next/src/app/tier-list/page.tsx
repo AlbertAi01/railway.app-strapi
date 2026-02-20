@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
-import { CHARACTERS } from '@/lib/data';
+import { CHARACTERS, ELEMENTS, ROLES, WEAPON_TYPES } from '@/lib/data';
 import { CHARACTER_ICONS } from '@/lib/assets';
 import { Save, RotateCcw, LayoutGrid, Download, Share2, Link as LinkIcon, Search, X } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
@@ -28,12 +28,6 @@ const TIER_LABEL_COLORS: Record<string, string> = {
   C: '#3498DB',
   D: '#9B59B6',
 };
-
-// ──────────── Filter Configuration ────────────
-
-const ELEMENTS: Element[] = ['Physical', 'Heat', 'Cryo', 'Electric', 'Nature'];
-const ROLES: Role[] = ['Assault', 'Guard', 'Defender', 'Vanguard', 'Supporter', 'Caster'];
-const WEAPON_TYPES: WeaponType[] = ['Sword', 'Greatsword', 'Polearm', 'Handcannon', 'Arts Unit'];
 const RARITIES = [6, 5, 4];
 
 const ELEMENT_COLORS: Record<Element, string> = {

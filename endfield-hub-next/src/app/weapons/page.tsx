@@ -9,8 +9,7 @@ import type { WeaponData } from '@/data/weapons';
 import { RARITY_COLORS } from '@/types/game';
 import type { WeaponType } from '@/types/game';
 import { WEAPON_ICONS } from '@/lib/assets';
-
-const WEAPON_TYPES: WeaponType[] = ['Greatsword', 'Polearm', 'Handcannon', 'Sword', 'Arts Unit'];
+import { WEAPON_TYPES } from '@/lib/data';
 const RARITY_FILTERS = [6, 5, 4, 3] as const;
 
 function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
