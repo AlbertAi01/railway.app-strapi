@@ -11,6 +11,7 @@ import html2canvas from 'html2canvas';
 import { WEAPON_DATA, getAtkAtLevel, type WeaponData } from '@/data/weapons';
 import { WEAPON_ESSENCES } from '@/data/essences';
 import { GEAR_SETS, STANDALONE_GEAR, TIER_COLORS, type GearPiece, type GearSet } from '@/data/gear';
+import { OPERATOR_STATS, getOperatorStatsAtLevel, getTalentAttributeBonus } from '@/data/operator-stats';
 
 // ──────────── Theme Colors ────────────
 
@@ -55,17 +56,166 @@ interface EquipmentSlotState {
 
 // ──────────── Computed Stats ────────────
 
-function computeStats(char: Character, level: number, potential: number) {
-  const lvScale = level / 80;
-  const potScale = 1 + potential * 0.02;
-  const hp = Math.round((3200 + char.Strength * 18 + char.Will * 8) * lvScale * potScale);
-  const atk = Math.round((120 + char.Strength * 8 + char.Intellect * 6 + char.Agility * 3) * lvScale * potScale);
-  const def = Math.round((80 + char.Will * 4 + char.Strength * 3) * lvScale * potScale);
-  const critRate = 5.0 + char.Agility * 0.008;
-  const critDmg = 50.0 + char.Intellect * 0.02;
+/** Parse equipment stat strings like "+65", "+23.0%", "HP +5.8%" into { flat, percent, statKey } */
+function parseEquipStat(statName: string, statValue: string): { key: string; flat: number; percent: number } {
+  const name = statName.toLowerCase();
+  let key = 'unknown';
+  if (name.includes('hp')) key = 'hp';
+  else if (name.includes('atk') || name.includes('attack')) key = 'atk';
+  else if (name.includes('def') || name.includes('defense')) key = 'def';
+  else if (name.includes('str') || name.includes('strength')) key = 'str';
+  else if (name.includes('agi') || name.includes('agility')) key = 'agi';
+  else if (name.includes('int') || name.includes('intellect')) key = 'int';
+  else if (name.includes('wil') || name.includes('will')) key = 'wil';
+  else if (name.includes('crit rate') || name.includes('critical rate')) key = 'critRate';
+  else if (name.includes('crit dmg') || name.includes('critical dmg')) key = 'critDmg';
+
+  const numMatch = statValue.match(/[+-]?\d+\.?\d*/);
+  const num = numMatch ? parseFloat(numMatch[0]) : 0;
+  const isPercent = statValue.includes('%');
+
+  return { key, flat: isPercent ? 0 : num, percent: isPercent ? num : 0 };
+}
+
+/**
+ * Comprehensive stat calculator using real operator progression data.
+ *
+ * Stat sources aggregated:
+ * 1. Operator base stats interpolated to current level within elite tier
+ * 2. Talent attribute bonus (+10/+25/+40/+60 to main attribute based on breakthrough)
+ * 3. Weapon ATK (linear interpolation based on weapon level)
+ * 4. Weapon passive attribute bonus (flat STR/AGI/INT/WIL/Main Attribute)
+ * 5. Equipment flat stat bonuses (parsed from gear piece stat strings)
+ * 6. Equipment percentage bonuses applied after flat bonuses
+ */
+function computeStats(
+  char: Character,
+  level: number,
+  potential: number,
+  breakthrough?: number,
+  weaponData?: WeaponData | null,
+  weaponLevel?: number,
+  equippedPieces?: ({ piece: GearPiece; setName: string } | null)[]
+) {
+  // 1. Get real operator stats at level from progression data
+  const bt = breakthrough ?? Math.min(Math.floor(level / 20), 4);
+  const opStats = getOperatorStatsAtLevel(char.Name, level, bt);
+
+  let hp: number, atk: number, str: number, agi: number, int: number, wil: number;
+
+  if (opStats) {
+    hp = opStats.hp;
+    atk = opStats.atk;
+    str = opStats.str;
+    agi = opStats.agi;
+    int = opStats.int;
+    wil = opStats.wil;
+  } else {
+    // Fallback for operators not yet in OPERATOR_STATS (should not happen)
+    const lvScale = level / 80;
+    hp = Math.round(500 + (5000) * lvScale);
+    atk = Math.round(30 + (270) * lvScale);
+    str = char.Strength;
+    agi = char.Agility;
+    int = char.Intellect;
+    wil = char.Will;
+  }
+
+  // 2. Add talent attribute bonus (Forged/Skirmisher/Keen Mind/Stalwart)
+  const talentBonus = getTalentAttributeBonus(char.Name, bt);
+  if (talentBonus) {
+    switch (talentBonus.attribute) {
+      case 'str': str += talentBonus.bonus; break;
+      case 'agi': agi += talentBonus.bonus; break;
+      case 'int': int += talentBonus.bonus; break;
+      case 'wil': wil += talentBonus.bonus; break;
+    }
+  }
+
+  // 3. Add weapon ATK
+  let weaponAtk = 0;
+  if (weaponData && weaponLevel) {
+    weaponAtk = getAtkAtLevel(weaponData.BaseAtk, weaponData.MaxAtk, weaponLevel);
+    atk += weaponAtk;
+  }
+
+  // 4. Add weapon passive attribute bonus
+  if (weaponData?.PassiveAttribute) {
+    const pa = weaponData.PassiveAttribute;
+    if (!pa.isPercentage) {
+      const paKey = pa.key.toLowerCase();
+      if (paKey === 'str' || paKey === 'strength') str += pa.value;
+      else if (paKey === 'agi' || paKey === 'agility') agi += pa.value;
+      else if (paKey === 'int' || paKey === 'wisd' || paKey === 'intellect') int += pa.value;
+      else if (paKey === 'wil' || paKey === 'will') wil += pa.value;
+      else if (paKey === 'mainattr' || paKey === 'main attribute') {
+        // "Main Attribute" — applies to the operator's main attribute
+        const opData = OPERATOR_STATS[char.Name];
+        if (opData) {
+          switch (opData.mainAttribute) {
+            case 'str': str += pa.value; break;
+            case 'agi': agi += pa.value; break;
+            case 'int': int += pa.value; break;
+            case 'wil': wil += pa.value; break;
+          }
+        }
+      }
+    }
+  }
+
+  // 5. Parse and add equipment stat bonuses
+  let equipHpFlat = 0, equipAtkFlat = 0, equipDefFlat = 0;
+  let equipHpPct = 0, equipAtkPct = 0;
+  let equipCritRate = 0, equipCritDmg = 0;
+
+  if (equippedPieces) {
+    for (const ep of equippedPieces) {
+      if (!ep) continue;
+      for (const st of ep.piece.stats) {
+        const parsed = parseEquipStat(st.name, st.value);
+        switch (parsed.key) {
+          case 'hp':
+            equipHpFlat += parsed.flat;
+            equipHpPct += parsed.percent;
+            break;
+          case 'atk':
+            equipAtkFlat += parsed.flat;
+            equipAtkPct += parsed.percent;
+            break;
+          case 'def':
+            equipDefFlat += parsed.flat;
+            break;
+          case 'str': str += parsed.flat; break;
+          case 'agi': agi += parsed.flat; break;
+          case 'int': int += parsed.flat; break;
+          case 'wil': wil += parsed.flat; break;
+          case 'critRate': equipCritRate += parsed.percent || parsed.flat; break;
+          case 'critDmg': equipCritDmg += parsed.percent || parsed.flat; break;
+        }
+      }
+      // Add gear DEF (from piece.def)
+      if (ep.piece.def) {
+        equipDefFlat += ep.piece.def;
+      }
+    }
+  }
+
+  // Apply flat equipment bonuses
+  hp += equipHpFlat;
+  atk += equipAtkFlat;
+  const def = equipDefFlat;
+
+  // Apply percentage equipment bonuses
+  if (equipHpPct) hp = Math.round(hp * (1 + equipHpPct / 100));
+  if (equipAtkPct) atk = Math.round(atk * (1 + equipAtkPct / 100));
+
+  // Crit stats
+  const critRate = 5.0 + equipCritRate;
+  const critDmg = 50.0 + equipCritDmg;
+
   return {
     HP: hp, ATK: atk, DEF: def,
-    STR: char.Strength, AGI: char.Agility, INT: char.Intellect, WILL: char.Will,
+    STR: str, AGI: agi, INT: int, WILL: wil,
     'CRIT Rate': Math.round(critRate * 10) / 10,
     'CRIT DMG': Math.round(critDmg * 10) / 10,
   };
@@ -435,7 +585,6 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
   char: Character; weapon: Weapon | undefined;
   colorScheme: ColorScheme;
 }) {
-  const stats = computeStats(char, state.level, state.potential);
   const splashUrl = CHARACTER_SPLASH[char.Name];
   const gachaUrl = CHARACTER_GACHA[char.Name];
   const charIcon = CHARACTER_ICONS[char.Name];
@@ -455,6 +604,10 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
     const piece = findGearPieceByName(slot.pieceName);
     return piece ? { piece, setName: slot.setName, artifice: slot.artifice, label } : null;
   });
+
+  // Compute stats with all data sources: operator progression, talent, weapon, equipment
+  const stats = computeStats(char, state.level, state.potential, state.charBreakthrough, weaponData, state.weaponLevel, equippedPieces);
+
   const setCount: Record<string, number> = {};
   equippedPieces.forEach(ep => { if (ep && ep.setName) setCount[ep.setName] = (setCount[ep.setName] || 0) + 1; });
   const activeSets = Object.entries(setCount).filter(([, count]) => count >= 3);
