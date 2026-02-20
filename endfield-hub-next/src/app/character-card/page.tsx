@@ -1249,15 +1249,73 @@ export default function CharacterCardPage() {
           CARD PREVIEW — FULL WIDTH, MAXIMUM SIZE
           ════════════════════════════════════════════ */}
       <div className="w-full bg-black/40">
-        <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 pt-3 pb-3">
-          {/* Compact header inline with export actions */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-0.5 h-5" style={{ background: 'var(--color-accent)' }} />
-              <h1 className="text-sm font-black uppercase tracking-wider font-tactical text-[var(--color-text-primary)]">Operator Card</h1>
-              <span className="text-[10px] text-[var(--color-text-muted)] font-mono hidden sm:inline">RIOS-CARD-001</span>
+        <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 xl:pr-16 pt-3 pb-3">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-0.5 h-5" style={{ background: 'var(--color-accent)' }} />
+            <h1 className="text-sm font-black uppercase tracking-wider font-tactical text-[var(--color-text-primary)]">Operator Card</h1>
+            <span className="text-[10px] text-[var(--color-text-muted)] font-mono hidden sm:inline">RIOS-CARD-001</span>
+          </div>
+
+          {/* Card preview with floating action bar */}
+          <div className="relative">
+            {/* Card */}
+            <div ref={previewRef} className="border border-[var(--color-border)]/50 overflow-hidden" style={{ borderRadius: 2, height: 675 * previewScale }}>
+              <div style={{
+                width: 1200, height: 675,
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'top left',
+              }}>
+                <div ref={cardRef}>
+                  <CardCanvas state={state} theme={theme} char={char} weapon={weapon} colorScheme={state.colorScheme} />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
+
+            {/* Floating vertical action bar — right side */}
+            <div className="absolute right-0 top-0 translate-x-[calc(100%+8px)] hidden xl:flex flex-col gap-1.5">
+              <button onClick={() => exportCard('png')} disabled={exporting}
+                className="w-10 h-10 text-[9px] font-bold uppercase tracking-wider bg-[var(--color-accent)] text-black hover:brightness-110 transition-all disabled:opacity-50 flex flex-col items-center justify-center gap-0.5" title="Download PNG">
+                <Download size={14} /><span>PNG</span>
+              </button>
+              <button onClick={() => exportCard('jpg')} disabled={exporting}
+                className="w-10 h-10 text-[9px] font-bold uppercase tracking-wider border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-all disabled:opacity-50 flex flex-col items-center justify-center gap-0.5" title="Download JPG">
+                <Download size={14} /><span>JPG</span>
+              </button>
+              <div className="h-px bg-[var(--color-border)] mx-1" />
+              <button onClick={copyToClipboard} disabled={exporting}
+                className="w-10 h-10 text-[9px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[var(--color-text-secondary)] transition-all disabled:opacity-50 flex flex-col items-center justify-center gap-0.5" title="Copy to clipboard">
+                <Copy size={14} /><span>Copy</span>
+              </button>
+              <button onClick={copyShareLink}
+                className="w-10 h-10 text-[9px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[var(--color-text-secondary)] transition-all flex flex-col items-center justify-center gap-0.5" title="Copy share link">
+                {copied ? <Check size={14} /> : <Link2 size={14} />}
+                <span>{copied ? 'OK' : 'Link'}</span>
+              </button>
+              <div className="h-px bg-[var(--color-border)] mx-1" />
+              <button onClick={() => {
+                const text = `Check out my ${char.Name} build on Zero Sanity!`;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeState(state)}`;
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=550,height=420');
+              }} className="w-10 h-10 border border-[var(--color-border)] text-white hover:border-[#1DA1F2] hover:text-[#1DA1F2] transition-all flex items-center justify-center" title="Share on X">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </button>
+              <button onClick={() => {
+                const text = `Check out my ${char.Name} build!`;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeState(state)}`;
+                window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(text)}`, '_blank');
+              }} className="w-10 h-10 border border-[var(--color-border)] text-white hover:border-[#FF4500] hover:text-[#FF4500] transition-all flex items-center justify-center" title="Share on Reddit">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm6.066 13.27c.068.378.069.77 0 1.149-.607 3.44-4.268 6.08-8.066 6.08s-7.46-2.64-8.066-6.08a3.012 3.012 0 010-1.15C2.49 10.41 3.88 8.55 6.27 7.67a3.27 3.27 0 012.263.129 11.653 11.653 0 013.463-1.15l1.37-4.4a.501.501 0 01.595-.337l3.2.72a1.78 1.78 0 113.32-.078l-3.52-.79-1.25 4a11.565 11.565 0 013.106 1.05 3.27 3.27 0 012.257-.13c2.39.88 3.78 2.74 4.34 5.6zM8 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm8 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-8.25 2.75a.75.75 0 011.06 0c1.12 1.12 3.26 1.12 4.38 0a.75.75 0 111.06 1.06c-1.71 1.71-4.79 1.71-6.5 0a.75.75 0 010-1.06z"/></svg>
+              </button>
+              <div className="h-px bg-[var(--color-border)] mx-1" />
+              <button onClick={() => setState(defaultShowcaseState())}
+                className="w-10 h-10 text-[9px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] hover:text-white transition-colors flex flex-col items-center justify-center gap-0.5 border border-[var(--color-border)] hover:border-[var(--color-text-secondary)]" title="New card">
+                <FilePlus2 size={14} /><span>New</span>
+              </button>
+            </div>
+
+            {/* Horizontal action bar — shown below card on screens < xl */}
+            <div className="flex xl:hidden items-center justify-center gap-1.5 mt-2 flex-wrap">
               <button onClick={() => exportCard('png')} disabled={exporting}
                 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--color-accent)] text-black hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-1">
                 <Download size={11} /> PNG
@@ -1274,38 +1332,24 @@ export default function CharacterCardPage() {
                 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[var(--color-text-secondary)] transition-all flex items-center gap-1">
                 {copied ? <><Check size={11} /> Copied!</> : <><Link2 size={11} /> Share</>}
               </button>
-              <div className="w-px h-5 bg-[var(--color-border)] mx-1 hidden sm:block" />
               <button onClick={() => {
                 const text = `Check out my ${char.Name} build on Zero Sanity!`;
                 const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeState(state)}`;
                 window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=550,height=420');
-              }} className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[#1DA1F2] hover:text-[#1DA1F2] transition-all flex items-center gap-1" title="Share on X/Twitter">
+              }} className="px-2 py-1.5 border border-[var(--color-border)] text-white hover:border-[#1DA1F2] hover:text-[#1DA1F2] transition-all flex items-center justify-center" title="Share on X">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </button>
               <button onClick={() => {
                 const text = `Check out my ${char.Name} build!`;
                 const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeState(state)}`;
                 window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(text)}`, '_blank');
-              }} className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--color-border)] text-white hover:border-[#FF4500] hover:text-[#FF4500] transition-all flex items-center gap-1" title="Share on Reddit">
+              }} className="px-2 py-1.5 border border-[var(--color-border)] text-white hover:border-[#FF4500] hover:text-[#FF4500] transition-all flex items-center justify-center" title="Share on Reddit">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm6.066 13.27c.068.378.069.77 0 1.149-.607 3.44-4.268 6.08-8.066 6.08s-7.46-2.64-8.066-6.08a3.012 3.012 0 010-1.15C2.49 10.41 3.88 8.55 6.27 7.67a3.27 3.27 0 012.263.129 11.653 11.653 0 013.463-1.15l1.37-4.4a.501.501 0 01.595-.337l3.2.72a1.78 1.78 0 113.32-.078l-3.52-.79-1.25 4a11.565 11.565 0 013.106 1.05 3.27 3.27 0 012.257-.13c2.39.88 3.78 2.74 4.34 5.6zM8 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm8 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-8.25 2.75a.75.75 0 011.06 0c1.12 1.12 3.26 1.12 4.38 0a.75.75 0 111.06 1.06c-1.71 1.71-4.79 1.71-6.5 0a.75.75 0 010-1.06z"/></svg>
               </button>
               <button onClick={() => setState(defaultShowcaseState())}
                 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] hover:text-white transition-colors flex items-center gap-1 border border-[var(--color-border)] hover:border-[var(--color-text-secondary)]">
                 <FilePlus2 size={11} /> New
               </button>
-            </div>
-          </div>
-
-          {/* Full-width card preview */}
-          <div ref={previewRef} className="border border-[var(--color-border)]/50 overflow-hidden" style={{ borderRadius: 2, height: 675 * previewScale }}>
-            <div style={{
-              width: 1200, height: 675,
-              transform: `scale(${previewScale})`,
-              transformOrigin: 'top left',
-            }}>
-              <div ref={cardRef}>
-                <CardCanvas state={state} theme={theme} char={char} weapon={weapon} colorScheme={state.colorScheme} />
-              </div>
             </div>
           </div>
         </div>
