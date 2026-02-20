@@ -35,6 +35,7 @@ export default function Blueprints() {
   const [submitImageUrl, setSubmitImageUrl] = useState('');
   const [submitProductName, setSubmitProductName] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [strapiSynced, setStrapiSynced] = useState(false);
 
   const handleSubmitBlueprint = async () => {
     if (!submitTitle.trim() || !submitImport.trim()) return;
@@ -93,10 +94,11 @@ export default function Blueprints() {
     }
 
     // Clear form and show success
+    setStrapiSynced(strapiSuccess);
     setSubmitTitle(''); setSubmitDesc(''); setSubmitImport('');
     setSubmitTags(''); setSubmitOperators(''); setSubmitImageUrl(''); setSubmitProductName('');
     setSubmitStatus('success');
-    setTimeout(() => { setSubmitStatus('idle'); setShowCreate(false); setShowMySubmissions(true); }, 1500);
+    setTimeout(() => { setSubmitStatus('idle'); setStrapiSynced(false); setShowCreate(false); setShowMySubmissions(true); }, 2500);
   };
 
   const handleDeleteSubmission = (id: number) => {
@@ -363,7 +365,9 @@ export default function Blueprints() {
                 Cancel
               </button>
               {submitStatus === 'success' && (
-                <span className="text-xs font-mono text-green-400">Blueprint submitted for review!</span>
+                <span className={`text-xs font-mono ${strapiSynced ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {strapiSynced ? 'Blueprint submitted for review!' : 'Saved locally (server sync pending)'}
+                </span>
               )}
             </div>
           </div>

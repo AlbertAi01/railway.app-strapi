@@ -126,6 +126,12 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'endfield-hub-auth',
       partialize: (state) => ({ token: state.token, user: state.user }),
+      onRehydrateStorage: () => (state) => {
+        // Re-inject the persisted auth token into the axios instance on page load
+        if (state?.token) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+        }
+      },
     }
   )
 );
