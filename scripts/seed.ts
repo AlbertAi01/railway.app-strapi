@@ -40,7 +40,7 @@ async function apiPost(path: string, data: Record<string, unknown>): Promise<any
     body: JSON.stringify({ data: { ...data, publishedAt: new Date().toISOString() } }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err: any = await res.json().catch(() => ({}));
     throw new Error(err?.error?.message || `HTTP ${res.status}`);
   }
   return res.json();
