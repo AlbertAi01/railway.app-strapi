@@ -1718,16 +1718,28 @@ export default function CharacterCardPage() {
                         <span className="text-[10px] font-mono text-[var(--color-accent)]">+{slot.artifice}/{maxArt}</span>
                       </div>
 
-                      {/* Hex indicator + affix breakdown */}
+                      {/* Hex indicator + affix breakdown with real stat names */}
                       <div className="flex items-center gap-3">
                         <ArtificeHexagon level={slot.artifice} maxLevel={maxArt} size={56} accentColor="var(--color-accent)" />
                         <div className="flex-1 space-y-1">
                           {Array.from({ length: affixCount }, (_, affixIdx) => {
                             const affixBase = affixIdx * 3;
                             const affixFilled = Math.max(0, Math.min(3, slot.artifice - affixBase));
+                            // Use actual stat name from gear piece data
+                            const affixName = piece?.stats[affixIdx]?.name || `A${affixIdx + 1}`;
+                            // Abbreviate long stat names for the compact label
+                            const shortName = affixName
+                              .replace('Strength', 'STR').replace('Agility', 'AGI')
+                              .replace('Intellect', 'INT').replace('Will', 'WIL')
+                              .replace('Arts Intensity', 'Arts')
+                              .replace('Physical DMG', 'Phys%').replace('Combo Skill DMG', 'Cmb%')
+                              .replace('Normal Skill DMG', 'Nrm%').replace('Ultimate SP Gain', 'UltSP')
+                              .replace('Battle Skill DMG', 'Btl%').replace('Crit Rate', 'CR%')
+                              .replace('Crit DMG', 'CD%').replace('DMG to Broken', 'Brk%')
+                              .replace('HP', 'HP').replace('ATK', 'ATK').replace('DEF', 'DEF');
                             return (
                               <div key={affixIdx} className="flex items-center gap-1.5">
-                                <span className="text-[9px] text-[var(--color-text-muted)] font-mono w-8 flex-shrink-0">A{affixIdx + 1}</span>
+                                <span className="text-[9px] text-[var(--color-text-muted)] font-mono w-10 flex-shrink-0 truncate" title={affixName}>{shortName}</span>
                                 <div className="flex gap-0.5 flex-1">
                                   {[0, 1, 2].map(seg => (
                                     <button key={seg}
@@ -1740,7 +1752,7 @@ export default function CharacterCardPage() {
                                         backgroundColor: seg < affixFilled ? 'var(--color-accent)' : 'var(--color-surface-2)',
                                         border: `1px solid ${seg < affixFilled ? 'var(--color-accent)' : 'var(--color-border)'}`,
                                       }}
-                                      title={`Affix ${affixIdx + 1}, upgrade ${seg + 1}`}
+                                      title={`${affixName} upgrade ${seg + 1}/3`}
                                     />
                                   ))}
                                 </div>
