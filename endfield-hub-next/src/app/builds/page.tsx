@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -30,10 +30,13 @@ import { useAuthStore } from '@/store/authStore';
 
 type ViewMode = 'browse' | 'create' | 'my-builds';
 
-export default function BuildsPage() {
+function BuildsPageContent() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
-  const [viewMode, setViewMode] = useState<ViewMode>('browse');
+  const initialView = searchParams.get('view') as ViewMode | null;
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    initialView && ['browse', 'create', 'my-builds'].includes(initialView) ? initialView : 'browse'
+  );
   const [browseFilter, setBrowseFilter] = useState<BrowseFilter>('popular');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('char') || '');
   const [filterTag, setFilterTag] = useState('');
@@ -1281,6 +1284,14 @@ export default function BuildsPage() {
         </PickerModal>
       )}
     </div>
+  );
+}
+
+export default function BuildsPage() {
+  return (
+    <Suspense>
+      <BuildsPageContent />
+    </Suspense>
   );
 }
 

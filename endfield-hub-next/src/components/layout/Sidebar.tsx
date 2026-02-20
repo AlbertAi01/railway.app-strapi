@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Home, Users, Sword, Shield, BookOpen, Factory, Map,
   Trophy, Target, Dice6, LayoutGrid, Star,
   FlaskConical, Wrench, Sparkles, ChevronDown, ChevronRight,
-  Menu, X, LogIn, User, Hammer, Puzzle
+  Menu, X, LogIn, User, Hammer, Puzzle, Bookmark, Plus
 } from 'lucide-react';
 import ZeroSanityLogo from '@/components/ui/ZeroSanityLogo';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 interface NavItem {
@@ -43,9 +43,11 @@ const navigation: NavItem[] = [
   // ── BUILDS: Community builds, tier lists, team planning ──
   // Grouped because they all involve sharing/comparing operator configurations.
   {
-    label: 'Builds', path: '/builds', icon: <Hammer size={18} />, isNew: true,
+    label: 'Builds', path: '/builds', icon: <Hammer size={18} />,
     children: [
       { label: 'Browse Builds', path: '/builds', icon: <Hammer size={16} /> },
+      { label: 'My Builds', path: '/builds?view=my-builds', icon: <Bookmark size={16} /> },
+      { label: 'Create Build', path: '/builds?view=create', icon: <Plus size={16} /> },
       { label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={16} /> },
       { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={16} /> },
     ],
@@ -56,6 +58,7 @@ const navigation: NavItem[] = [
     label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />,
     children: [
       { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
+      { label: 'My Blueprints', path: '/blueprints?view=my', icon: <Bookmark size={16} /> },
       { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={16} /> },
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
     ],
@@ -77,10 +80,14 @@ const navigation: NavItem[] = [
   { label: 'Summon Simulator', path: '/summon-simulator', icon: <Dice6 size={18} />, section: 'TRACKER' },
 ];
 
-export default function Sidebar() {
+function SidebarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuthStore();
+
+  // Build full URL path for matching nav items with query params
+  const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
 
   // Default all expandable sections to open; respect sessionStorage overrides
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -105,13 +112,21 @@ export default function Sidebar() {
     });
   };
 
-  const isActive = (path: string) => pathname === path;
+  // Match nav paths — supports both plain paths and paths with query params
+  const isActive = (path: string) => {
+    if (path.includes('?')) return currentUrl === path;
+    return pathname === path && !searchParams.toString();
+  };
 
   // Check if any child path matches the current route (for parent highlighting)
   const isParentActive = (item: NavItem) => {
-    if (pathname === item.path || pathname.startsWith(item.path + '/')) return true;
+    const itemPath = item.path.split('?')[0];
+    if (pathname === itemPath || pathname.startsWith(itemPath + '/')) return true;
     if (item.children) {
-      return item.children.some(c => pathname === c.path || pathname.startsWith(c.path + '/'));
+      return item.children.some(c => {
+        const cPath = c.path.split('?')[0];
+        return pathname === cPath || pathname.startsWith(cPath + '/');
+      });
     }
     return false;
   };
@@ -280,5 +295,13 @@ export default function Sidebar() {
         </div>
       </aside>
     </>
+  );
+}
+
+export default function Sidebar() {
+  return (
+    <Suspense>
+      <SidebarContent />
+    </Suspense>
   );
 }

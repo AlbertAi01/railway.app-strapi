@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, ThumbsUp, Copy, Check, Plus, LogIn, LayoutGrid, ImageOff, Filter, Zap, Package, AlertTriangle, Clock, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
@@ -9,7 +10,8 @@ import { fetchBlueprints, createBlueprint } from '@/lib/api';
 import { SCRAPED_BLUEPRINTS, getUserBlueprints, saveUserBlueprint, removeUserBlueprint, getBlueprintUpvoteCount, type BlueprintEntry, type Category, type Complexity } from '@/data/blueprints';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 
-export default function Blueprints() {
+function BlueprintsContent() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
@@ -17,7 +19,7 @@ export default function Blueprints() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [showMySubmissions, setShowMySubmissions] = useState(false);
+  const [showMySubmissions, setShowMySubmissions] = useState(searchParams.get('view') === 'my');
   const [blueprints, setBlueprints] = useState<BlueprintEntry[]>(SCRAPED_BLUEPRINTS);
   const [userSubmissions, setUserSubmissions] = useState<BlueprintEntry[]>([]);
   const { user } = useAuthStore();
@@ -609,5 +611,13 @@ export default function Blueprints() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function Blueprints() {
+  return (
+    <Suspense>
+      <BlueprintsContent />
+    </Suspense>
   );
 }

@@ -2,18 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   Users, Sword, Shield, Star, FlaskConical, Wrench, Factory,
-  LayoutGrid, Map, Target, Trophy, Dice6, BookOpen, Sparkles, Crosshair
+  LayoutGrid, Map, Target, Trophy, Dice6, BookOpen, Sparkles, Crosshair, Puzzle, Hammer
 } from 'lucide-react';
 import RIOSHeader from '@/components/ui/RIOSHeader';
 import EventCalendar from '@/components/home/EventCalendar';
 
 export const metadata: Metadata = {
   title: 'Zero Sanity - Arknights: Endfield Toolkit',
-  description: 'Free Arknights: Endfield tools, database, and guides. Factory blueprints, character builds, tier lists, headhunt tracker, and more.',
+  description: 'Free Arknights: Endfield tools, database, and guides. Factory blueprints, community builds, team builder, tier lists, headhunt tracker, and more.',
   alternates: { canonical: '/' },
 };
 
-const tools = [
+const tools: { name: string; desc: string; path: string; icon: string; color: string; isNew?: boolean }[] = [
   { name: 'Operator Database', desc: 'Browse all 23 operators with stats, skills, and combat data', path: '/characters', icon: 'Users', color: '#E8A624' },
   { name: 'Weapons Arsenal', desc: 'Complete weapon database with stats and passive effects', path: '/weapons', icon: 'Sword', color: '#FF6B35' },
   { name: 'Equipment Systems', desc: 'Equipment sets with bonuses and tactical recommendations', path: '/equipment', icon: 'Shield', color: '#00BFFF' },
@@ -22,21 +22,23 @@ const tools = [
   { name: 'Gear Analysis', desc: 'Calculate optimal equipment substats and probabilities', path: '/gear-artificing', icon: 'Wrench', color: '#69F0AE' },
   { name: 'AIC Factory Planner', desc: 'Design production chains for manufacturing', path: '/factory-planner', icon: 'Factory', color: '#FF6B35' },
   { name: 'Blueprint Registry', desc: 'Browse and share community factory blueprints', path: '/blueprints', icon: 'LayoutGrid', color: '#00BFFF' },
+  { name: 'Community Builds', desc: 'Browse, create, and share operator build guides', path: '/builds', icon: 'Hammer', color: '#FF8A65' },
+  { name: 'Team Builder', desc: 'Plan and optimize squad compositions', path: '/team-builder', icon: 'Puzzle', color: '#CE93D8' },
   { name: 'Combat Assessment', desc: 'Create and share operator tier rankings', path: '/tier-list', icon: 'LayoutGrid', color: '#E8A624' },
-  { name: 'Operator Card', desc: 'Generate tactical operator showcase cards', path: '/character-card', icon: 'Sparkles', color: '#F5A623', isNew: true },
+  { name: 'Operator Card', desc: 'Generate tactical operator showcase cards', path: '/character-card', icon: 'Sparkles', color: '#F5A623' },
   { name: 'Tactical Map', desc: 'Explore Valley IV and Wuling with markers', path: '/map', icon: 'Map', color: '#69F0AE' },
-  { name: 'Headhunt Operations', desc: 'Track recruitment attempts and pity counter', path: '/headhunt-tracker', icon: 'Target', color: '#FF6B35', isNew: true },
+  { name: 'Headhunt Operations', desc: 'Track recruitment attempts and pity counter', path: '/headhunt-tracker', icon: 'Target', color: '#FF6B35' },
   { name: 'Achievement Registry', desc: 'Track mission completion and rewards', path: '/achievements', icon: 'Trophy', color: '#FFD700' },
   { name: 'Recruitment Simulator', desc: 'Simulate headhunt operations with verified rates', path: '/summon-simulator', icon: 'Dice6', color: '#00BFFF' },
   { name: 'Intel Briefings', desc: 'In-depth verified guides for all operations', path: '/guides', icon: 'BookOpen', color: '#69F0AE' },
 ];
 
 const iconMap: Record<string, React.FC<{ size?: number }>> = {
-  Users, Sword, Shield, Star, FlaskConical, Wrench, Factory, LayoutGrid, Map, Target, Trophy, Dice6, BookOpen, Sparkles,
+  Users, Sword, Shield, Star, FlaskConical, Wrench, Factory, LayoutGrid, Map, Target, Trophy, Dice6, BookOpen, Sparkles, Puzzle, Hammer,
 };
 
 const faqItems = [
-  { q: 'What is Zero Sanity?', a: 'Zero Sanity is a free community toolkit for Arknights: Endfield, offering character databases, factory blueprint sharing, tier list builders, gacha trackers, and 15+ other tools.' },
+  { q: 'What is Zero Sanity?', a: 'Zero Sanity is a free community toolkit for Arknights: Endfield, offering character databases, factory blueprint sharing, community builds, tier list builders, gacha trackers, and 17+ other tools.' },
   { q: 'How do I use Arknights: Endfield blueprints?', a: 'Browse our community blueprint database, find a factory layout you like, copy the EFO import code, and paste it in-game in the AIC factory build menu.' },
   { q: 'Is Zero Sanity free?', a: 'Yes, all tools on Zero Sanity are completely free. You can optionally create an account to sync your data across devices.' },
   { q: 'What characters are in Arknights: Endfield?', a: 'Arknights: Endfield features 23 playable characters across 5 elements (Physical, Heat, Cryo, Electric, Nature) and 6 roles (Guard, Defender, Supporter, Caster, Vanguard, Assault).' },
@@ -48,7 +50,7 @@ export default function Home() {
     '@type': 'WebSite',
     name: 'Zero Sanity',
     url: 'https://zerosanity.app',
-    description: 'Comprehensive Arknights: Endfield community toolkit with 15+ free tools.',
+    description: 'Comprehensive Arknights: Endfield community toolkit with 17+ free tools.',
     potentialAction: {
       '@type': 'SearchAction',
       target: 'https://zerosanity.app/characters?q={search_term_string}',
@@ -84,7 +86,7 @@ export default function Home() {
         <div className="flex flex-wrap gap-3 mb-10">
           <span className="terminal-text text-[var(--color-originium)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] clip-corner-tl">v0.1</span>
           <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">23 OPERATORS</span>
-          <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">15+ MODULES</span>
+          <span className="terminal-text text-[var(--color-text-secondary)] px-4 py-1.5 border border-[var(--color-border)] bg-[var(--color-surface)]">17 MODULES</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
