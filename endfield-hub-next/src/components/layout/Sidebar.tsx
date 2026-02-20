@@ -9,7 +9,7 @@ import {
   Menu, X, LogIn, User, Hammer, Puzzle
 } from 'lucide-react';
 import ZeroSanityLogo from '@/components/ui/ZeroSanityLogo';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 interface NavItem {
@@ -18,50 +18,48 @@ interface NavItem {
   icon: React.ReactNode;
   children?: { label: string; path: string; icon: React.ReactNode }[];
   isNew?: boolean;
+  section?: string;
 }
 
 const navigation: NavItem[] = [
-  { label: 'Home', path: '/', icon: <Home size={20} /> },
+  { label: 'Home', path: '/', icon: <Home size={18} />, section: 'MAIN' },
+  { label: 'Operator Card', path: '/character-card', icon: <Sparkles size={18} />, isNew: true, section: 'MAIN' },
+  { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={18} />, section: 'MAIN' },
   {
-    label: 'Operators', path: '/characters', icon: <Users size={20} />,
+    label: 'Operators', path: '/characters', icon: <Users size={18} />, section: 'DATABASE',
     children: [
-      { label: 'All Operators', path: '/characters', icon: <Users size={18} /> },
-      { label: 'Weapons', path: '/weapons', icon: <Sword size={18} /> },
-      { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={18} /> },
-      { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={18} /> },
-      { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={18} /> },
-      { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={18} /> },
+      { label: 'All Operators', path: '/characters', icon: <Users size={16} /> },
+      { label: 'Weapons', path: '/weapons', icon: <Sword size={16} /> },
+      { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={16} /> },
     ],
   },
-  { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={20} /> },
   {
-    label: 'Operator Card', path: '/character-card', icon: <Sparkles size={20} />,
-    isNew: true,
-  },
-  {
-    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={20} />,
+    label: 'Build Tools', path: '/ascension-planner', icon: <Star size={18} />, section: 'DATABASE',
     children: [
-      { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={18} /> },
-      { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={18} /> },
-      { label: 'Recipes', path: '/recipes', icon: <BookOpen size={18} /> },
+      { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={16} /> },
+      { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={16} /> },
+      { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={16} /> },
     ],
   },
-  { label: 'Interactive Map (BUGGY)', path: '/map', icon: <Map size={20} /> },
   {
-    label: 'Headhunt Ops', path: '/headhunt-tracker', icon: <Target size={20} />,
-    isNew: true,
+    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />, section: 'LOGISTICS',
+    children: [
+      { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
+      { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={16} /> },
+      { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
+    ],
   },
-  { label: 'Achievements', path: '/achievements', icon: <Trophy size={20} /> },
-  { label: 'Recruitment Sim', path: '/summon-simulator', icon: <Dice6 size={20} /> },
+  { label: 'Interactive Map', path: '/map', icon: <Map size={18} />, section: 'LOGISTICS' },
+  { label: 'Headhunt Ops', path: '/headhunt-tracker', icon: <Target size={18} />, isNew: true, section: 'TOOLS' },
+  { label: 'Recruitment Sim', path: '/summon-simulator', icon: <Dice6 size={18} />, section: 'TOOLS' },
+  { label: 'Achievements', path: '/achievements', icon: <Trophy size={18} />, section: 'TOOLS' },
   {
-    label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={20} />,
-    isNew: true,
+    label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={18} />, isNew: true, section: 'COMMUNITY',
   },
   {
-    label: 'Community Builds', path: '/builds', icon: <Hammer size={20} />,
-    isNew: true,
+    label: 'Community Builds', path: '/builds', icon: <Hammer size={18} />, isNew: true, section: 'COMMUNITY',
   },
-  { label: 'Intel Briefings', path: '/guides', icon: <BookOpen size={20} /> },
+  { label: 'Intel Briefings', path: '/guides', icon: <BookOpen size={18} />, section: 'COMMUNITY' },
 ];
 
 export default function Sidebar() {
@@ -70,70 +68,107 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuthStore();
 
+  // Auto-expand parent if a child route is active
+  useEffect(() => {
+    const autoExpand: Record<string, boolean> = {};
+    navigation.forEach(item => {
+      if (item.children?.some(child => pathname === child.path || pathname.startsWith(child.path + '/'))) {
+        autoExpand[item.label] = true;
+      }
+    });
+    if (Object.keys(autoExpand).length > 0) {
+      setExpanded(prev => ({ ...prev, ...autoExpand }));
+    }
+  }, [pathname]);
+
   const toggleExpand = (label: string) => {
     setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
   const isActive = (path: string) => pathname === path;
 
+  // Group items by section
+  const sections: { label: string; items: NavItem[] }[] = [];
+  let currentSection = '';
+  navigation.forEach(item => {
+    if (item.section && item.section !== currentSection) {
+      currentSection = item.section;
+      sections.push({ label: currentSection, items: [] });
+    }
+    sections[sections.length - 1]?.items.push(item);
+  });
+
   const renderNav = () => (
-    <nav className="flex flex-col gap-1 px-3">
-      {navigation.map((item) => (
-        <div key={item.label}>
-          {item.children ? (
-            <>
-              <button
-                onClick={() => toggleExpand(item.label)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 clip-corner-tl text-[14px] font-semibold transition-colors hover:bg-[var(--color-surface-2)] border-l-2 ${
-                  pathname.startsWith(item.path)
-                    ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)] border-[var(--color-accent)]'
-                    : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]'
-                }`}
-              >
-                {item.icon}
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.isNew && (
-                  <span className="text-[10px] bg-[#FFE500] text-black px-1.5 py-0.5 font-bold clip-corner-tl">NEW</span>
-                )}
-                {expanded[item.label] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              </button>
-              {expanded[item.label] && (
-                <div className="ml-5 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-1">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.path}
-                      href={child.path}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2 text-[13px] font-medium transition-colors hover:bg-[var(--color-surface-2)] ${
-                        isActive(child.path)
-                          ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)]'
-                          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                      }`}
-                    >
-                      {child.icon}
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <Link
-              href={item.path}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 clip-corner-tl text-[14px] font-semibold transition-colors hover:bg-[var(--color-surface-2)] border-l-2 ${
-                isActive(item.path)
-                  ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)] border-[var(--color-accent)]'
-                  : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]'
-              }`}
-            >
-              {item.icon}
-              <span className="flex-1">{item.label}</span>
-              {item.isNew && (
-                <span className="text-[10px] bg-[#FFE500] text-black px-1.5 py-0.5 font-bold clip-corner-tl">NEW</span>
-              )}
-            </Link>
+    <nav className="flex flex-col gap-0.5 px-2">
+      {sections.map((section, si) => (
+        <div key={section.label}>
+          {si > 0 && (
+            <div className="flex items-center gap-2 px-3 pt-4 pb-1.5">
+              <div className="h-px flex-1 bg-[var(--color-border)]" />
+              <span className="text-[10px] font-bold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">{section.label}</span>
+              <div className="h-px flex-1 bg-[var(--color-border)]" />
+            </div>
           )}
+          {section.items.map((item) => (
+            <div key={item.label}>
+              {item.children ? (
+                <>
+                  <button
+                    onClick={() => toggleExpand(item.label)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold transition-all rounded-sm ${
+                      pathname.startsWith(item.path)
+                        ? 'text-[var(--color-accent)] bg-[var(--color-accent)]/8'
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]'
+                    }`}
+                  >
+                    <span className={`flex-shrink-0 ${pathname.startsWith(item.path) ? 'text-[var(--color-accent)]' : ''}`}>{item.icon}</span>
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {item.isNew && (
+                      <span className="text-[9px] bg-[var(--color-accent)] text-black px-1.5 py-0.5 font-bold leading-none">NEW</span>
+                    )}
+                    <span className="text-[var(--color-text-muted)]">
+                      {expanded[item.label] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </span>
+                  </button>
+                  {expanded[item.label] && (
+                    <div className="ml-4 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-2 mt-0.5 mb-1">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.path}
+                          href={child.path}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] font-medium transition-all rounded-sm ${
+                            isActive(child.path)
+                              ? 'text-[var(--color-accent)] bg-[var(--color-accent)]/8'
+                              : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]'
+                          }`}
+                        >
+                          <span className={`flex-shrink-0 ${isActive(child.path) ? 'text-[var(--color-accent)]' : ''}`}>{child.icon}</span>
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  href={item.path}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold transition-all rounded-sm ${
+                    isActive(item.path)
+                      ? 'text-[var(--color-accent)] bg-[var(--color-accent)]/8'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]'
+                  }`}
+                >
+                  <span className={`flex-shrink-0 ${isActive(item.path) ? 'text-[var(--color-accent)]' : ''}`}>{item.icon}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.isNew && (
+                    <span className="text-[9px] bg-[var(--color-accent)] text-black px-1.5 py-0.5 font-bold leading-none">NEW</span>
+                  )}
+                </Link>
+              )}
+            </div>
+          ))}
         </div>
       ))}
     </nav>
@@ -144,9 +179,9 @@ export default function Sidebar() {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl shadow-[var(--shadow-card)]"
+        className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-lg"
       >
-        {mobileOpen ? <X size={22} className="text-[var(--color-accent)]" /> : <Menu size={22} className="text-[var(--color-accent)]" />}
+        {mobileOpen ? <X size={20} className="text-[var(--color-accent)]" /> : <Menu size={20} className="text-[var(--color-text-primary)]" />}
       </button>
 
       {/* Mobile backdrop */}
@@ -155,37 +190,37 @@ export default function Sidebar() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] z-40 flex flex-col overflow-y-auto transition-transform ${
+      <aside className={`fixed top-0 left-0 h-full w-60 bg-[var(--color-surface)] border-r border-[var(--color-border)] z-40 flex flex-col overflow-y-auto transition-transform ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        {/* Zero Sanity Logo Header */}
-        <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
-          <Link href="/" className="flex items-center gap-3 no-underline">
-            <ZeroSanityLogo size={36} variant="icon" />
-            <div>
-              <span className="text-base font-bold text-white tracking-wider font-tactical uppercase">
+        {/* Logo Header */}
+        <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+          <Link href="/" className="flex items-center gap-2.5 no-underline">
+            <ZeroSanityLogo size={30} variant="icon" />
+            <div className="flex flex-col">
+              <span className="text-[14px] font-bold text-[var(--color-text-primary)] tracking-wider font-tactical uppercase leading-none">
                 ZERO SANITY
               </span>
-              <p className="terminal-text-sm text-[var(--color-text-muted)] mt-0.5">
-                ENDFIELD.TOOLKIT.v0.1
-              </p>
+              <span className="text-[9px] text-[var(--color-text-muted)] tracking-[0.15em] mt-1 font-mono uppercase leading-none">
+                ENDFIELD TOOLKIT
+              </span>
             </div>
           </Link>
         </div>
 
         {/* User/Auth section */}
-        <div className="px-3 py-3 border-b border-[var(--color-border)]">
+        <div className="px-2 py-2 border-b border-[var(--color-border)]">
           {user ? (
             <Link
               href="/profile"
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 clip-corner-tl text-[14px] font-semibold transition-colors hover:bg-[var(--color-surface-2)] border-l-2 ${
+              className={`flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold transition-all rounded-sm ${
                 isActive('/profile')
-                  ? 'text-[var(--color-accent)] bg-[var(--color-surface-2)] border-[var(--color-accent)]'
-                  : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]'
+                  ? 'text-[var(--color-accent)] bg-[var(--color-accent)]/8'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]'
               }`}
             >
-              <User size={20} />
+              <User size={18} />
               <span className="flex-1 truncate">{user.username}</span>
             </Link>
           ) : (
@@ -193,26 +228,25 @@ export default function Sidebar() {
               href={`/login?returnTo=${encodeURIComponent(pathname)}`}
               onClick={() => {
                 setMobileOpen(false);
-                // Also store in sessionStorage for OAuth flows
                 sessionStorage.setItem('endfield-return-to', pathname);
               }}
-              className="flex items-center gap-3 px-3 py-2.5 clip-corner-tl text-[14px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-surface-2)] transition-colors border-l-2 border-transparent"
+              className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-surface-2)] transition-all rounded-sm"
             >
-              <LogIn size={20} />
+              <LogIn size={18} />
               <span>Authorize</span>
             </Link>
           )}
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 py-4 overflow-y-auto">
+        <div className="flex-1 py-2 overflow-y-auto scrollbar-thin">
           {renderNav()}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--color-border)]">
-          <p className="terminal-text-sm text-[var(--color-text-muted)]">ZS.v0.1 &middot; zerosanity.app</p>
-          <p className="terminal-text-sm text-[var(--color-text-muted)] mt-1">GAME ASSETS &copy; GRYPHLINE</p>
+        <div className="px-4 py-3 border-t border-[var(--color-border)]">
+          <p className="text-[9px] text-[var(--color-text-muted)] tracking-[0.1em] font-mono uppercase">ZS.v0.1 &middot; zerosanity.app</p>
+          <p className="text-[9px] text-[var(--color-text-muted)] tracking-[0.1em] font-mono uppercase mt-0.5">GAME ASSETS &copy; GRYPHLINE</p>
         </div>
       </aside>
     </>

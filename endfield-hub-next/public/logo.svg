@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Outer diamond -->
+  <rect x="10" y="10" width="44" height="44" rx="2" transform="rotate(45 32 32)" fill="#161310" stroke="#FFD429" stroke-width="2.5"/>
+  <!-- Inner accent diamond -->
+  <rect x="16" y="16" width="32" height="32" rx="1" transform="rotate(45 32 32)" fill="#1E1A15" stroke="#FFD42940" stroke-width="0.5"/>
+  <!-- Z letterform - bold angular -->
+  <path d="M20 22 H36 L22 42 H38" stroke="#FFD429" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+  <!-- Originium accent dot top -->
+  <rect x="30" y="4" width="4" height="4" transform="rotate(45 32 6)" fill="#FF6B35"/>
+  <!-- Originium accent dot bottom -->
+  <rect x="30" y="56" width="4" height="4" transform="rotate(45 32 58)" fill="#FF6B35"/>
+</svg>

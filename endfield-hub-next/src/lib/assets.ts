@@ -117,29 +117,28 @@ export const CHARACTER_SPLASH: Record<string, string> = {
   'Fluorite': splashProxy('Fluorite_Splash_Art.png'),
 };
 
-// Role / Profession icons
-// 0=sword(Guard) 1=crossbow(Caster) 2=shield(Defender) 3=snowflake(Supporter) 4=N-symbol(Vanguard) 5=polearm(Assault)
+// Role / Profession icons — verified against endfieldtools.dev/characters filter buttons
+// 0=sword(Guard) 1=glaive(Assault) 2=shield(Defender) 4=N-symbol(Supporter) 5=staff(Caster) 7=arrows(Vanguard)
 export const PROFESSION_ICONS: Record<string, string> = {
   'Guard': `${TOOLS_CDN}/charprofessionicon/icon_profession_0.png`,
-  'Caster': `${TOOLS_CDN}/charprofessionicon/icon_profession_1.png`,
+  'Assault': `${TOOLS_CDN}/charprofessionicon/icon_profession_1.png`,
   'Defender': `${TOOLS_CDN}/charprofessionicon/icon_profession_2.png`,
-  'Supporter': `${TOOLS_CDN}/charprofessionicon/icon_profession_3.png`,
-  'Vanguard': `${TOOLS_CDN}/charprofessionicon/icon_profession_4.png`,
-  'Assault': `${TOOLS_CDN}/charprofessionicon/icon_profession_5.png`,
+  'Supporter': `${TOOLS_CDN}/charprofessionicon/icon_profession_4.png`,
+  'Caster': `${TOOLS_CDN}/charprofessionicon/icon_profession_5.png`,
+  'Vanguard': `${TOOLS_CDN}/charprofessionicon/icon_profession_7.png`,
 };
 
 // Equipment set icons
-// Note: Some sets have missing CDN icons and will use fallback rendering with first letter + tier color
 export const EQUIPMENT_ICONS: Record<string, string> = {
   // T4 Late Game (Lv70)
   'Æthertech': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_poise01_body_01.png`,
-  'Bonekrusha': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_attri01_body_03.png`,
+  'Bonekrusha': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_attri01_body_01.png`,
   'Eternal Xiranite': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_usp02_body_01.png`,
-  // 'Frontiers': CDN returns HTML instead of image - will use fallback
+  'Frontiers': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_atb01_body_01.png`,
   'Hot Work': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_fire_natr01_body_01.png`,
   'LYNX': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_heal01_body_01.png`,
-  // 'MI Security': CDN returns HTML instead of image - will use fallback
-  // 'Pulser Labs': CDN returns HTML instead of image - will use fallback
+  'MI Security': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_criti01_body_01.png`,
+  'Pulser Labs': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_pulse_cryst01_body_01.png`,
   'Swordmancer': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_phy01_body_02.png`,
   'Tide Surge': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_burst01_body_01.png`,
   'Type 50 Yinglung': `${TOOLS_CDN}/itemicon/item_equip_t4_suit_atk02_body_01.png`,
@@ -152,7 +151,7 @@ export const EQUIPMENT_ICONS: Record<string, string> = {
   'Roving MSGR': `${TOOLS_CDN}/itemicon/item_equip_t3_suit_agi01_body_01.png`,
   // T1 Early Game (Lv10-28)
   'AIC Heavy': `${TOOLS_CDN}/itemicon/item_equip_t1_suit_stragi01_body_01.png`,
-  // 'AIC Light': CDN returns HTML instead of image - will use fallback
+  'AIC Light': `${TOOLS_CDN}/itemicon/item_equip_t1_suit_wisdwill01_body_01.png`,
 };
 
 // Weapon icons (mapped by weapon name)

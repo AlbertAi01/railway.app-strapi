@@ -17,11 +17,11 @@
   --color-border-accent: #FFD429;
   --color-surface-card: #1A1612;
 
-  /* Text - WCAG AA compliant on warm dark surfaces */
-  --color-text-primary: #F5F0E8;
-  --color-text-secondary: #C4B8A5;
-  --color-text-tertiary: #8C7F6E;
-  --color-text-muted: #6B5F50;
+  /* Text - Brightened for improved readability on warm dark surfaces */
+  --color-text-primary: #F8F4EE;
+  --color-text-secondary: #D4C8B5;
+  --color-text-tertiary: #A09080;
+  --color-text-muted: #8A7E6E;
 
   /* Element Colors */
   --color-physical: #CFD8DC;

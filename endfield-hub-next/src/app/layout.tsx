@@ -29,11 +29,24 @@ export const metadata: Metadata = {
     siteName: 'Zero Sanity',
     type: 'website',
     locale: 'en_US',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Zero Sanity - Arknights: Endfield Toolkit',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Zero Sanity - Arknights: Endfield Toolkit',
     description: 'Comprehensive Arknights: Endfield community toolkit.',
+    images: ['/og-image.png'],
+  },
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
   },
   alternates: {
     canonical: 'https://zerosanity.app',
@@ -72,7 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AutoDeployOverlay />
         <div className="min-h-screen bg-[#0E0C09]">
           <Sidebar />
-          <main className="lg:ml-64 min-h-screen">
+          <main className="lg:ml-60 min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 lg:pt-8">
               {children}
             </div>

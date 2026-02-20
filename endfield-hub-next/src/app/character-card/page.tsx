@@ -803,151 +803,159 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         display: 'flex', flexDirection: 'column', padding: '10px 16px',
         background: 'rgba(8,11,16,0.95)',
       }}>
-        {/* Equipment loadout */}
-        <div style={{ marginBottom: 8 }}>
+        {/* Equipment loadout — prominent icon grid */}
+        <div style={{ marginBottom: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <div style={{ width: 3, height: 10, background: accentColor }} />
             <span style={{ fontSize: 9, color: accentColor, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, fontFamily: FONT_HEADER }}>EQUIPMENT LOADOUT</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Equipment grid: 3 columns showing icon-forward cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
             {equippedPieces.map((ep, i) => {
               const slotLabel = equipSlots[i].label;
               if (!ep) {
                 return (
                   <div key={i} style={{
-                    padding: '4px 8px', background: 'rgba(16,20,28,0.5)', border: '1px solid #1a1f28',
-                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px', background: 'rgba(16,20,28,0.5)', border: '1px solid #1a1f28',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    minHeight: 70,
                   }}>
-                    <span style={{ fontSize: 8, color: '#444', fontWeight: 700, letterSpacing: 1, width: 36 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 8, color: '#333' }}>— EMPTY —</span>
+                    <span style={{ fontSize: 7, color: '#444', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 7, color: '#333', marginTop: 4 }}>EMPTY</span>
                   </div>
                 );
               }
+              const tierColor = TIER_COLORS[ep.piece.tier];
               return (
                 <div key={i} style={{
-                  padding: '4px 8px', background: 'rgba(16,20,28,0.7)',
-                  border: `1px solid ${TIER_COLORS[ep.piece.tier]}20`,
-                  borderLeft: `2px solid ${TIER_COLORS[ep.piece.tier]}60`,
-                  display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden',
+                  padding: '5px', background: 'rgba(16,20,28,0.7)',
+                  border: `1px solid ${tierColor}25`,
+                  borderTop: `2px solid ${tierColor}70`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  overflow: 'hidden', position: 'relative',
                 }}>
-                  <span style={{ fontSize: 7, color: '#555', fontWeight: 700, letterSpacing: 1, width: 32, flexShrink: 0 }}>{slotLabel}</span>
+                  <span style={{ fontSize: 6, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', alignSelf: 'flex-start' }}>{slotLabel}</span>
                   {ep.piece.icon ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 24, height: 24, objectFit: 'contain', flexShrink: 0 }} />
+                    <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 40, height: 40, objectFit: 'contain' }} />
                   ) : (
-                    <span style={{ fontSize: 8, color: TIER_COLORS[ep.piece.tier], fontWeight: 900, flexShrink: 0, width: 24, textAlign: 'center' }}>{ep.piece.tier}</span>
+                    <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tierColor}10`, border: `1px solid ${tierColor}30` }}>
+                      <span style={{ fontSize: 14, color: tierColor, fontWeight: 900 }}>{ep.piece.tier}</span>
+                    </div>
                   )}
-                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <div style={{ fontSize: 10, color: '#ddd', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ep.piece.name}
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 8, color: TIER_COLORS[ep.piece.tier], fontWeight: 700 }}>{ep.piece.tier}</span>
-                      <span style={{ fontSize: 8, color: '#666' }}>DEF {ep.piece.def}</span>
-                      {ep.piece.stats.slice(0, 2).map((st, si) => (
-                        <span key={si} style={{ fontSize: 7, color: '#777' }}>{st.name} {st.value}</span>
-                      ))}
-                    </div>
+                  <div style={{ fontSize: 8, color: '#ddd', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                    {ep.piece.name}
                   </div>
-                  {ep.artifice > 0 && (
-                    <span style={{ fontSize: 9, color: accentColor, fontWeight: 800, flexShrink: 0 }}>+{ep.artifice}</span>
-                  )}
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 7, color: tierColor, fontWeight: 700 }}>{ep.piece.tier}</span>
+                    {ep.artifice > 0 && <span style={{ fontSize: 7, color: accentColor, fontWeight: 800 }}>+{ep.artifice}</span>}
+                  </div>
                 </div>
               );
             })}
           </div>
           {/* Active set bonuses */}
           {activeSets.length > 0 && (
-            <div style={{ marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {activeSets.map(([name, count]) => {
-                const set = findGearSetByName(name);
-                return (
-                  <div key={name} style={{ flex: 1, minWidth: 150 }}>
-                    <div style={{
-                      padding: '3px 8px', background: `${accentColor}08`, border: `1px solid ${accentColor}25`,
-                      borderLeft: `2px solid ${accentColor}`,
-                    }}>
-                      <div style={{ fontSize: 9, color: accentColor, fontWeight: 700, letterSpacing: 0.5 }}>{name} ({count}pc)</div>
-                      {set && (
-                        <div style={{ fontSize: 7, color: '#666', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {set.setBonus}
-                        </div>
-                      )}
-                    </div>
+            <div style={{ marginTop: 4, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {activeSets.map(([name, count]) => (
+                <div key={name} style={{ flex: 1, minWidth: 120 }}>
+                  <div style={{
+                    padding: '3px 6px', background: `${accentColor}08`, border: `1px solid ${accentColor}25`,
+                    borderLeft: `2px solid ${accentColor}`,
+                  }}>
+                    <div style={{ fontSize: 8, color: accentColor, fontWeight: 700, letterSpacing: 0.5 }}>{name} ({count}pc)</div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        <HDivider mb={8} />
+        <HDivider mb={6} />
 
-        {/* Clearance Badge + Classification Stamp Area */}
-        <div style={{ display: 'flex', gap: 14, flex: 1, minHeight: 0 }}>
-          {/* Clearance octagon */}
-          <div style={{
-            width: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          }}>
+        {/* Operator Info + Clearance — compact horizontal layout */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
+          {/* Clearance octagon — compact */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{
-              width: 110, height: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              width: 76, height: 76, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               border: `2px solid ${accentColor}60`,
               clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)',
               background: `radial-gradient(circle, ${accentColor}08 0%, transparent 70%)`,
-              position: 'relative',
             }}>
-              <span style={{ fontSize: 9, color: '#666', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, fontFamily: FONT_HEADER }}>CLEARANCE</span>
-              <span style={{ fontSize: 44, fontWeight: 900, color: accentColor, fontFamily: FONT_HEADER, lineHeight: 1, textShadow: `0 0 10px ${accentColor}40` }}>{clearance}</span>
-              <span style={{ fontSize: 8, color: '#555', textTransform: 'uppercase', letterSpacing: 1 }}>LEVEL {char.Rarity - 3}</span>
+              <span style={{ fontSize: 7, color: '#666', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 700, fontFamily: FONT_HEADER }}>CLEARANCE</span>
+              <span style={{ fontSize: 32, fontWeight: 900, color: accentColor, fontFamily: FONT_HEADER, lineHeight: 1, textShadow: `0 0 8px ${accentColor}40` }}>{clearance}</span>
             </div>
-            {/* Mini barcode below badge */}
-            <div style={{ marginTop: 8, display: 'flex', gap: 1, opacity: 0.3 }}>
-              {operatorID.split('').map((ch, i) => (
-                <div key={i} style={{ width: ch.charCodeAt(0) % 2 === 0 ? 3 : 1.5, height: 16, background: '#fff' }} />
-              ))}
-            </div>
-            <span style={{ fontSize: 7, color: '#444', letterSpacing: 1, marginTop: 2 }}>{operatorID}</span>
+            <span style={{ fontSize: 6, color: '#444', letterSpacing: 1, marginTop: 3 }}>{operatorID}</span>
           </div>
 
-          {/* Right info fields */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {/* Operator quick stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+          {/* Operator info fields */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
               {[
                 { label: 'ELEMENT', value: char.Element.toUpperCase(), color: theme.primary },
                 { label: 'ROLE', value: char.Role.toUpperCase(), color: '#ccc' },
                 { label: 'WEAPON TYPE', value: char.WeaponType.toUpperCase(), color: '#ccc' },
                 { label: 'RARITY', value: '★'.repeat(char.Rarity), color: RARITY_COLORS[char.Rarity] },
               ].map((f, i) => (
-                <div key={i} style={{ padding: '3px 6px', background: 'rgba(16,20,28,0.6)', borderLeft: `2px solid ${f.color}30` }}>
-                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>{f.label}</div>
-                  <div style={{ fontSize: 10, color: f.color, fontWeight: 700, fontFamily: FONT_MONO }}>{f.value}</div>
+                <div key={i} style={{ padding: '2px 5px', background: 'rgba(16,20,28,0.6)', borderLeft: `2px solid ${f.color}30` }}>
+                  <div style={{ fontSize: 6, color: '#555', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>{f.label}</div>
+                  <div style={{ fontSize: 9, color: f.color, fontWeight: 700, fontFamily: FONT_MONO }}>{f.value}</div>
                 </div>
               ))}
             </div>
-
-            {/* Character icon if available */}
             {charIcon && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', background: 'rgba(16,20,28,0.5)', border: `1px solid ${accentColor}10` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 6px', background: 'rgba(16,20,28,0.5)', border: `1px solid ${accentColor}10` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={charIcon} alt={char.Name} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                <img src={charIcon} alt={char.Name} style={{ width: 28, height: 28, objectFit: 'contain' }} />
                 <div>
-                  <div style={{ fontSize: 8, color: '#555', letterSpacing: 1, fontWeight: 600 }}>VERIFIED IDENTITY</div>
-                  <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>{char.Name}</div>
+                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 1, fontWeight: 600 }}>IDENTITY CONFIRMED</div>
+                  <div style={{ fontSize: 9, color: '#aaa', fontWeight: 600 }}>{char.Name}</div>
                 </div>
               </div>
             )}
+          </div>
+        </div>
 
-            {/* Approval stamp */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px',
-              border: `1px dashed ${accentColor}30`, marginTop: 'auto',
-            }}>
-              <div style={{ transform: 'rotate(-6deg)', textAlign: 'center' }}>
-                <div style={{ fontSize: 14, fontWeight: 900, color: `${accentColor}50`, letterSpacing: 3, textTransform: 'uppercase', fontFamily: FONT_HEADER }}>APPROVED</div>
-                <div style={{ fontSize: 8, color: '#444', letterSpacing: 1 }}>{timestamp}</div>
+        <HDivider mb={6} />
+
+        {/* Equipment stats detail — fills remaining space */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, minHeight: 0 }}>
+          {equippedPieces.filter(Boolean).length > 0 && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <div style={{ width: 3, height: 8, background: '#555' }} />
+                <span style={{ fontSize: 7, color: '#555', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 700, fontFamily: FONT_HEADER }}>EQUIPMENT STATS</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                {equippedPieces.filter(Boolean).flatMap((ep) =>
+                  ep!.piece.stats.map((st, si) => ({ ...st, tier: ep!.piece.tier, key: `${ep!.piece.name}-${si}` }))
+                ).slice(0, 12).map((st) => (
+                  <div key={st.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 5px', background: 'rgba(16,20,28,0.4)' }}>
+                    <span style={{ fontSize: 7, color: '#666' }}>{st.name}</span>
+                    <span style={{ fontSize: 7, color: '#999', fontWeight: 600, fontFamily: FONT_MONO }}>{st.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {/* Approval stamp — bottom anchored */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px',
+            border: `1px solid ${accentColor}15`, marginTop: 'auto',
+            background: 'rgba(16,20,28,0.3)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 1, opacity: 0.3 }}>
+                {operatorID.split('').slice(0, 12).map((ch, i) => (
+                  <div key={i} style={{ width: ch.charCodeAt(0) % 2 === 0 ? 2.5 : 1, height: 12, background: '#fff' }} />
+                ))}
               </div>
             </div>
+            <div style={{ transform: 'rotate(-4deg)', textAlign: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: `${accentColor}45`, letterSpacing: 3, textTransform: 'uppercase', fontFamily: FONT_HEADER }}>APPROVED</span>
+            </div>
+            <span style={{ fontSize: 7, color: '#444', letterSpacing: 0.5, fontFamily: FONT_MONO }}>{timestamp}</span>
           </div>
         </div>
       </div>
