@@ -48,6 +48,91 @@ function getPieceSlotType(piece: GearPiece): 'Body' | 'Hand' | 'EDC' {
   return 'EDC';
 }
 
+/** Max artifice level per slot type: Body/Hand = 9 (3 affixes x 3), EDC = 6 (2 affixes x 3) */
+function getMaxArtifice(slotType: 'Body' | 'Hand' | 'EDC'): number {
+  return slotType === 'EDC' ? 6 : 9;
+}
+
+/** Number of affix slots per slot type: Body/Hand = 3, EDC = 2 */
+function getAffixCount(slotType: 'Body' | 'Hand' | 'EDC'): number {
+  return slotType === 'EDC' ? 2 : 3;
+}
+
+/** Hexagon artifice indicator — segments fill as upgrades succeed.
+ *  Each affix has 3 upgrade segments. Body/Hand have 3 affixes (9 total), EDC has 2 (6 total). */
+function ArtificeHexagon({ level, maxLevel, size = 48, accentColor }: {
+  level: number; maxLevel: number; size?: number; accentColor?: string;
+}) {
+  const totalSegments = maxLevel;
+  const affixCount = maxLevel / 3;
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerR = size / 2 - 2;
+  const innerR = outerR * 0.55;
+  const gapAngle = 4; // degrees between affix groups
+  const segGap = 1.5; // degrees between segments within a group
+
+  // Start from top (-90 degrees)
+  const startAngle = -90;
+  const totalGapDeg = affixCount * gapAngle;
+  const availableDeg = 360 - totalGapDeg;
+  const degPerAffix = availableDeg / affixCount;
+  const degPerSeg = (degPerAffix - 2 * segGap) / 3;
+
+  const paths: JSX.Element[] = [];
+  let segIndex = 0;
+
+  for (let a = 0; a < affixCount; a++) {
+    const affixStart = startAngle + a * (degPerAffix + gapAngle);
+    for (let s = 0; s < 3; s++) {
+      const sStart = affixStart + s * (degPerSeg + segGap);
+      const sEnd = sStart + degPerSeg;
+      const filled = segIndex < level;
+
+      const toRad = (deg: number) => (deg * Math.PI) / 180;
+      const x1o = cx + outerR * Math.cos(toRad(sStart));
+      const y1o = cy + outerR * Math.sin(toRad(sStart));
+      const x2o = cx + outerR * Math.cos(toRad(sEnd));
+      const y2o = cy + outerR * Math.sin(toRad(sEnd));
+      const x1i = cx + innerR * Math.cos(toRad(sEnd));
+      const y1i = cy + innerR * Math.sin(toRad(sEnd));
+      const x2i = cx + innerR * Math.cos(toRad(sStart));
+      const y2i = cy + innerR * Math.sin(toRad(sStart));
+      const largeArc = degPerSeg > 180 ? 1 : 0;
+
+      const d = [
+        `M ${x1o} ${y1o}`,
+        `A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o}`,
+        `L ${x1i} ${y1i}`,
+        `A ${innerR} ${innerR} 0 ${largeArc} 0 ${x2i} ${y2i}`,
+        'Z',
+      ].join(' ');
+
+      const fillColor = filled
+        ? (accentColor || '#4FC3F7')
+        : 'rgba(255,255,255,0.06)';
+
+      paths.push(
+        <path key={`${a}-${s}`} d={d} fill={fillColor}
+          stroke={filled ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.03)'}
+          strokeWidth={0.5} />
+      );
+      segIndex++;
+    }
+  }
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {paths}
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central"
+        fill={level > 0 ? (accentColor || '#4FC3F7') : '#555'}
+        fontSize={size * 0.28} fontWeight="800" fontFamily="'Share Tech Mono', monospace">
+        {level > 0 ? `+${level}` : '0'}
+      </text>
+    </svg>
+  );
+}
+
 interface EquipmentSlotState {
   setName: string;
   pieceName: string;
@@ -910,6 +995,8 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
             {equippedPieces.map((ep, i) => {
               const slotLabel = equipSlots[i].label;
+              const slotType: 'Body' | 'Hand' | 'EDC' = i < 2 ? (i === 0 ? 'Body' : 'Hand') : 'EDC';
+              const maxArt = getMaxArtifice(slotType);
               if (!ep) {
                 return (
                   <div key={i} style={{
@@ -923,30 +1010,66 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
                 );
               }
               const tc = TIER_COLORS[ep.piece.tier];
+              const artLevel = ep.artifice || 0;
               return (
                 <div key={i} style={{
                   padding: '6px 4px', background: 'rgba(16,20,28,0.7)',
                   borderBottom: `2px solid ${tc}60`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  overflow: 'hidden', position: 'relative',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 2px' }}>
                     <span style={{ fontSize: 7, color: '#555', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 7, color: tc, fontWeight: 700 }}>
-                      {ep.piece.tier}{ep.artifice > 0 ? ` +${ep.artifice}` : ''}
-                    </span>
+                    <span style={{ fontSize: 7, color: tc, fontWeight: 700 }}>{ep.piece.tier}</span>
                   </div>
-                  {ep.piece.icon ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 36, height: 36, objectFit: 'contain' }} />
-                  ) : (
-                    <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tc}10` }}>
-                      <span style={{ fontSize: 14, color: tc, fontWeight: 900 }}>{ep.piece.tier}</span>
-                    </div>
-                  )}
+                  <div style={{ position: 'relative', width: 40, height: 40 }}>
+                    {ep.piece.icon ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 36, height: 36, objectFit: 'contain', position: 'absolute', top: 2, left: 2 }} />
+                    ) : (
+                      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tc}10`, position: 'absolute', top: 2, left: 2 }}>
+                        <span style={{ fontSize: 14, color: tc, fontWeight: 900 }}>{ep.piece.tier}</span>
+                      </div>
+                    )}
+                    {/* Artifice ring indicator around icon */}
+                    {artLevel > 0 && (() => {
+                      const totalSegs = maxArt;
+                      const r = 19;
+                      const strokeW = 2.5;
+                      const gapDeg = 8;
+                      const availDeg = 360 - totalSegs * gapDeg;
+                      const segDeg = availDeg / totalSegs;
+                      return (
+                        <svg width={40} height={40} viewBox="0 0 40 40" style={{ position: 'absolute', top: 0, left: 0 }}>
+                          {Array.from({ length: totalSegs }, (_, si) => {
+                            const start = -90 + si * (segDeg + gapDeg);
+                            const end = start + segDeg;
+                            const filled = si < artLevel;
+                            const toRad = (d: number) => (d * Math.PI) / 180;
+                            const x1 = 20 + r * Math.cos(toRad(start));
+                            const y1 = 20 + r * Math.sin(toRad(start));
+                            const x2 = 20 + r * Math.cos(toRad(end));
+                            const y2 = 20 + r * Math.sin(toRad(end));
+                            return (
+                              <path key={si}
+                                d={`M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`}
+                                fill="none"
+                                stroke={filled ? ac : 'rgba(255,255,255,0.08)'}
+                                strokeWidth={strokeW}
+                                strokeLinecap="butt"
+                              />
+                            );
+                          })}
+                        </svg>
+                      );
+                    })()}
+                  </div>
                   <div style={{ fontSize: 7, color: '#bbb', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 2px' }}>
                     {ep.piece.name}
                   </div>
+                  {artLevel > 0 && (
+                    <span style={{ fontSize: 7, color: ac, fontWeight: 800 }}>+{artLevel}</span>
+                  )}
                 </div>
               );
             })}
@@ -1551,15 +1674,23 @@ export default function CharacterCardPage() {
               const slotLabel = slotKey === 'equipBody' ? 'Body' : slotKey === 'equipHand' ? 'Hand' : slotKey === 'equipEdc1' ? 'EDC 1' : 'EDC 2';
               const slotType: 'Body' | 'Hand' | 'EDC' = slotKey === 'equipBody' ? 'Body' : slotKey === 'equipHand' ? 'Hand' : 'EDC';
               const piece = slot.pieceName ? findGearPieceByName(slot.pieceName) : null;
+              const maxArt = getMaxArtifice(slotType);
+              const affixCount = getAffixCount(slotType);
               return (
-                <div key={slotKey} className="border border-[var(--color-border)] p-3 space-y-2 bg-[var(--color-surface)]/50">
+                <div key={slotKey} className="border border-[var(--color-border)] p-3 space-y-3 bg-[var(--color-surface)]/50">
+                  {/* Slot header */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--color-accent)] font-bold uppercase tracking-wider">{slotLabel}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[var(--color-accent)] font-bold uppercase tracking-wider">{slotLabel}</span>
+                      <span className="text-[9px] text-[var(--color-text-muted)] font-mono">{affixCount} affixes</span>
+                    </div>
                     {slot.pieceName && (
                       <button onClick={() => updateState({ [slotKey]: defaultEquipSlot() })}
                         className="text-[10px] text-[var(--color-text-muted)] hover:text-red-400 transition-colors">Clear</button>
                     )}
                   </div>
+
+                  {/* Piece selector */}
                   <button onClick={() => setEquipPickerOpen({ slot: slotType, target: slotKey })}
                     className="w-full flex items-center gap-2.5 p-2.5 bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-text-secondary)] transition-colors text-left min-h-[48px]">
                     {piece ? (
@@ -1578,19 +1709,53 @@ export default function CharacterCardPage() {
                       <span className="text-sm text-[var(--color-text-muted)]">Click to select</span>
                     )}
                   </button>
+
+                  {/* Artifice section with hex indicator */}
                   {slot.pieceName && (
-                    <div>
-                      <label className="text-[10px] text-[var(--color-text-muted)] mb-1 block">Artifice Level</label>
-                      <div className="flex gap-1">
-                        {[0, 1, 2, 3].map(a => (
-                          <button key={a} onClick={() => updateState({ [slotKey]: { ...slot, artifice: a } })}
-                            className={`flex-1 py-1.5 text-xs font-bold border transition-colors ${
-                              slot.artifice === a
-                                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-black'
-                                : 'border-[var(--color-border)] text-[var(--color-text-muted)]'
-                            }`}>+{a}</button>
-                        ))}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Artifice</label>
+                        <span className="text-[10px] font-mono text-[var(--color-accent)]">+{slot.artifice}/{maxArt}</span>
                       </div>
+
+                      {/* Hex indicator + affix breakdown */}
+                      <div className="flex items-center gap-3">
+                        <ArtificeHexagon level={slot.artifice} maxLevel={maxArt} size={56} accentColor="var(--color-accent)" />
+                        <div className="flex-1 space-y-1">
+                          {Array.from({ length: affixCount }, (_, affixIdx) => {
+                            const affixBase = affixIdx * 3;
+                            const affixFilled = Math.max(0, Math.min(3, slot.artifice - affixBase));
+                            return (
+                              <div key={affixIdx} className="flex items-center gap-1.5">
+                                <span className="text-[9px] text-[var(--color-text-muted)] font-mono w-8 flex-shrink-0">A{affixIdx + 1}</span>
+                                <div className="flex gap-0.5 flex-1">
+                                  {[0, 1, 2].map(seg => (
+                                    <button key={seg}
+                                      onClick={() => {
+                                        const newLevel = affixBase + seg + 1;
+                                        updateState({ [slotKey]: { ...slot, artifice: slot.artifice === newLevel ? newLevel - 1 : newLevel } });
+                                      }}
+                                      className="h-2 flex-1 transition-colors"
+                                      style={{
+                                        backgroundColor: seg < affixFilled ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                                        border: `1px solid ${seg < affixFilled ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                                      }}
+                                      title={`Affix ${affixIdx + 1}, upgrade ${seg + 1}`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Quick-set slider */}
+                      <input
+                        type="range" min={0} max={maxArt} value={slot.artifice}
+                        onChange={e => updateState({ [slotKey]: { ...slot, artifice: Number(e.target.value) } })}
+                        className="w-full h-1 bg-[var(--color-border)] appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[var(--color-accent)] [&::-webkit-slider-thumb]:cursor-pointer"
+                      />
                     </div>
                   )}
                 </div>
