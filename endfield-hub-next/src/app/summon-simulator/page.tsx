@@ -45,22 +45,34 @@ interface HistoryEntry {
   timestamp: number;
 }
 
-interface SimState {
+type BannerType = 'operator' | 'weapon';
+
+interface BannerState {
   pityCounter: number;
   guaranteedRateUp: boolean;
   totalPulls: number;
   stats: Record<number, number>;
   sixStarHistory: { item: string; pullNumber: number }[];
+}
+
+interface SimState {
+  operator: BannerState;
+  weapon: BannerState;
   collection: Record<string, { count: number; rarity: number; type: string; icon?: string }>;
   history: HistoryEntry[];
 }
 
-const DEFAULT_STATE: SimState = {
+const DEFAULT_BANNER_STATE: BannerState = {
   pityCounter: 0,
   guaranteedRateUp: false,
   totalPulls: 0,
   stats: { 6: 0, 5: 0, 4: 0, 3: 0 },
   sixStarHistory: [],
+};
+
+const DEFAULT_STATE: SimState = {
+  operator: { ...DEFAULT_BANNER_STATE },
+  weapon: { ...DEFAULT_BANNER_STATE },
   collection: {},
   history: [],
 };
@@ -68,6 +80,7 @@ const DEFAULT_STATE: SimState = {
 // ─── Component ───────────────────────────────────────────────────────
 export default function SummonSimulatorPage() {
   const [state, setState] = useState<SimState>(DEFAULT_STATE);
+  const [bannerType, setBannerType] = useState<BannerType>('operator');
   const [currentPulls, setCurrentPulls] = useState<Pull[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -78,14 +91,14 @@ export default function SummonSimulatorPage() {
 
   // Load from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('zerosanity-summon-v3');
+    const saved = localStorage.getItem('zerosanity-summon-v4');
     if (saved) {
       try { setState(JSON.parse(saved)); } catch { /* ignore */ }
     }
   }, []);
 
   const saveState = useCallback((s: SimState) => {
-    localStorage.setItem('zerosanity-summon-v3', JSON.stringify(s));
+    localStorage.setItem('zerosanity-summon-v4', JSON.stringify(s));
   }, []);
 
   // ─── Pull Logic ──────────────────────────────────────────────────
@@ -100,62 +113,90 @@ export default function SummonSimulatorPage() {
     return 3;
   }, []);
 
-  const getItemForRarity = useCallback((rarity: number, guaranteed: boolean): {
+  const getItemForRarity = useCallback((rarity: number, guaranteed: boolean, banner: BannerType): {
     name: string; icon?: string; type: 'character' | 'weapon'; isRateUp: boolean;
   } => {
-    // 6-star featured rate-up (50/50)
-    if (rarity === 6) {
-      const featured6 = ['Ardelia', 'Laevatain'];
-      const isRateUp = guaranteed || Math.random() < 0.5;
-      if (isRateUp) {
-        const name = featured6[Math.floor(Math.random() * featured6.length)];
+    if (banner === 'operator') {
+      // OPERATOR BANNER - only characters/operators
+
+      // 6-star featured rate-up (50/50)
+      if (rarity === 6) {
+        const featured6 = ['Ardelia', 'Laevatain'];
+        const isRateUp = guaranteed || Math.random() < 0.5;
+        if (isRateUp) {
+          const name = featured6[Math.floor(Math.random() * featured6.length)];
+          return { name, icon: CHARACTER_ICONS[name], type: 'character', isRateUp: true };
+        }
+      }
+
+      // 5-star featured rate-up
+      if (rarity === 5 && Math.random() < 0.5) {
+        const featured5 = ['Alesh', 'Chen Qianyu', 'Perlica', 'Avywenna', 'Da Pan', 'Snowshine'];
+        const name = featured5[Math.floor(Math.random() * featured5.length)];
         return { name, icon: CHARACTER_ICONS[name], type: 'character', isRateUp: true };
       }
-    }
 
-    // 5-star featured rate-up
-    if (rarity === 5 && Math.random() < 0.5) {
-      const featured5 = ['Alesh', 'Chen Qianyu', 'Perlica', 'Avywenna', 'Da Pan', 'Snowshine'];
-      const name = featured5[Math.floor(Math.random() * featured5.length)];
-      return { name, icon: CHARACTER_ICONS[name], type: 'character', isRateUp: true };
-    }
-
-    // Non-featured: character or weapon
-    const charChance = rarity <= 3 ? 0 : rarity === 6 ? 0.5 : rarity === 5 ? 0.6 : 0.7;
-    const isCharacter = Math.random() < charChance;
-
-    if (isCharacter) {
+      // Non-featured operators
       const chars = CHARACTERS.filter(c => c.Rarity === rarity);
       if (chars.length > 0) {
         const char = chars[Math.floor(Math.random() * chars.length)];
         return { name: char.Name, icon: CHARACTER_ICONS[char.Name], type: 'character', isRateUp: false };
       }
-    }
 
-    const weapons = WEAPONS.filter(w => w.Rarity === rarity);
-    if (weapons.length > 0) {
-      const weapon = weapons[Math.floor(Math.random() * weapons.length)];
-      return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon', isRateUp: false };
-    }
+      // Fallback to any character
+      const fallbackChar = CHARACTERS[0];
+      return { name: fallbackChar.Name, icon: CHARACTER_ICONS[fallbackChar.Name], type: 'character', isRateUp: false };
 
-    const fallback = WEAPONS[0];
-    return { name: fallback.Name, icon: WEAPON_ICONS[fallback.Name], type: 'weapon', isRateUp: false };
+    } else {
+      // WEAPON BANNER - only weapons
+
+      // 6-star featured weapons (50/50)
+      if (rarity === 6) {
+        const featured6Weapons = WEAPONS.filter(w => w.Rarity === 6).slice(0, 2); // Use first 2 as featured
+        const isRateUp = guaranteed || Math.random() < 0.5;
+        if (isRateUp && featured6Weapons.length > 0) {
+          const weapon = featured6Weapons[Math.floor(Math.random() * featured6Weapons.length)];
+          return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon', isRateUp: true };
+        }
+      }
+
+      // 5-star featured weapons
+      if (rarity === 5 && Math.random() < 0.5) {
+        const featured5Weapons = WEAPONS.filter(w => w.Rarity === 5).slice(0, 6); // Use first 6 as featured
+        if (featured5Weapons.length > 0) {
+          const weapon = featured5Weapons[Math.floor(Math.random() * featured5Weapons.length)];
+          return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon', isRateUp: true };
+        }
+      }
+
+      // Non-featured weapons
+      const weapons = WEAPONS.filter(w => w.Rarity === rarity);
+      if (weapons.length > 0) {
+        const weapon = weapons[Math.floor(Math.random() * weapons.length)];
+        return { name: weapon.Name, icon: WEAPON_ICONS[weapon.Name], type: 'weapon', isRateUp: false };
+      }
+
+      // Fallback to any weapon
+      const fallback = WEAPONS[0];
+      return { name: fallback.Name, icon: WEAPON_ICONS[fallback.Name], type: 'weapon', isRateUp: false };
+    }
   }, []);
 
   const performPull = useCallback((count: 10 | 1) => {
     setIsPulling(true);
     const pulls: Pull[] = [];
-    let counter = state.pityCounter;
-    let guaranteed = state.guaranteedRateUp;
-    const newStats = { ...state.stats };
+    const currentBanner = state[bannerType];
+    let counter = currentBanner.pityCounter;
+    let guaranteed = currentBanner.guaranteedRateUp;
+    const newStats = { ...currentBanner.stats };
     const newCollection = { ...state.collection };
-    const newSixHistory = [...state.sixStarHistory];
-    const total = state.totalPulls;
+    const newSixHistory = [...currentBanner.sixStarHistory];
+    const total = currentBanner.totalPulls;
 
     for (let i = 0; i < count; i++) {
       const rarity = calculateRarity(counter);
       const isPity = counter >= PITY_SOFT && rarity === 6;
-      const item = getItemForRarity(rarity, guaranteed);
+      const item = getItemForRarity(rarity, guaranteed, bannerType);
       const pullNumber = total + i + 1;
       const isNew = !newCollection[item.name];
 
@@ -181,11 +222,14 @@ export default function SummonSimulatorPage() {
 
     const newEntry: HistoryEntry = { pulls, timestamp: Date.now() };
     const newState: SimState = {
-      pityCounter: counter,
-      guaranteedRateUp: guaranteed,
-      totalPulls: total + count,
-      stats: newStats,
-      sixStarHistory: newSixHistory,
+      ...state,
+      [bannerType]: {
+        pityCounter: counter,
+        guaranteedRateUp: guaranteed,
+        totalPulls: total + count,
+        stats: newStats,
+        sixStarHistory: newSixHistory,
+      },
       collection: newCollection,
       history: [newEntry, ...state.history].slice(0, 50),
     };
@@ -217,7 +261,7 @@ export default function SummonSimulatorPage() {
       };
       revealTimerRef.current = setTimeout(revealNext, 150);
     }
-  }, [state, calculateRarity, getItemForRarity, saveState]);
+  }, [state, bannerType, calculateRarity, getItemForRarity, saveState]);
 
   const skipReveal = useCallback(() => {
     if (isRevealing) {
@@ -233,29 +277,38 @@ export default function SummonSimulatorPage() {
       setCurrentPulls([]);
       setRevealedCount(0);
       setState(DEFAULT_STATE);
-      localStorage.removeItem('zerosanity-summon-v3');
+      localStorage.removeItem('zerosanity-summon-v4');
     }
   }, []);
 
   // ─── Derived ──────────────────────────────────────────────────────
+  const currentBanner = state[bannerType];
+  const totalPulls = state.operator.totalPulls + state.weapon.totalPulls;
+
   const rank = useMemo(() =>
-    RANK_TITLES.find(r => state.totalPulls >= r.min && state.totalPulls <= r.max) || RANK_TITLES[0],
-    [state.totalPulls]
+    RANK_TITLES.find(r => totalPulls >= r.min && totalPulls <= r.max) || RANK_TITLES[0],
+    [totalPulls]
   );
 
   const currentRate = useMemo(() => {
     let rate = RATES[6];
-    if (state.pityCounter >= PITY_SOFT) rate += (state.pityCounter - PITY_SOFT + 1) * PITY_INCREASE;
+    if (currentBanner.pityCounter >= PITY_SOFT) rate += (currentBanner.pityCounter - PITY_SOFT + 1) * PITY_INCREASE;
     return Math.min(rate * 100, 100);
-  }, [state.pityCounter]);
+  }, [currentBanner.pityCounter]);
 
   const poolByRarity = useMemo(() => {
-    const pool: Record<number, { name: string; icon?: string; type: string }[]> = { 6: [], 5: [], 4: [] };
-    CHARACTERS.forEach(c => {
-      if (pool[c.Rarity]) pool[c.Rarity].push({ name: c.Name, icon: CHARACTER_ICONS[c.Name], type: 'character' });
-    });
+    const pool: Record<number, { name: string; icon?: string; type: string }[]> = { 6: [], 5: [], 4: [], 3: [] };
+    if (bannerType === 'operator') {
+      CHARACTERS.forEach(c => {
+        if (pool[c.Rarity]) pool[c.Rarity].push({ name: c.Name, icon: CHARACTER_ICONS[c.Name], type: 'character' });
+      });
+    } else {
+      WEAPONS.forEach(w => {
+        if (pool[w.Rarity]) pool[w.Rarity].push({ name: w.Name, icon: WEAPON_ICONS[w.Name], type: 'weapon' });
+      });
+    }
     return pool;
-  }, []);
+  }, [bannerType]);
 
   // ─── Render ──────────────────────────────────────────────────────
   return (
@@ -281,12 +334,52 @@ export default function SummonSimulatorPage() {
           </div>
         </div>
 
+        {/* ════ BANNER SELECTOR ════ */}
+        <div className="mb-6 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+          <div className="p-4 border-b border-[var(--color-border)]">
+            <h3 className="text-sm font-bold text-white mb-2">Banner Type</h3>
+            <p className="text-[10px] text-[var(--color-text-tertiary)] mb-3">
+              Select which banner to pull from. Each banner has its own separate pity counter.
+            </p>
+          </div>
+          <div className="flex">
+            <button
+              onClick={() => setBannerType('operator')}
+              disabled={isPulling}
+              className={`flex-1 px-6 py-4 text-sm font-bold border-r border-[var(--color-border)] transition-all disabled:opacity-50 ${
+                bannerType === 'operator'
+                  ? 'bg-[var(--color-accent)] text-black border-b-4 border-b-[var(--color-originium)]'
+                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] hover:text-white'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <span>Operator Banner</span>
+                <span className="text-[9px] opacity-70">Characters Only</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setBannerType('weapon')}
+              disabled={isPulling}
+              className={`flex-1 px-6 py-4 text-sm font-bold transition-all disabled:opacity-50 ${
+                bannerType === 'weapon'
+                  ? 'bg-[var(--color-accent)] text-black border-b-4 border-b-[var(--color-originium)]'
+                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] hover:text-white'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <span>Weapon Banner</span>
+                <span className="text-[9px] opacity-70">Weapons Only</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* ════ PULL BUTTON ════ */}
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => performPull(10)}
             disabled={isPulling}
             className="px-8 py-3 text-lg font-bold bg-[var(--color-accent)] text-black border-l-4 border-l-[var(--color-originium)] hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2">
-            <Dice6 size={20} /> Perform 10x Summon/Headhunt
+            <Dice6 size={20} /> Pull 10x ({bannerType === 'operator' ? 'Operator' : 'Weapon'} Banner)
           </button>
           <button onClick={() => performPull(1)}
             disabled={isPulling}
@@ -340,29 +433,29 @@ export default function SummonSimulatorPage() {
         <div className="text-center mb-6">
           <span className="text-[var(--color-accent)] font-bold text-sm">{rank.title}</span>
           <span className="text-[var(--color-text-tertiary)] text-sm"> - {rank.desc}</span>
-          {state.totalPulls > 0 && (
-            <span className="text-[var(--color-text-muted)] text-xs ml-2">({state.totalPulls} total pulls)</span>
+          {totalPulls > 0 && (
+            <span className="text-[var(--color-text-muted)] text-xs ml-2">({totalPulls} total pulls)</span>
           )}
         </div>
 
         {/* Pity info bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3 text-center">
-            <p className="text-xl font-bold text-white font-mono">{state.pityCounter}</p>
+            <p className="text-xl font-bold text-white font-mono">{currentBanner.pityCounter}</p>
             <p className="text-[10px] text-[var(--color-text-tertiary)]">Pity Counter</p>
           </div>
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3 text-center">
-            <p className="text-xl font-bold font-mono" style={{ color: state.pityCounter >= PITY_SOFT ? '#E74C3C' : '#27AE60' }}>
-              {PITY_HARD - state.pityCounter}
+            <p className="text-xl font-bold font-mono" style={{ color: currentBanner.pityCounter >= PITY_SOFT ? '#E74C3C' : '#27AE60' }}>
+              {PITY_HARD - currentBanner.pityCounter}
             </p>
             <p className="text-[10px] text-[var(--color-text-tertiary)]">Until Hard Pity</p>
           </div>
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3 text-center">
-            <p className="text-xl font-bold font-mono" style={{ color: state.guaranteedRateUp ? '#27AE60' : '#E67E22' }}>
-              {state.guaranteedRateUp ? 'YES' : '50/50'}
+            <p className="text-xl font-bold font-mono" style={{ color: currentBanner.guaranteedRateUp ? '#27AE60' : '#E67E22' }}>
+              {currentBanner.guaranteedRateUp ? 'YES' : '50/50'}
             </p>
             <p className="text-[10px] text-[var(--color-text-tertiary)]">
-              {state.guaranteedRateUp ? 'Guaranteed Rate-Up' : 'Next 6-Star'}
+              {currentBanner.guaranteedRateUp ? 'Guaranteed Rate-Up' : 'Next 6-Star'}
             </p>
           </div>
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3 text-center">
@@ -376,17 +469,17 @@ export default function SummonSimulatorPage() {
         {/* Pity progress bar */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-[10px] mb-1">
-            <span className="text-[var(--color-text-tertiary)]">Pity Progress</span>
+            <span className="text-[var(--color-text-tertiary)]">Pity Progress ({bannerType === 'operator' ? 'Operator' : 'Weapon'} Banner)</span>
             <div className="flex items-center gap-3">
               <span className="text-[var(--color-text-tertiary)]">Soft: {PITY_SOFT}</span>
-              <span className={`font-bold ${state.pityCounter >= PITY_SOFT ? 'text-red-400' : 'text-[var(--color-accent)]'}`}>
-                {state.pityCounter}/{PITY_HARD}
+              <span className={`font-bold ${currentBanner.pityCounter >= PITY_SOFT ? 'text-red-400' : 'text-[var(--color-accent)]'}`}>
+                {currentBanner.pityCounter}/{PITY_HARD}
               </span>
             </div>
           </div>
           <div className="relative w-full bg-[var(--color-border)] h-3">
-            <div className={`h-full transition-all duration-300 ${state.pityCounter >= PITY_SOFT ? 'bg-red-500' : 'bg-[var(--color-accent)]'}`}
-              style={{ width: `${(state.pityCounter / PITY_HARD) * 100}%` }} />
+            <div className={`h-full transition-all duration-300 ${currentBanner.pityCounter >= PITY_SOFT ? 'bg-red-500' : 'bg-[var(--color-accent)]'}`}
+              style={{ width: `${(currentBanner.pityCounter / PITY_HARD) * 100}%` }} />
             <div className="absolute top-0 bottom-0 w-px bg-orange-400"
               style={{ left: `${(PITY_SOFT / PITY_HARD) * 100}%` }} />
           </div>
@@ -435,36 +528,40 @@ export default function SummonSimulatorPage() {
           </div>
         </div>
 
-        {/* ════ CHARACTER POOL ════ */}
+        {/* ════ SUMMON POOL ════ */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl mb-6">
           <div className="p-4 border-b border-[var(--color-border)]">
             <div className="flex items-center gap-2">
               <Star size={16} className="text-[var(--color-accent)]" />
-              <h3 className="text-sm font-bold text-white">Character Pool</h3>
-              <span className="text-[10px] text-[var(--color-text-tertiary)]">Browse all available characters in the summon pool, organized by rarity</span>
+              <h3 className="text-sm font-bold text-white">
+                {bannerType === 'operator' ? 'Operator' : 'Weapon'} Pool
+              </h3>
+              <span className="text-[10px] text-[var(--color-text-tertiary)]">
+                Browse all available {bannerType === 'operator' ? 'operators' : 'weapons'} in this banner, organized by rarity
+              </span>
             </div>
           </div>
           <div className="p-4 space-y-4">
-            {[6, 5, 4].map(rarity => (
+            {(bannerType === 'operator' ? [6, 5, 4] : [6, 5, 4, 3]).map(rarity => (
               <div key={rarity}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold" style={{ color: RARITY_COLORS[rarity] }}>{rarity}-Star</span>
-                  <span className="text-[10px] text-[var(--color-text-muted)]">{poolByRarity[rarity]?.length || 0}</span>
+                  <span className="text-[10px] text-[var(--color-text-muted)]">{poolByRarity[rarity]?.length || 0} {bannerType === 'operator' ? 'operators' : 'weapons'}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(poolByRarity[rarity] || []).map(char => {
-                    const owned = state.collection[char.name];
+                  {(poolByRarity[rarity] || []).map(item => {
+                    const owned = state.collection[item.name];
                     return (
-                      <div key={char.name}
+                      <div key={item.name}
                         className={`relative w-14 h-14 sm:w-16 sm:h-16 overflow-hidden border-b-2 ${owned ? 'opacity-100' : 'opacity-40 grayscale'}`}
                         style={{ borderBottomColor: RARITY_COLORS[rarity], background: 'var(--color-surface-2)' }}
-                        title={`${char.name}${owned ? ` (x${owned.count})` : ' (not owned)'}`}>
-                        {char.icon ? (
-                          <Image src={char.icon} alt={char.name} width={64} height={64}
+                        title={`${item.name}${owned ? ` (x${owned.count})` : ' (not owned)'}`}>
+                        {item.icon ? (
+                          <Image src={item.icon} alt={item.name} width={64} height={64}
                             className="w-full h-full object-contain p-0.5" unoptimized />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-[7px] text-[var(--color-text-tertiary)]">
-                            {char.name}
+                            {item.name}
                           </div>
                         )}
                         {owned && owned.count > 1 && (
@@ -497,11 +594,19 @@ export default function SummonSimulatorPage() {
               </button>
             </div>
             <div className="p-4 space-y-3">
+              <div className="p-3 bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30">
+                <h4 className="text-xs font-bold text-[var(--color-accent)] mb-2">Banner Types</h4>
+                <ul className="text-[10px] text-[var(--color-text-tertiary)] space-y-1">
+                  <li><strong className="text-white">Operator Banner:</strong> Only pulls operators/characters</li>
+                  <li><strong className="text-white">Weapon Banner:</strong> Only pulls weapons</li>
+                  <li>Each banner has its own separate pity counter</li>
+                </ul>
+              </div>
               {[
-                { rarity: 6, rate: '0.8%', desc: '6-Star Operator/Weapon', note: `Soft pity from pull ${PITY_SOFT} (+2%/pull). Hard pity at pull ${PITY_HARD}. 50/50 featured rate-up.` },
-                { rarity: 5, rate: '8.0%', desc: '5-Star Operator/Weapon', note: '50% chance of being a featured 5-Star.' },
-                { rarity: 4, rate: '40.0%', desc: '4-Star Operator/Weapon', note: '' },
-                { rarity: 3, rate: '51.2%', desc: '3-Star Weapon', note: '' },
+                { rarity: 6, rate: '0.8%', desc: '6-Star', note: `Soft pity from pull ${PITY_SOFT} (+2%/pull). Hard pity at pull ${PITY_HARD}. 50/50 featured rate-up.` },
+                { rarity: 5, rate: '8.0%', desc: '5-Star', note: '50% chance of being a featured 5-Star.' },
+                { rarity: 4, rate: '40.0%', desc: '4-Star', note: '' },
+                { rarity: 3, rate: '51.2%', desc: '3-Star', note: 'Only available in weapon banner.' },
               ].map(r => (
                 <div key={r.rarity} className="flex items-center gap-3 p-3 bg-[var(--color-surface-2)]">
                   <div className="w-2 h-8" style={{ backgroundColor: RARITY_COLORS[r.rarity] }} />
@@ -518,8 +623,9 @@ export default function SummonSimulatorPage() {
                   <li>Base 6-Star rate: 0.8%</li>
                   <li>Starting at pull {PITY_SOFT}, the rate increases by 2% per pull (soft pity)</li>
                   <li>At pull {PITY_HARD}, you are guaranteed a 6-Star (hard pity)</li>
-                  <li>If you lose the 50/50, your next 6-Star is guaranteed to be the featured character</li>
+                  <li>If you lose the 50/50, your next 6-Star is guaranteed to be featured</li>
                   <li>Pity counter resets when you pull a 6-Star</li>
+                  <li><strong className="text-white">Each banner type has its own independent pity counter</strong></li>
                 </ul>
               </div>
               <p className="text-[10px] text-[var(--color-text-muted)] italic">
@@ -542,39 +648,82 @@ export default function SummonSimulatorPage() {
               </button>
             </div>
             <div className="p-4 space-y-4">
+              {/* Banner selector tabs */}
+              <div className="flex gap-2 mb-4">
+                <button onClick={() => setBannerType('operator')}
+                  className={`flex-1 px-4 py-2 text-xs font-bold transition-colors ${
+                    bannerType === 'operator'
+                      ? 'bg-[var(--color-accent)] text-black'
+                      : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
+                  }`}>
+                  Operator Banner
+                </button>
+                <button onClick={() => setBannerType('weapon')}
+                  className={`flex-1 px-4 py-2 text-xs font-bold transition-colors ${
+                    bannerType === 'weapon'
+                      ? 'bg-[var(--color-accent)] text-black'
+                      : 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
+                  }`}>
+                  Weapon Banner
+                </button>
+              </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-[var(--color-surface-2)] p-3 text-center">
-                  <p className="text-2xl font-bold text-white font-mono">{state.totalPulls}</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Total Pulls</p>
+                  <p className="text-2xl font-bold text-white font-mono">{currentBanner.totalPulls}</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Banner Pulls</p>
                 </div>
                 <div className="bg-[var(--color-surface-2)] p-3 text-center">
-                  <p className="text-2xl font-bold font-mono" style={{ color: RARITY_COLORS[6] }}>{state.stats[6] || 0}</p>
+                  <p className="text-2xl font-bold font-mono" style={{ color: RARITY_COLORS[6] }}>{currentBanner.stats[6] || 0}</p>
                   <p className="text-[10px] text-[var(--color-text-tertiary)]">
-                    6-Star ({state.totalPulls > 0 ? (((state.stats[6] || 0) / state.totalPulls) * 100).toFixed(1) : '0.0'}%)
+                    6-Star ({currentBanner.totalPulls > 0 ? (((currentBanner.stats[6] || 0) / currentBanner.totalPulls) * 100).toFixed(1) : '0.0'}%)
                   </p>
                 </div>
                 <div className="bg-[var(--color-surface-2)] p-3 text-center">
-                  <p className="text-2xl font-bold font-mono" style={{ color: RARITY_COLORS[5] }}>{state.stats[5] || 0}</p>
+                  <p className="text-2xl font-bold font-mono" style={{ color: RARITY_COLORS[5] }}>{currentBanner.stats[5] || 0}</p>
                   <p className="text-[10px] text-[var(--color-text-tertiary)]">
-                    5-Star ({state.totalPulls > 0 ? (((state.stats[5] || 0) / state.totalPulls) * 100).toFixed(1) : '0.0'}%)
+                    5-Star ({currentBanner.totalPulls > 0 ? (((currentBanner.stats[5] || 0) / currentBanner.totalPulls) * 100).toFixed(1) : '0.0'}%)
                   </p>
                 </div>
                 <div className="bg-[var(--color-surface-2)] p-3 text-center">
                   <p className="text-2xl font-bold text-white font-mono">
-                    {(state.stats[6] || 0) > 0 ? Math.round(state.totalPulls / (state.stats[6] || 1)) : '-'}
+                    {(currentBanner.stats[6] || 0) > 0 ? Math.round(currentBanner.totalPulls / (currentBanner.stats[6] || 1)) : '-'}
                   </p>
                   <p className="text-[10px] text-[var(--color-text-tertiary)]">Avg Pulls per 6-Star</p>
                 </div>
               </div>
 
+              {/* Overall stats */}
+              <div className="bg-[var(--color-surface-2)] p-3">
+                <h4 className="text-xs font-bold text-white mb-2">Overall Statistics</h4>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-white font-mono">{totalPulls}</p>
+                    <p className="text-[9px] text-[var(--color-text-tertiary)]">Total Pulls</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold font-mono" style={{ color: RARITY_COLORS[6] }}>
+                      {(state.operator.stats[6] || 0) + (state.weapon.stats[6] || 0)}
+                    </p>
+                    <p className="text-[9px] text-[var(--color-text-tertiary)]">Total 6-Stars</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold font-mono" style={{ color: RARITY_COLORS[5] }}>
+                      {(state.operator.stats[5] || 0) + (state.weapon.stats[5] || 0)}
+                    </p>
+                    <p className="text-[9px] text-[var(--color-text-tertiary)]">Total 5-Stars</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Distribution bar */}
-              {state.totalPulls > 0 && (
+              {currentBanner.totalPulls > 0 && (
                 <div>
-                  <h4 className="text-xs font-bold text-white mb-2">Pull Distribution</h4>
+                  <h4 className="text-xs font-bold text-white mb-2">Pull Distribution ({bannerType === 'operator' ? 'Operator' : 'Weapon'})</h4>
                   <div className="flex h-6 overflow-hidden">
                     {[6, 5, 4, 3].map(r => {
-                      const count = state.stats[r] || 0;
-                      const pct = (count / state.totalPulls) * 100;
+                      const count = currentBanner.stats[r] || 0;
+                      const pct = (count / currentBanner.totalPulls) * 100;
                       if (pct === 0) return null;
                       return (
                         <div key={r} style={{ width: `${pct}%`, backgroundColor: RARITY_COLORS[r] }}
@@ -588,11 +737,11 @@ export default function SummonSimulatorPage() {
               )}
 
               {/* 6-star pull history */}
-              {state.sixStarHistory.length > 0 && (
+              {currentBanner.sixStarHistory.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-bold text-white mb-2">6-Star Pull History</h4>
+                  <h4 className="text-xs font-bold text-white mb-2">6-Star Pull History ({bannerType === 'operator' ? 'Operator' : 'Weapon'})</h4>
                   <div className="flex flex-wrap gap-1">
-                    {state.sixStarHistory.map((h, i) => (
+                    {currentBanner.sixStarHistory.map((h, i) => (
                       <span key={i} className="px-2 py-1 text-[9px] bg-[var(--color-surface-2)] border border-[var(--color-border)]">
                         <span style={{ color: RARITY_COLORS[6] }}>{h.item}</span>
                         <span className="text-[var(--color-text-tertiary)]"> @{h.pullNumber}</span>
@@ -603,12 +752,12 @@ export default function SummonSimulatorPage() {
               )}
 
               {/* Luck analysis */}
-              {state.totalPulls >= 10 && (
+              {currentBanner.totalPulls >= 10 && (
                 <div>
-                  <h4 className="text-xs font-bold text-white mb-2">Luck Analysis</h4>
+                  <h4 className="text-xs font-bold text-white mb-2">Luck Analysis ({bannerType === 'operator' ? 'Operator' : 'Weapon'})</h4>
                   {(() => {
-                    const expected6 = state.totalPulls * 0.016;
-                    const actual6 = state.stats[6] || 0;
+                    const expected6 = currentBanner.totalPulls * 0.016;
+                    const actual6 = currentBanner.stats[6] || 0;
                     const luckFactor = actual6 / Math.max(expected6, 0.01);
                     const luckLabel = luckFactor >= 1.5 ? 'Incredibly Lucky' :
                       luckFactor >= 1.1 ? 'Above Average' :
