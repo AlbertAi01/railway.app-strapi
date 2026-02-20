@@ -22,44 +22,46 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
+  // ── MAIN ──
   { label: 'Home', path: '/', icon: <Home size={18} />, section: 'MAIN' },
-  { label: 'Operator Card', path: '/character-card', icon: <Sparkles size={18} />, isNew: true, section: 'MAIN' },
-  { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={18} />, section: 'MAIN' },
+
+  // ── DATABASE: Quick-reference browsing ──
+  { label: 'Operators', path: '/characters', icon: <Users size={18} />, section: 'DATABASE' },
+  { label: 'Weapons', path: '/weapons', icon: <Sword size={18} />, section: 'DATABASE' },
+  { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={18} />, section: 'DATABASE' },
+  { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={18} />, section: 'DATABASE' },
+
+  // ── PLANNER: Optimization & planning tools ──
+  { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={18} />, section: 'PLANNER' },
+  { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={18} />, section: 'PLANNER' },
+  { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={18} />, section: 'PLANNER' },
+
+  // ── CREATE: User-generated content & creative tools ──
+  { label: 'Operator Card', path: '/character-card', icon: <Sparkles size={18} />, section: 'CREATE' },
+  { label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={18} />, isNew: true, section: 'CREATE' },
   {
-    label: 'Operators', path: '/characters', icon: <Users size={18} />, section: 'DATABASE',
+    label: 'Community Builds', path: '/builds', icon: <Hammer size={18} />, isNew: true, section: 'CREATE',
     children: [
-      { label: 'All Operators', path: '/characters', icon: <Users size={16} /> },
-      { label: 'Weapons', path: '/weapons', icon: <Sword size={16} /> },
-      { label: 'Equipment Sets', path: '/equipment', icon: <Shield size={16} /> },
+      { label: 'Browse Builds', path: '/builds', icon: <Hammer size={16} /> },
     ],
   },
   {
-    label: 'Build Tools', path: '/ascension-planner', icon: <Star size={18} />, section: 'DATABASE',
-    children: [
-      { label: 'Ascension Planner', path: '/ascension-planner', icon: <Star size={16} /> },
-      { label: 'Essence Solver', path: '/essence-solver', icon: <FlaskConical size={16} /> },
-      { label: 'Gear Artificing', path: '/gear-artificing', icon: <Wrench size={16} /> },
-    ],
-  },
-  {
-    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />, section: 'LOGISTICS',
+    label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />, section: 'CREATE',
     children: [
       { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
       { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={16} /> },
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
     ],
   },
-  { label: 'Interactive Map', path: '/map', icon: <Map size={18} />, section: 'LOGISTICS' },
-  { label: 'Headhunt Ops', path: '/headhunt-tracker', icon: <Target size={18} />, isNew: true, section: 'TOOLS' },
-  { label: 'Recruitment Sim', path: '/summon-simulator', icon: <Dice6 size={18} />, section: 'TOOLS' },
-  { label: 'Achievements', path: '/achievements', icon: <Trophy size={18} />, section: 'TOOLS' },
-  {
-    label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={18} />, isNew: true, section: 'COMMUNITY',
-  },
-  {
-    label: 'Community Builds', path: '/builds', icon: <Hammer size={18} />, isNew: true, section: 'COMMUNITY',
-  },
-  { label: 'Intel Briefings', path: '/guides', icon: <BookOpen size={18} />, section: 'COMMUNITY' },
+
+  // ── TRACKER: Progress & exploration ──
+  { label: 'Interactive Map', path: '/map', icon: <Map size={18} />, section: 'TRACKER' },
+  { label: 'Headhunt Tracker', path: '/headhunt-tracker', icon: <Target size={18} />, section: 'TRACKER' },
+  { label: 'Achievements', path: '/achievements', icon: <Trophy size={18} />, section: 'TRACKER' },
+  { label: 'Summon Simulator', path: '/summon-simulator', icon: <Dice6 size={18} />, section: 'TRACKER' },
+
+  // ── COMMUNITY: Learning & engagement ──
+  { label: 'Guides', path: '/guides', icon: <BookOpen size={18} />, section: 'COMMUNITY' },
 ];
 
 export default function Sidebar() {

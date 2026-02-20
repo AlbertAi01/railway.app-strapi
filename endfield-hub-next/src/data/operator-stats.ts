@@ -60,7 +60,7 @@ export const OPERATOR_STATS: Record<string, OperatorStatData> = {
       elite3_lv60: { hp: 3811, atk: 225, str: 77, agi: 65, int: 103, wil: 83 },
       elite4_lv80: { hp: 4934, atk: 291, str: 100, agi: 84, int: 131, wil: 106 },
     },
-    maxStats: { hp: 5495, atk: 324, str: 100, agi: 84, int: 131, wil: 106 },
+    maxStats: { hp: 5495, atk: 324, str: 112, agi: 94, int: 145, wil: 118 },
   },
   Gilberta: {
     rarity: 6, mainAttribute: 'wil', secondaryAttribute: 'int',

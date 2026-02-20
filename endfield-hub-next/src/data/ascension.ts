@@ -28,7 +28,7 @@ export const BREAK_COSTS: Record<string, { gold: number; template: { id: string;
     ],
     mushroomTier: 'item_plant_mushroom_1_3',
   },
-  charBreak70: {
+  charBreak80: {
     gold: 100000,
     template: [
       { id: 'item_char_break_stage_3_4', count: 36 },
@@ -42,11 +42,11 @@ export const BREAK_MUSHROOM_COUNTS: Record<string, number> = {
   charBreak20: 3,
   charBreak40: 5,
   charBreak60: 5,
-  charBreak70: 8,
+  charBreak80: 8,
 };
 
-// charBreak70 also adds a specialize material (count: 20)
-export const BREAK70_SPECIALIZE_COUNT = 20;
+// charBreak80 (E4) also adds a specialize material (count: 20)
+export const BREAK80_SPECIALIZE_COUNT = 20;
 
 // Shared skill level cost templates
 // All characters share the same amounts. Plant and specialize items are substituted per character.
@@ -66,8 +66,8 @@ export const SKILL_COSTS: Record<number, { gold: number; items: { type: 'skillBo
 
 // Per-character material assignments (only the items that vary between characters)
 export const CHAR_MATERIALS: Record<string, {
-  breakSpec: string;    // specialize material for charBreak70
-  breakMush2: string;   // tier-2 mushroom for charBreak70
+  breakSpec: string;    // specialize material for charBreak80 (E4)
+  breakMush2: string;   // tier-2 mushroom for charBreak80 (E4)
   skillPlant2: string;  // tier-2 crystal plant for skill levels 10+
   skillSpecA: string;   // specialize for NormalSkill + UltimateSkill levels 10+
   skillSpecB: string;   // specialize for ComboSkill + NormalAttack levels 10+
@@ -103,7 +103,7 @@ export function getBreakMaterials(slug: string, fromBreak: number, toBreak: numb
   if (!charMats) return [];
 
   const totals: Record<string, number> = {};
-  const breakLevels = [20, 40, 60, 70];
+  const breakLevels = [20, 40, 60, 80];
 
   for (const level of breakLevels) {
     if (level <= fromBreak || level > toBreak) continue;
@@ -121,12 +121,12 @@ export function getBreakMaterials(slug: string, fromBreak: number, toBreak: numb
 
     // Mushroom
     const mushCount = BREAK_MUSHROOM_COUNTS[key];
-    if (level < 70) {
+    if (level < 80) {
       totals[cost.mushroomTier] = (totals[cost.mushroomTier] || 0) + mushCount;
     } else {
-      // charBreak70 uses per-character mushroom_2 and specialize
+      // charBreak80 uses per-character mushroom_2 and specialize
       totals[charMats.breakMush2] = (totals[charMats.breakMush2] || 0) + mushCount;
-      totals[charMats.breakSpec] = (totals[charMats.breakSpec] || 0) + BREAK70_SPECIALIZE_COUNT;
+      totals[charMats.breakSpec] = (totals[charMats.breakSpec] || 0) + BREAK80_SPECIALIZE_COUNT;
     }
   }
 
@@ -172,43 +172,46 @@ export function getSkillMaterials(slug: string, skillGroup: number, fromLevel: n
 }
 
 // ─── Weapon Breakthrough Costs ──────────────────────────────────────────────
-// Weapons break at levels 20, 40, 60, 80 (vs characters at 20, 40, 60, 70)
+// Weapons break at levels 20, 40, 60, 80 (same as characters: E1/E2/E3/E4)
 // Weapon breakthrough costs are simpler than character costs - only gold + materials
 
 export const WEAPON_BREAK_COSTS: Record<string, { gold: number; materials: { id: string; count: number }[] }> = {
   weaponBreak20: {
-    gold: 2000,
+    gold: 2200,
     materials: [
-      { id: 'item_weapon_break_stage_1_2', count: 5 },
+      { id: 'item_weapon_break_stage_1_2', count: 5 },  // Cast Die
     ],
   },
   weaponBreak40: {
-    gold: 8000,
+    gold: 8500,
     materials: [
-      { id: 'item_weapon_break_stage_1_2', count: 15 },
+      { id: 'item_weapon_break_stage_1_2', count: 18 }, // Cast Die
     ],
   },
   weaponBreak60: {
     gold: 25000,
     materials: [
-      { id: 'item_weapon_break_stage_3_4', count: 20 },
+      { id: 'item_weapon_break_stage_3_4', count: 20 }, // Heavy Cast Die
     ],
   },
   weaponBreak80: {
-    gold: 120000,
+    gold: 90000,
     materials: [
-      { id: 'item_weapon_break_stage_3_4', count: 30 },
+      { id: 'item_weapon_break_stage_3_4', count: 30 }, // Heavy Cast Die
     ],
   },
 };
 
 // Per-weapon material assignments
-// These are weapon-specific breakthrough materials that vary per weapon
+// T1-T2 use weapon-type ore materials (Kalkonyx/Auronyx shared across weapons)
+// T3-T4 use weapon-specific rare materials + minerals
 export const WEAPON_MATERIALS: Record<string, {
-  breakMat20: string;  // tier-1 weapon material for break 20
-  breakMat40: string;  // tier-2 weapon material for break 40
-  breakMat60: string;  // tier-3 weapon material for break 60
-  breakMat80: string;  // tier-4 weapon material for break 80
+  breakMat20: string;  // tier-1 weapon material for break 20 (weapon type specific)
+  breakMat40: string;  // tier-2 weapon material for break 40 (weapon type specific)
+  breakMat60: string;  // tier-3 rare weapon material for break 60 (weapon specific)
+  breakMat80: string;  // tier-4 rare weapon material for break 80 (weapon specific)
+  mineral60?: string;  // tier-3 mineral for break 60 (weapon specific)
+  mineral80?: string;  // tier-4 mineral for break 80 (weapon specific)
 }> = {
   // 6-star Greatswords
   'exemplar': { breakMat20: 'item_weapon_greatsword_1', breakMat40: 'item_weapon_greatsword_2', breakMat60: 'item_weapon_greatsword_3', breakMat80: 'item_weapon_greatsword_4' },
@@ -269,12 +272,28 @@ export const WEAPON_MATERIALS: Record<string, {
   'finchaser-3-0': { breakMat20: 'item_weapon_sword_1', breakMat40: 'item_weapon_sword_2', breakMat60: 'item_weapon_sword_3', breakMat80: 'item_weapon_sword_4' },
 };
 
-// Weapon breakthrough material counts per break level
+// Ore material costs per break level (shared across all weapons)
+export const WEAPON_ORE_COSTS: Record<string, { id: string; count: number } | null> = {
+  weaponBreak20: { id: 'item_weapon_ore_1', count: 3 },  // Kalkonyx
+  weaponBreak40: { id: 'item_weapon_ore_2', count: 5 },  // Auronyx
+  weaponBreak60: { id: 'item_weapon_ore_3', count: 5 },  // Umbronyx
+  weaponBreak80: null,                                     // No ore at T4
+};
+
+// Weapon-specific breakthrough material counts per break level
+// T1-T2: only weapon-type-specific materials (3, 5)
+// T3-T4: weapon-specific rare materials (16) + weapon-specific minerals (8)
 export const WEAPON_BREAK_MAT_COUNTS: Record<string, number> = {
   weaponBreak20: 3,
-  weaponBreak40: 6,
-  weaponBreak60: 10,
-  weaponBreak80: 15,
+  weaponBreak40: 5,
+  weaponBreak60: 16,
+  weaponBreak80: 16,
+};
+
+// Additional mineral material counts for T3 and T4
+export const WEAPON_BREAK_MINERAL_COUNTS: Record<string, number> = {
+  weaponBreak60: 8,
+  weaponBreak80: 8,
 };
 
 // Helper: compute total materials for a weapon from currentBreak to targetBreak
@@ -294,9 +313,15 @@ export function getWeaponBreakMaterials(slug: string, fromBreak: number, toBreak
     // Gold
     totals['item_gold'] = (totals['item_gold'] || 0) + cost.gold;
 
-    // Generic break materials
+    // Generic break materials (Cast Die / Heavy Cast Die)
     for (const item of cost.materials) {
       totals[item.id] = (totals[item.id] || 0) + item.count;
+    }
+
+    // Shared ore materials (Kalkonyx, Auronyx, Umbronyx)
+    const ore = WEAPON_ORE_COSTS[key];
+    if (ore) {
+      totals[ore.id] = (totals[ore.id] || 0) + ore.count;
     }
 
     // Weapon-specific breakthrough materials
@@ -308,6 +333,15 @@ export function getWeaponBreakMaterials(slug: string, fromBreak: number, toBreak
     else matId = weaponMats.breakMat80;
 
     totals[matId] = (totals[matId] || 0) + matCount;
+
+    // Weapon-specific minerals for T3 and T4
+    const mineralCount = WEAPON_BREAK_MINERAL_COUNTS[key];
+    if (mineralCount) {
+      const mineralId = level === 60 ? weaponMats.mineral60 : weaponMats.mineral80;
+      if (mineralId) {
+        totals[mineralId] = (totals[mineralId] || 0) + mineralCount;
+      }
+    }
   }
 
   return Object.entries(totals).map(([id, count]) => ({ id, count }));

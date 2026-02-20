@@ -326,8 +326,11 @@ export const MATERIAL_ID_TO_NAME: Record<string, string> = {
   'item_plant_crylplant_2_1': 'Blighted Jadeleaf',
   'item_plant_crylplant_2_2': 'False Aggela',
   // Weapon breakthrough materials
-  'item_weapon_break_stage_1_2': 'Weapon Protodisk',
-  'item_weapon_break_stage_3_4': 'Weapon Protoset',
+  'item_weapon_break_stage_1_2': 'Cast Die',
+  'item_weapon_break_stage_3_4': 'Heavy Cast Die',
+  'item_weapon_ore_1': 'Kalkonyx',
+  'item_weapon_ore_2': 'Auronyx',
+  'item_weapon_ore_3': 'Umbronyx',
   'item_weapon_greatsword_1': 'Greatsword Fragment I',
   'item_weapon_greatsword_2': 'Greatsword Fragment II',
   'item_weapon_greatsword_3': 'Greatsword Fragment III',

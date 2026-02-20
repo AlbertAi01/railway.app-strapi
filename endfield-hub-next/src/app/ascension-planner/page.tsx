@@ -16,7 +16,7 @@ import RIOSHeader from '@/components/ui/RIOSHeader';
 import { useAuthStore } from '@/store/authStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
 
-const BREAK_LEVELS = [0, 20, 40, 60, 70];
+const BREAK_LEVELS = [0, 20, 40, 60, 80];
 const WEAPON_BREAK_LEVELS = [1, 20, 40, 60, 80];
 const SKILL_GROUPS = [
   { id: 0, label: 'Normal Skill' },
@@ -385,7 +385,7 @@ function PlanCard({ plan, onUpdate, onRemove, inventory }: {
                   className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
                 >
                   {BREAK_LEVELS.filter(lv => lv > plan.currentBreak).map(lv => (
-                    <option key={lv} value={lv}>Break {lv}{lv === 70 ? ' (Max)' : ''}</option>
+                    <option key={lv} value={lv}>Break {lv}{lv === 80 ? ' (Max)' : ''}</option>
                   ))}
                   {BREAK_LEVELS.filter(lv => lv > plan.currentBreak).length === 0 && (
                     <option value={plan.currentBreak}>Already maxed</option>
@@ -858,7 +858,7 @@ export default function AscensionPlannerPage() {
       id: `${slug}-${Date.now()}`,
       slug,
       currentBreak: 0,
-      targetBreak: 70,
+      targetBreak: 80,
       skillLevels: defaultSkillLevels(),
       collapsed: false,
     }]);
@@ -1137,9 +1137,9 @@ export default function AscensionPlannerPage() {
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-[10px] font-mono text-[var(--color-text-tertiary)] uppercase">Quick Set All:</span>
                       {plans.length > 0 && [
-                        { label: 'Ops: Break 70 + Skills 6', brk: 70, skills: 6 },
-                        { label: 'Ops: Break 70 + Skills 9', brk: 70, skills: 9 },
-                        { label: 'Ops: Break 70 + Skills 12', brk: 70, skills: 12 },
+                        { label: 'Ops: E4 + Skills 6', brk: 80, skills: 6 },
+                        { label: 'Ops: E4 + Skills 9', brk: 80, skills: 9 },
+                        { label: 'Ops: E4 + Skills 12', brk: 80, skills: 12 },
                       ].map(preset => (
                         <button
                           key={preset.label}

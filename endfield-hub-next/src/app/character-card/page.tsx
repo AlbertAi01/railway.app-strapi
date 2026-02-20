@@ -245,7 +245,7 @@ const SKILL_TYPES = [
 ];
 
 const CHAR_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3', 'B4'];
-const WEAPON_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3'];
+const WEAPON_BREAKTHROUGH_LABELS = ['B0', 'B1', 'B2', 'B3', 'B4'];
 
 type TalentState = 'locked' | 'base' | 'upgrade';
 
@@ -566,8 +566,8 @@ function generateOperatorID(name: string, rarity: number): string {
   return `${prefix}-${rarityCode}${serial}`;
 }
 
-function getClearanceLevel(rarity: number): string {
-  return rarity >= 6 ? 'S' : rarity >= 5 ? 'A' : rarity >= 4 ? 'B' : 'C';
+function getEliteLabel(breakthrough: number): string {
+  return breakthrough >= 4 ? 'E4' : breakthrough >= 3 ? 'E3' : breakthrough >= 2 ? 'E2' : breakthrough >= 1 ? 'E1' : 'E0';
 }
 
 function getDossierTimestamp(): string {
@@ -576,9 +576,9 @@ function getDossierTimestamp(): string {
 }
 
 // ──────────── CARD CANVAS (the exported image) ────────────
-// Endfield Industries ID Card / Military Dossier layout
-// 1200x675 — 3-column grid: portrait left | data center | loadout right
-// Classification header, barcode footer, angular clip-paths, max information density
+// Art-forward operator showcase — character art dominates the left,
+// semi-transparent data panel on the right. Inspired by Enka.Network / StarDB.
+// 1200x675 (16:9) — optimized for Twitter/Discord/Reddit embeds.
 
 function CardCanvas({ state, theme, char, weapon, colorScheme }: {
   state: ShowcaseState; theme: typeof THEME_COLORS.Physical;
@@ -599,567 +599,433 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
     { slot: state.equipEdc1, label: 'EDC-1' },
     { slot: state.equipEdc2, label: 'EDC-2' },
   ];
-  const equippedPieces = equipSlots.map(({ slot, label }) => {
+  const equippedPieces = equipSlots.map(({ slot }) => {
     if (!slot.pieceName) return null;
     const piece = findGearPieceByName(slot.pieceName);
-    return piece ? { piece, setName: slot.setName, artifice: slot.artifice, label } : null;
+    return piece ? { piece, setName: slot.setName, artifice: slot.artifice } : null;
   });
 
-  // Compute stats with all data sources: operator progression, talent, weapon, equipment
   const stats = computeStats(char, state.level, state.potential, state.charBreakthrough, weaponData, state.weaponLevel, equippedPieces);
 
   const setCount: Record<string, number> = {};
   equippedPieces.forEach(ep => { if (ep && ep.setName) setCount[ep.setName] = (setCount[ep.setName] || 0) + 1; });
   const activeSets = Object.entries(setCount).filter(([, count]) => count >= 3);
 
-  const FONT_HEADER = "'Rajdhani', 'Exo 2', sans-serif";
-  const FONT_MONO = "'Share Tech Mono', 'Courier New', monospace";
+  const F = "'Rajdhani', 'Exo 2', sans-serif";
+  const FM = "'Share Tech Mono', 'Courier New', monospace";
   const operatorID = generateOperatorID(char.Name, char.Rarity);
-  const clearance = getClearanceLevel(char.Rarity);
-  const timestamp = getDossierTimestamp();
+  const eliteLabel = getEliteLabel(state.charBreakthrough);
   const schemeConfig = COLOR_SCHEMES[colorScheme] || COLOR_SCHEMES.auto;
-  const bgGrad = colorScheme === 'auto' ? COLOR_SCHEMES.standard.bgGrad : schemeConfig.bgGrad;
   const brightnessFilter = state.brightness !== 1.0 ? `brightness(${state.brightness})` : undefined;
-  const accentColor = schemeConfig.tint || theme.primary;
+  const ac = schemeConfig.tint || theme.primary; // accent color
 
-  // Divider component for reuse
-  const HDivider = ({ mb = 6 }: { mb?: number }) => (
-    <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${accentColor}30, transparent)`, marginBottom: mb }} />
-  );
+  // Panel widths
+  const DATA_W = 520; // right data panel
+  const ART_W = 1200 - DATA_W; // left art area = 680
 
   return (
     <div style={{
       width: 1200, height: 675, position: 'relative', overflow: 'hidden',
-      background: bgGrad, fontFamily: FONT_MONO, filter: brightnessFilter,
+      background: '#080a0f', fontFamily: FM, filter: brightnessFilter,
     }}>
-      {/* Scanline overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 1, opacity: 0.02, pointerEvents: 'none',
-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px)',
-      }} />
-      {/* Color tint */}
-      {schemeConfig.tint && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
-          background: `radial-gradient(ellipse at 30% 50%, ${schemeConfig.tint}06 0%, transparent 60%)`,
-        }} />
+
+      {/* ═══ FULL-BLEED CHARACTER ART ═══ */}
+      {(splashUrl || gachaUrl) && (
+        <div style={{ position: 'absolute', left: 0, top: 0, width: ART_W + 80, height: '100%', zIndex: 1 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={splashUrl || gachaUrl || ''} alt={char.Name} style={{
+            width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%',
+            filter: 'brightness(0.85) contrast(1.05)',
+          }} />
+          {/* Fade to black on right edge */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0, width: 200, height: '100%',
+            background: 'linear-gradient(to right, transparent, #080a0f)',
+          }} />
+          {/* Fade to black on bottom */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 200,
+            background: 'linear-gradient(to top, #080a0fEE, #080a0f88, transparent)',
+          }} />
+          {/* Fade to black on top for header */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 80,
+            background: 'linear-gradient(to bottom, #080a0fCC, transparent)',
+          }} />
+        </div>
       )}
-      {/* Grid pattern */}
+
+      {/* Element glow behind character */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 1, opacity: schemeConfig.overlayOpacity * 0.6, pointerEvents: 'none',
-        backgroundImage: `linear-gradient(${accentColor}20 1px, transparent 1px), linear-gradient(90deg, ${accentColor}20 1px, transparent 1px)`,
-        backgroundSize: '40px 40px',
+        position: 'absolute', left: ART_W / 2 - 150, top: '30%', width: 300, height: 300,
+        borderRadius: '50%', zIndex: 0,
+        background: `radial-gradient(circle, ${theme.glow} 0%, transparent 70%)`, opacity: 0.3,
       }} />
 
-      {/* ═══════════════════════════════════════════════════
-          HEADER BAR — Classification / Document ID / Timestamp
-          ═══════════════════════════════════════════════════ */}
+      {/* Scanline overlay */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 32, zIndex: 20,
-        background: `linear-gradient(90deg, ${accentColor}18 0%, rgba(8,11,16,0.95) 40%, rgba(8,11,16,0.95) 100%)`,
-        borderBottom: `1px solid ${accentColor}30`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 16px',
+        position: 'absolute', inset: 0, zIndex: 2, opacity: 0.015, pointerEvents: 'none',
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 4px)',
+      }} />
+
+      {/* ═══ TOP-LEFT: LEVEL BADGE ═══ */}
+      <div style={{
+        position: 'absolute', top: 16, left: 20, zIndex: 15,
+        display: 'flex', alignItems: 'flex-end', gap: 10,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Diamond icon */}
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M6 0 L12 6 L6 12 L0 6 Z" fill={accentColor} fillOpacity="0.8" />
-          </svg>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#F5A623', letterSpacing: 2, textTransform: 'uppercase',
-            background: 'rgba(245,166,35,0.1)', padding: '1px 8px', border: '1px solid rgba(245,166,35,0.3)',
-          }}>CLEARANCE {clearance}</span>
-          <span style={{ fontSize: 9, color: '#666', letterSpacing: 1 }}>ENDFIELD INDUSTRIES</span>
-          <span style={{ fontSize: 9, color: '#555', letterSpacing: 1 }}>OPERATOR DOSSIER</span>
+        <div style={{
+          width: 62, height: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: `linear-gradient(135deg, ${ac}EE, ${theme.accent}DD)`,
+          border: `2px solid ${ac}`,
+          clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
+        }}>
+          <span style={{ fontSize: 30, fontWeight: 900, color: '#080a0f', lineHeight: 1, fontFamily: F }}>{state.level}</span>
+          <span style={{ fontSize: 8, fontWeight: 700, color: '#080a0f', opacity: 0.6, letterSpacing: 2 }}>LEVEL</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontSize: 9, color: '#555', letterSpacing: 1 }}>{operatorID}</span>
-          <span style={{ fontSize: 9, color: '#444', letterSpacing: 0.5 }}>{timestamp}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, paddingBottom: 2 }}>
+          <div style={{
+            padding: '2px 8px', background: 'rgba(8,10,15,0.85)', border: `1px solid ${ac}40`,
+            fontSize: 9, color: '#ccc', letterSpacing: 1.5, fontWeight: 600,
+          }}>
+            POT <span style={{ color: ac, fontWeight: 800 }}>{state.potential}</span>
+            <span style={{ color: '#555', margin: '0 4px' }}>|</span>
+            AFF <span style={{ color: ac, fontWeight: 800 }}>{state.affinity}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 2 }}>
+            {Array.from({ length: 5 }, (_, i) => (
+              <div key={i} style={{
+                width: 18, height: 4,
+                backgroundColor: i <= state.charBreakthrough ? ac : '#333',
+                opacity: i <= state.charBreakthrough ? 1 : 0.5,
+              }} />
+            ))}
+            <span style={{ fontSize: 9, color: ac, fontWeight: 800, marginLeft: 4 }}>{CHAR_BREAKTHROUGH_LABELS[state.charBreakthrough]}</span>
+          </div>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════
-          LEFT COLUMN — Portrait + Identity (width: 310px)
-          ═══════════════════════════════════════════════════ */}
+      {/* ═══ BOTTOM-LEFT: NAME PLATE ═══ */}
       <div style={{
-        position: 'absolute', left: 0, top: 32, width: 310, height: 'calc(100% - 64px)', zIndex: 10,
-        background: 'rgba(8,11,16,0.4)',
-        borderRight: `1px solid ${accentColor}15`,
+        position: 'absolute', bottom: 36, left: 20, zIndex: 15,
+        maxWidth: ART_W - 40,
       }}>
-        {/* Character art — full bleed in left column */}
-        {(splashUrl || gachaUrl) && (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={splashUrl || gachaUrl || ''} alt={char.Name} style={{
-              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%',
-              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.95) 50%, rgba(0,0,0,0.7) 75%, rgba(0,0,0,0.3) 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.95) 50%, rgba(0,0,0,0.7) 75%, rgba(0,0,0,0.3) 100%)',
-              filter: 'brightness(0.8) contrast(1.08)',
-            }} />
+        {/* Name */}
+        <div style={{
+          fontSize: 42, fontWeight: 900, color: '#fff', fontFamily: F,
+          letterSpacing: 4, textTransform: 'uppercase', lineHeight: 1,
+          textShadow: '0 2px 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)',
+        }}>
+          {char.Name}
+        </div>
+
+        {/* Showcase name */}
+        {state.name && (
+          <div style={{
+            fontSize: 13, color: ac, fontWeight: 600, letterSpacing: 2,
+            textTransform: 'uppercase', marginTop: 4, fontFamily: F,
+            textShadow: '0 1px 8px rgba(0,0,0,0.6)',
+          }}>
+            {state.name}
           </div>
         )}
 
-        {/* Element glow - bottom */}
-        <div style={{
-          position: 'absolute', left: '50%', bottom: -40, transform: 'translateX(-50%)',
-          width: 200, height: 200, borderRadius: '50%', zIndex: 2,
-          background: `radial-gradient(circle, ${theme.glow} 0%, transparent 70%)`, opacity: 0.5,
-        }} />
-
-        {/* Overlay identity info at bottom */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 5, padding: '10px 14px',
-          background: 'linear-gradient(to top, rgba(8,11,16,0.95) 50%, rgba(8,11,16,0.6) 80%, transparent 100%)',
-        }}>
-          {/* Character name */}
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', fontFamily: FONT_HEADER, letterSpacing: 3, textTransform: 'uppercase', lineHeight: 1, marginBottom: 4 }}>
-            {char.Name}
+        {/* Rarity + Element + Role */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+          <div style={{ display: 'flex', gap: 2 }}>
+            {Array.from({ length: char.Rarity }, (_, i) => (
+              <span key={i} style={{ color: RARITY_COLORS[char.Rarity], fontSize: 14, textShadow: `0 0 6px ${RARITY_COLORS[char.Rarity]}60` }}>★</span>
+            ))}
           </div>
-          {state.name && (
-            <div style={{ fontSize: 10, color: '#777', fontStyle: 'italic', marginBottom: 4 }}>&quot;{state.name}&quot;</div>
+          <div style={{ width: 1, height: 14, background: '#555' }} />
+          {roleIcon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={roleIcon} alt={char.Role} style={{ width: 16, height: 16, opacity: 0.9, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }} />
           )}
-
-          {/* Rarity + Element + Role row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <div style={{ display: 'flex', gap: 1 }}>
-              {Array.from({ length: char.Rarity }, (_, i) => (
-                <span key={i} style={{ color: RARITY_COLORS[char.Rarity], fontSize: 12 }}>★</span>
-              ))}
-            </div>
-            <div style={{ width: 1, height: 12, background: '#444' }} />
-            {roleIcon && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={roleIcon} alt={char.Role} style={{ width: 14, height: 14, opacity: 0.8 }} />
-            )}
-            <span style={{ fontSize: 9, color: theme.primary, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
-              {char.Element} / {char.Role}
-            </span>
-          </div>
-
-          {/* ID plate */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: 'rgba(10,14,20,0.8)', border: `1px solid ${accentColor}20`, padding: '3px 8px',
-          }}>
-            <span style={{ fontSize: 8, color: '#666', letterSpacing: 1 }}>OPERATOR ID</span>
-            <span style={{ fontSize: 9, color: accentColor, fontWeight: 700, letterSpacing: 1.5 }}>{operatorID}</span>
-          </div>
-
-          {/* Breakthrough bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
-            <span style={{ fontSize: 8, color: '#666', letterSpacing: 1, fontWeight: 600 }}>BTK</span>
-            <div style={{ display: 'flex', gap: 2 }}>
-              {Array.from({ length: 5 }, (_, i) => (
-                <div key={i} style={{ width: 16, height: 3, backgroundColor: i < state.charBreakthrough ? theme.primary : '#333' }} />
-              ))}
-            </div>
-            <span style={{ fontSize: 8, color: theme.primary, fontWeight: 800 }}>{CHAR_BREAKTHROUGH_LABELS[state.charBreakthrough]}</span>
-          </div>
+          <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>
+            {char.Element} / {char.Role}
+          </span>
         </div>
 
-        {/* Top-left badge: Level */}
-        <div style={{
-          position: 'absolute', top: 8, left: 10, zIndex: 6,
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          <div style={{
-            width: 44, height: 44, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${theme.primary}DD, ${theme.accent}DD)`,
-            border: `2px solid ${theme.primary}`,
-            clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)',
-          }}>
-            <span style={{ fontSize: 20, fontWeight: 900, color: '#0a0e14', lineHeight: 1, fontFamily: FONT_HEADER }}>{state.level}</span>
-            <span style={{ fontSize: 7, fontWeight: 700, color: '#0a0e14', opacity: 0.7, textTransform: 'uppercase', letterSpacing: 1.5 }}>LV</span>
+        {/* User info */}
+        {state.username && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+            <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>{state.username}</span>
+            {state.userCode && <span style={{ fontSize: 9, color: '#555' }}>#{state.userCode}</span>}
+            {state.server && <span style={{ fontSize: 9, color: '#555' }}>[{state.server}]</span>}
           </div>
-          {/* POT / AFF badges */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div style={{ padding: '1px 6px', background: 'rgba(10,14,20,0.85)', border: `1px solid ${theme.primary}30`, fontSize: 8, color: '#aaa', letterSpacing: 1, fontWeight: 600 }}>
-              POT <span style={{ color: theme.primary, fontWeight: 800 }}>{state.potential}</span>
-            </div>
-            <div style={{ padding: '1px 6px', background: 'rgba(10,14,20,0.85)', border: `1px solid ${theme.primary}30`, fontSize: 8, color: '#aaa', letterSpacing: 1, fontWeight: 600 }}>
-              AFF <span style={{ color: theme.primary, fontWeight: 800 }}>{state.affinity}</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* ═══════════════════════════════════════════════════
-          CENTER COLUMN — Combat Stats + Skills (width: ~470px)
-          ═══════════════════════════════════════════════════ */}
+      {/* ═══ RIGHT DATA PANEL ═══ */}
       <div style={{
-        position: 'absolute', left: 310, top: 32, width: 470, height: 'calc(100% - 64px)', zIndex: 10,
-        display: 'flex', flexDirection: 'column', padding: '10px 16px',
-        background: 'rgba(8,11,16,0.92)',
-        borderRight: `1px solid ${accentColor}10`,
+        position: 'absolute', right: 0, top: 0, width: DATA_W, height: '100%', zIndex: 10,
+        background: 'rgba(8,10,15,0.88)',
+        borderLeft: `1px solid ${ac}15`,
+        display: 'flex', flexDirection: 'column',
+        padding: '14px 18px 10px',
       }}>
-        {/* Section: Combat Stats */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <div style={{ width: 3, height: 10, background: accentColor }} />
-            <span style={{ fontSize: 9, color: accentColor, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, fontFamily: FONT_HEADER }}>COMBAT ASSESSMENT</span>
+
+        {/* ── Stats Section ── */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{ width: 3, height: 14, background: ac }} />
+            <span style={{ fontSize: 12, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>STATS</span>
+            <div style={{ flex: 1, height: 1, background: `${ac}20` }} />
           </div>
-          {/* HP/ATK/DEF bars */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+
+          {/* HP / ATK / DEF row */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             {[
-              { label: 'HP', value: stats.HP, max: 20000, color: '#EF4444' },
-              { label: 'ATK', value: stats.ATK, max: 4000, color: '#F59E0B' },
-              { label: 'DEF', value: stats.DEF, max: 3000, color: '#3B82F6' },
+              { label: 'HP', value: stats.HP, max: 12000, color: '#EF4444' },
+              { label: 'ATK', value: stats.ATK, max: 800, color: '#F5A623' },
+              { label: 'DEF', value: stats.DEF, max: 500, color: '#3B82F6' },
             ].map(s => (
               <div key={s.label} style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <span style={{ fontSize: 8, color: '#666', letterSpacing: 1, fontWeight: 700 }}>{s.label}</span>
-                  <span style={{ fontSize: 12, color: '#fff', fontWeight: 800, fontFamily: FONT_MONO }}>{s.value.toLocaleString()}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+                  <span style={{ fontSize: 9, color: s.color, letterSpacing: 1.5, fontWeight: 700 }}>{s.label}</span>
+                  <span style={{ fontSize: 16, color: '#fff', fontWeight: 800, fontFamily: FM, lineHeight: 1 }}>{s.value.toLocaleString()}</span>
                 </div>
-                <div style={{ height: 3, background: '#1a1f28', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, (s.value / s.max) * 100)}%`, background: `linear-gradient(to right, ${s.color}70, ${s.color})` }} />
+                <div style={{ height: 3, background: '#1a1e28' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, (s.value / s.max) * 100)}%`, background: `linear-gradient(to right, ${s.color}60, ${s.color})` }} />
                 </div>
               </div>
             ))}
           </div>
+
+          {/* STR / AGI / INT / WILL + Crit */}
+          <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 3, flex: 1 }}>
+              {[
+                { label: 'STR', value: stats.STR, color: '#FF6B35' },
+                { label: 'AGI', value: stats.AGI, color: '#00BFFF' },
+                { label: 'INT', value: stats.INT, color: '#C084FC' },
+                { label: 'WILL', value: stats.WILL, color: '#34D399' },
+              ].map(s => (
+                <div key={s.label} style={{
+                  textAlign: 'center', padding: '5px 0',
+                  background: 'rgba(16,20,28,0.7)', borderBottom: `2px solid ${s.color}50`,
+                }}>
+                  <div style={{ fontSize: 8, color: s.color, fontWeight: 800, letterSpacing: 1.5, marginBottom: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 18, color: '#eee', fontWeight: 700, fontFamily: FM, lineHeight: 1 }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: 90 }}>
+              {[
+                { label: 'CRIT%', value: `${stats['CRIT Rate']}%` },
+                { label: 'CDMG%', value: `${stats['CRIT DMG']}%` },
+              ].map(s => (
+                <div key={s.label} style={{
+                  flex: 1, padding: '3px 6px', background: 'rgba(16,20,28,0.7)',
+                  borderBottom: `2px solid ${ac}40`, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                }}>
+                  <div style={{ fontSize: 7, color: '#666', letterSpacing: 1, fontWeight: 700 }}>{s.label}</div>
+                  <div style={{ fontSize: 14, color: ac, fontWeight: 800, fontFamily: FM, lineHeight: 1.1 }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <HDivider mb={6} />
-
-        {/* Base attributes + Crit */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-          {/* STR/AGI/INT/WILL */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4, flex: 1 }}>
-            {[
-              { label: 'STR', value: stats.STR, color: '#FF6B35' },
-              { label: 'AGI', value: stats.AGI, color: '#00BFFF' },
-              { label: 'INT', value: stats.INT, color: '#C084FC' },
-              { label: 'WILL', value: stats.WILL, color: '#34D399' },
-            ].map(s => (
-              <div key={s.label} style={{
-                textAlign: 'center', padding: '4px 0',
-                background: 'rgba(16,20,28,0.6)', borderLeft: `2px solid ${s.color}40`,
-              }}>
-                <div style={{ fontSize: 7, color: s.color, fontWeight: 800, letterSpacing: 1, marginBottom: 1 }}>{s.label}</div>
-                <div style={{ fontSize: 15, color: '#eee', fontWeight: 700, fontFamily: FONT_MONO, lineHeight: 1 }}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-          {/* Crit */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 100 }}>
-            <div style={{ padding: '3px 8px', background: 'rgba(16,20,28,0.6)', borderLeft: `2px solid ${accentColor}40` }}>
-              <div style={{ fontSize: 7, color: '#666', letterSpacing: 0.5, fontWeight: 700 }}>CRIT RATE</div>
-              <div style={{ fontSize: 13, color: accentColor, fontWeight: 800, fontFamily: FONT_MONO, lineHeight: 1.1 }}>{stats['CRIT Rate']}%</div>
+        {/* ── Skills ── */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 3, height: 12, background: ac }} />
+            <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>SKILLS</span>
+            <div style={{ flex: 1, height: 1, background: `${ac}20` }} />
+            {/* Talents inline */}
+            <div style={{ display: 'flex', gap: 4 }}>
+              {state.talentStates.map((t, i) => (
+                <span key={i} style={{
+                  padding: '1px 6px', fontSize: 8, fontWeight: 700, letterSpacing: 0.5,
+                  color: t === 'locked' ? '#444' : t === 'base' ? '#888' : ac,
+                  background: t === 'upgrade' ? `${ac}12` : 'rgba(16,20,28,0.7)',
+                  border: `1px solid ${t === 'upgrade' ? ac + '40' : '#222'}`,
+                }}>
+                  T{i+1}:{t === 'locked' ? 'OFF' : t === 'base' ? 'α' : 'β'}
+                </span>
+              ))}
             </div>
-            <div style={{ padding: '3px 8px', background: 'rgba(16,20,28,0.6)', borderLeft: `2px solid ${accentColor}40` }}>
-              <div style={{ fontSize: 7, color: '#666', letterSpacing: 0.5, fontWeight: 700 }}>CRIT DMG</div>
-              <div style={{ fontSize: 13, color: accentColor, fontWeight: 800, fontFamily: FONT_MONO, lineHeight: 1.1 }}>{stats['CRIT DMG']}%</div>
-            </div>
-          </div>
-        </div>
-
-        <HDivider mb={6} />
-
-        {/* Skills */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-            <div style={{ width: 3, height: 10, background: accentColor }} />
-            <span style={{ fontSize: 9, color: accentColor, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, fontFamily: FONT_HEADER }}>SKILL PROFICIENCY</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
             {SKILL_TYPES.map(sk => {
               const lvl = state.skillLevels[sk.key as keyof typeof state.skillLevels];
-              const isMax = lvl >= 10;
+              const isMax = lvl >= 9;
               return (
                 <div key={sk.key} style={{
-                  textAlign: 'center', padding: '5px 0',
-                  background: isMax ? `${accentColor}10` : 'rgba(16,20,28,0.7)',
-                  border: `1px solid ${isMax ? accentColor + '40' : '#1a1f28'}`,
-                  borderLeft: `2px solid ${isMax ? accentColor : '#333'}`,
+                  textAlign: 'center', padding: '6px 0',
+                  background: isMax ? `${ac}0D` : 'rgba(16,20,28,0.7)',
+                  borderBottom: `2px solid ${isMax ? ac : '#282e38'}`,
                 }}>
-                  <div style={{ fontSize: 7, color: isMax ? accentColor : '#666', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 1 }}>{sk.short}</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: isMax ? accentColor : '#ddd', fontFamily: FONT_HEADER, lineHeight: 1 }}>{lvl}</div>
+                  <div style={{ fontSize: 8, color: isMax ? ac : '#666', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 700, marginBottom: 2 }}>{sk.short}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: isMax ? ac : '#ddd', fontFamily: F, lineHeight: 1 }}>{lvl}</div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        <HDivider mb={6} />
-
-        {/* Talents */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 8, color: '#555', letterSpacing: 1, fontWeight: 600 }}>TALENTS</span>
-          </div>
-          {state.talentStates.map((t, i) => (
-            <div key={i} style={{
-              padding: '2px 8px',
-              background: t === 'upgrade' ? `${accentColor}10` : 'rgba(16,20,28,0.7)',
-              border: `1px solid ${t === 'upgrade' ? accentColor + '50' : t === 'base' ? accentColor + '20' : '#222'}`,
-              fontSize: 9, letterSpacing: 0.5, fontWeight: 700,
-              color: t === 'locked' ? '#444' : t === 'base' ? '#888' : accentColor,
-            }}>
-              T{i+1} {t === 'locked' ? 'LOCKED' : t === 'base' ? 'BASE' : 'MAX'}
-            </div>
-          ))}
-        </div>
-
-        <HDivider mb={6} />
-
-        {/* Weapon */}
+        {/* ── Weapon ── */}
         {weapon && (
-          <div style={{ marginBottom: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-              <div style={{ width: 3, height: 10, background: '#F5A623' }} />
-              <span style={{ fontSize: 9, color: '#F5A623', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, fontFamily: FONT_HEADER }}>ASSIGNED WEAPON</span>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{ width: 3, height: 12, background: '#F5A623' }} />
+              <span style={{ fontSize: 11, color: '#F5A623', textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>WEAPON</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(245,166,35,0.15)' }} />
             </div>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px',
-              background: 'rgba(16,20,28,0.8)', border: `1px solid ${accentColor}15`,
-              clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)',
+              display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px',
+              background: 'rgba(16,20,28,0.8)', border: `1px solid ${ac}12`,
             }}>
               {weaponIcon && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={weaponIcon} alt={weapon.Name} style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                <img src={weaponIcon} alt={weapon.Name} style={{ width: 44, height: 44, objectFit: 'contain' }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: '#fff', fontWeight: 700, fontFamily: FONT_HEADER, letterSpacing: 0.5 }}>{weapon.Name}</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 1 }}>
-                  <span style={{ fontSize: 9, color: RARITY_COLORS[weapon.Rarity] }}>{'★'.repeat(weapon.Rarity)}</span>
-                  <span style={{ fontSize: 9, color: '#777' }}>Lv.{state.weaponLevel}</span>
-                  <span style={{ fontSize: 9, color: '#777' }}>{WEAPON_BREAKTHROUGH_LABELS[state.weaponBreakthrough]}</span>
-                  <span style={{ fontSize: 9, color: '#777' }}>P{state.weaponPotential}</span>
-                  {weaponAtk && <span style={{ fontSize: 9, color: accentColor, fontWeight: 700 }}>ATK {weaponAtk}</span>}
+                <div style={{ fontSize: 15, color: '#fff', fontWeight: 700, fontFamily: F, letterSpacing: 1 }}>{weapon.Name}</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+                  <span style={{ fontSize: 10, color: RARITY_COLORS[weapon.Rarity] }}>{'★'.repeat(weapon.Rarity)}</span>
+                  <span style={{ fontSize: 10, color: '#888' }}>Lv.{state.weaponLevel}</span>
+                  <span style={{ fontSize: 10, color: '#888' }}>{WEAPON_BREAKTHROUGH_LABELS[state.weaponBreakthrough]}</span>
+                  <span style={{ fontSize: 10, color: '#888' }}>P{state.weaponPotential}</span>
+                  {weaponAtk != null && <span style={{ fontSize: 10, color: '#F5A623', fontWeight: 700 }}>ATK {weaponAtk}</span>}
                 </div>
-                {weaponData?.SkillName && (
-                  <div style={{ fontSize: 8, color: '#555', marginTop: 2, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {weaponData.SkillName}
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Essence levels if any */}
-        {state.essenceLevels.some(l => l > 1) && (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <span style={{ fontSize: 8, color: '#555', letterSpacing: 1, fontWeight: 600 }}>ESSENCE</span>
-            {state.essenceLevels.map((l, i) => (
-              <span key={i} style={{ fontSize: 9, color: l > 1 ? accentColor : '#555', fontWeight: 700 }}>
-                E{i+1}:{l}
+        {/* ── Equipment ── */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 3, height: 12, background: ac }} />
+            <span style={{ fontSize: 11, color: ac, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700, fontFamily: F }}>EQUIPMENT</span>
+            <div style={{ flex: 1, height: 1, background: `${ac}20` }} />
+            {activeSets.length > 0 && activeSets.map(([name, count]) => (
+              <span key={name} style={{ fontSize: 8, color: ac, fontWeight: 700, padding: '1px 6px', background: `${ac}10`, border: `1px solid ${ac}30` }}>
+                {name} ({count}pc)
               </span>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* ═══════════════════════════════════════════════════
-          RIGHT COLUMN — Equipment + Clearance Badge (width: 420px)
-          ═══════════════════════════════════════════════════ */}
-      <div style={{
-        position: 'absolute', right: 0, top: 32, width: 420, height: 'calc(100% - 64px)', zIndex: 10,
-        display: 'flex', flexDirection: 'column', padding: '10px 16px',
-        background: 'rgba(8,11,16,0.95)',
-      }}>
-        {/* Equipment loadout — prominent icon grid */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <div style={{ width: 3, height: 10, background: accentColor }} />
-            <span style={{ fontSize: 9, color: accentColor, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, fontFamily: FONT_HEADER }}>EQUIPMENT LOADOUT</span>
-          </div>
-          {/* Equipment grid: 3 columns showing icon-forward cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
             {equippedPieces.map((ep, i) => {
               const slotLabel = equipSlots[i].label;
               if (!ep) {
                 return (
                   <div key={i} style={{
-                    padding: '6px', background: 'rgba(16,20,28,0.5)', border: '1px solid #1a1f28',
+                    padding: '8px 4px', background: 'rgba(16,20,28,0.4)', border: '1px dashed #1e2430',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    minHeight: 70,
+                    minHeight: 80, gap: 4,
                   }}>
-                    <span style={{ fontSize: 7, color: '#444', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
-                    <span style={{ fontSize: 7, color: '#333', marginTop: 4 }}>EMPTY</span>
+                    <span style={{ fontSize: 8, color: '#333', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 8, color: '#222' }}>EMPTY</span>
                   </div>
                 );
               }
-              const tierColor = TIER_COLORS[ep.piece.tier];
+              const tc = TIER_COLORS[ep.piece.tier];
               return (
                 <div key={i} style={{
-                  padding: '5px', background: 'rgba(16,20,28,0.7)',
-                  border: `1px solid ${tierColor}25`,
-                  borderTop: `2px solid ${tierColor}70`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                  overflow: 'hidden', position: 'relative',
+                  padding: '6px 4px', background: 'rgba(16,20,28,0.7)',
+                  borderBottom: `2px solid ${tc}60`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  overflow: 'hidden',
                 }}>
-                  <span style={{ fontSize: 6, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', alignSelf: 'flex-start' }}>{slotLabel}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 2px' }}>
+                    <span style={{ fontSize: 7, color: '#555', fontWeight: 700, letterSpacing: 1 }}>{slotLabel}</span>
+                    <span style={{ fontSize: 7, color: tc, fontWeight: 700 }}>
+                      {ep.piece.tier}{ep.artifice > 0 ? ` +${ep.artifice}` : ''}
+                    </span>
+                  </div>
                   {ep.piece.icon ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                    <img src={ep.piece.icon} alt={ep.piece.name} style={{ width: 36, height: 36, objectFit: 'contain' }} />
                   ) : (
-                    <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tierColor}10`, border: `1px solid ${tierColor}30` }}>
-                      <span style={{ fontSize: 14, color: tierColor, fontWeight: 900 }}>{ep.piece.tier}</span>
+                    <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${tc}10` }}>
+                      <span style={{ fontSize: 14, color: tc, fontWeight: 900 }}>{ep.piece.tier}</span>
                     </div>
                   )}
-                  <div style={{ fontSize: 8, color: '#ddd', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                  <div style={{ fontSize: 7, color: '#bbb', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 2px' }}>
                     {ep.piece.name}
-                  </div>
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 7, color: tierColor, fontWeight: 700 }}>{ep.piece.tier}</span>
-                    {ep.artifice > 0 && <span style={{ fontSize: 7, color: accentColor, fontWeight: 800 }}>+{ep.artifice}</span>}
                   </div>
                 </div>
               );
             })}
           </div>
-          {/* Active set bonuses */}
-          {activeSets.length > 0 && (
-            <div style={{ marginTop: 4, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {activeSets.map(([name, count]) => (
-                <div key={name} style={{ flex: 1, minWidth: 120 }}>
-                  <div style={{
-                    padding: '3px 6px', background: `${accentColor}08`, border: `1px solid ${accentColor}25`,
-                    borderLeft: `2px solid ${accentColor}`,
-                  }}>
-                    <div style={{ fontSize: 8, color: accentColor, fontWeight: 700, letterSpacing: 0.5 }}>{name} ({count}pc)</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        <HDivider mb={6} />
-
-        {/* Operator Info + Clearance — compact horizontal layout */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
-          {/* Clearance octagon — compact */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{
-              width: 76, height: 76, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              border: `2px solid ${accentColor}60`,
-              clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)',
-              background: `radial-gradient(circle, ${accentColor}08 0%, transparent 70%)`,
-            }}>
-              <span style={{ fontSize: 7, color: '#666', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 700, fontFamily: FONT_HEADER }}>CLEARANCE</span>
-              <span style={{ fontSize: 32, fontWeight: 900, color: accentColor, fontFamily: FONT_HEADER, lineHeight: 1, textShadow: `0 0 8px ${accentColor}40` }}>{clearance}</span>
-            </div>
-            <span style={{ fontSize: 6, color: '#444', letterSpacing: 1, marginTop: 3 }}>{operatorID}</span>
-          </div>
-
-          {/* Operator info fields */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-              {[
-                { label: 'ELEMENT', value: char.Element.toUpperCase(), color: theme.primary },
-                { label: 'ROLE', value: char.Role.toUpperCase(), color: '#ccc' },
-                { label: 'WEAPON TYPE', value: char.WeaponType.toUpperCase(), color: '#ccc' },
-                { label: 'RARITY', value: '★'.repeat(char.Rarity), color: RARITY_COLORS[char.Rarity] },
-              ].map((f, i) => (
-                <div key={i} style={{ padding: '2px 5px', background: 'rgba(16,20,28,0.6)', borderLeft: `2px solid ${f.color}30` }}>
-                  <div style={{ fontSize: 6, color: '#555', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>{f.label}</div>
-                  <div style={{ fontSize: 9, color: f.color, fontWeight: 700, fontFamily: FONT_MONO }}>{f.value}</div>
-                </div>
-              ))}
-            </div>
-            {charIcon && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 6px', background: 'rgba(16,20,28,0.5)', border: `1px solid ${accentColor}10` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={charIcon} alt={char.Name} style={{ width: 28, height: 28, objectFit: 'contain' }} />
-                <div>
-                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 1, fontWeight: 600 }}>IDENTITY CONFIRMED</div>
-                  <div style={{ fontSize: 9, color: '#aaa', fontWeight: 600 }}>{char.Name}</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <HDivider mb={6} />
-
-        {/* Equipment stats detail — fills remaining space */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, minHeight: 0 }}>
+          {/* Equipment stats detail */}
           {equippedPieces.filter(Boolean).length > 0 && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <div style={{ width: 3, height: 8, background: '#555' }} />
-                <span style={{ fontSize: 7, color: '#555', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 700, fontFamily: FONT_HEADER }}>EQUIPMENT STATS</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                {equippedPieces.filter(Boolean).flatMap((ep) =>
-                  ep!.piece.stats.map((st, si) => ({ ...st, tier: ep!.piece.tier, key: `${ep!.piece.name}-${si}` }))
-                ).slice(0, 12).map((st) => (
-                  <div key={st.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 5px', background: 'rgba(16,20,28,0.4)' }}>
-                    <span style={{ fontSize: 7, color: '#666' }}>{st.name}</span>
-                    <span style={{ fontSize: 7, color: '#999', fontWeight: 600, fontFamily: FONT_MONO }}>{st.value}</span>
-                  </div>
-                ))}
-              </div>
-            </>
+            <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              {equippedPieces.filter(Boolean).flatMap((ep) =>
+                ep!.piece.stats.map((st, si) => ({ ...st, key: `${ep!.piece.name}-${si}` }))
+              ).slice(0, 8).map((st) => (
+                <div key={st.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 5px', background: 'rgba(16,20,28,0.35)' }}>
+                  <span style={{ fontSize: 7, color: '#555' }}>{st.name}</span>
+                  <span style={{ fontSize: 7, color: '#888', fontWeight: 600, fontFamily: FM }}>{st.value}</span>
+                </div>
+              ))}
+            </div>
           )}
-          {/* Approval stamp — bottom anchored */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px',
-            border: `1px solid ${accentColor}15`, marginTop: 'auto',
-            background: 'rgba(16,20,28,0.3)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ display: 'flex', gap: 1, opacity: 0.3 }}>
-                {operatorID.split('').slice(0, 12).map((ch, i) => (
-                  <div key={i} style={{ width: ch.charCodeAt(0) % 2 === 0 ? 2.5 : 1, height: 12, background: '#fff' }} />
-                ))}
-              </div>
+
+          {/* Essence levels */}
+          {state.essenceLevels.some(l => l > 1) && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+              <span style={{ fontSize: 8, color: '#555', letterSpacing: 1, fontWeight: 600 }}>ESSENCE</span>
+              {state.essenceLevels.map((l, i) => (
+                <span key={i} style={{ fontSize: 9, color: l > 1 ? ac : '#555', fontWeight: 700 }}>
+                  E{i+1}:{l}
+                </span>
+              ))}
             </div>
-            <div style={{ transform: 'rotate(-4deg)', textAlign: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: `${accentColor}45`, letterSpacing: 3, textTransform: 'uppercase', fontFamily: FONT_HEADER }}>APPROVED</span>
-            </div>
-            <span style={{ fontSize: 7, color: '#444', letterSpacing: 0.5, fontFamily: FONT_MONO }}>{timestamp}</span>
+          )}
+        </div>
+
+        {/* ── Footer inside panel ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderTop: `1px solid ${ac}15`, paddingTop: 6, marginTop: 6,
+        }}>
+          <span style={{ fontSize: 8, color: '#444', letterSpacing: 1 }}>{operatorID}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {charIcon && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={charIcon} alt={char.Name} style={{ width: 16, height: 16, objectFit: 'contain', opacity: 0.6 }} />
+            )}
+            <span style={{ fontSize: 8, color: '#555', fontWeight: 700, letterSpacing: 0.5 }}>{char.Element} {char.Role}</span>
           </div>
+          <span style={{ fontSize: 8, color: '#444', letterSpacing: 1 }}>{eliteLabel}</span>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════
-          FOOTER BAR — User Info + Barcode + Watermark
-          ═══════════════════════════════════════════════════ */}
+      {/* ═══ BOTTOM BAR ═══ */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: 32, zIndex: 20,
-        background: 'rgba(8,11,16,0.98)',
-        borderTop: `1px solid ${accentColor}20`,
+        position: 'absolute', bottom: 0, left: 0, width: ART_W, height: 32, zIndex: 20,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 16px',
+        padding: '0 20px',
       }}>
-        {/* Left: color bar + char name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 3, height: 16, background: theme.primary }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#888', fontFamily: FONT_MONO, letterSpacing: 1, textTransform: 'uppercase' }}>
-            {char.Name}
-          </span>
-          {state.username && (
-            <>
-              <div style={{ width: 1, height: 12, background: '#333' }} />
-              <span style={{ fontSize: 9, color: '#555', fontWeight: 600 }}>{state.username}</span>
-              {state.userCode && <span style={{ fontSize: 8, color: '#444' }}>#{state.userCode}</span>}
-              {state.server && <span style={{ fontSize: 8, color: '#444' }}>[{state.server}]</span>}
-            </>
-          )}
-        </div>
-
-        {/* Center: barcode */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 1, opacity: 0.25 }}>
-          {`${operatorID}${char.Name}`.split('').slice(0, 30).map((ch, i) => (
-            <div key={i} style={{ width: ch.charCodeAt(0) % 3 === 0 ? 2.5 : ch.charCodeAt(0) % 2 === 0 ? 1.5 : 1, height: 14, background: '#fff' }} />
-          ))}
-        </div>
-
-        {/* Right: ZeroSanity watermark */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <svg width="14" height="14" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={accentColor} fillOpacity="0.6" />
-            <path d="M32 7 L57 32 L32 57 L7 32 Z" fill="#0a0e14" />
-            <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={accentColor} fillOpacity="0.7" />
+        {/* Rarity element badge */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.7" />
           </svg>
-          <span style={{ fontSize: 9, color: '#444', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', fontFamily: FONT_MONO }}>ZeroSanity.app</span>
+          <span style={{ fontSize: 9, color: '#666', letterSpacing: 1.5, fontWeight: 600, textTransform: 'uppercase' }}>
+            {char.Rarity}★ {char.Element}
+          </span>
         </div>
       </div>
 
-      {/* Corner classification marks */}
-      <div style={{ position: 'absolute', top: 36, right: 12, zIndex: 15, fontSize: 7, color: `${accentColor}30`, letterSpacing: 1, fontWeight: 600, textTransform: 'uppercase' }}>
-        RIOS-CARD-001
+      {/* ═══ WATERMARK ═══ */}
+      <div style={{
+        position: 'absolute', bottom: 8, right: 18, zIndex: 20,
+        display: 'flex', alignItems: 'center', gap: 5,
+      }}>
+        <svg width="12" height="12" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.5" />
+          <path d="M32 7 L57 32 L32 57 L7 32 Z" fill="#080a0f" />
+          <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.6" />
+        </svg>
+        <span style={{ fontSize: 8, color: '#444', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>ZeroSanity.app</span>
       </div>
     </div>
   );
@@ -1479,10 +1345,20 @@ export default function CharacterCardPage() {
               </button>
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Level</label>
-                <select value={state.level} onChange={e => updateState({ level: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm">
-                  {[80, 70, 60, 50, 40, 30, 20, 10, 1].map(l => <option key={l} value={l}>Lv. {l}</option>)}
-                </select>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-[var(--color-text-muted)] font-mono">Lv.</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={state.level}
+                    onChange={e => {
+                      const v = Math.max(1, Math.min(90, Number(e.target.value) || 1));
+                      updateState({ level: v });
+                    }}
+                    className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1575,10 +1451,20 @@ export default function CharacterCardPage() {
               </button>
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Weapon Level</label>
-                <select value={state.weaponLevel} onChange={e => updateState({ weaponLevel: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm">
-                  {[80, 70, 60, 50, 40, 30, 20, 10, 1].map(l => <option key={l} value={l}>Lv. {l}</option>)}
-                </select>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-[var(--color-text-muted)] font-mono">Lv.</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={state.weaponLevel}
+                    onChange={e => {
+                      const v = Math.max(1, Math.min(90, Number(e.target.value) || 1));
+                      updateState({ weaponLevel: v });
+                    }}
+                    className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
               </div>
             </div>
             <div className="space-y-3">
