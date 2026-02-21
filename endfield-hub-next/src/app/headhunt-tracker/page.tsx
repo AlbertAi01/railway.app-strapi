@@ -109,9 +109,26 @@ type Tab = 'import' | 'history' | 'global' | 'leaderboard';
 
 const LOCAL_KEY = 'zerosanity-headhunt';
 
+// ─── Platform scripts ────────────────────────────────────────
 const POWERSHELL_ONE_CLICK = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; $scriptUrl='https://raw.githubusercontent.com/holstonline/endfield-gacha-url/refs/heads/main/extract-headhunt-api-url.ps1'; $scriptText=(Invoke-WebRequest -UseBasicParsing -Uri $scriptUrl).Content; Invoke-Expression $scriptText`;
 
-const POWERSHELL_FALLBACK = `$logPath="$env:USERPROFILE\\AppData\\LocalLow\\Gryphline\\Endfield\\sdklogs\\HGWebview.log"; if(-not (Test-Path $logPath)){Write-Host "Log file not found" -ForegroundColor Red; exit}; $raw=Get-Content -Path $logPath -Raw; $matches=[regex]::Matches($raw,'https://ef-webview\\.gryphline\\.com[^\\s]+u8_token=[^\\s]+'); if($matches.Count -eq 0){Write-Host "No URL found. Open gacha history in-game first." -ForegroundColor Yellow; exit}; $url=$matches[$matches.Count-1].Value; Set-Clipboard -Value $url; Write-Host "URL copied to clipboard!" -ForegroundColor Green; Write-Host $url`;
+const POWERSHELL_FALLBACK = `$logPath="$env:USERPROFILE\\AppData\\LocalLow\\Gryphline\\Endfield\\sdklogs\\HGWebview.log"; if(-not (Test-Path $logPath)){Write-Host "Log file not found: $logPath" -ForegroundColor Red; return}; $raw=Get-Content -Path $logPath -Raw; $matches=[regex]::Matches($raw,"https://ef-webview\\.gryphline\\.com[^\\s]+u8_token=[^\\s]+"); if($matches.Count -eq 0){Write-Host "No URL with u8_token found. Open summon history first, then retry." -ForegroundColor Yellow; return}; $url=$matches[$matches.Count-1].Value; Set-Clipboard -Value $url; Write-Host "URL copied to clipboard." -ForegroundColor Green`;
+
+const POWERSHELL_TOKEN_ONLY = `$p="$env:USERPROFILE\\AppData\\LocalLow\\Gryphline\\Endfield\\sdklogs\\HGWebview.log"; if(Test-Path $p){$t=(Select-String -Path $p -Pattern 'u8_token=([^&|\\s]+)' -AllMatches | Select-Object -Last 1).Matches.Groups[1].Value; if($t){$t|clip; echo "Token copied!"}}`;
+
+const LINUX_GREP = `grep -oP 'u8_token=\\K[^&|\\s]+' "$LOG_PATH" | tail -1 | xclip`;
+
+type ImportPlatform = 'pc' | 'pc2' | 'pc3' | 'pc-manual' | 'linux' | 'android' | 'ios';
+
+const IMPORT_PLATFORMS: { id: ImportPlatform; label: string }[] = [
+  { id: 'pc', label: 'PC' },
+  { id: 'pc2', label: 'PC 2' },
+  { id: 'pc3', label: 'PC 3' },
+  { id: 'pc-manual', label: 'PC Manual' },
+  { id: 'linux', label: 'Linux' },
+  { id: 'android', label: 'Android' },
+  { id: 'ios', label: 'iOS Beta' },
+];
 
 const VALID_GACHA_DOMAINS = new Set([
   'ef-webview.gryphline.com',
@@ -206,7 +223,7 @@ export default function HeadhuntTrackerPage() {
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedOneClick, setCopiedOneClick] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
-  const [importPlatform, setImportPlatform] = useState<'pc' | 'android'>('pc');
+  const [importPlatform, setImportPlatform] = useState<ImportPlatform>('pc');
   const [importServer, setImportServer] = useState('3');
   const [parsedToken, setParsedToken] = useState<string | null>(null);
   const [importStep, setImportStep] = useState<1 | 2 | 3>(1);
@@ -847,27 +864,20 @@ export default function HeadhuntTrackerPage() {
               {/* Step 1: Platform Selection */}
               <div className="mb-6">
                 <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Step 1: Choose Platform</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setImportPlatform('pc')}
-                    className={`py-4 px-6 clip-corner-tl font-bold text-base transition-colors ${
-                      importPlatform === 'pc'
-                        ? 'bg-[var(--color-accent)] text-black'
-                        : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
-                    }`}
-                  >
-                    PC (Windows)
-                  </button>
-                  <button
-                    onClick={() => setImportPlatform('android')}
-                    className={`py-4 px-6 clip-corner-tl font-bold text-base transition-colors ${
-                      importPlatform === 'android'
-                        ? 'bg-[var(--color-accent)] text-black'
-                        : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
-                    }`}
-                  >
-                    Android
-                  </button>
+                <div className="flex flex-wrap gap-2">
+                  {IMPORT_PLATFORMS.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setImportPlatform(p.id)}
+                      className={`py-2.5 px-5 clip-corner-tl font-bold text-sm transition-colors ${
+                        importPlatform === p.id
+                          ? 'bg-[var(--color-accent)] text-black'
+                          : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -895,80 +905,189 @@ export default function HeadhuntTrackerPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Step 3: Get Your Gacha URL</h3>
 
-                {importPlatform === 'pc' ? (
-                  <div className="space-y-4">
-                    <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
-                      <p className="text-sm text-[var(--color-text-secondary)] mb-3">
-                        <strong className="text-white">Before you begin:</strong> Open Endfield and navigate to the Headhunt history page (Headhunt → History). Then follow the instructions below.
+                <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
+                  <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+                    <strong className="text-white">Before you begin:</strong> Open Endfield and navigate to the Headhunt history page (Headhunt &rarr; History). Then follow the instructions below.
+                  </p>
+
+                  {/* PC — One-click GitHub script */}
+                  {importPlatform === 'pc' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white">One-Click PowerShell Command</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                        Copy this command, paste it into PowerShell, and press Enter. The URL will be automatically copied to your clipboard.
                       </p>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-bold text-white mb-2">Option 1: One-Click Command (Recommended)</p>
-                          <p className="text-xs text-[var(--color-text-muted)] mb-2">
-                            Copy this command, paste it into PowerShell, and press Enter. The URL will be automatically copied to your clipboard.
-                          </p>
-                          <div className="relative">
-                            <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
-                              {POWERSHELL_ONE_CLICK}
-                            </pre>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(POWERSHELL_ONE_CLICK);
-                                setCopiedOneClick(true);
-                                setTimeout(() => setCopiedOneClick(false), 2000);
-                              }}
-                              className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
-                            >
-                              {copiedOneClick ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                            </button>
-                          </div>
-                        </div>
-
+                      <div className="relative">
+                        <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                          {POWERSHELL_ONE_CLICK}
+                        </pre>
                         <button
-                          onClick={() => setShowManualScript(!showManualScript)}
-                          className="flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-white transition-colors"
+                          onClick={() => {
+                            navigator.clipboard.writeText(POWERSHELL_ONE_CLICK);
+                            setCopiedOneClick(true);
+                            setTimeout(() => setCopiedOneClick(false), 2000);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
                         >
-                          <ChevronDown size={14} className={`transition-transform ${showManualScript ? 'rotate-180' : ''}`} />
-                          Option 2: Manual Method (Alternative)
+                          {copiedOneClick ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
                         </button>
-
-                        {showManualScript && (
-                          <div>
-                            <p className="text-xs text-[var(--color-text-muted)] mb-2">
-                              If the one-click command doesn&apos;t work, you can use this manual script:
-                            </p>
-                            <div className="relative">
-                              <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
-                                {POWERSHELL_FALLBACK}
-                              </pre>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(POWERSHELL_FALLBACK);
-                                  setCopiedScript(true);
-                                  setTimeout(() => setCopiedScript(false), 2000);
-                                }}
-                                className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
-                              >
-                                {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
-                      <div className="mt-3 text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)] p-2 clip-corner-tl">
-                        <strong className="text-white">Note:</strong> The log file is located at: {LOG_PATHS[SERVERS.find(s => s.id === importServer)?.region || 'global']}
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        This downloads and runs the extraction script from{' '}
+                        <a href="https://github.com/holstonline/endfield-gacha-url" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">GitHub</a>.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* PC 2 — Embedded fallback URL extractor */}
+                  {importPlatform === 'pc2' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white">Embedded URL Extractor</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                        Reads the game log file directly and copies the full URL to your clipboard. Use this if the PC one-click method doesn&apos;t work.
+                      </p>
+                      <div className="relative">
+                        <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                          {POWERSHELL_FALLBACK}
+                        </pre>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(POWERSHELL_FALLBACK);
+                            setCopiedScript(true);
+                            setTimeout(() => setCopiedScript(false), 2000);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
+                        >
+                          {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                        </button>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="bg-amber-900/15 border border-amber-500/30 clip-corner-tl p-4">
-                    <p className="text-sm text-amber-300 font-bold mb-2">Android Import (Coming Soon)</p>
-                    <p className="text-xs text-amber-400/80">
-                      Android import requires WiFi proxy or packet capture tools to extract the gacha URL. This feature is currently under development.
-                      For now, please use the PC method or manually enter your pulls below.
-                    </p>
-                  </div>
-                )}
+                  )}
+
+                  {/* PC 3 — Legacy token-only extractor */}
+                  {importPlatform === 'pc3' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white">Token-Only Extractor (Legacy)</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                        Extracts only the u8_token value from the log file. Use this if you only need the authentication token.
+                      </p>
+                      <div className="relative">
+                        <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                          {POWERSHELL_TOKEN_ONLY}
+                        </pre>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(POWERSHELL_TOKEN_ONLY);
+                            setCopiedScript(true);
+                            setTimeout(() => setCopiedScript(false), 2000);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
+                        >
+                          {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PC Manual — File path instructions */}
+                  {importPlatform === 'pc-manual' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white">Manual Log File Method</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">If PowerShell scripts don&apos;t work, you can manually open the log file and extract the URL.</p>
+                      <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+                        <p><strong className="text-white">1.</strong> Open the gacha history page in Endfield (Headhunt &rarr; History)</p>
+                        <p><strong className="text-white">2.</strong> Open this file in a text editor:</p>
+                        <div className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono break-all">
+                          {LOG_PATHS[SERVERS.find(s => s.id === importServer)?.region || 'global']}
+                        </div>
+                        <p><strong className="text-white">3.</strong> Search for <code className="text-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-0.5 text-xs">u8_token=</code></p>
+                        <p><strong className="text-white">4.</strong> Copy the <strong>complete URL</strong> starting with <code className="text-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-0.5 text-xs">https://ef-webview.gryphline.com</code> and paste it below</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Linux — grep extraction */}
+                  {importPlatform === 'linux' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white">Linux / Proton Extraction</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                        Use grep to extract the token from the game log. Requires <code className="text-[var(--color-accent)]">xclip</code> for clipboard support.
+                      </p>
+                      <div className="relative">
+                        <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                          {LINUX_GREP}
+                        </pre>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(LINUX_GREP);
+                            setCopiedScript(true);
+                            setTimeout(() => setCopiedScript(false), 2000);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
+                        >
+                          {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                      <div className="bg-amber-900/10 border border-amber-500/20 clip-corner-tl p-3 text-xs text-amber-400/80 space-y-1">
+                        <p><strong className="text-amber-300">Notes:</strong></p>
+                        <p>- Logging may not be enabled by default on Linux/Proton builds</p>
+                        <p>- Proton/Wine paths may differ &mdash; use <code className="text-[var(--color-accent)]">find ~/.steam -type f | grep -Ei webview</code> to locate the log</p>
+                        <p>- Install <code className="text-[var(--color-accent)]">xclip</code> via your package manager if not available</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Android — Shizuku + LogFox */}
+                  {importPlatform === 'android' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white">Android (Shizuku + LogFox)</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                        Use Shizuku and LogFox to capture the authentication URL from system logs.
+                      </p>
+                      <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+                        <p><strong className="text-white">1.</strong> Install <a href="https://shizuku.rikka.app/" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">Shizuku</a> and <a href="https://github.com/F0x1d/LogFox" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">LogFox</a> from the Play Store / GitHub</p>
+                        <p><strong className="text-white">2.</strong> Enable <strong>Wireless Debugging</strong> in Developer Options and pair with Shizuku</p>
+                        <p><strong className="text-white">3.</strong> Start Shizuku service, then in LogFox select <strong>Shizuku</strong> as the logger</p>
+                        <p><strong className="text-white">4.</strong> Open Endfield and navigate to Headhunt &rarr; History to trigger the URL</p>
+                        <p><strong className="text-white">5.</strong> In LogFox, search for <code className="text-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-0.5 text-xs">ef-webview.gryphline.com</code> and copy the URL containing <code className="text-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-0.5 text-xs">u8_token=</code></p>
+                      </div>
+                      <div className="bg-amber-900/10 border border-amber-500/20 clip-corner-tl p-3 text-xs text-amber-400/80">
+                        <strong className="text-amber-300">Warning:</strong> VPN or DPI bypass apps may prevent logs from being captured. Disable them temporarily if no logs appear.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* iOS Beta — Stream HTTPS sniffing */}
+                  {importPlatform === 'ios' && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-bold text-white flex items-center gap-2">
+                        iOS (Stream HTTPS Sniffing)
+                        <span className="text-[9px] bg-amber-500 text-black px-1.5 py-0.5 font-bold leading-none">BETA</span>
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                        Use the Stream app to capture HTTPS requests from Endfield.
+                      </p>
+                      <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+                        <p><strong className="text-white">1.</strong> Install <strong>Stream</strong> from the App Store</p>
+                        <p><strong className="text-white">2.</strong> Open Stream &rarr; allow VPN profile setup in iOS Settings</p>
+                        <p><strong className="text-white">3.</strong> Install and <strong>trust</strong> the Stream CA certificate (Settings &rarr; General &rarr; About &rarr; Certificate Trust Settings) for HTTPS sniffing</p>
+                        <p><strong className="text-white">4.</strong> Start sniffing in Stream, then open Endfield and go to Headhunt &rarr; History</p>
+                        <p><strong className="text-white">5.</strong> Stop sniffing and find the request to <code className="text-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-0.5 text-xs">ef-webview.gryphline.com</code></p>
+                        <p><strong className="text-white">6.</strong> Copy the full request URL and paste it below</p>
+                      </div>
+                      <div className="bg-amber-900/10 border border-amber-500/20 clip-corner-tl p-3 text-xs text-amber-400/80">
+                        <strong className="text-amber-300">Warning:</strong> VPN or DPI bypass apps may interfere with HTTPS capture. Disable them temporarily. Remember to remove the certificate trust after you&apos;re done.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Log path note for PC-based methods */}
+                  {(importPlatform === 'pc' || importPlatform === 'pc2' || importPlatform === 'pc3') && (
+                    <div className="mt-3 text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)] p-2 clip-corner-tl">
+                      <strong className="text-white">Log file location:</strong> {LOG_PATHS[SERVERS.find(s => s.id === importServer)?.region || 'global']}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Step 4: Paste URL */}
@@ -984,7 +1103,7 @@ export default function HeadhuntTrackerPage() {
                   />
                   <button
                     onClick={handleUrlImport}
-                    disabled={!importUrl.trim() || importStatus === 'loading' || importPlatform === 'android'}
+                    disabled={!importUrl.trim() || importStatus === 'loading'}
                     className="px-6 py-3 bg-[var(--color-accent)] text-black font-bold text-sm clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {importStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Import'}
