@@ -835,13 +835,17 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         </div>
       </div>
 
-      {/* ═══ TOP-LEFT: CLASSIFICATION LABEL — tucked inside art, away from data panel ═══ */}
+      {/* ═══ TOP-RIGHT OF ART: CLASSIFICATION STAMP ═══ */}
       <div style={{
-        position: 'absolute', top: 14, left: ART_W - 140, zIndex: 15,
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2,
+        position: 'absolute', top: 12, right: DATA_W + 12, zIndex: 16,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3,
+        padding: '5px 8px',
+        background: 'rgba(8,10,15,0.72)',
+        border: `1px solid ${ac}22`,
+        backdropFilter: 'blur(4px)',
       }}>
-        <span style={{ fontSize: 7, color: '#bbb', letterSpacing: 2, fontWeight: 700, textShadow: '0 1px 6px rgba(0,0,0,0.95), 0 0 10px rgba(0,0,0,0.8)' }}>{operatorID}</span>
-        <span style={{ fontSize: 7, color: '#999', letterSpacing: 1.5, textShadow: '0 1px 6px rgba(0,0,0,0.95), 0 0 10px rgba(0,0,0,0.8)' }}>{timestamp}</span>
+        <span style={{ fontSize: 9, color: ac, letterSpacing: 3, fontWeight: 800, fontFamily: F, textTransform: 'uppercase' }}>{operatorID}</span>
+        <span style={{ fontSize: 8, color: '#ccc', letterSpacing: 2, fontFamily: FM }}>{timestamp}</span>
       </div>
 
       {/* ═══ BOTTOM-LEFT: NAME PLATE ═══ */}
@@ -1299,52 +1303,54 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
         {/* ── Footer inside panel ── */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderTop: `1px solid ${ac}10`, paddingTop: 4, marginTop: 'auto',
+          borderTop: `1px solid ${ac}15`, paddingTop: 5, marginTop: 'auto',
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 5, height: 5, background: ac, transform: 'rotate(45deg)', opacity: 0.5 }} />
-            <span style={{ fontSize: 7, color: '#777', letterSpacing: 1.5, fontWeight: 600 }}>RIOS-CARD-001</span>
+            <div style={{ width: 5, height: 5, background: ac, transform: 'rotate(45deg)', opacity: 0.7 }} />
+            <span style={{ fontSize: 8, color: '#aaa', letterSpacing: 1.5, fontWeight: 700 }}>RIOS-CARD-001</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {charIcon && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={charIcon} alt={char.Name} style={{ width: 14, height: 14, objectFit: 'contain', opacity: 0.6 }} />
+              <img src={charIcon} alt={char.Name} style={{ width: 16, height: 16, objectFit: 'contain', opacity: 0.8 }} />
             )}
-            <span style={{ fontSize: 7, color: '#999', fontWeight: 700, letterSpacing: 0.5 }}>{char.Element} {char.Role}</span>
+            <span style={{ fontSize: 8, color: '#ccc', fontWeight: 700, letterSpacing: 1 }}>{char.Element} · {char.Role}</span>
           </div>
-          <span style={{ fontSize: 7, color: '#777', letterSpacing: 1 }}>{operatorID}</span>
+          <span style={{ fontSize: 8, color: '#aaa', letterSpacing: 1.5, fontFamily: FM }}>{operatorID}</span>
         </div>
       </div>
 
-      {/* ═══ BOTTOM BAR with art-side info ═══ */}
+      {/* ═══ BOTTOM BAR — art side: rarity/element + ZeroSanity.app watermark ═══ */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, width: ART_W, height: 30, zIndex: 20,
+        position: 'absolute', bottom: 0, left: 0, width: ART_W, height: 44, zIndex: 20,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 20px',
-        background: 'linear-gradient(to top, rgba(8,10,15,0.85), transparent)',
+        padding: '0 18px 0 20px',
+        background: 'linear-gradient(to top, rgba(8,10,15,0.92) 0%, rgba(8,10,15,0.5) 70%, transparent 100%)',
       }}>
+        {/* Left: rarity + element */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.7" />
+          <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+            <path d="M5 0 L10 5 L5 10 L0 5 Z" fill={ac} fillOpacity="0.9" />
           </svg>
-          <span style={{ fontSize: 8, color: '#bbb', letterSpacing: 2, fontWeight: 600, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+          <span style={{ fontSize: 10, color: '#ddd', letterSpacing: 2.5, fontWeight: 700, textTransform: 'uppercase', fontFamily: F, textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
             {char.Rarity}&#9733; {char.Element}
           </span>
         </div>
-      </div>
 
-      {/* ═══ WATERMARK ═══ */}
-      <div style={{
-        position: 'absolute', bottom: 10, left: ART_W - 30, zIndex: 20,
-        display: 'flex', alignItems: 'center', gap: 5,
-      }}>
-        <svg width="12" height="12" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.5" />
-          <path d="M32 7 L57 32 L32 57 L7 32 Z" fill="#080a0f" />
-          <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.6" />
-        </svg>
-        <span style={{ fontSize: 7, color: '#888', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>ZeroSanity.app</span>
+        {/* Right: ZeroSanity.app site branding */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <svg width="18" height="18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 2 L62 32 L32 62 L2 32 Z" fill={ac} fillOpacity="0.75" />
+            <path d="M32 9 L55 32 L32 55 L9 32 Z" fill="#080a0f" />
+            <path d="M22 22h18v4.5L26 40h14v4H21v-4.5L35 26H22z" fill={ac} fillOpacity="0.9" />
+          </svg>
+          <span style={{
+            fontSize: 13, color: '#fff', fontWeight: 800, letterSpacing: 3,
+            textTransform: 'uppercase', fontFamily: F,
+            textShadow: `0 1px 8px rgba(0,0,0,0.9), 0 0 20px ${ac}30`,
+          }}>ZeroSanity.app</span>
+        </div>
       </div>
     </div>
   );
