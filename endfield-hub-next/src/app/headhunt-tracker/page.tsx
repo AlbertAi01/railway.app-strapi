@@ -575,27 +575,24 @@ export default function HeadhuntTrackerPage() {
     setImportStatus('loading');
     setImportMessage('Parsing URL and extracting token...');
 
-    const { token, serverId } = parseGachaUrl(importUrl);
+    const { token: gachaToken, serverId } = parseGachaUrl(importUrl);
 
-    if (!token) {
+    if (!gachaToken) {
       setImportStatus('error');
       setImportMessage('Invalid URL. Make sure you paste the full URL from the PowerShell script that contains a u8_token parameter.');
       return;
     }
 
     if (serverId) setImportServer(serverId);
-    setParsedToken(token);
+    setParsedToken(gachaToken);
     setImportMessage('Token extracted successfully! Submitting to import queue...');
 
     try {
-      if (!token) throw new Error('No token');
+      if (!gachaToken) throw new Error('No token');
 
       // Submit to our Strapi backend for server-side fetching
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
       const response = await api.post('/headhunt-records/import', {
-        token: token,
+        token: gachaToken,
         serverId: serverId || importServer,
         platform: importPlatform,
       });
