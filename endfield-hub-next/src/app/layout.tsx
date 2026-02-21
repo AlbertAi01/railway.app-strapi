@@ -109,6 +109,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://endfieldtools.dev" />
+        <link rel="dns-prefetch" href="https://endfield.wiki.gg" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+      </head>
       <body>
         <JsonLd data={organizationSchema} />
         <AutoDeployOverlay />

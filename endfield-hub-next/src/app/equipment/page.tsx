@@ -87,7 +87,7 @@ export default function Equipment() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-white font-semibold text-base">{set.name}</h3>
+                    <h2 className="text-white font-semibold text-base">{set.name}</h2>
                     <span className="text-[12px] px-2 py-0.5 clip-corner-tl" style={{ backgroundColor: `${tierColor}30`, color: tierColor }}>
                       {set.pieces[0]?.tier}
                     </span>

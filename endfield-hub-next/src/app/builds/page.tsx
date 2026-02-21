@@ -752,7 +752,7 @@ function BuildsPageContent() {
 
                             {/* Title + timestamp */}
                             <div className="mb-2">
-                              <h3 className="text-white font-bold text-sm mb-1">{build.name}</h3>
+                              <h2 className="text-white font-bold text-sm mb-1">{build.name}</h2>
                               <span className="text-[10px] text-[var(--color-text-tertiary)]">
                                 {formatTimeAgo(build.updatedAt)}
                               </span>
@@ -1589,7 +1589,7 @@ function BuildCard({ build, isFavorited, onToggleFavorite, onDuplicate, formatTi
       <Link href={`/builds/${build.id}`} className="block p-3 hover:bg-[var(--color-surface-2)] transition-colors">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
+            <h2 className="text-white font-bold text-sm truncate">{build.name}</h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
                 {build.type === 'team' ? 'TEAM' : 'SINGLE'}

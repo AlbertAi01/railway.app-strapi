@@ -541,7 +541,7 @@ function BlueprintsContent() {
       </div>
 
       <div className="space-y-4">
-        {filtered.map(bp => (
+        {filtered.map((bp, bpIdx) => (
           <Link
             key={bp.id}
             href={`/blueprints/${bp.slug}`}
@@ -559,6 +559,7 @@ function BlueprintsContent() {
                     sizes="192px"
                     unoptimized
                     placeholder="empty"
+                    {...(bpIdx === 0 ? { priority: true } : {})}
                   />
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--color-text-muted)]">
@@ -586,7 +587,7 @@ function BlueprintsContent() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-white font-semibold text-base truncate group-hover:text-[var(--color-accent)] transition-colors">{bp.Title}</h3>
+                      <h2 className="text-white font-semibold text-base truncate group-hover:text-[var(--color-accent)] transition-colors">{bp.Title}</h2>
                       {bp.productName && (
                         <span className="flex-shrink-0 text-[11px] bg-[var(--color-accent)]/10 text-[var(--color-accent)] px-2 py-0.5 clip-corner-tl border border-[var(--color-accent)]/30 font-mono uppercase">
                           {bp.productName}

@@ -1743,7 +1743,7 @@ export default function CharacterCardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Character Selector */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Character</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Character</h2>
               <button onClick={() => setCharPickerOpen(true)}
                 className="w-full flex items-center gap-3 p-3 border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/5 hover:bg-[var(--color-accent)]/10 transition-colors">
                 {CHARACTER_ICONS[char.Name] ? (
@@ -1758,10 +1758,11 @@ export default function CharacterCardPage() {
                 </div>
               </button>
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Level</label>
+                <label htmlFor="card-char-level" className="text-xs text-[var(--color-text-muted)] mb-1 block">Level</label>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-[var(--color-text-muted)] font-mono">Lv.</span>
                   <input
+                    id="card-char-level"
                     type="number"
                     min={1}
                     max={90}
@@ -1778,7 +1779,7 @@ export default function CharacterCardPage() {
 
             {/* Breakthrough / Potential / Affinity */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Progression</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Progression</h2>
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Breakthrough</label>
                 <div className="flex gap-1.5">
@@ -1822,7 +1823,7 @@ export default function CharacterCardPage() {
 
             {/* Talent Levels */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Talents</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Talents</h2>
               {state.talentStates.map((ts, i) => (
                 <div key={i} className="space-y-1.5">
                   <div className="text-xs text-[var(--color-text-muted)]">Talent {i + 1}</div>
@@ -1850,7 +1851,7 @@ export default function CharacterCardPage() {
         {activeTab === 'weapon' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Weapon Selection</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Weapon Selection</h2>
               <button onClick={() => setWeaponPickerOpen(true)}
                 className="w-full flex items-center gap-3 p-3 border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/5 hover:bg-[var(--color-accent)]/10 transition-colors">
                 {weapon && WEAPON_ICONS[weapon.Name] ? (
@@ -1864,10 +1865,11 @@ export default function CharacterCardPage() {
                 </div>
               </button>
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Weapon Level</label>
+                <label htmlFor="card-weapon-level" className="text-xs text-[var(--color-text-muted)] mb-1 block">Weapon Level</label>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-[var(--color-text-muted)] font-mono">Lv.</span>
                   <input
+                    id="card-weapon-level"
                     type="number"
                     min={1}
                     max={90}
@@ -1882,7 +1884,7 @@ export default function CharacterCardPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Weapon Progression</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Weapon Progression</h2>
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Breakthrough</label>
                 <div className="flex gap-1.5">
@@ -2117,7 +2119,7 @@ export default function CharacterCardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Skill Levels */}
             <div className="space-y-3 md:col-span-2 lg:col-span-2">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Skill Levels</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Skill Levels</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {SKILL_TYPES.map(sk => {
                   const currentLevel = state.skillLevels[sk.key as keyof typeof state.skillLevels];
@@ -2141,26 +2143,26 @@ export default function CharacterCardPage() {
 
             {/* Customization / Card Info */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Card Info</h3>
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical">Card Info</h2>
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Showcase Name</label>
-                <input type="text" value={state.name} onChange={e => updateState({ name: e.target.value })} placeholder="Optional title"
+                <label htmlFor="card-showcase-name" className="text-xs text-[var(--color-text-muted)] mb-1 block">Showcase Name</label>
+                <input id="card-showcase-name" type="text" value={state.name} onChange={e => updateState({ name: e.target.value })} placeholder="Optional title"
                   className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
               </div>
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Username</label>
-                <input type="text" value={state.username} onChange={e => updateState({ username: e.target.value })} placeholder="In-game name"
+                <label htmlFor="card-username" className="text-xs text-[var(--color-text-muted)] mb-1 block">Username</label>
+                <input id="card-username" type="text" value={state.username} onChange={e => updateState({ username: e.target.value })} placeholder="In-game name"
                   className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">User Code</label>
-                  <input type="text" value={state.userCode} onChange={e => updateState({ userCode: e.target.value })} placeholder="ID"
+                  <label htmlFor="card-user-code" className="text-xs text-[var(--color-text-muted)] mb-1 block">User Code</label>
+                  <input id="card-user-code" type="text" value={state.userCode} onChange={e => updateState({ userCode: e.target.value })} placeholder="ID"
                     className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]" />
                 </div>
                 <div>
-                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Server</label>
-                  <select value={state.server} onChange={e => updateState({ server: e.target.value })}
+                  <label htmlFor="card-server" className="text-xs text-[var(--color-text-muted)] mb-1 block">Server</label>
+                  <select id="card-server" value={state.server} onChange={e => updateState({ server: e.target.value })}
                     className="w-full px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white text-sm focus:outline-none focus:border-[var(--color-accent)]">
                     <option value="">Select</option>
                     <option value="NA/EU">NA / EU</option>
@@ -2178,9 +2180,9 @@ export default function CharacterCardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Color Scheme */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical flex items-center gap-2">
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical flex items-center gap-2">
                 <Palette size={14} /> Color Scheme
-              </h3>
+              </h2>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(COLOR_SCHEMES) as [ColorScheme, typeof COLOR_SCHEMES.auto][]).map(([key, scheme]) => (
                   <button key={key} onClick={() => updateState({ colorScheme: key as ColorScheme })}
@@ -2204,9 +2206,9 @@ export default function CharacterCardPage() {
 
             {/* Brightness */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical flex items-center gap-2">
+              <h2 className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-wider font-tactical flex items-center gap-2">
                 <Sun size={14} /> Brightness
-              </h3>
+              </h2>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <input

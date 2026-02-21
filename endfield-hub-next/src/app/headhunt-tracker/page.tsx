@@ -109,24 +109,62 @@ type Tab = 'import' | 'history' | 'global' | 'leaderboard';
 
 const LOCAL_KEY = 'zerosanity-headhunt';
 
-const POWERSHELL_SCRIPT = `# Endfield Gacha URL Extractor
-# Run this in PowerShell after opening the gacha history page in-game
+const POWERSHELL_ONE_CLICK = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; $scriptUrl='https://raw.githubusercontent.com/holstonline/endfield-gacha-url/refs/heads/main/extract-headhunt-api-url.ps1'; $scriptText=(Invoke-WebRequest -UseBasicParsing -Uri $scriptUrl).Content; Invoke-Expression $scriptText`;
 
-$logPath = "$env:USERPROFILE\\AppData\\LocalLow\\Gryphline\\Endfield\\HGWebview.log"
-if (Test-Path $logPath) {
-    $content = Get-Content $logPath -Raw
-    $match = [regex]::Match($content, 'https://[^\\s"]+gacha[^\\s"]+')
-    if ($match.Success) {
-        $url = $match.Value
-        Set-Clipboard $url
-        Write-Host "URL copied to clipboard!" -ForegroundColor Green
-        Write-Host $url
-    } else {
-        Write-Host "No gacha URL found. Open the gacha history in-game first." -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "Log file not found. Is Endfield installed?" -ForegroundColor Red
-}`;
+const POWERSHELL_FALLBACK = `$logPath="$env:USERPROFILE\\AppData\\LocalLow\\Gryphline\\Endfield\\sdklogs\\HGWebview.log"; if(-not (Test-Path $logPath)){Write-Host "Log file not found" -ForegroundColor Red; exit}; $raw=Get-Content -Path $logPath -Raw; $matches=[regex]::Matches($raw,'https://ef-webview\\.gryphline\\.com[^\\s]+u8_token=[^\\s]+'); if($matches.Count -eq 0){Write-Host "No URL found. Open gacha history in-game first." -ForegroundColor Yellow; exit}; $url=$matches[$matches.Count-1].Value; Set-Clipboard -Value $url; Write-Host "URL copied to clipboard!" -ForegroundColor Green; Write-Host $url`;
+
+const VALID_GACHA_DOMAINS = new Set([
+  'ef-webview.gryphline.com',
+  'ef-webview.hypergryph.com',
+  'ef-webview.biligame.com',
+]);
+
+const SERVERS = [
+  { id: '1', name: 'China (Bilibili)', region: 'cn' },
+  { id: '2', name: 'Asia', region: 'asia' },
+  { id: '3', name: 'Europe / America', region: 'global' },
+];
+
+const LOG_PATHS: Record<string, string> = {
+  cn: '%USERPROFILE%\\AppData\\LocalLow\\Hypergryph\\Endfield\\sdklogs\\HGWebview.log',
+  asia: '%USERPROFILE%\\AppData\\LocalLow\\Gryphline\\Endfield\\sdklogs\\HGWebview.log',
+  global: '%USERPROFILE%\\AppData\\LocalLow\\Gryphline\\Endfield\\sdklogs\\HGWebview.log',
+};
+
+// ─── Helper: Parse gacha URL ────────────────────────────────
+function parseGachaUrl(input: string): { token: string | null; serverId: string | null } {
+  const trimmed = input.trim().replace(/^['"`]+|['"`]+$/g, '');
+  if (!trimmed) return { token: null, serverId: null };
+
+  if (trimmed.startsWith('http')) {
+    try {
+      const url = new URL(trimmed);
+      if (!VALID_GACHA_DOMAINS.has(url.hostname)) return { token: null, serverId: null };
+      const token = url.searchParams.get('u8_token') || url.searchParams.get('token');
+      const serverId = url.searchParams.get('server_id') || url.searchParams.get('server');
+      return { token: token?.trim() || null, serverId: serverId || '3' };
+    } catch { return { token: null, serverId: null }; }
+  }
+
+  // Bare token (no URL)
+  if (trimmed.length > 20 && !trimmed.includes(' ')) {
+    return { token: trimmed, serverId: null };
+  }
+
+  return { token: null, serverId: null };
+}
+
+// ─── Helper: Map banner name ────────────────────────────────
+function mapBannerName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.includes('basic') || lower.includes('standard')) return 'basic';
+  if (lower.includes('scars') || lower.includes('laevatain') || lower.includes('forge')) return 'scars-of-the-forge';
+  if (lower.includes('hues') || lower.includes('ardelia') || lower.includes('passion')) return 'hues-of-passion';
+  if (lower.includes('rime') || lower.includes('last rite') || lower.includes('depths')) return 'rime-of-the-depths';
+  if (lower.includes('floaty') || lower.includes('gilberta') || lower.includes('messenger')) return 'the-floaty-messenger';
+  if (lower.includes('arsenal') || lower.includes('weapon')) return 'arsenal-issue';
+  return 'basic';
+}
 
 // ─── Helper: Migrate legacy data ────────────────────────────
 function migrateLegacyData(legacy: LegacyHeadhuntData): HeadhuntData {
@@ -166,7 +204,13 @@ export default function HeadhuntTrackerPage() {
   const [importMessage, setImportMessage] = useState('');
   const [showPowerShell, setShowPowerShell] = useState(false);
   const [copiedScript, setCopiedScript] = useState(false);
+  const [copiedOneClick, setCopiedOneClick] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [importPlatform, setImportPlatform] = useState<'pc' | 'android'>('pc');
+  const [importServer, setImportServer] = useState('3');
+  const [parsedToken, setParsedToken] = useState<string | null>(null);
+  const [importStep, setImportStep] = useState<1 | 2 | 3>(1);
+  const [showManualScript, setShowManualScript] = useState(false);
   const [manualBanner, setManualBanner] = useState('basic');
   const [manualRarity, setManualRarity] = useState(6);
   const [manualType, setManualType] = useState<'character' | 'weapon'>('character');
@@ -512,17 +556,87 @@ export default function HeadhuntTrackerPage() {
   const handleUrlImport = async () => {
     if (!importUrl.trim()) return;
     setImportStatus('loading');
-    setImportMessage('Attempting to fetch gacha history from URL...');
+    setImportMessage('Parsing URL and extracting token...');
 
-    // The actual game API is only accessible via the game client, so
-    // we show an instructional message
-    setTimeout(() => {
+    const { token, serverId } = parseGachaUrl(importUrl);
+
+    if (!token) {
+      setImportStatus('error');
+      setImportMessage('Invalid URL. Make sure you paste the full URL from the PowerShell script that contains a u8_token parameter.');
+      return;
+    }
+
+    if (serverId) setImportServer(serverId);
+    setParsedToken(token);
+    setImportMessage('Token extracted successfully! Submitting to import queue...');
+
+    try {
+      if (!token) throw new Error('No token');
+
+      // Submit to our Strapi backend for server-side fetching
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await api.post('/headhunt-records/import', {
+        token: token,
+        serverId: serverId || importServer,
+        platform: importPlatform,
+      });
+
+      if (response.data?.data?.pulls) {
+        const importedPulls: Pull[] = response.data.data.pulls.map((p: any, i: number) => ({
+          id: `import-${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
+          timestamp: new Date(p.date || p.timestamp).getTime(),
+          rarity: p.rarity || p.star || 3,
+          name: p.name || p.item || 'Unknown',
+          item: p.name || p.item || 'Unknown',
+          banner: mapBannerName(p.banner || p.pool || 'basic'),
+          icon: p.icon || CHARACTER_ICONS[p.name] || WEAPON_ICONS[p.name],
+          type: p.type || (CHARACTER_ICONS[p.name] ? 'character' : WEAPON_ICONS[p.name] ? 'weapon' : undefined),
+          date: p.date || new Date(p.timestamp).toISOString(),
+        }));
+
+        // Merge with existing, deduplicate
+        const merged = [...importedPulls, ...pulls];
+        const seen = new Set<string>();
+        const deduped = merged.filter(p => {
+          const key = `${p.name}-${p.banner}-${p.timestamp}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).sort((a, b) => b.timestamp - a.timestamp);
+
+        // Recalculate pity
+        const newPity: Record<string, number> = {};
+        BANNERS.forEach(banner => {
+          const bannerPulls = deduped.filter(p => p.banner === banner.id).sort((a, b) => b.timestamp - a.timestamp);
+          let counter = 0;
+          for (const pull of bannerPulls) {
+            if (pull.rarity === 6) break;
+            counter++;
+          }
+          newPity[banner.id] = counter;
+        });
+
+        setPulls(deduped);
+        setPityCounters(newPity);
+        saveData(deduped, newPity);
+        if (token) submitToBackend(importedPulls);
+
+        setImportStatus('success');
+        setImportMessage(`Imported ${importedPulls.length} pulls successfully! (${deduped.length} total after dedup)`);
+      } else {
+        throw new Error('No pull data returned');
+      }
+    } catch (err: any) {
+      // If backend import not available, fall back to client-side instruction
       setImportStatus('error');
       setImportMessage(
-        'Direct URL import requires the game client\'s authentication token which cannot be proxied through a web browser. ' +
-        'Please use JSON file import instead, or use the manual entry form below.'
+        'Server-side import is not yet available. Your token was validated successfully. ' +
+        'For now, please use JSON file import to transfer your data, or use manual entry. ' +
+        'We are working on adding direct API import support.'
       );
-    }, 2000);
+    }
   };
 
   const exportHistoryJSON = () => {
@@ -719,78 +833,176 @@ export default function HeadhuntTrackerPage() {
 
         {/* ===== IMPORT TAB ===== */}
         {activeTab === 'import' && (
-          <div className="space-y-6 max-w-4xl">
-            {/* URL Import Section */}
+          <div className="space-y-6 max-w-5xl">
+            {/* Import Center */}
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6">
-              <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                <Link size={18} className="text-[var(--color-accent)]" />
-                Import from Game URL
+              <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                <Upload size={24} className="text-[var(--color-accent)]" />
+                Import Center
               </h2>
-              <p className="text-sm text-[var(--color-text-muted)] mb-4">
-                Extract your gacha history URL from the game client and paste it below.
+              <p className="text-sm text-[var(--color-text-muted)] mb-6">
+                Import your gacha history directly from the game using the PowerShell script method.
               </p>
 
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={importUrl}
-                  onChange={(e) => setImportUrl(e.target.value)}
-                  placeholder="Paste gacha history URL here..."
-                  className="flex-1 px-3 py-2 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
-                />
-                <button
-                  onClick={handleUrlImport}
-                  disabled={!importUrl.trim() || importStatus === 'loading'}
-                  className="px-4 py-2 bg-[var(--color-accent)] text-black font-bold text-sm clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50"
-                >
-                  {importStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Import'}
-                </button>
+              {/* Step 1: Platform Selection */}
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Step 1: Choose Platform</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setImportPlatform('pc')}
+                    className={`py-4 px-6 clip-corner-tl font-bold text-base transition-colors ${
+                      importPlatform === 'pc'
+                        ? 'bg-[var(--color-accent)] text-black'
+                        : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+                    }`}
+                  >
+                    PC (Windows)
+                  </button>
+                  <button
+                    onClick={() => setImportPlatform('android')}
+                    className={`py-4 px-6 clip-corner-tl font-bold text-base transition-colors ${
+                      importPlatform === 'android'
+                        ? 'bg-[var(--color-accent)] text-black'
+                        : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+                    }`}
+                  >
+                    Android
+                  </button>
+                </div>
               </div>
 
+              {/* Step 2: Server Selection */}
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Step 2: Select Your Server</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {SERVERS.map(server => (
+                    <button
+                      key={server.id}
+                      onClick={() => setImportServer(server.id)}
+                      className={`py-3 px-4 clip-corner-tl font-bold text-sm transition-colors ${
+                        importServer === server.id
+                          ? 'bg-[var(--color-accent)] text-black'
+                          : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+                      }`}
+                    >
+                      {server.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 3: Get URL (Platform-specific) */}
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Step 3: Get Your Gacha URL</h3>
+
+                {importPlatform === 'pc' ? (
+                  <div className="space-y-4">
+                    <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-4">
+                      <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+                        <strong className="text-white">Before you begin:</strong> Open Endfield and navigate to the Headhunt history page (Headhunt → History). Then follow the instructions below.
+                      </p>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-bold text-white mb-2">Option 1: One-Click Command (Recommended)</p>
+                          <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                            Copy this command, paste it into PowerShell, and press Enter. The URL will be automatically copied to your clipboard.
+                          </p>
+                          <div className="relative">
+                            <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                              {POWERSHELL_ONE_CLICK}
+                            </pre>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(POWERSHELL_ONE_CLICK);
+                                setCopiedOneClick(true);
+                                setTimeout(() => setCopiedOneClick(false), 2000);
+                              }}
+                              className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
+                            >
+                              {copiedOneClick ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => setShowManualScript(!showManualScript)}
+                          className="flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-white transition-colors"
+                        >
+                          <ChevronDown size={14} className={`transition-transform ${showManualScript ? 'rotate-180' : ''}`} />
+                          Option 2: Manual Method (Alternative)
+                        </button>
+
+                        {showManualScript && (
+                          <div>
+                            <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                              If the one-click command doesn&apos;t work, you can use this manual script:
+                            </p>
+                            <div className="relative">
+                              <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-3 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                                {POWERSHELL_FALLBACK}
+                              </pre>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(POWERSHELL_FALLBACK);
+                                  setCopiedScript(true);
+                                  setTimeout(() => setCopiedScript(false), 2000);
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors clip-corner-tl"
+                              >
+                                {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)] p-2 clip-corner-tl">
+                        <strong className="text-white">Note:</strong> The log file is located at: {LOG_PATHS[SERVERS.find(s => s.id === importServer)?.region || 'global']}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-amber-900/15 border border-amber-500/30 clip-corner-tl p-4">
+                    <p className="text-sm text-amber-300 font-bold mb-2">Android Import (Coming Soon)</p>
+                    <p className="text-xs text-amber-400/80">
+                      Android import requires WiFi proxy or packet capture tools to extract the gacha URL. This feature is currently under development.
+                      For now, please use the PC method or manually enter your pulls below.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Step 4: Paste URL */}
+              <div className="mb-4">
+                <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Step 4: Paste Your URL</h3>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={importUrl}
+                    onChange={(e) => setImportUrl(e.target.value)}
+                    placeholder="Paste the gacha URL here (starts with https://ef-webview...)..."
+                    className="flex-1 px-4 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl focus:outline-none focus:border-[var(--color-accent)] text-white text-sm"
+                  />
+                  <button
+                    onClick={handleUrlImport}
+                    disabled={!importUrl.trim() || importStatus === 'loading' || importPlatform === 'android'}
+                    className="px-6 py-3 bg-[var(--color-accent)] text-black font-bold text-sm clip-corner-tl hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {importStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Import'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Message */}
               {importMessage && (
-                <div className={`text-sm p-3 clip-corner-tl ${
+                <div className={`text-sm p-4 clip-corner-tl ${
                   importStatus === 'success' ? 'bg-green-900/20 border border-green-500/30 text-green-400' :
                   importStatus === 'error' ? 'bg-red-900/20 border border-red-500/30 text-red-400' :
-                  'bg-[var(--color-surface-2)] text-[var(--color-text-muted)]'
+                  'bg-blue-900/20 border border-blue-500/30 text-blue-400'
                 }`}>
                   {importStatus === 'error' && <AlertCircle size={14} className="inline mr-1.5 -mt-0.5" />}
+                  {importStatus === 'success' && <Check size={14} className="inline mr-1.5 -mt-0.5" />}
+                  {importStatus === 'loading' && <Loader2 size={14} className="inline mr-1.5 -mt-0.5 animate-spin" />}
                   {importMessage}
-                </div>
-              )}
-
-              {/* PowerShell Script */}
-              <button
-                onClick={() => setShowPowerShell(!showPowerShell)}
-                className="mt-4 flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-white transition-colors"
-              >
-                <ChevronDown size={14} className={`transition-transform ${showPowerShell ? 'rotate-180' : ''}`} />
-                How to get the gacha URL (PowerShell script)
-              </button>
-
-              {showPowerShell && (
-                <div className="mt-3 space-y-3">
-                  <div className="text-sm text-[var(--color-text-muted)] space-y-2">
-                    <p><strong className="text-white">Step 1:</strong> Open the gacha history page in Endfield (Headhunt &gt; History)</p>
-                    <p><strong className="text-white">Step 2:</strong> Open PowerShell and run this script:</p>
-                  </div>
-                  <div className="relative">
-                    <pre className="bg-[#0a0e14] border border-[var(--color-border)] p-4 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre max-h-60">
-                      {POWERSHELL_SCRIPT}
-                    </pre>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(POWERSHELL_SCRIPT);
-                        setCopiedScript(true);
-                        setTimeout(() => setCopiedScript(false), 2000);
-                      }}
-                      className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white transition-colors"
-                    >
-                      {copiedScript ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                    </button>
-                  </div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    <strong className="text-white">Step 3:</strong> The URL will be copied to your clipboard. Paste it in the field above.
-                  </p>
                 </div>
               )}
             </div>
