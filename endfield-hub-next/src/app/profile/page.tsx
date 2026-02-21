@@ -175,20 +175,29 @@ export default function ProfilePage() {
     if (!trimmed) { setNameError('Display name cannot be empty'); return; }
     if (trimmed.length < 3) { setNameError('Must be at least 3 characters'); return; }
     if (trimmed.length > 30) { setNameError('Must be 30 characters or less'); return; }
+    if (!/^[a-zA-Z0-9 _-]+$/.test(trimmed)) { setNameError('Only letters, numbers, spaces, dashes, and underscores'); return; }
     if (trimmed === user?.username) { setEditingName(false); return; }
 
     setSavingName(true);
     setNameError('');
     try {
-      if (token) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/profile/update-name', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ username: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNameError(data.error || 'Failed to update display name');
+        return;
       }
-      const { data } = await api.put(`/users/${user?.id}`, { username: trimmed });
       setUser({ ...user!, username: data.username || trimmed });
       setEditingName(false);
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to update display name';
-      setNameError(msg);
+    } catch {
+      setNameError('Failed to update display name');
     } finally {
       setSavingName(false);
     }
