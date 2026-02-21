@@ -10,6 +10,7 @@ import MapDetailPanel from '@/components/ui/MapDetailPanel';
 const TOOLS_CDN = 'https://endfieldtools.dev/assets/images/endfield';
 const TILE_BASE = `${TOOLS_CDN}/levelmap/levelmapgrids`;
 const ICON_BASE = `${TOOLS_CDN}/itemicon`;
+const MARK_ICON_BASE = `${TOOLS_CDN}/markiconsmall`;
 const TILE_SIZE = 600;
 
 interface POI {
@@ -38,100 +39,203 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
   chest: {
     label: 'Treasure Chests', color: '#FF8C00', icon: 'item_materialchest_01', defaultOn: true,
     subTypes: [
+      { label: 'Basic Chest', icon: 'item_materialchest_01', types: ['int_trchest_common'] },
+      { label: 'Normal Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_normal'] },
+      { label: 'Exquisite Chest', icon: 'item_materialchest_02', types: ['int_trchest_common_high'] },
       { label: 'Gorgeous Chest', icon: 'item_materialchest_03', types: ['int_trchest_common_gorgeous'] },
       { label: 'Locked Chest', icon: 'item_materialchest_02', types: ['int_trchest_lock'] },
-      { label: 'High-Tier Chest', icon: 'item_materialchest_02', types: ['int_trchest_common_high'] },
-      { label: 'Normal Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_normal'] },
-      { label: 'Basic Chest', icon: 'item_materialchest_01', types: ['int_trchest_common'] },
-      { label: 'Equipment Chest', icon: 'item_materialchest_03', types: ['int_trchest_equip', 'mark_equip_formula_chest'] },
+      { label: 'Gear Template Crate', icon: 'item_materialchest_03', types: ['int_trchest_equip'] },
       { label: 'Supply Box', icon: 'item_materialchest_01', types: ['int_trchest_supplybox_01', 'int_trchest_supplybox'] },
     ],
   },
   travel: { label: 'Campfires', color: '#FF6B35', icon: 'item_add_endurance', defaultOn: true },
-  dungeon: { label: 'Dungeons', color: '#F39C12', icon: 'item_adventureexp', defaultOn: true },
+  dungeon: {
+    label: 'Dungeons', color: '#F39C12', icon: 'item_adventureexp', defaultOn: true,
+    subTypes: [
+      { label: 'Protocol Space', icon: 'item_char_break_stage_3_4', types: ['dung_group_ss03', 'dung_group_ss04', 'dung_group_ss05'] },
+      { label: 'Exploration Level', icon: 'item_adventureexp', types: ['indie_group_levelcheck03', 'indie_group_levelcheck04'] },
+    ],
+  },
   collectible: {
     label: 'Collectibles', color: '#FFD700', icon: 'item_diamond', defaultOn: false,
     subTypes: [
-      { label: 'Common', icon: 'item_diamond', types: ['int_collection_common'] },
-      { label: 'Hongshan (Dynamic)', icon: 'item_diamond', types: ['int_collection_coin_hongshan_dynamic'] },
-      { label: 'Hongshan (Static)', icon: 'item_diamond', types: ['int_collection_coin_hongshan_static'] },
+      { label: 'White Fragment', icon: 'item_diamond', types: ['int_collection_common'] },
+      { label: 'Aurylene', icon: 'item_diamond', types: ['int_collection_coin_hongshan_dynamic', 'int_collection_coin_hongshan_static'] },
+      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_scene_empty', 'int_narrative_common', 'int_narrative_common_book', 'int_narrative_common_pad', 'int_narrative_common_audiotape', 'int_narrative_scene', 'int_narrative_scene_signage', 'int_narrative_common_empty', 'int_narrative_scene_screen', 'int_narrative_scene_bag', 'int_narrative_common_news', 'int_narrative_scene_notebook'] },
+      { label: 'Buyable File', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_expensivebook', 'int_trigger_dnarrative_appliance', 'int_trigger_dnarrative_letter', 'int_trigger_dnarrative_document'] },
+      { label: 'Protocol Datalogger', icon: 'item_diamond', types: ['mark_dg_blackbox'] },
+      { label: 'Repair Logic', icon: 'item_diamond', types: ['mark_p_pazzle'] },
     ],
   },
   mineral: {
     label: 'Mining Points', color: '#3498DB', icon: 'item_iron_ore', defaultOn: false,
     subTypes: [
-      { label: 'Originium', icon: 'item_originium_ore', types: ['int_doodad_core_mine_originium'] },
       { label: 'Iron', icon: 'item_iron_ore', types: ['int_doodad_core_mine_iron'] },
-      { label: 'Auronyx', icon: 'item_plant_spcstone_1_1', types: ['int_doodad_spcstone_1_3', 'int_doodad_spcstone_2_1'] },
-      { label: 'Igneosite', icon: 'item_plant_spcstone_1_2', types: ['int_doodad_spcstone_2_2'] },
+      { label: 'Originium', icon: 'item_originium_ore', types: ['int_doodad_core_mine_originium'] },
+      { label: 'Umbronyx', icon: 'item_plant_spcstone_1_3', types: ['int_doodad_spcstone_1_3'] },
+      { label: 'Wulingstone', icon: 'item_plant_spcstone_2_1', types: ['int_doodad_spcstone_2_1'] },
+      { label: 'Igneosite', icon: 'item_plant_spcstone_2_2', types: ['int_doodad_spcstone_2_2'] },
     ],
   },
   plant: {
     label: 'Plant Materials', color: '#27AE60', icon: 'item_plant_moss_1', defaultOn: false,
     subTypes: [
-      { label: 'Windgrass A', icon: 'item_plant_moss_1', types: ['int_doodad_grass_1', 'int_doodad_grass_spc_1', 'int_doodad_grass_spc_once_1'] },
-      { label: 'Windgrass B', icon: 'item_plant_moss_2', types: ['int_doodad_grass_2', 'int_doodad_grass_spc_2', 'int_doodad_grass_spc_once_2'] },
-      { label: 'Windbell', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
-      { label: 'Blazebloom', icon: 'item_plant_bbflower_1', types: ['int_doodad_bbflower_1'] },
-      { label: 'Mushroom A', icon: 'item_plant_mushroom_1_1', types: ['int_doodad_mushroom_1_3', 'int_doodad_mushroom_2_1'] },
-      { label: 'Mushroom B', icon: 'item_plant_mushroom_1_2', types: ['int_doodad_mushroom_2_2'] },
-      { label: 'Stinger', icon: 'item_plant_tundra_insect_1', types: ['int_doodad_insect_1'] },
-      { label: 'Luminoth', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
-      { label: 'Cryplant A', icon: 'item_plant_crylplant_1_1', types: ['int_doodad_crylplant_1_3', 'int_doodad_crylplant_2_1'] },
-      { label: 'Cryplant B', icon: 'item_plant_crylplant_1_2', types: ['int_doodad_crylplant_2_2'] },
-      { label: 'Scrap Metal', icon: 'item_iron_ore', types: ['int_doodad_corp_3', 'int_doodad_corp_4'] },
+      { label: 'Jincao', icon: 'item_plant_moss_1', types: ['int_doodad_grass_1', 'int_doodad_grass_spc_1', 'int_doodad_grass_spc_once_1'] },
+      { label: 'Yazhen', icon: 'item_plant_moss_2', types: ['int_doodad_grass_2', 'int_doodad_grass_spc_2', 'int_doodad_grass_spc_once_2'] },
+      { label: 'Sandleaf', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
+      { label: 'Aketine', icon: 'item_plant_bbflower_1', types: ['int_doodad_bbflower_1'] },
+      { label: 'Ruby Bolete', icon: 'item_plant_mushroom_1_3', types: ['int_doodad_mushroom_1_3'] },
+      { label: 'Bloodcap', icon: 'item_plant_mushroom_2_1', types: ['int_doodad_mushroom_2_1'] },
+      { label: 'Cosmagaric', icon: 'item_plant_mushroom_2_2', types: ['int_doodad_mushroom_2_2'] },
+      { label: 'Glowbug', icon: 'item_plant_tundra_insect_1', types: ['int_doodad_insect_1'] },
+      { label: 'Scorchbug', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
+      { label: 'Vitrodendra', icon: 'item_plant_crylplant_1_3', types: ['int_doodad_crylplant_1_3'] },
+      { label: 'Blighted Jadeleaf', icon: 'item_plant_crylplant_2_1', types: ['int_doodad_crylplant_2_1'] },
+      { label: 'False Aggela', icon: 'item_plant_crylplant_2_2', types: ['int_doodad_crylplant_2_2'] },
+      { label: 'Redjade Ginseng', icon: 'item_plant_sp_3', types: ['int_doodad_corp_3'] },
+      { label: 'Amber Rice', icon: 'item_plant_sp_4', types: ['int_doodad_corp_4'] },
     ],
   },
-  ether: { label: 'Ether Shards', color: '#00BFFF', icon: 'item_diamond', defaultOn: false },
-  narrative: { label: 'Story Items', color: '#E74C3C', icon: 'item_diamond', defaultOn: false },
-  terminal: { label: 'Terminals', color: '#9B59B6', icon: 'item_diamond', defaultOn: false },
+  battle: {
+    label: 'Battle Encounters', color: '#E74C3C', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Energy Alluvium', icon: 'item_diamond', types: ['eny_0092_slbomb', 'eny_0108_slbomb2'] },
+      { label: 'Blazemist Slug', icon: 'item_diamond', types: ['eny_0094_hsfly'] },
+      { label: 'Firemist Slug', icon: 'item_diamond', types: ['eny_0053_hsmob'] },
+      { label: 'Grove Archer', icon: 'item_diamond', types: ['eny_0084_hshunt'] },
+      { label: 'Hedron', icon: 'item_diamond', types: ['eny_0087_wgslime', 'eny_0105_wgslime2'] },
+      { label: 'Imbued', icon: 'item_diamond', types: ['eny_0088_wgthorns', 'eny_0106_wgthorns2'] },
+      { label: 'Glaring Rakerbeast', icon: 'item_diamond', types: ['eny_0093_hshog', 'eny_0093_hshog_special01', 'eny_0109_hshog2'] },
+      { label: 'Mudflow', icon: 'item_diamond', types: ['eny_0089_wgreflec', 'eny_0107_wgshoal2'] },
+      { label: 'Other Enemies', icon: 'item_diamond', types: ['eny_0102_hstiger2', 'eny_0083_hstiger', 'eny_0007_mimicw', 'int_system_world_energy_point', 'mark_p_enemyspawner'] },
+    ],
+  },
+  events: {
+    label: 'Events', color: '#9B59B6', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Delta Bot', icon: 'item_diamond', types: ['mark_p_fixablerobot'] },
+    ],
+  },
+  buildings: {
+    label: 'Buildings', color: '#1ABC9C', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: "Seed-Expert's Shop", icon: 'item_diamond', types: ['shop_common'] },
+      { label: 'Early Warning Terminal', icon: 'item_diamond', types: ['int_warning_terminal'] },
+      { label: 'Settlement Defense', icon: 'item_diamond', types: ['mark_settlement_defense_terminal'] },
+      { label: 'Stock Redistribution', icon: 'item_diamond', types: ['mark_p_domain_shop'] },
+      { label: 'Depot Node', icon: 'item_diamond', types: ['mark_p_domain_depot'] },
+      { label: 'Recycling Station', icon: 'item_diamond', types: ['mark_p_recycler'] },
+    ],
+  },
+  system: { label: 'Challenge Entrance', color: '#E67E22', icon: 'item_diamond', defaultOn: false },
+  ether: { label: 'Recycling Stations', color: '#00BFFF', icon: 'item_diamond', defaultOn: false },
+  narrative: {
+    label: 'Story Items', color: '#C0392B', icon: 'item_read_note', defaultOn: false,
+    subTypes: [
+      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_common_empty', 'int_narrative_common_pad', 'int_narrative_scene_appliance', 'int_narrative_scene_bag'] },
+      { label: 'Buyable File', icon: 'item_read_note', types: ['int_narrative_shop_buyable_nar_paper_map02_67_1__item_read_note'] },
+    ],
+  },
 };
 
-const ENTITY_ICON: Record<string, string> = {
-  'int_campfire_v2': 'item_add_endurance',
-  'int_trchest_common': 'item_materialchest_01',
-  'int_trchest_common_gorgeous': 'item_materialchest_03',
-  'int_trchest_common_high': 'item_materialchest_02',
-  'int_trchest_common_normal': 'item_materialchest_01',
-  'int_trchest_lock': 'item_materialchest_02',
-  'int_trchest_equip': 'item_materialchest_03',
-  'mark_equip_formula_chest': 'item_materialchest_03',
-  'int_trchest_supplybox_01': 'item_materialchest_01',
-  'int_trchest_supplybox': 'item_materialchest_01',
-  'int_collection_common': 'item_diamond',
-  'int_collection_coin_hongshan_dynamic': 'item_diamond',
-  'int_collection_coin_hongshan_static': 'item_diamond',
-  'int_doodad_grass_1': 'item_plant_moss_1',
-  'int_doodad_grass_2': 'item_plant_moss_2',
-  'int_doodad_grass_spc_1': 'item_plant_moss_1',
-  'int_doodad_grass_spc_2': 'item_plant_moss_2',
-  'int_doodad_grass_spc_once_1': 'item_plant_moss_1',
-  'int_doodad_grass_spc_once_2': 'item_plant_moss_2',
-  'int_doodad_flower_3': 'item_plant_moss_3',
-  'int_doodad_bbflower_1': 'item_plant_bbflower_1',
-  'int_doodad_mushroom_1_3': 'item_plant_mushroom_1_1',
-  'int_doodad_mushroom_2_1': 'item_plant_mushroom_1_1',
-  'int_doodad_mushroom_2_2': 'item_plant_mushroom_1_2',
-  'int_doodad_insect_1': 'item_plant_tundra_insect_1',
-  'int_doodad_insect_2': 'item_plant_tundra_insect_2',
-  'int_doodad_crylplant_1_3': 'item_plant_crylplant_1_1',
-  'int_doodad_crylplant_2_1': 'item_plant_crylplant_1_1',
-  'int_doodad_crylplant_2_2': 'item_plant_crylplant_1_2',
-  'int_doodad_spcstone_1_3': 'item_plant_spcstone_1_1',
-  'int_doodad_spcstone_2_1': 'item_plant_spcstone_1_1',
-  'int_doodad_spcstone_2_2': 'item_plant_spcstone_1_2',
-  'int_doodad_core_mine_iron': 'item_iron_ore',
-  'int_doodad_core_mine_originium': 'item_originium_ore',
-  'int_doodad_core_recycle': 'item_iron_ore',
-  'int_doodad_corp_3': 'item_iron_ore',
-  'int_doodad_corp_4': 'item_iron_ore',
-};
+// Icon resolution — matches competitor's logic for entity type → icon filename
+// Returns { base, isMarkIcon } to differentiate between itemicon/ and markiconsmall/ CDN paths
+function resolveIcon(type: string): { name: string; isMarkIcon: boolean } {
+  const t = type.toLowerCase();
 
-function getEntityIcon(type: string): string {
-  return ENTITY_ICON[type] || 'item_diamond';
+  // Campfire
+  if (t.includes('campfire')) return { name: 'icon_map_campfire', isMarkIcon: true };
+
+  // Chests
+  if (t === 'int_trchest_equip') return { name: 'icon_map_equipment_blueprints', isMarkIcon: true };
+  if (t.includes('trchest_common_gorgeous')) return { name: 'item_materialchest_03', isMarkIcon: false };
+  if (t.includes('trchest_common_high') || t.includes('trchest_lock')) return { name: 'item_materialchest_02', isMarkIcon: false };
+  if (t.includes('trchest')) return { name: 'item_materialchest_01', isMarkIcon: false };
+
+  // Buildings
+  if (t.includes('domain_shop')) return { name: 'icon_map_depot_pick_up', isMarkIcon: true };
+  if (t.includes('domain_depot')) return { name: 'icon_map_depot_receiving', isMarkIcon: true };
+  if (t.includes('shop_common') || t.includes('credit_shop')) return { name: 'icon_map_general_shop', isMarkIcon: true };
+  if (t === 'int_doodad_core_recycle') return { name: 'icon_map_recycle', isMarkIcon: true };
+  if (t.includes('warning_terminal')) return { name: 'icon_map_terminal', isMarkIcon: false };
+  if (t.includes('settlement_defense')) return { name: 'icon_map_settlement_terminal', isMarkIcon: false };
+  if (t.includes('recycler')) return { name: 'icon_map_recycle', isMarkIcon: true };
+
+  // Events
+  if (t.includes('fixablerobot')) return { name: 'icon_map_fixablerobot', isMarkIcon: true };
+
+  // Collectibles
+  if (t.includes('collection_common') || t.includes('collection_piece')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('collection_coin')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('pazzle')) return { name: 'icon_map_pazzle', isMarkIcon: true };
+  if (t.includes('dg_blackbox')) return { name: 'icon_map_equipment_blueprints', isMarkIcon: true };
+
+  // Narrative / Buyable files
+  if (t.includes('narrative') || t.includes('dnarrative')) return { name: 'item_read_note', isMarkIcon: false };
+
+  // System
+  if (t.includes('challenge_start_point')) return { name: 'item_adventureexp', isMarkIcon: false };
+  if (t.includes('system_world_energy')) return { name: 'item_diamond', isMarkIcon: false };
+
+  // Enemies
+  if (t.startsWith('eny_') || t.includes('enemyspawner')) return { name: 'item_diamond', isMarkIcon: false };
+
+  // Dungeons — use iconMapping from competitor
+  if (t.includes('bossrush') || t.includes('boss')) return { name: 'icon_map_boss', isMarkIcon: true };
+  const dungeonIcons: Record<string, string> = {
+    'dung_group_ss03': 'item_char_break_stage_3_4',
+    'dung_group_ss04': 'item_char_break_stage_3_4',
+    'dung_group_ss05': 'item_char_break_stage_3_4',
+    'indie_group_levelcheck03': 'item_adventureexp',
+    'indie_group_levelcheck04': 'item_adventureexp',
+  };
+  if (dungeonIcons[type]) return { name: dungeonIcons[type], isMarkIcon: false };
+
+  // Minerals
+  if (t.includes('core_mine_iron')) return { name: 'item_iron_ore', isMarkIcon: false };
+  if (t.includes('core_mine_originium')) return { name: 'item_originium_ore', isMarkIcon: false };
+  if (t.includes('spcstone')) {
+    const m = t.match(/spcstone_(\d+_\d+)/);
+    return { name: `item_plant_spcstone_${m ? m[1] : '1_3'}`, isMarkIcon: false };
+  }
+
+  // Plants — pattern-based icon resolution (matches competitor logic)
+  if (t.includes('mushroom')) {
+    const m = t.match(/mushroom_(\d+_\d+)/);
+    return { name: `item_plant_mushroom_${m ? m[1] : '1_1'}`, isMarkIcon: false };
+  }
+  if (t.includes('crylplant')) {
+    const m = t.match(/crylplant_(\d+_\d+)/);
+    return { name: `item_plant_crylplant_${m ? m[1] : '1_1'}`, isMarkIcon: false };
+  }
+  if (t.includes('bbflower')) return { name: 'item_plant_bbflower_1', isMarkIcon: false };
+  if (t.includes('grass_spc')) {
+    const m = t.match(/grass_spc(?:_once)?_(\d+)/);
+    return { name: `item_plant_grass_${m ? m[1] : '1'}`, isMarkIcon: false };
+  }
+  if (t.includes('grass_')) {
+    const m = t.match(/grass_(\d+)/);
+    return { name: `item_plant_moss_${m ? m[1] : '1'}`, isMarkIcon: false };
+  }
+  if (t.includes('flower_3') || t.includes('flower_spc')) return { name: 'item_plant_moss_3', isMarkIcon: false };
+  if (t.includes('insect_')) {
+    return { name: 'item_plant_tundra_insect_1', isMarkIcon: false };
+  }
+  if (t.includes('corp_')) {
+    const m = t.match(/corp_(\d+)/);
+    const idx = m ? m[1] : '1';
+    return { name: `item_plant_sp_${idx}`, isMarkIcon: false };
+  }
+
+  return { name: 'item_diamond', isMarkIcon: false };
 }
 
-// Generate all tiles with EXACT coordinates — sparse lists of validated CDN tiles only
+function getEntityIconUrl(type: string): string {
+  const { name, isMarkIcon } = resolveIcon(type);
+  return isMarkIcon ? `${MARK_ICON_BASE}/${name}.png` : `${ICON_BASE}/${name}.png`;
+}
+
+// Generate all tiles with EXACT coordinates — full grids for each zone
 // Y DECREASES per row (row 1 at startY, subsequent rows above), matching Valley IV
 function generateAllTiles(): TileDef[] {
   const tiles: TileDef[] = [];
@@ -150,34 +254,34 @@ function generateAllTiles(): TileDef[] {
     }
   };
 
-  // map02_lv001 (Jingyu Valley) — 33 valid tiles out of 54, startX=1800, startY=10800
-  // Row 1 at Y=10800 (bottom of zone), row 9 at Y=6000 (top of zone)
-  // Covers POIs Y≈[6000, 10800] matching competitor grid absRow -8 to -16
+  // map02_lv001 (Jingyu Valley) — 6×9 grid, 37 tiles (sparse)
   const lv001Tiles: Array<[number, number]> = [
-    [1, 9],
-    [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 9],
-    [3, 2], [3, 3], [3, 4], [3, 7], [3, 9],
-    [4, 1], [4, 4], [4, 7], [4, 8],
-    [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9],
-    [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9],
+    [1,1],[2,1],[3,1],
+    [1,2],[2,2],[3,2],[4,2],
+    [1,3],[2,3],[3,3],[4,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],
+    [2,6],[3,6],[4,6],[5,6],
+    [2,7],[3,7],[4,7],[5,7],
+    [2,8],[3,8],[4,8],[5,8],
+    [3,9],[4,9],[5,9],[6,9],
   ];
-  addTiles('map02_lv001', 'map02lv001', 1800, 10800, lv001Tiles);
+  addTiles('map02_lv001', 'map02lv001', 2400, 12000, lv001Tiles);
 
-  // map02_lv002 (Wuling City) — 78 valid tiles out of 90, startX=600, startY=6000
-  // Row 1 at Y=6000 (bottom of zone), row 10 at Y=600 (top of zone)
-  // Covers POIs Y≈[600, 6000] matching competitor grid absRow -8 to 1
+  // map02_lv002 (Wuling City) — 9×10 grid, 84 tiles (sparse)
   const lv002Tiles: Array<[number, number]> = [
-    [1, 2], [1, 4], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10],
-    [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 9], [2, 10],
-    [3, 1], [3, 2], [3, 4], [3, 7], [3, 8], [3, 9],
-    [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 8], [4, 9], [4, 10],
-    [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10],
-    [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9], [6, 10],
-    [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7], [7, 9], [7, 10],
-    [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [8, 7], [8, 8], [8, 9], [8, 10],
-    [9, 1], [9, 2], [9, 3], [9, 4], [9, 5], [9, 6], [9, 7], [9, 8], [9, 9], [9, 10],
+    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],
+    [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
+    [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
+    [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],
+    [1,9],[2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],
+    [2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],
   ];
-  addTiles('map02_lv002', 'map02lv002', 600, 6000, lv002Tiles);
+  addTiles('map02_lv002', 'map02lv002', 1200, 7200, lv002Tiles);
 
   return tiles;
 }
@@ -799,8 +903,10 @@ export default function WulingMapPage() {
                   href={tile.src}
                   x={tile.x}
                   y={tile.y}
-                  width={TILE_SIZE}
-                  height={TILE_SIZE}
+                  width={TILE_SIZE + 1}
+                  height={TILE_SIZE + 1}
+                  preserveAspectRatio="none"
+                  style={{ pointerEvents: 'none', userSelect: 'none', imageRendering: 'auto' }}
                   onLoad={() => handleTileLoad(tile.key)}
                   onError={() => handleTileLoad(tile.key)}
                 />
@@ -865,7 +971,7 @@ export default function WulingMapPage() {
               const cat = CATEGORY_CONFIG[p.cat];
               const isMulti = cluster.pois.length > 1;
               const allDone = cluster.pois.every(poi => completed.has(poi.id));
-              const iconName = getEntityIcon(p.type);
+              const iconUrl = getEntityIconUrl(p.type);
 
               return (
                 <div
@@ -884,7 +990,7 @@ export default function WulingMapPage() {
                     title={isMulti ? `${cluster.pois.length} POIs` : p.name || p.type}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`${ICON_BASE}/${iconName}.png`} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
+                    <img src={iconUrl} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
                     {isMulti && (
                       <div className="absolute -top-1.5 -right-1.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5 bg-black border-2 border-white text-[10px] font-bold text-white">
                         {cluster.pois.length}
@@ -984,7 +1090,8 @@ export default function WulingMapPage() {
             categoryConfig={CATEGORY_CONFIG}
             zoneNames={mapData.zones}
             iconBase={ICON_BASE}
-            getEntityIcon={getEntityIcon}
+            getEntityIcon={(type) => resolveIcon(type).name}
+            getEntityIconUrl={getEntityIconUrl}
             mapRegion="wuling"
           />
         )}

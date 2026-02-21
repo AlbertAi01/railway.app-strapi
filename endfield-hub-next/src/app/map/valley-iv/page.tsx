@@ -10,6 +10,7 @@ import MapDetailPanel from '@/components/ui/MapDetailPanel';
 const TOOLS_CDN = 'https://endfieldtools.dev/assets/images/endfield';
 const TILE_BASE = `${TOOLS_CDN}/levelmap/levelmapgrids`;
 const ICON_BASE = `${TOOLS_CDN}/itemicon`;
+const MARK_ICON_BASE = `${TOOLS_CDN}/markiconsmall`;
 const TILE_SIZE = 600;
 
 interface POI {
@@ -37,20 +38,40 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
   chest: {
     label: 'Treasure Chests', color: '#FF8C00', icon: 'item_materialchest_01', defaultOn: true,
     subTypes: [
+      { label: 'Basic Chest', icon: 'item_materialchest_01', types: ['int_trchest_common'] },
+      { label: 'Normal Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_normal'] },
+      { label: 'Exquisite Chest', icon: 'item_materialchest_02', types: ['int_trchest_common_high'] },
       { label: 'Gorgeous Chest', icon: 'item_materialchest_03', types: ['int_trchest_common_gorgeous'] },
       { label: 'Locked Chest', icon: 'item_materialchest_02', types: ['int_trchest_lock'] },
-      { label: 'High-Tier Chest', icon: 'item_materialchest_02', types: ['int_trchest_common_high'] },
-      { label: 'Normal Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_normal'] },
-      { label: 'Basic Chest', icon: 'item_materialchest_01', types: ['int_trchest_common'] },
     ],
   },
   travel: { label: 'Campfires', color: '#FF6B35', icon: 'item_add_endurance', defaultOn: true },
-  dungeon: { label: 'Dungeons', color: '#F39C12', icon: 'item_adventureexp', defaultOn: true },
-  collectible: { label: 'Collectibles', color: '#FFD700', icon: 'item_diamond', defaultOn: false },
+  dungeon: {
+    label: 'Dungeons', color: '#F39C12', icon: 'item_adventureexp', defaultOn: true,
+    subTypes: [
+      { label: 'Boss Rush', icon: 'item_adventureexp', types: ['dung01_group_bossrush01', 'dung01_group_bossrush02', 'dung01_group_bossrush03'] },
+      { label: 'Resource Farm', icon: 'item_gold', types: ['dung01_group_exp01', 'dung01_group_gold01', 'dung01_group_skill01', 'dung01_group_wpexp01'] },
+      { label: 'Breakthrough', icon: 'item_char_break_stage_1_2', types: ['dung01_group_charbreak01', 'dung01_group_wpbreak01'] },
+      { label: 'Protocol Space', icon: 'item_char_break_stage_3_4', types: ['dung_group_ss01', 'dung_group_ss02'] },
+      { label: 'Exploration Level', icon: 'item_adventureexp', types: ['indie_group_levelcheck01', 'indie_group_levelcheck02'] },
+      { label: 'High Difficulty', icon: 'item_adventureexp', types: ['mark_high_difficulty_enter'] },
+    ],
+  },
+  collectible: {
+    label: 'Collectibles', color: '#FFD700', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'White Fragment', icon: 'item_diamond', types: ['int_collection_common', 'int_collection_piece_in_door'] },
+      { label: 'Aurylene', icon: 'item_diamond', types: ['int_collection_coin', 'int_collection_coin_puzzle'] },
+      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_scene_empty', 'int_narrative_common', 'int_narrative_common_pad', 'int_narrative_common_audiotape', 'int_narrative_common_book', 'int_narrative_scene', 'int_narrative_common_empty', 'int_narrative_scene_pad', 'int_narrative_scene_notebook', 'int_narrative_empty', 'int_narrative_common_empty_withoutVfx', 'int_narrative_scene_expensiveBook', 'int_narrative_scene_chip', 'int_narrative_scene_document', 'int_narrative_scene_letter', 'int_narrative_scene_book'] },
+      { label: 'Buyable File', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_document', 'int_trigger_dnarrative_letter'] },
+      { label: 'Protocol Datalogger', icon: 'item_diamond', types: ['mark_dg_blackbox'] },
+      { label: 'Repair Logic', icon: 'item_diamond', types: ['mark_p_pazzle'] },
+    ],
+  },
   mineral: {
     label: 'Mining Points', color: '#3498DB', icon: 'item_iron_ore', defaultOn: false,
     subTypes: [
-      { label: 'Iron', icon: 'item_iron_ore', types: ['int_doodad_core_mine_iron', 'int_doodad_corp_1', 'int_doodad_corp_2'] },
+      { label: 'Iron', icon: 'item_iron_ore', types: ['int_doodad_core_mine_iron'] },
       { label: 'Originium', icon: 'item_originium_ore', types: ['int_doodad_core_mine_originium'] },
       { label: 'Quartz', icon: 'item_quartz_sand', types: ['int_doodad_core_mine_quartz'] },
       { label: 'Auronyx', icon: 'item_plant_spcstone_1_1', types: ['int_doodad_spcstone_1_1'] },
@@ -62,159 +83,252 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
     subTypes: [
       { label: 'Aketine', icon: 'item_plant_moss_1', types: ['int_doodad_flower_1', 'int_doodad_flower_once_1', 'int_doodad_flower_spc_1', 'int_doodad_flower_spc_once_1', 'int_doodad_flower_story_1'] },
       { label: 'Buckflower', icon: 'item_plant_moss_2', types: ['int_doodad_flower_2', 'int_doodad_flower_once_2', 'int_doodad_flower_spc_2', 'int_doodad_flower_spc_once_2'] },
-      { label: 'Windbell', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
+      { label: 'Sandleaf', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
       { label: 'Blazebloom', icon: 'item_plant_bbflower_1', types: ['int_doodad_bbflower_1'] },
-      { label: 'Mushroom', icon: 'item_plant_mushroom_1_1', types: ['int_doodad_mushroom_1_1', 'int_doodad_mushroom_spc_2_1'] },
-      { label: 'Sporebloom', icon: 'item_plant_mushroom_1_2', types: ['int_doodad_mushroom_1_2'] },
-      { label: 'Stinger', icon: 'item_plant_tundra_insect_1', types: ['int_doodad_insect_1'] },
-      { label: 'Luminoth', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
-      { label: 'Cryplant A', icon: 'item_plant_crylplant_1_1', types: ['int_doodad_crylplant_1_1'] },
-      { label: 'Cryplant B', icon: 'item_plant_crylplant_1_2', types: ['int_doodad_crylplant_1_2'] },
+      { label: 'Bloodcap', icon: 'item_plant_mushroom_1_1', types: ['int_doodad_mushroom_1_1'] },
+      { label: 'Cosmagaric', icon: 'item_plant_mushroom_1_2', types: ['int_doodad_mushroom_1_2'] },
+      { label: 'Ruby Bolete', icon: 'item_plant_mushroom_2_1', types: ['int_doodad_mushroom_spc_2_1'] },
+      { label: 'Glowbug', icon: 'item_plant_tundra_insect_1', types: ['int_doodad_insect_1'] },
+      { label: 'Scorchbug', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
+      { label: 'Vitrodendra', icon: 'item_plant_crylplant_1_1', types: ['int_doodad_crylplant_1_1'] },
+      { label: 'Blighted Jadeleaf', icon: 'item_plant_crylplant_1_2', types: ['int_doodad_crylplant_1_2'] },
+      { label: 'Redjade Ginseng', icon: 'item_plant_sp_1', types: ['int_doodad_corp_1'] },
+      { label: 'Amber Rice', icon: 'item_plant_sp_2', types: ['int_doodad_corp_2'] },
     ],
   },
-  ether: { label: 'Ether Shards', color: '#00BFFF', icon: 'item_diamond', defaultOn: false },
-  narrative: { label: 'Story Items', color: '#E74C3C', icon: 'item_diamond', defaultOn: false },
-  terminal: { label: 'Terminals', color: '#9B59B6', icon: 'item_diamond', defaultOn: false },
+  battle: {
+    label: 'Battle Encounters', color: '#E74C3C', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Liverbeast', icon: 'item_diamond', types: ['eny_0029_lbmob', 'eny_0065_lbmob2', 'eny_0060_lbmad'] },
+      { label: 'Liverbeast Hunter', icon: 'item_diamond', types: ['eny_0033_lbhunt', 'eny_0066_lbhunt2'] },
+      { label: 'Liverbeast Tough', icon: 'item_diamond', types: ['eny_0018_lbtough', 'eny_0068_lbtough2'] },
+      { label: 'Hound', icon: 'item_diamond', types: ['eny_0050_hound', 'eny_0067_hound2', 'eny_0057_dog', 'eny_0059_erhound'] },
+      { label: 'Aggregate', icon: 'item_diamond', types: ['eny_0021_agmelee', 'eny_0063_agmelee2', 'eny_0063_agmelee2_001', 'eny_0025_agrange', 'eny_0064_agrange2', 'eny_0064_agrange2_001', 'eny_0023_aghornb', 'eny_0023_aghornb_001', 'eny_0069_aghornb2', 'eny_0027_agscorp', 'eny_0070_agscorp2', 'eny_0058_agdisk', 'eny_0076_agfly'] },
+      { label: 'Originium Slug', icon: 'item_diamond', types: ['eny_0072_slimeml', 'eny_0099_slimeml2', 'eny_0073_slimerg', 'eny_0100_slimerg2'] },
+      { label: 'Sandworm', icon: 'item_diamond', types: ['eny_0071_sandb', 'eny_0098_sandb2'] },
+      { label: 'Boss', icon: 'item_diamond', types: ['eny_0051_rodin', 'eny_0045_agtrinit', 'eny_0052_palesent', 'eny_0061_palecore'] },
+      { label: 'Other Enemies', icon: 'item_diamond', types: ['eny_0007_mimicw', 'eny_0049_rogue', 'eny_0046_lbshamman', 'eny_0047_firebat', 'eny_0074_lbshield', 'eny_0075_lbroshan', 'int_system_world_energy_point', 'mark_p_enemyspawner'] },
+    ],
+  },
+  events: {
+    label: 'Events', color: '#9B59B6', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Delta Bot', icon: 'item_diamond', types: ['mark_p_fixablerobot'] },
+    ],
+  },
+  buildings: {
+    label: 'Buildings', color: '#1ABC9C', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Shop', icon: 'item_diamond', types: ['shop_common'] },
+      { label: 'Stock Redistribution', icon: 'item_diamond', types: ['mark_p_domain_shop'] },
+      { label: 'Depot Node', icon: 'item_diamond', types: ['mark_p_domain_depot'] },
+      { label: 'Early Warning Terminal', icon: 'item_diamond', types: ['int_warning_terminal'] },
+      { label: 'Settlement Defense', icon: 'item_diamond', types: ['mark_settlement_defense_terminal'] },
+      { label: 'Recycling Station', icon: 'item_diamond', types: ['mark_p_recycler'] },
+    ],
+  },
+  system: { label: 'Challenge Entrance', color: '#E67E22', icon: 'item_diamond', defaultOn: false },
+  ether: { label: 'Recycling Stations', color: '#00BFFF', icon: 'item_diamond', defaultOn: false },
+  narrative: {
+    label: 'Story Items', color: '#C0392B', icon: 'item_read_note', defaultOn: false,
+    subTypes: [
+      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_common', 'int_narrative_scene_empty', 'int_narrative_common_empty', 'int_narrative_common_pad', 'int_narrative_scene', 'int_narrative_common_audiotape', 'int_narrative_scene_pad', 'int_narrative_common_news', 'int_narrative_scene_notebook', 'int_narrative_scene_expensiveBook', 'int_narrative_scene_document', 'int_narrative_common_empty_withoutVfx', 'int_narrative_common_FisrtAid', 'int_narrative_empty', 'int_narrative_scene_newspapaer', 'int_narrative_common_book'] },
+      { label: 'Buyable File', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_document', 'int_trigger_dnarrative_letter', 'int_trigger_dnarrative_expensivebook', 'int_trigger_dnarrative_appliance'] },
+      { label: 'Shop Buyable', icon: 'item_read_note', types: ['int_narrative_shop_buyable_nar_paper_map01_112_1__item_read_note', 'int_narrative_shop_buyable_nar_paper_map01_112_2__item_read_note', 'int_narrative_shop_buyable_nar_paper_map01_115_1__item_read_news', 'int_narrative_shop_buyable_nar_paper_map01_116_1__prts_read_expensivebook', 'int_narrative_shop_buyable_nar_paper_map01_113_1__item_read_news', 'int_narrative_shop_buyable_nar_paper_map01_114_1__prts_read_expensivebook'] },
+      { label: 'Switch / Trigger', icon: 'item_read_note', types: ['int_trigger_button', 'int_trigger_volume_monster'] },
+    ],
+  },
+  terminal: {
+    label: 'Terminals', color: '#9B59B6', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Reading Terminal', icon: 'item_diamond', types: ['int_terminal_reading'] },
+      { label: 'Switch Terminal', icon: 'item_diamond', types: ['int_switch_terminal_v2'] },
+      { label: 'Gantry Terminal', icon: 'item_diamond', types: ['gantry_terminal1', 'gantry_terminal2', 'gantry_terminal3', 'int_gantry_terminal', 'int_gantry_terminal3', 'int_gantry_terminal4'] },
+      { label: 'Communication Terminal', icon: 'item_diamond', types: ['int_001_comm_terminal'] },
+    ],
+  },
 };
 
-const ENTITY_ICON: Record<string, string> = {
-  'int_campfire_v2': 'item_add_endurance',
-  'int_trchest_common': 'item_materialchest_01',
-  'int_trchest_common_gorgeous': 'item_materialchest_03',
-  'int_trchest_common_high': 'item_materialchest_02',
-  'int_trchest_common_normal': 'item_materialchest_01',
-  'int_trchest_lock': 'item_materialchest_02',
-  'int_collection_coin': 'item_diamond',
-  'int_collection_coin_puzzle': 'item_diamond',
-  'int_collection_common': 'item_diamond',
-  'int_collection_piece_in_door': 'item_diamond',
-  'int_doodad_bbflower_1': 'item_plant_bbflower_1',
-  'int_doodad_flower_1': 'item_plant_moss_1',
-  'int_doodad_flower_2': 'item_plant_moss_2',
-  'int_doodad_flower_3': 'item_plant_moss_3',
-  'int_doodad_flower_once_1': 'item_plant_moss_1',
-  'int_doodad_flower_once_2': 'item_plant_moss_2',
-  'int_doodad_flower_spc_1': 'item_plant_moss_1',
-  'int_doodad_flower_spc_2': 'item_plant_moss_2',
-  'int_doodad_flower_spc_once_1': 'item_plant_moss_1',
-  'int_doodad_flower_spc_once_2': 'item_plant_moss_2',
-  'int_doodad_flower_story_1': 'item_plant_moss_1',
-  'int_doodad_mushroom_1_1': 'item_plant_mushroom_1_1',
-  'int_doodad_mushroom_1_2': 'item_plant_mushroom_1_2',
-  'int_doodad_mushroom_spc_2_1': 'item_plant_mushroom_1_1',
-  'int_doodad_insect_1': 'item_plant_tundra_insect_1',
-  'int_doodad_insect_2': 'item_plant_tundra_insect_2',
-  'int_doodad_crylplant_1_1': 'item_plant_crylplant_1_1',
-  'int_doodad_crylplant_1_2': 'item_plant_crylplant_1_2',
-  'int_doodad_spcstone_1_1': 'item_plant_spcstone_1_1',
-  'int_doodad_spcstone_1_2': 'item_plant_spcstone_1_2',
-  'int_doodad_core_mine_iron': 'item_iron_ore',
-  'int_doodad_core_mine_originium': 'item_originium_ore',
-  'int_doodad_core_mine_quartz': 'item_quartz_sand',
-  'int_doodad_core_recycle': 'item_iron_ore',
-  'int_doodad_corp_1': 'item_iron_ore',
-  'int_doodad_corp_2': 'item_iron_ore',
-};
+// Icon resolution — matches competitor's logic for entity type → icon filename
+// Returns { name, isMarkIcon } to differentiate between itemicon/ and markiconsmall/ CDN paths
+function resolveIcon(type: string): { name: string; isMarkIcon: boolean } {
+  const t = type.toLowerCase();
 
-function getEntityIcon(type: string): string {
-  return ENTITY_ICON[type] || 'item_diamond';
+  // Campfire
+  if (t.includes('campfire')) return { name: 'icon_map_campfire', isMarkIcon: true };
+
+  // Chests
+  if (t === 'int_trchest_equip') return { name: 'icon_map_equipment_blueprints', isMarkIcon: true };
+  if (t.includes('trchest_common_gorgeous')) return { name: 'item_materialchest_03', isMarkIcon: false };
+  if (t.includes('trchest_common_high') || t.includes('trchest_lock')) return { name: 'item_materialchest_02', isMarkIcon: false };
+  if (t.includes('trchest')) return { name: 'item_materialchest_01', isMarkIcon: false };
+
+  // Buildings
+  if (t.includes('domain_shop')) return { name: 'icon_map_depot_pick_up', isMarkIcon: true };
+  if (t.includes('domain_depot')) return { name: 'icon_map_depot_receiving', isMarkIcon: true };
+  if (t.includes('shop_common') || t.includes('credit_shop')) return { name: 'icon_map_general_shop', isMarkIcon: true };
+  if (t === 'int_doodad_core_recycle') return { name: 'icon_map_recycle', isMarkIcon: true };
+  if (t.includes('warning_terminal')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('settlement_defense')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('recycler')) return { name: 'icon_map_recycle', isMarkIcon: true };
+
+  // Terminals
+  if (t.includes('terminal') || t.includes('gantry_terminal')) return { name: 'item_diamond', isMarkIcon: false };
+
+  // Events
+  if (t.includes('fixablerobot')) return { name: 'icon_map_fixablerobot', isMarkIcon: true };
+
+  // Collectibles
+  if (t.includes('collection_common') || t.includes('collection_piece')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('collection_coin')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('pazzle')) return { name: 'icon_map_pazzle', isMarkIcon: true };
+  if (t.includes('dg_blackbox')) return { name: 'icon_map_equipment_blueprints', isMarkIcon: true };
+
+  // Narrative / Buyable files
+  if (t.includes('narrative') || t.includes('dnarrative') || t.includes('trigger_button') || t.includes('trigger_volume')) return { name: 'item_read_note', isMarkIcon: false };
+
+  // System
+  if (t.includes('challenge_start_point')) return { name: 'item_adventureexp', isMarkIcon: false };
+  if (t.includes('system_world_energy')) return { name: 'item_diamond', isMarkIcon: false };
+  if (t.includes('high_difficulty_enter')) return { name: 'item_adventureexp', isMarkIcon: false };
+
+  // Enemies
+  if (t.startsWith('eny_') || t.includes('enemyspawner')) return { name: 'item_diamond', isMarkIcon: false };
+
+  // Dungeons — use iconMapping from competitor
+  if (t.includes('bossrush') || t.includes('boss')) return { name: 'icon_map_boss', isMarkIcon: true };
+  const dungeonIcons: Record<string, string> = {
+    'dung01_group_exp01': 'item_expcard_2_3',
+    'dung01_group_gold01': 'item_gold',
+    'dung01_group_skill01': 'item_char_skill_level_7_12',
+    'dung01_group_wpexp01': 'item_weapon_expcard_low',
+    'dung01_group_charbreak01': 'item_char_break_stage_1_2',
+    'dung01_group_wpbreak01': 'item_weapon_breakthrough_a2',
+    'dung_group_ss01': 'item_char_break_stage_3_4',
+    'dung_group_ss02': 'item_char_break_stage_3_4',
+    'indie_group_levelcheck01': 'item_adventureexp',
+    'indie_group_levelcheck02': 'item_adventureexp',
+  };
+  if (dungeonIcons[type]) return { name: dungeonIcons[type], isMarkIcon: false };
+
+  // Minerals
+  if (t.includes('core_mine_iron')) return { name: 'item_iron_ore', isMarkIcon: false };
+  if (t.includes('core_mine_originium')) return { name: 'item_originium_ore', isMarkIcon: false };
+  if (t.includes('core_mine_quartz')) return { name: 'item_quartz_sand', isMarkIcon: false };
+  if (t.includes('spcstone')) {
+    const m = t.match(/spcstone_(\d+_\d+)/);
+    return { name: `item_plant_spcstone_${m ? m[1] : '1_1'}`, isMarkIcon: false };
+  }
+
+  // Plants — pattern-based icon resolution (matches competitor logic)
+  if (t.includes('mushroom')) {
+    const m = t.match(/mushroom_(\d+_\d+)/);
+    return { name: `item_plant_mushroom_${m ? m[1] : '1_1'}`, isMarkIcon: false };
+  }
+  if (t.includes('crylplant')) {
+    const m = t.match(/crylplant_(\d+_\d+)/);
+    return { name: `item_plant_crylplant_${m ? m[1] : '1_1'}`, isMarkIcon: false };
+  }
+  if (t.includes('bbflower')) return { name: 'item_plant_bbflower_1', isMarkIcon: false };
+  if (t.includes('flower_spc')) {
+    const m = t.match(/flower_spc(?:_once)?_(\d+)/);
+    return { name: `item_plant_moss_spc_${m ? m[1] : '1'}`, isMarkIcon: false };
+  }
+  if (t.includes('flower_')) {
+    const m = t.match(/flower_(?:once_|story_)?(\d+)/);
+    return { name: `item_plant_moss_${m ? m[1] : '1'}`, isMarkIcon: false };
+  }
+  if (t.includes('insect_')) {
+    return { name: 'item_plant_tundra_insect_1', isMarkIcon: false };
+  }
+  if (t.includes('corp_')) {
+    const m = t.match(/corp_(\d+)/);
+    const idx = m ? m[1] : '1';
+    return { name: `item_plant_sp_${idx}`, isMarkIcon: false };
+  }
+
+  return { name: 'item_diamond', isMarkIcon: false };
+}
+
+function getEntityIconUrl(type: string): string {
+  const { name, isMarkIcon } = resolveIcon(type);
+  return isMarkIcon ? `${MARK_ICON_BASE}/${name}.png` : `${ICON_BASE}/${name}.png`;
 }
 
 // Generate all tiles with EXACT coordinates from endfieldtools.dev
 function generateAllTiles(): TileDef[] {
   const tiles: TileDef[] = [];
 
-  // Helper to generate tiles for a zone
+  // Helper: row 1 = bottom (largest screenY), Y decreases per row
   const addTiles = (id: string, folder: string, startX: number, startY: number, tileList: Array<[number, number]>) => {
     for (const [col, row] of tileList) {
       const x = startX + (col - 1) * 600;
-      const y = startY - (row - 1) * 600; // Y DECREASES per row
-      const fname = `${id}_${col}_${row}.png`;
+      const y = startY - (row - 1) * 600;
       tiles.push({
-        src: `${TILE_BASE}/${folder}/${fname}`,
-        x,
-        y,
-        key: `${id}_${col}_${row}`
+        src: `${TILE_BASE}/${folder}/${id}_${col}_${row}.png`,
+        x, y, key: `${id}_${col}_${row}`
       });
     }
   };
 
-  // map01lv007 (Power Plateau) - Cols 1-8, Rows 1-8 (64 tiles, full grid)
-  const lv007Tiles: Array<[number, number]> = [];
-  for (let col = 1; col <= 8; col++) {
-    for (let row = 1; row <= 8; row++) {
-      lv007Tiles.push([col, row]);
-    }
-  }
-  addTiles('map01_lv007', 'map01lv007', 1800, 3000, lv007Tiles);
-
-  // map01lv006 (Origin Lodespring) - Cols 4-8, Rows 1-8 (37 tiles, sparse)
-  const lv006Tiles: Array<[number, number]> = [];
-  for (let col = 4; col <= 7; col++) {
-    for (let row = 1; row <= 8; row++) {
-      lv006Tiles.push([col, row]);
-    }
-  }
-  // Col 8 only has rows 4-8
-  for (let row = 4; row <= 8; row++) {
-    lv006Tiles.push([8, row]);
-  }
-  addTiles('map01_lv006', 'map01lv006', 4800, 3000, lv006Tiles);
-
-  // map01lv005 (Originium Science Park) - Cols 1-7, Rows 1-6 (30 tiles, sparse)
-  const lv005Tiles: Array<[number, number]> = [];
-  for (let col = 1; col <= 6; col++) {
-    for (let row = 1; row <= 4; row++) {
-      lv005Tiles.push([col, row]);
-    }
-  }
-  // Col 7 has rows 1-6
-  for (let row = 1; row <= 6; row++) {
-    lv005Tiles.push([7, row]);
-  }
-  addTiles('map01_lv005', 'map01lv005', 5400, 5400, lv005Tiles);
-
-  // map01lv003 (Aburrey Quarry) - Cols 1-5, Rows 1-5 (17 tiles, very sparse)
-  const lv003Tiles: Array<[number, number]> = [
-    // Col 1 has rows 1-5
-    [1, 1], [1, 2], [1, 3], [1, 4], [1, 5],
-    // Cols 2-5 have rows 1-3 only
-    [2, 1], [2, 2], [2, 3],
-    [3, 1], [3, 2], [3, 3],
-    [4, 1], [4, 2], [4, 3],
-    [5, 1], [5, 2], [5, 3],
+  // map01_lv001 (The Hub) - 8x6 grid, 43 tiles
+  const lv001Tiles: Array<[number, number]> = [
+    [2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
+    [2,2],[3,2],[4,2],[5,2],[6,2],[7,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],
+    [2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
   ];
-  addTiles('map01_lv003', 'map01lv003', 4800, 7200, lv003Tiles);
+  addTiles('map01_lv001', 'map01lv001', 1800, 7800, lv001Tiles);
 
-  // map01lv002 (Valley Pass) - Cols 1-5, Rows 1-5 (17 tiles, very sparse)
+  // map01_lv002 (Valley Pass) - 4x4 grid, 15 tiles
   const lv002Tiles: Array<[number, number]> = [
-    // Cols 1-3 have rows 1-5
-    [1, 1], [1, 2], [1, 3], [1, 4], [1, 5],
-    [2, 1], [2, 2], [2, 3], [2, 4], [2, 5],
-    [3, 1], [3, 2], [3, 3], [3, 4], [3, 5],
-    // Cols 4-5 have row 1 only
-    [4, 1],
-    [5, 1],
+    [1,1],[2,1],[3,1],
+    [1,2],[2,2],[3,2],[4,2],
+    [1,3],[2,3],[3,3],[4,3],
+    [1,4],[2,4],[3,4],[4,4],
   ];
-  addTiles('map01_lv002', 'map01lv002', 0, 3600, lv002Tiles);
+  addTiles('map01_lv002', 'map01lv002', 1200, 5400, lv002Tiles);
 
-  // map01lv001 (The Hub) - Cols 1-8, Rows 1-5 (33 tiles, sparse)
-  const lv001Tiles: Array<[number, number]> = [];
-  // Cols 1-4 have rows 1-4
-  for (let col = 1; col <= 4; col++) {
-    for (let row = 1; row <= 4; row++) {
-      lv001Tiles.push([col, row]);
-    }
-  }
-  // Cols 5-7 have rows 1-5
-  for (let col = 5; col <= 7; col++) {
-    for (let row = 1; row <= 5; row++) {
-      lv001Tiles.push([col, row]);
-    }
-  }
-  // Col 8 has rows 4-5 only
-  lv001Tiles.push([8, 4], [8, 5]);
-  addTiles('map01_lv001', 'map01lv001', 600, 6000, lv001Tiles);
+  // map01_lv003 (Aburrey Quarry) - 3x4 grid, 12 tiles (full)
+  const lv003Tiles: Array<[number, number]> = [
+    [1,1],[2,1],[3,1],
+    [1,2],[2,2],[3,2],
+    [1,3],[2,3],[3,3],
+    [1,4],[2,4],[3,4],
+  ];
+  addTiles('map01_lv003', 'map01lv003', 6000, 9000, lv003Tiles);
+
+  // map01_lv005 (Originium Science Park) - 5x4 grid, 20 tiles (full)
+  const lv005Tiles: Array<[number, number]> = [
+    [1,1],[2,1],[3,1],[4,1],[5,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],
+  ];
+  addTiles('map01_lv005', 'map01lv005', 6600, 7200, lv005Tiles);
+
+  // map01_lv006 (Origin Lodespring) - 6x6 grid, 27 tiles (sparse)
+  const lv006Tiles: Array<[number, number]> = [
+    [2,1],[3,1],[4,1],[5,1],
+    [2,2],[3,2],[4,2],[5,2],[6,2],
+    [2,3],[3,3],[4,3],[5,3],[6,3],
+    [2,4],[3,4],[4,4],[5,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],
+    [1,6],[2,6],[3,6],[4,6],
+  ];
+  addTiles('map01_lv006', 'map01lv006', 6000, 4800, lv006Tiles);
+
+  // map01_lv007 (Power Plateau) - 6x5 grid, 24 tiles (sparse)
+  const lv007Tiles: Array<[number, number]> = [
+    [3,1],[4,1],[5,1],[6,1],
+    [3,2],[4,2],[5,2],[6,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],
+  ];
+  addTiles('map01_lv007', 'map01lv007', 3000, 4800, lv007Tiles);
 
   return tiles;
 }
@@ -835,8 +949,10 @@ export default function ValleyIVMapPage() {
                   href={tile.src}
                   x={tile.x}
                   y={tile.y}
-                  width={TILE_SIZE}
-                  height={TILE_SIZE}
+                  width={TILE_SIZE + 1}
+                  height={TILE_SIZE + 1}
+                  preserveAspectRatio="none"
+                  style={{ pointerEvents: 'none', userSelect: 'none', imageRendering: 'auto' }}
                   onLoad={() => handleTileLoad(tile.key)}
                   onError={() => handleTileLoad(tile.key)}
                 />
@@ -901,7 +1017,7 @@ export default function ValleyIVMapPage() {
               const cat = CATEGORY_CONFIG[p.cat];
               const isMulti = cluster.pois.length > 1;
               const allDone = cluster.pois.every(poi => completed.has(poi.id));
-              const iconName = getEntityIcon(p.type);
+              const iconUrl = getEntityIconUrl(p.type);
 
               return (
                 <div
@@ -920,7 +1036,7 @@ export default function ValleyIVMapPage() {
                     title={isMulti ? `${cluster.pois.length} POIs` : p.name || p.type}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`${ICON_BASE}/${iconName}.png`} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
+                    <img src={iconUrl} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
                     {isMulti && (
                       <div className="absolute -top-1.5 -right-1.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5 bg-black border-2 border-white text-[10px] font-bold text-white">
                         {cluster.pois.length}
@@ -1019,7 +1135,8 @@ export default function ValleyIVMapPage() {
             categoryConfig={CATEGORY_CONFIG}
             zoneNames={mapData.zones}
             iconBase={ICON_BASE}
-            getEntityIcon={getEntityIcon}
+            getEntityIcon={(type) => resolveIcon(type).name}
+            getEntityIconUrl={getEntityIconUrl}
             mapRegion="valley-iv"
           />
         )}

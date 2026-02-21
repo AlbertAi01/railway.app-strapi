@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "poi_comments",
+  "info": {
+    "singularName": "poi-comment",
+    "pluralName": "poi-comments",
+    "displayName": "POI Comment",
+    "description": "User comments on interactive map POIs"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "poiId": {
+      "type": "string",
+      "required": true
+    },
+    "mapId": {
+      "type": "enumeration",
+      "enum": ["Valley IV", "Wuling"],
+      "required": true
+    },
+    "text": {
+      "type": "text",
+      "required": true
+    },
+    "author": {
+      "type": "string",
+      "required": true
+    },
+    "authorId": {
+      "type": "integer",
+      "required": true
+    },
+    "screenshots": {
+      "type": "json",
+      "default": []
+    },
+    "upvotes": {
+      "type": "integer",
+      "default": 0
+    },
+    "downvotes": {
+      "type": "integer",
+      "default": 0
+    },
+    "isPinned": {
+      "type": "boolean",
+      "default": false
+    },
+    "parentCommentId": {
+      "type": "string"
+    }
+  }
+}

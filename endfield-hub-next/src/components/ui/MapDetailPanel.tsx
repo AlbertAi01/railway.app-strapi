@@ -5,7 +5,7 @@ import {
   X, Check, Copy, MapPin, MessageSquare, ThumbsUp, ThumbsDown,
   Camera, Send, ChevronDown, ChevronUp, Reply, Flag, Clock,
   CheckCircle2, Image as ImageIcon, Trash2, Bold, Italic, Link2,
-  Eye, CornerDownRight
+  Eye, CornerDownRight, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -56,6 +56,7 @@ interface MapDetailPanelProps {
   zoneNames: Record<string, string>;
   iconBase: string;
   getEntityIcon: (type: string) => string;
+  getEntityIconUrl?: (type: string) => string;
   mapRegion: string;
 }
 
@@ -77,21 +78,107 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
 }
 
-// ──── Storage ────
+// ──── Storage (localStorage as fallback cache) ────
 
-const COMMENT_STORAGE_KEY = 'zerosanity-map-comments';
+const COMMENT_CACHE_KEY = 'zerosanity-map-comments';
 
-function loadLocalComments(): Record<string, Comment[]> {
+function loadCachedComments(poiId: string): Comment[] {
   try {
-    const raw = localStorage.getItem(COMMENT_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
+    const raw = localStorage.getItem(COMMENT_CACHE_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    return data[poiId] || [];
+  } catch { return []; }
 }
 
-function saveLocalComments(data: Record<string, Comment[]>) {
+function cacheComments(poiId: string, comments: Comment[]) {
   try {
-    localStorage.setItem(COMMENT_STORAGE_KEY, JSON.stringify(data));
+    const raw = localStorage.getItem(COMMENT_CACHE_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    data[poiId] = comments;
+    localStorage.setItem(COMMENT_CACHE_KEY, JSON.stringify(data));
   } catch { /* silent */ }
+}
+
+// Map internal map IDs to Strapi enum values
+function resolveMapId(mapRegion: string): string {
+  const lower = mapRegion.toLowerCase();
+  if (lower.includes('wuling') || lower === 'map02') return 'Wuling';
+  return 'Valley IV';
+}
+
+// ──── API helpers ────
+
+async function fetchComments(poiId: string, mapId: string): Promise<Comment[]> {
+  const res = await fetch(`/api/comments?poiId=${encodeURIComponent(poiId)}&mapId=${encodeURIComponent(mapId)}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  // Transform server comments into local Comment shape (replies are separate entries)
+  const items = json.data || [];
+  const topLevel: Comment[] = [];
+  const replies: Record<string, CommentReply[]> = {};
+  for (const item of items) {
+    if (item.parentCommentId) {
+      if (!replies[item.parentCommentId]) replies[item.parentCommentId] = [];
+      replies[item.parentCommentId].push({
+        id: item.id,
+        author: item.author,
+        text: item.text,
+        createdAt: item.createdAt,
+        upvotes: item.upvotes,
+        userVote: null,
+      });
+    } else {
+      topLevel.push({
+        id: item.id,
+        author: item.author,
+        text: item.text,
+        createdAt: item.createdAt,
+        upvotes: item.upvotes,
+        downvotes: item.downvotes,
+        userVote: null,
+        screenshots: item.screenshots || [],
+        replies: [],
+        isPinned: item.isPinned,
+      });
+    }
+  }
+  // Attach replies to parent comments
+  for (const c of topLevel) {
+    c.replies = replies[c.id] || [];
+  }
+  return topLevel;
+}
+
+async function postComment(poiId: string, mapId: string, text: string, token: string, screenshots: string[], parentCommentId?: string) {
+  const res = await fetch('/api/comments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ poiId, mapId, text, screenshots, parentCommentId }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function voteOnComment(commentId: string, voteType: 'up' | 'down') {
+  const res = await fetch('/api/comments', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ commentId, voteType }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function deleteComment(commentId: string, token: string) {
+  const res = await fetch(`/api/comments?commentId=${encodeURIComponent(commentId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 // ════════════════════════════════════════════
@@ -100,12 +187,13 @@ function saveLocalComments(data: Record<string, Comment[]>) {
 
 export default function MapDetailPanel({
   poi, isCompleted, onToggleComplete, onClose,
-  categoryConfig, zoneNames, iconBase, getEntityIcon, mapRegion,
+  categoryConfig, zoneNames, iconBase, getEntityIcon, getEntityIconUrl, mapRegion,
 }: MapDetailPanelProps) {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
 
   // ── State ──
   const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -119,17 +207,34 @@ export default function MapDetailPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Load comments on POI change ──
+  const strapiMapId = resolveMapId(mapRegion);
+
+  // ── Load comments on POI change (API-first with localStorage fallback) ──
   useEffect(() => {
-    const local = loadLocalComments();
-    setComments(local[poi.id] || []);
+    // Reset UI state
     setCommentText('');
     setReplyingTo(null);
     setReplyText('');
     setUploadedImages([]);
     setActiveTab('info');
     setCoordsCopied(false);
-  }, [poi.id]);
+
+    // Show cached data immediately
+    const cached = loadCachedComments(poi.id);
+    setComments(cached);
+
+    // Fetch from API in background
+    setCommentsLoading(true);
+    fetchComments(poi.id, strapiMapId)
+      .then((serverComments) => {
+        setComments(serverComments);
+        cacheComments(poi.id, serverComments);
+      })
+      .catch(() => {
+        // Keep cached data on failure
+      })
+      .finally(() => setCommentsLoading(false));
+  }, [poi.id, strapiMapId]);
 
   // ── Scroll to top on POI change ──
   useEffect(() => {
@@ -146,8 +251,10 @@ export default function MapDetailPanel({
   }, [poi.px, poi.py]);
 
   const addComment = useCallback(() => {
-    if (!commentText.trim()) return;
-    const newComment: Comment = {
+    if (!commentText.trim() || !token) return;
+
+    // Optimistic update
+    const optimisticComment: Comment = {
       id: generateId(),
       author: user?.username || 'Anonymous Doctor',
       text: commentText.trim(),
@@ -158,19 +265,32 @@ export default function MapDetailPanel({
       screenshots: [...uploadedImages],
       replies: [],
     };
-    const updated = [newComment, ...comments];
+    const updated = [optimisticComment, ...comments];
     setComments(updated);
+    cacheComments(poi.id, updated);
     setCommentText('');
     setUploadedImages([]);
 
-    // Persist
-    const local = loadLocalComments();
-    local[poi.id] = [...(local[poi.id] || []), newComment];
-    saveLocalComments(local);
-  }, [commentText, comments, poi.id, user, uploadedImages]);
+    // Post to API
+    postComment(poi.id, strapiMapId, optimisticComment.text, token, optimisticComment.screenshots)
+      .then((res) => {
+        // Replace optimistic comment with server data
+        if (res.data) {
+          setComments(prev => prev.map(c =>
+            c.id === optimisticComment.id
+              ? { ...c, id: res.data.id, createdAt: res.data.createdAt }
+              : c
+          ));
+        }
+      })
+      .catch(() => {
+        // Keep optimistic comment in cache even if API fails
+      });
+  }, [commentText, comments, poi.id, user, uploadedImages, token, strapiMapId]);
 
   const addReply = useCallback((commentId: string) => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || !token) return;
+
     const newReply: CommentReply = {
       id: generateId(),
       author: user?.username || 'Anonymous Doctor',
@@ -179,20 +299,27 @@ export default function MapDetailPanel({
       upvotes: 0,
       userVote: null,
     };
+
+    // Optimistic update
     const updated = comments.map(c =>
       c.id === commentId ? { ...c, replies: [...c.replies, newReply] } : c
     );
     setComments(updated);
+    cacheComments(poi.id, updated);
     setReplyingTo(null);
     setReplyText('');
-  }, [replyText, comments, user]);
+
+    // Post reply to API (uses parentCommentId)
+    postComment(poi.id, strapiMapId, newReply.text, token, [], commentId)
+      .catch(() => { /* keep optimistic */ });
+  }, [replyText, comments, user, token, poi.id, strapiMapId]);
 
   const voteComment = useCallback((commentId: string, direction: 'up' | 'down') => {
+    // Optimistic update (local toggle behavior)
     setComments(prev => prev.map(c => {
       if (c.id !== commentId) return c;
       const prevVote = c.userVote;
       if (prevVote === direction) {
-        // Remove vote
         return {
           ...c,
           upvotes: direction === 'up' ? c.upvotes - 1 : c.upvotes,
@@ -207,6 +334,9 @@ export default function MapDetailPanel({
         userVote: direction,
       };
     }));
+
+    // Persist vote to API (fire-and-forget)
+    voteOnComment(commentId, direction).catch(() => { /* keep optimistic */ });
   }, []);
 
   const toggleReplies = useCallback((commentId: string) => {
@@ -288,7 +418,7 @@ export default function MapDetailPanel({
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`${iconBase}/${getEntityIcon(poi.type)}.png`}
+                  src={getEntityIconUrl ? getEntityIconUrl(poi.type) : `${iconBase}/${getEntityIcon(poi.type)}.png`}
                   alt={poi.type}
                   className="w-10 h-10 object-contain"
                   draggable={false}
@@ -586,7 +716,12 @@ export default function MapDetailPanel({
 
               {/* Comments List */}
               <div className="flex-1 overflow-y-auto overscroll-contain">
-                {comments.length === 0 ? (
+                {commentsLoading && comments.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Loader2 size={24} className="mx-auto text-[var(--color-accent)] mb-3 animate-spin" />
+                    <div className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase">Loading comments...</div>
+                  </div>
+                ) : comments.length === 0 ? (
                   <div className="p-6 text-center">
                     <MessageSquare size={32} className="mx-auto text-[var(--color-text-muted)] mb-3 opacity-40" />
                     <div className="text-[13px] text-[var(--color-text-muted)]">No comments yet</div>
@@ -690,6 +825,20 @@ export default function MapDetailPanel({
                               <Reply size={12} />
                               Reply
                             </button>
+
+                            {/* Delete own comment */}
+                            {user && comment.author === user.username && (
+                              <button
+                                onClick={() => {
+                                  setComments(prev => prev.filter(c => c.id !== comment.id));
+                                  if (token) deleteComment(comment.id, token).catch(() => { /* keep optimistic */ });
+                                }}
+                                className="text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
+                                title="Delete comment"
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            )}
 
                             {/* Report */}
                             <button className="ml-auto text-[var(--color-text-muted)] hover:text-red-400 transition-colors">
