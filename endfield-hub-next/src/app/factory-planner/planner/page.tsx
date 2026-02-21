@@ -31,6 +31,11 @@ import {
   Upload,
   Clipboard,
   BarChart3,
+  Activity,
+  Zap,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
 } from 'lucide-react';
 
 // ──── Building Data Types ────
@@ -52,6 +57,40 @@ interface PlacedBuilding {
   x: number;
   y: number;
   rotation: number; // 0, 90, 180, 270
+}
+
+// ──── Factory Recipe Data Types ────
+
+interface RecipeItem {
+  id: string;
+  name: string;
+  count: number;
+}
+
+interface Recipe {
+  id: string;
+  name: string;
+  machine: string;
+  machineName: string;
+  inputs: RecipeItem[];
+  outputs: RecipeItem[];
+  craftTime: number;
+  power: number;
+}
+
+interface FactoryBuilding {
+  id: string;
+  name: string;
+  power: number;
+  width: number;
+  height: number;
+  category: string;
+}
+
+interface FactoryRecipeData {
+  buildings: Record<string, FactoryBuilding>;
+  items: Record<string, string>;
+  recipes: Recipe[];
 }
 
 // Get effective dimensions accounting for rotation
@@ -151,6 +190,30 @@ const OUTPOST_CONFIGS: OutpostConfig[] = [
   },
 ];
 
+// ──── Building ID Mapping ────
+// Maps planner building IDs to factory recipe facility IDs
+const BUILDING_TO_FACILITY_MAP: Record<string, string> = {
+  'refining-unit': 'item_port_furnance_1',
+  'shredding-unit': 'item_port_grinder_1',
+  'moulding-unit': 'item_port_shaper_1',
+  'filling-unit': 'item_port_filling_pd_mc_1',
+  'fitting-unit': 'item_port_cmpt_mc_1',
+  'gearing-unit': 'item_port_winder_1',
+  'grinding-unit': 'item_port_thickener_1',
+  'packaging-unit': 'item_port_tools_asm_mc_1',
+  'planting-unit': 'item_port_planter_1',
+  'seed-picking-unit': 'item_port_seedcol_1',
+  'separating-unit': 'item_port_dismantler_1',
+  'reactor-crucible': 'item_port_mix_pool_1',
+  'forge-of-the-sky': 'item_port_xiranite_oven_1',
+  'fluid-supply-unit': 'item_port_dumper_1',
+  'electric-pylon': 'item_port_power_diffuser_1',
+  'relay-tower': 'item_port_power_pole_2',
+  'xiranite-pylon': 'item_port_power_diffuser_2',
+  'thermal-bank': 'item_port_power_sta_1',
+  'electric-nexus': 'item_port_power_port_1',
+};
+
 // ──── Building Database ────
 
 const BUILDINGS: Building[] = [
@@ -183,6 +246,8 @@ const BUILDINGS: Building[] = [
   { id: 'electric-pylon', name: 'Electric Pylon', category: 'Utility', size: { width: 2, height: 2 }, inputs: 0, outputs: 0, power: 0, description: 'Wirelessly powers nearby facilities', isFavorite: true },
   { id: 'relay-tower', name: 'Relay Tower', category: 'Utility', size: { width: 3, height: 3 }, inputs: 0, outputs: 0, power: 0, description: 'Extends power grid (80m, line of sight)' },
   { id: 'xiranite-pylon', name: 'Xiranite Pylon', category: 'Utility', size: { width: 2, height: 2 }, inputs: 0, outputs: 0, power: 0, description: 'Special power pylon' },
+  { id: 'thermal-bank', name: 'Thermal Bank', category: 'Utility', size: { width: 2, height: 2 }, inputs: 0, outputs: 0, power: -220, description: 'Power generator (220W)', isFavorite: true },
+  { id: 'electric-nexus', name: 'Electric Nexus', category: 'Utility', size: { width: 1, height: 1 }, inputs: 0, outputs: 0, power: 0, description: 'Power grid junction' },
 
   // LOGISTICS
   { id: 'conveyor-splitter', name: 'Conveyor Splitter', category: 'Logistics', size: { width: 1, height: 1 }, inputs: 1, outputs: 3, power: 0, description: 'Splits conveyor flow' },
@@ -238,6 +303,7 @@ interface State {
   showEditMenu: boolean;
   outpostConfig: string;
   showOutpostMenu: boolean;
+  showProductionStats: boolean;
   // Move/drag state
   movingBuildingIndex: number | null; // Index of building being moved (picked up)
   movingBuildingData: PlacedBuilding | null; // The building data being moved
@@ -270,6 +336,7 @@ type Action =
   | { type: 'TOGGLE_EDIT_MENU' }
   | { type: 'SET_OUTPOST_CONFIG'; config: string }
   | { type: 'TOGGLE_OUTPOST_MENU' }
+  | { type: 'TOGGLE_PRODUCTION_STATS' }
   | { type: 'CLOSE_ALL_MENUS' }
   | { type: 'PICK_UP_BUILDING'; index: number }
   | { type: 'DROP_MOVING_BUILDING' }
@@ -414,6 +481,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, outpostConfig: action.config, showOutpostMenu: false };
     case 'TOGGLE_OUTPOST_MENU':
       return { ...state, showOutpostMenu: !state.showOutpostMenu, showFileMenu: false, showDataMenu: false, showEditMenu: false };
+    case 'TOGGLE_PRODUCTION_STATS':
+      return { ...state, showProductionStats: !state.showProductionStats };
     case 'CLOSE_ALL_MENUS':
       return { ...state, showFileMenu: false, showDataMenu: false, showEditMenu: false, showOutpostMenu: false };
     default:
@@ -441,6 +510,7 @@ const initialState: State = {
   showEditMenu: false,
   outpostConfig: 'pac-base',
   showOutpostMenu: false,
+  showProductionStats: false,
   movingBuildingIndex: null,
   movingBuildingData: null,
   placementRotation: 0,
@@ -478,6 +548,368 @@ function ToolbarButton({
 
 function ToolbarDivider() {
   return <div className="w-px h-6 bg-[var(--color-border)] mx-0.5 flex-shrink-0" />;
+}
+
+// ──── Production Stats Panel ────
+
+interface ProductionStatsProps {
+  buildings: PlacedBuilding[];
+  onClose: () => void;
+}
+
+function ProductionStatsPanel({ buildings, onClose }: ProductionStatsProps) {
+  const [recipeData, setRecipeData] = useState<FactoryRecipeData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load factory recipes on mount
+  useEffect(() => {
+    fetch('/data/factory-recipes.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load recipes');
+        return res.json();
+      })
+      .then((data: FactoryRecipeData) => {
+        setRecipeData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  // Calculate production stats
+  const stats = useMemo(() => {
+    if (!recipeData) return null;
+
+    // Count buildings by type
+    const buildingCounts: Record<string, number> = {};
+    let totalPowerConsumption = 0;
+    let totalPowerGeneration = 0;
+
+    buildings.forEach(pb => {
+      const facilityId = BUILDING_TO_FACILITY_MAP[pb.buildingId];
+      if (!facilityId) return;
+
+      const facilityData = recipeData.buildings[facilityId];
+      if (!facilityData) return;
+
+      // Count this building
+      buildingCounts[facilityId] = (buildingCounts[facilityId] || 0) + 1;
+
+      // Calculate power (will be refined by recipes later)
+      if (facilityData.power > 0) {
+        totalPowerConsumption += facilityData.power;
+      } else if (facilityData.power < 0) {
+        totalPowerGeneration += Math.abs(facilityData.power);
+      }
+    });
+
+    // Get all recipes for placed buildings
+    const buildingRecipes: Record<string, Recipe[]> = {};
+    Object.keys(buildingCounts).forEach(facilityId => {
+      buildingRecipes[facilityId] = recipeData.recipes.filter(r => r.machine === facilityId);
+    });
+
+    // Calculate aggregate inputs/outputs (for first recipe of each building type)
+    const inputRates: Record<string, number> = {};
+    const outputRates: Record<string, number> = {};
+
+    // Reset power calculations to use recipe-based power
+    totalPowerConsumption = 0;
+    totalPowerGeneration = 0;
+
+    Object.entries(buildingCounts).forEach(([facilityId, count]) => {
+      const recipes = buildingRecipes[facilityId];
+      if (!recipes || recipes.length === 0) {
+        // No recipes - use building power as fallback
+        const facilityData = recipeData.buildings[facilityId];
+        if (facilityData && facilityData.power > 0) {
+          totalPowerConsumption += facilityData.power * count;
+        }
+        return;
+      }
+
+      // Use first recipe as default
+      const recipe = recipes[0];
+      const itemsPerMinute = 60 / recipe.craftTime;
+
+      // Power from recipe (negative = generation)
+      if (recipe.power > 0) {
+        totalPowerConsumption += recipe.power * count;
+      } else if (recipe.power < 0) {
+        totalPowerGeneration += Math.abs(recipe.power) * count;
+      }
+
+      // Inputs
+      recipe.inputs.forEach(input => {
+        const rate = input.count * itemsPerMinute * count;
+        inputRates[input.name] = (inputRates[input.name] || 0) + rate;
+      });
+
+      // Outputs
+      recipe.outputs.forEach(output => {
+        const rate = output.count * itemsPerMinute * count;
+        outputRates[output.name] = (outputRates[output.name] || 0) + rate;
+      });
+    });
+
+    // Convert to sorted arrays
+    const inputsList = Object.entries(inputRates)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, rate]) => ({ name, rate }));
+
+    const outputsList = Object.entries(outputRates)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, rate]) => ({ name, rate }));
+
+    // Building summary with recipe-based power
+    const buildingsList = Object.entries(buildingCounts)
+      .map(([facilityId, count]) => {
+        const facilityData = recipeData.buildings[facilityId];
+        const recipes = buildingRecipes[facilityId];
+        const recipe = recipes && recipes.length > 0 ? recipes[0] : null;
+
+        return {
+          facilityId,
+          name: facilityData?.name || 'Unknown',
+          count,
+          power: recipe ? recipe.power : (facilityData?.power || 0),
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      totalPowerConsumption,
+      totalPowerGeneration,
+      buildingsList,
+      inputsList,
+      outputsList,
+      totalBuildings: buildings.length,
+    };
+  }, [buildings, recipeData]);
+
+  if (loading) {
+    return (
+      <div className="absolute top-0 right-0 h-full w-80 bg-[var(--color-surface)] border-l border-[var(--color-border)] flex flex-col shadow-2xl z-20">
+        <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Activity size={14} />
+            Production Stats
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-gray-400 hover:text-white transition-colors"
+            title="Close production stats"
+          >
+            <X size={14} />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-400 text-sm">Loading recipe data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !recipeData) {
+    return (
+      <div className="absolute top-0 right-0 h-full w-80 bg-[var(--color-surface)] border-l border-[var(--color-border)] flex flex-col shadow-2xl z-20">
+        <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Activity size={14} />
+            Production Stats
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-gray-400 hover:text-white transition-colors"
+            title="Close production stats"
+          >
+            <X size={14} />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-400 text-sm px-4 text-center">
+            Failed to load recipe data: {error || 'Unknown error'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
+
+  const powerUsagePercent = stats.totalPowerGeneration > 0
+    ? (stats.totalPowerConsumption / stats.totalPowerGeneration) * 100
+    : 0;
+
+  const isPowerSufficient = stats.totalPowerConsumption <= stats.totalPowerGeneration;
+
+  return (
+    <div className="absolute top-0 right-0 h-full w-96 bg-[var(--color-surface)] border-l border-[var(--color-border)] flex flex-col shadow-2xl z-20">
+      {/* Panel Header */}
+      <div className="p-3 border-b border-[var(--color-border)] flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+          <Activity size={14} />
+          Production Stats
+        </h2>
+        <button
+          onClick={onClose}
+          className="p-1.5 text-gray-400 hover:text-white transition-colors"
+          title="Close production stats"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* Stats Content */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        {/* Power Section */}
+        <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1.5">
+            <Zap size={12} className="text-[var(--color-accent)]" />
+            POWER
+          </h3>
+          <div className="space-y-2">
+            {/* Power Bar */}
+            <div className="relative h-4 bg-[#0d1117] border border-[var(--color-border)] overflow-hidden">
+              <div
+                className={`h-full transition-all ${
+                  isPowerSufficient ? 'bg-[var(--color-accent)]' : 'bg-red-500'
+                }`}
+                style={{ width: `${Math.min(powerUsagePercent, 100)}%` }}
+              />
+              {powerUsagePercent > 100 && (
+                <div
+                  className="absolute top-0 h-full bg-red-700 opacity-50"
+                  style={{
+                    left: '100%',
+                    width: `${Math.min((powerUsagePercent - 100), 100)}%`
+                  }}
+                />
+              )}
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-white font-medium">
+                {stats.totalPowerConsumption.toFixed(0)}W / {stats.totalPowerGeneration.toFixed(0)}W
+              </span>
+              <span className={isPowerSufficient ? 'text-green-400' : 'text-red-400'}>
+                {powerUsagePercent.toFixed(0)}%
+              </span>
+            </div>
+            {isPowerSufficient ? (
+              <div className="flex items-center gap-1 text-[10px] text-green-400">
+                <CheckCircle size={10} />
+                <span>Power grid sufficient</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-[10px] text-red-400">
+                <AlertTriangle size={10} />
+                <span>Insufficient power generation</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Buildings Section */}
+        <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1.5">
+            <Building2 size={12} className="text-[var(--color-accent)]" />
+            BUILDINGS ({stats.totalBuildings} placed)
+          </h3>
+          {stats.buildingsList.length > 0 ? (
+            <div className="space-y-1">
+              {stats.buildingsList.map(({ facilityId, name, count, power }) => (
+                <div
+                  key={facilityId}
+                  className="flex items-center justify-between text-[10px] text-gray-300 py-1"
+                >
+                  <span className="flex-1">
+                    {count}x {name}
+                  </span>
+                  {power > 0 && (
+                    <span className="text-[var(--color-accent)] font-medium ml-2">
+                      {power * count}W
+                    </span>
+                  )}
+                  {power < 0 && (
+                    <span className="text-green-400 font-medium ml-2">
+                      {Math.abs(power * count)}W
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-[10px] text-gray-500">No production buildings placed</div>
+          )}
+        </div>
+
+        {/* Inputs Required Section */}
+        <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1.5">
+            <Download size={12} className="text-blue-400" />
+            INPUTS REQUIRED
+          </h3>
+          {stats.inputsList.length > 0 ? (
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {stats.inputsList.map(({ name, rate }) => (
+                <div
+                  key={name}
+                  className="flex items-center justify-between text-[10px] text-gray-300 py-1"
+                >
+                  <span className="flex-1 truncate" title={name}>{name}</span>
+                  <span className="text-blue-400 font-medium ml-2">
+                    {rate.toFixed(1)}/min
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-[10px] text-gray-500">No inputs required</div>
+          )}
+        </div>
+
+        {/* Outputs Produced Section */}
+        <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3">
+          <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1.5">
+            <Upload size={12} className="text-green-400" />
+            OUTPUTS PRODUCED
+          </h3>
+          {stats.outputsList.length > 0 ? (
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {stats.outputsList.map(({ name, rate }) => (
+                <div
+                  key={name}
+                  className="flex items-center justify-between text-[10px] text-gray-300 py-1"
+                >
+                  <span className="flex-1 truncate" title={name}>{name}</span>
+                  <span className="text-green-400 font-medium ml-2">
+                    {rate.toFixed(1)}/min
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-[10px] text-gray-500">No outputs produced</div>
+          )}
+        </div>
+
+        {/* Efficiency Note */}
+        {stats.totalBuildings === 0 && (
+          <div className="bg-[#161310] border border-[var(--color-border)] p-3 text-center">
+            <TrendingUp size={24} className="text-gray-600 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">
+              Place buildings on the grid to see production statistics
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ──── Main Component ────
@@ -1749,6 +2181,10 @@ export default function FactoryPlannerPage() {
         <ToolbarButton active={state.showStats} onClick={() => dispatch({ type: 'TOGGLE_STATS' })} title="Toggle building statistics overlay">
           Stats
         </ToolbarButton>
+        <ToolbarButton active={state.showProductionStats} onClick={() => dispatch({ type: 'TOGGLE_PRODUCTION_STATS' })} title="Toggle production calculator panel">
+          <Activity size={13} />
+          Prod
+        </ToolbarButton>
         <ToolbarButton active={state.showAnim} onClick={() => dispatch({ type: 'TOGGLE_ANIM' })} title="Toggle animations on/off">
           Anim
         </ToolbarButton>
@@ -2026,6 +2462,14 @@ export default function FactoryPlannerPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ─── Production Stats Panel (overlay right) ─── */}
+        {state.showProductionStats && (
+          <ProductionStatsPanel
+            buildings={state.grid.buildings}
+            onClose={() => dispatch({ type: 'TOGGLE_PRODUCTION_STATS' })}
+          />
         )}
       </div>
     </div>

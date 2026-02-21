@@ -61,6 +61,7 @@ function BuildsPageContent() {
   const [myBuilds, setMyBuilds] = useState<Build[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [myBuildsTab, setMyBuildsTab] = useState<'created' | 'favorited'>('created');
+  const [myBuildsSort, setMyBuildsSort] = useState<'newest' | 'oldest' | 'most-liked' | 'alphabetical'>('newest');
 
   // Create form state
   const [createTab, setCreateTab] = useState<'single' | 'team'>('single');
@@ -149,6 +150,39 @@ function BuildsPageContent() {
   const favoritedBuilds = useMemo(() => {
     return allBuilds.filter(b => favoriteIds.includes(b.id));
   }, [allBuilds, favoriteIds]);
+
+  // Sorted My Builds (Created tab) - excludes most-liked since these are user's own builds
+  const sortedMyBuilds = useMemo(() => {
+    const builds = [...myBuilds];
+    if (myBuildsSort === 'newest') {
+      return builds.sort((a, b) => b.createdAt - a.createdAt);
+    }
+    if (myBuildsSort === 'oldest') {
+      return builds.sort((a, b) => a.createdAt - b.createdAt);
+    }
+    if (myBuildsSort === 'alphabetical') {
+      return builds.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return builds;
+  }, [myBuilds, myBuildsSort]);
+
+  // Sorted Favorited Builds - includes most-liked option
+  const sortedFavoritedBuilds = useMemo(() => {
+    const builds = [...favoritedBuilds];
+    if (myBuildsSort === 'newest') {
+      return builds.sort((a, b) => b.createdAt - a.createdAt);
+    }
+    if (myBuildsSort === 'oldest') {
+      return builds.sort((a, b) => a.createdAt - b.createdAt);
+    }
+    if (myBuildsSort === 'most-liked') {
+      return builds.sort((a, b) => getBuildLikeCount(b.id) - getBuildLikeCount(a.id));
+    }
+    if (myBuildsSort === 'alphabetical') {
+      return builds.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return builds;
+  }, [favoritedBuilds, myBuildsSort]);
 
   // Character picker
   const filteredChars = useMemo(() => {
@@ -576,117 +610,228 @@ function BuildsPageContent() {
         {/* ===== MY BUILDS VIEW ===== */}
         {viewMode === 'my-builds' && (
           <div>
-            {/* Sub-tabs: Created / Favorited */}
-            <div className="flex gap-1 mb-4">
-              <button onClick={() => setMyBuildsTab('created')}
-                className={`px-4 py-2 text-sm font-bold clip-corner-tl flex items-center gap-2 ${
-                  myBuildsTab === 'created' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
-                }`}>
-                <Edit3 size={14} /> Created ({myBuilds.length})
+            {/* CTA Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+              {/* Create Build Card */}
+              <button
+                onClick={() => { navigateView('create'); resetForm(); }}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all text-left group"
+              >
+                <Plus className="mb-3 text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)] transition-colors" size={32} />
+                <div className="font-bold text-white text-base mb-1">Create Build</div>
+                <div className="text-xs text-[var(--color-text-tertiary)] mb-3">Share your strategies with the community</div>
+                <span className="inline-block px-3 py-1 bg-[var(--color-accent)] text-black text-xs font-bold clip-corner-tl">QUICK</span>
               </button>
-              <button onClick={() => setMyBuildsTab('favorited')}
-                className={`px-4 py-2 text-sm font-bold clip-corner-tl flex items-center gap-2 ${
-                  myBuildsTab === 'favorited' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white'
-                }`}>
-                <BookmarkCheck size={14} /> Favorited ({favoritedBuilds.length})
+
+              {/* Browse Builds Card */}
+              <button
+                onClick={() => navigateView('browse')}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 hover:border-[var(--color-accent)] transition-all text-left group"
+              >
+                <Users className="mb-3 text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)] transition-colors" size={32} />
+                <div className="font-bold text-white text-base mb-1">Browse Builds</div>
+                <div className="text-xs text-[var(--color-text-tertiary)]">Discover builds from the community</div>
               </button>
             </div>
 
+            {/* Header with tabs and sort */}
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-border)]">
+              <div className="flex items-center gap-4">
+                <h2 className="text-sm font-bold text-[var(--color-text-secondary)]">MY BUILDS</h2>
+                <div className="flex gap-3 text-xs">
+                  <button
+                    onClick={() => setMyBuildsTab('created')}
+                    className={`font-bold transition-colors ${
+                      myBuildsTab === 'created' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)] hover:text-white'
+                    }`}
+                  >
+                    Created ({sortedMyBuilds.length})
+                  </button>
+                  <span className="text-[var(--color-border)]">|</span>
+                  <button
+                    onClick={() => setMyBuildsTab('favorited')}
+                    className={`font-bold transition-colors ${
+                      myBuildsTab === 'favorited' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)] hover:text-white'
+                    }`}
+                  >
+                    Favorited ({sortedFavoritedBuilds.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="relative">
+                <select
+                  value={myBuildsSort}
+                  onChange={(e) => setMyBuildsSort(e.target.value as any)}
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] text-white text-xs px-3 py-1.5 pr-8 clip-corner-tl appearance-none cursor-pointer hover:border-[var(--color-accent)] transition-colors"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  {myBuildsTab === 'favorited' && <option value="most-liked">Most Liked</option>}
+                  <option value="alphabetical">A-Z</option>
+                </select>
+                <ArrowUpDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]" />
+              </div>
+            </div>
+
+            {/* Created Tab */}
             {myBuildsTab === 'created' && (
               <>
-                {myBuilds.length === 0 ? (
-                  <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
-                    <Plus size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
-                    <p className="text-[var(--color-text-tertiary)] mb-4">You haven&apos;t created any builds yet.</p>
-                    <button onClick={() => { navigateView('create'); resetForm(); }}
-                      className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold clip-corner-tl">
+                {sortedMyBuilds.length === 0 ? (
+                  <div className="text-center py-20 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+                    <Plus size={64} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-20" />
+                    <p className="text-white font-bold mb-2">No builds yet</p>
+                    <p className="text-sm text-[var(--color-text-tertiary)] mb-6 max-w-md mx-auto">
+                      Share your strategies with the community and help others master Endfield
+                    </p>
+                    <button
+                      onClick={() => { navigateView('create'); resetForm(); }}
+                      className="px-6 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/90 text-black font-bold clip-corner-tl transition-colors"
+                    >
                       Create Your First Build
                     </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {myBuilds.map(build => (
-                      <div key={build.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden">
-                        {/* Character portraits row */}
-                        <div className="flex bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
-                          {build.characters.map((bc, i) => {
-                            const icon = CHARACTER_ICONS[bc.name];
-                            const rarity = getCharRarity(bc.name);
-                            return (
-                              <div key={i} className="w-16 h-16 relative flex-shrink-0"
-                                style={{ borderBottom: `3px solid ${RARITY_COLORS[rarity] || '#666'}` }}>
-                                {icon ? (
-                                  <Image src={icon} alt={bc.name} fill className="object-cover" unoptimized sizes="64px" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-[10px] text-[var(--color-text-tertiary)]">{bc.name}</div>
-                                )}
-                              </div>
-                            );
-                          })}
-                          <div className="flex-1" />
-                        </div>
-                        <div className="p-3">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-white font-bold text-sm truncate">{build.name}</h3>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
-                                  {build.type === 'team' ? 'TEAM' : 'SINGLE'}
+                    {sortedMyBuilds.map(build => {
+                      const likeCount = getBuildLikeCount(build.id);
+                      return (
+                        <div key={build.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl overflow-hidden hover:border-[var(--color-accent)]/50 transition-colors">
+                          {/* Character portraits row - TALLER (96px) */}
+                          <div className="flex bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
+                            {build.characters.map((bc, i) => {
+                              const icon = CHARACTER_ICONS[bc.name];
+                              const rarity = getCharRarity(bc.name);
+                              return (
+                                <div key={i} className="w-24 h-24 relative flex-shrink-0"
+                                  style={{ borderBottom: `3px solid ${RARITY_COLORS[rarity] || '#666'}` }}>
+                                  {icon ? (
+                                    <Image src={icon} alt={bc.name} fill className="object-cover" unoptimized sizes="96px" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-tertiary)]">{bc.name}</div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            <div className="flex-1" />
+                          </div>
+
+                          <div className="p-3">
+                            {/* Badge pills row at TOP */}
+                            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                              {build.isPublic ? (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-bold flex items-center gap-0.5">
+                                  <Globe size={8} /> PUBLIC
                                 </span>
-                                {build.isPublic ? (
-                                  <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-bold flex items-center gap-0.5"><Globe size={8} /> PUBLIC</span>
-                                ) : (
-                                  <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] font-bold flex items-center gap-0.5"><Lock size={8} /> PRIVATE</span>
-                                )}
-                                {build.youtubeUrl && <span className="text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-400 font-bold flex items-center gap-0.5"><Play size={8} /> VIDEO</span>}
-                                <span className="text-[10px] text-[var(--color-text-tertiary)]">{formatTimeAgo(build.updatedAt)}</span>
-                              </div>
+                              ) : (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] font-bold flex items-center gap-0.5">
+                                  <Lock size={8} /> PRIVATE
+                                </span>
+                              )}
+                              <span className={`text-[10px] px-1.5 py-0.5 font-bold ${build.type === 'team' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                                {build.type === 'team' ? 'TEAM' : 'SINGLE'}
+                              </span>
+                              {build.youtubeUrl && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-400 font-bold flex items-center gap-0.5">
+                                  <Play size={8} /> VIDEO
+                                </span>
+                              )}
                             </div>
-                            <div className="flex gap-1">
-                              <Link href={`/builds/${build.id}`} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]">
+
+                            {/* Title + timestamp */}
+                            <div className="mb-2">
+                              <h3 className="text-white font-bold text-sm mb-1">{build.name}</h3>
+                              <span className="text-[10px] text-[var(--color-text-tertiary)]">
+                                {formatTimeAgo(build.updatedAt)}
+                              </span>
+                            </div>
+
+                            {/* Description */}
+                            {build.shortDescription && (
+                              <p className="text-[11px] text-[var(--color-text-tertiary)] mb-3 line-clamp-2">
+                                {build.shortDescription}
+                              </p>
+                            )}
+
+                            {/* Stats row - ONLY likes, no views for user builds */}
+                            <div className="flex items-center gap-3 mb-3 text-[10px]">
+                              <span className="flex items-center gap-1 text-[var(--color-text-tertiary)]">
+                                <Heart size={10} className={likeCount > 0 ? 'text-red-400' : ''} /> {likeCount}
+                              </span>
+                            </div>
+
+                            {/* User-defined content tags at bottom */}
+                            {build.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {build.tags.map(t => (
+                                  <span key={t} className="text-[9px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]">
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Action buttons row */}
+                            <div className="flex gap-1 justify-end pt-2 border-t border-[var(--color-border)]">
+                              <Link
+                                href={`/builds/${build.id}`}
+                                className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+                                title="View"
+                              >
                                 <Eye size={14} />
                               </Link>
-                              <button onClick={() => editBuild(build)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]">
+                              <button
+                                onClick={() => editBuild(build)}
+                                className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+                                title="Edit"
+                              >
                                 <Edit3 size={14} />
                               </button>
-                              <button onClick={() => duplicateBuild(build)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-blue-400">
+                              <button
+                                onClick={() => duplicateBuild(build)}
+                                className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-blue-400 transition-colors"
+                                title="Duplicate"
+                              >
                                 <Copy size={14} />
                               </button>
-                              <button onClick={() => deleteBuild(build.id)} className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-red-400">
+                              <button
+                                onClick={() => deleteBuild(build.id)}
+                                className="p-1.5 hover:bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)] hover:text-red-400 transition-colors"
+                                title="Delete"
+                              >
                                 <Trash2 size={14} />
                               </button>
                             </div>
                           </div>
-                          {build.shortDescription && (
-                            <p className="text-[11px] text-[var(--color-text-tertiary)] mb-2 line-clamp-2">{build.shortDescription}</p>
-                          )}
-                          {build.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {build.tags.map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-tertiary)]">{t}</span>)}
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </>
             )}
 
+            {/* Favorited Tab */}
             {myBuildsTab === 'favorited' && (
               <>
-                {favoritedBuilds.length === 0 ? (
-                  <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
-                    <Bookmark size={48} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-30" />
-                    <p className="text-[var(--color-text-tertiary)] mb-4">No favorited builds yet. Browse builds and bookmark ones you like.</p>
-                    <button onClick={() => navigateView('browse')}
-                      className="px-6 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl">
+                {sortedFavoritedBuilds.length === 0 ? (
+                  <div className="text-center py-20 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl">
+                    <Bookmark size={64} className="mx-auto mb-4 text-[var(--color-text-tertiary)] opacity-20" />
+                    <p className="text-white font-bold mb-2">No saved builds</p>
+                    <p className="text-sm text-[var(--color-text-tertiary)] mb-6 max-w-md mx-auto">
+                      Discover and save builds from the community to access them quickly
+                    </p>
+                    <button
+                      onClick={() => navigateView('browse')}
+                      className="px-6 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/90 text-black font-bold clip-corner-tl transition-colors"
+                    >
                       Browse Builds
                     </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {favoritedBuilds.map(build => (
+                    {sortedFavoritedBuilds.map(build => (
                       <BuildCard
                         key={build.id}
                         build={build}

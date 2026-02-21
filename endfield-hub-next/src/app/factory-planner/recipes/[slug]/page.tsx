@@ -30,19 +30,21 @@ interface ChainNode {
 const ITEM_ICON_URL = 'https://endfieldtools.dev/assets/images/endfield/itemicon';
 
 const BUILDING_COLORS: Record<string, string> = {
-  furnance_1: '#FF6B35', grinder_1: '#E74C3C', shaper_1: '#9B59B6',
-  thickener_1: '#3498DB', winder_1: '#2ECC71', filling_powder_mc_1: '#F39C12',
-  component_mc_1: '#1ABC9C', tools_assebling_mc_1: '#E67E22',
-  seedcollector_1: '#27AE60', planter_1: '#66BB6A', mix_pool_1: '#00BCD4',
-  dismantler_1: '#95A5A6', xiranite_oven_1: '#FF5722',
+  item_port_furnance_1: '#FF6B35', item_port_grinder_1: '#E74C3C', item_port_shaper_1: '#9B59B6',
+  item_port_thickener_1: '#3498DB', item_port_winder_1: '#2ECC71', item_port_filling_pd_mc_1: '#F39C12',
+  item_port_cmpt_mc_1: '#1ABC9C', item_port_tools_asm_mc_1: '#E67E22',
+  item_port_seedcol_1: '#27AE60', item_port_planter_1: '#66BB6A', item_port_mix_pool_1: '#00BCD4',
+  item_port_dismantler_1: '#95A5A6', item_port_xiranite_oven_1: '#FF5722',
+  item_port_power_sta_1: '#F44336',
 };
 
 const BUILDING_LABELS: Record<string, string> = {
-  furnance_1: 'Smelting', grinder_1: 'Grinding', shaper_1: 'Shaping',
-  thickener_1: 'Thickening', winder_1: 'Winding', filling_powder_mc_1: 'Filling',
-  component_mc_1: 'Assembling', tools_assebling_mc_1: 'Tool Assembly',
-  seedcollector_1: 'Seed Picking', planter_1: 'Planting', mix_pool_1: 'Mixing',
-  dismantler_1: 'Dismantling', xiranite_oven_1: 'Xiranite Smelting',
+  item_port_furnance_1: 'Smelting', item_port_grinder_1: 'Grinding', item_port_shaper_1: 'Shaping',
+  item_port_thickener_1: 'Thickening', item_port_winder_1: 'Winding', item_port_filling_pd_mc_1: 'Filling',
+  item_port_cmpt_mc_1: 'Assembling', item_port_tools_asm_mc_1: 'Tool Assembly',
+  item_port_seedcol_1: 'Seed Picking', item_port_planter_1: 'Planting', item_port_mix_pool_1: 'Mixing',
+  item_port_dismantler_1: 'Dismantling', item_port_xiranite_oven_1: 'Xiranite Smelting',
+  item_port_power_sta_1: 'Power Generation',
 };
 
 function slugToItemId(slug: string): string { return `item_${slug}`; }

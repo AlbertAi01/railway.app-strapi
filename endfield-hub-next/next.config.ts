@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com",
             "img-src 'self' data: blob: https://endfield.wiki.gg https://endfieldtools.dev https://res.cloudinary.com https://img.youtube.com https://www.google-analytics.com",
-            "connect-src 'self' https://www.google-analytics.com https://vitals.vercel-insights.com https://www.googletagmanager.com",
+            "connect-src 'self' https://magical-canvas-ba9361cc3f.strapiapp.com https://www.google-analytics.com https://vitals.vercel-insights.com https://www.googletagmanager.com",
             "frame-src 'self' https://www.youtube.com",
             "frame-ancestors 'self'",
             "base-uri 'self'",

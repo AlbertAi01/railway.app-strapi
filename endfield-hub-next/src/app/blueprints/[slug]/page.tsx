@@ -5,9 +5,372 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, ThumbsUp, Copy, Check, Zap, Grid3X3, Package, TrendingUp, Download } from 'lucide-react';
-import { SCRAPED_BLUEPRINTS, getUserBlueprints, isBlueprintUpvoted, toggleUpvoteBlueprint, getBlueprintUpvoteCount, type BlueprintEntry } from '@/data/blueprints';
+import { SCRAPED_BLUEPRINTS, getUserBlueprints, isBlueprintUpvoted, toggleUpvoteBlueprint, getBlueprintUpvoteCount, type BlueprintEntry, type OutputRate, type Category } from '@/data/blueprints';
 import { fetchBlueprintBySlug } from '@/lib/api';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+
+// Building type for factory grid visualization
+interface Building {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: 'production' | 'processing' | 'power' | 'storage' | 'logistics';
+  label: string;
+}
+
+// Factory Grid Preview Component
+function FactoryGridPreview({
+  gridSize,
+  buildingCount,
+  category,
+  outputsPerMin,
+}: {
+  gridSize: string;
+  buildingCount: number;
+  category: Category;
+  outputsPerMin: OutputRate[];
+}) {
+  // Parse grid dimensions
+  const [width, height] = gridSize.split('x').map(n => parseInt(n));
+  const cellSize = 8; // pixels per grid cell
+  const svgWidth = width * cellSize;
+  const svgHeight = height * cellSize;
+
+  // Generate representative building layout based on category and building count
+  const generateBuildings = (): Building[] => {
+    const buildings: Building[] = [];
+    const totalCells = width * height;
+    const occupancyRatio = Math.min(0.4, (buildingCount * 12) / totalCells); // ~40% max occupancy
+
+    // Determine building type distribution based on category
+    let distribution = { production: 0.4, processing: 0.4, power: 0.1, storage: 0.05, logistics: 0.05 };
+
+    switch (category) {
+      case 'Production':
+        distribution = { production: 0.6, processing: 0.2, power: 0.1, storage: 0.05, logistics: 0.05 };
+        break;
+      case 'Processing':
+        distribution = { production: 0.2, processing: 0.6, power: 0.1, storage: 0.05, logistics: 0.05 };
+        break;
+      case 'Power':
+        distribution = { production: 0.1, processing: 0.1, power: 0.6, storage: 0.15, logistics: 0.05 };
+        break;
+      case 'Complete Chain':
+        distribution = { production: 0.3, processing: 0.3, power: 0.15, storage: 0.15, logistics: 0.1 };
+        break;
+      case 'Compact':
+        distribution = { production: 0.45, processing: 0.35, power: 0.1, storage: 0.05, logistics: 0.05 };
+        break;
+    }
+
+    const types: Array<'production' | 'processing' | 'power' | 'storage' | 'logistics'> = [
+      'production', 'processing', 'power', 'storage', 'logistics'
+    ];
+
+    // Create a grid to track occupied cells
+    const occupied = new Set<string>();
+
+    // Generate buildings in a flow pattern (left to right, with some vertical distribution)
+    const buildingsToPlace = Math.min(buildingCount, Math.floor(totalCells * occupancyRatio / 12));
+
+    for (let i = 0; i < buildingsToPlace; i++) {
+      // Determine building type based on distribution
+      let typeIndex = 0;
+      const rand = Math.random();
+      let cumulative = 0;
+      for (let t = 0; t < types.length; t++) {
+        cumulative += distribution[types[t]];
+        if (rand < cumulative) {
+          typeIndex = t;
+          break;
+        }
+      }
+      const type = types[typeIndex];
+
+      // Building size (varied by type)
+      let bWidth = 3, bHeight = 3;
+      if (type === 'processing') {
+        bWidth = Math.random() > 0.5 ? 4 : 3;
+        bHeight = Math.random() > 0.5 ? 4 : 3;
+      } else if (type === 'power') {
+        bWidth = 5;
+        bHeight = 4;
+      } else if (type === 'storage') {
+        bWidth = 3;
+        bHeight = 3;
+      } else if (type === 'logistics') {
+        bWidth = 2;
+        bHeight = 2;
+      }
+
+      // Place building in a flow pattern (inputs left, outputs right)
+      const flowProgress = i / buildingsToPlace;
+      const baseX = Math.floor(flowProgress * (width - bWidth - 4)) + 2;
+      const baseY = Math.floor((Math.sin(flowProgress * Math.PI * 3) * 0.3 + 0.5) * (height - bHeight - 4)) + 2;
+
+      // Find nearest unoccupied position
+      let placed = false;
+      for (let dy = 0; dy < 5 && !placed; dy++) {
+        for (let dx = 0; dx < 5 && !placed; dx++) {
+          const x = baseX + dx;
+          const y = baseY + dy;
+
+          if (x + bWidth >= width || y + bHeight >= height) continue;
+
+          // Check if this position is free
+          let isFree = true;
+          for (let cx = x; cx < x + bWidth + 1; cx++) {
+            for (let cy = y; cy < y + bHeight + 1; cy++) {
+              if (occupied.has(`${cx},${cy}`)) {
+                isFree = false;
+                break;
+              }
+            }
+            if (!isFree) break;
+          }
+
+          if (isFree) {
+            // Mark cells as occupied
+            for (let cx = x; cx < x + bWidth; cx++) {
+              for (let cy = y; cy < y + bHeight; cy++) {
+                occupied.add(`${cx},${cy}`);
+              }
+            }
+
+            buildings.push({
+              x,
+              y,
+              width: bWidth,
+              height: bHeight,
+              type,
+              label: type.charAt(0).toUpperCase() + type.slice(1)
+            });
+            placed = true;
+          }
+        }
+      }
+    }
+
+    return buildings;
+  };
+
+  const buildings = useMemo(() => generateBuildings(), [gridSize, buildingCount, category]);
+
+  // Color scheme for building types (dark theme)
+  const buildingColors = {
+    production: { fill: '#3b82f6', stroke: '#60a5fa', label: 'Production' },
+    processing: { fill: '#f97316', stroke: '#fb923c', label: 'Processing' },
+    power: { fill: '#ef4444', stroke: '#f87171', label: 'Power' },
+    storage: { fill: '#10b981', stroke: '#34d399', label: 'Storage' },
+    logistics: { fill: '#6b7280', stroke: '#9ca3af', label: 'Logistics' }
+  };
+
+  // Input/Output ports
+  const inputPorts = useMemo(() => {
+    const ports = [];
+    const numPorts = Math.min(3, Math.max(1, Math.floor(buildingCount / 15)));
+    for (let i = 0; i < numPorts; i++) {
+      ports.push({
+        x: 0,
+        y: Math.floor((i + 1) * height / (numPorts + 1))
+      });
+    }
+    return ports;
+  }, [height, buildingCount]);
+
+  const outputPorts = useMemo(() => {
+    const ports = [];
+    const numPorts = outputsPerMin.length;
+    for (let i = 0; i < numPorts; i++) {
+      ports.push({
+        x: width - 1,
+        y: Math.floor((i + 1) * height / (numPorts + 1)),
+        label: outputsPerMin[i].name
+      });
+    }
+    return ports;
+  }, [width, height, outputsPerMin]);
+
+  return (
+    <div className="w-full">
+      {/* SVG Grid */}
+      <div className="relative w-full overflow-auto rounded border border-[#1a1e2a] bg-[#0d1117]">
+        <svg
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          className="w-full h-auto"
+          style={{ minHeight: '400px', maxHeight: '600px' }}
+        >
+          {/* Background */}
+          <rect width={svgWidth} height={svgHeight} fill="#0d1117" />
+
+          {/* Grid lines */}
+          {Array.from({ length: width + 1 }).map((_, i) => (
+            <line
+              key={`v${i}`}
+              x1={i * cellSize}
+              y1={0}
+              x2={i * cellSize}
+              y2={svgHeight}
+              stroke="#1a1e2a"
+              strokeWidth="0.5"
+            />
+          ))}
+          {Array.from({ length: height + 1 }).map((_, i) => (
+            <line
+              key={`h${i}`}
+              x1={0}
+              y1={i * cellSize}
+              x2={svgWidth}
+              y2={i * cellSize}
+              stroke="#1a1e2a"
+              strokeWidth="0.5"
+            />
+          ))}
+
+          {/* Input ports */}
+          {inputPorts.map((port, i) => (
+            <g key={`input-${i}`}>
+              <circle
+                cx={port.x * cellSize + cellSize / 2}
+                cy={port.y * cellSize}
+                r={cellSize / 2}
+                fill="#10b981"
+                stroke="#34d399"
+                strokeWidth="1"
+              />
+              <line
+                x1={port.x * cellSize + cellSize / 2}
+                y1={port.y * cellSize}
+                x2={port.x * cellSize + cellSize * 3}
+                y2={port.y * cellSize}
+                stroke="#10b981"
+                strokeWidth="1"
+                strokeDasharray="2,2"
+                opacity="0.5"
+              />
+            </g>
+          ))}
+
+          {/* Output ports */}
+          {outputPorts.map((port, i) => (
+            <g key={`output-${i}`}>
+              <circle
+                cx={port.x * cellSize + cellSize / 2}
+                cy={port.y * cellSize}
+                r={cellSize / 2}
+                fill="#10b981"
+                stroke="#34d399"
+                strokeWidth="1"
+              />
+              <line
+                x1={port.x * cellSize - cellSize * 3}
+                y1={port.y * cellSize}
+                x2={port.x * cellSize + cellSize / 2}
+                y2={port.y * cellSize}
+                stroke="#10b981"
+                strokeWidth="1"
+                strokeDasharray="2,2"
+                opacity="0.5"
+              />
+            </g>
+          ))}
+
+          {/* Buildings */}
+          {buildings.map((building, i) => {
+            const colors = buildingColors[building.type];
+            const bx = building.x * cellSize;
+            const by = building.y * cellSize;
+            const bw = building.width * cellSize;
+            const bh = building.height * cellSize;
+
+            return (
+              <g key={i}>
+                {/* Building rectangle */}
+                <rect
+                  x={bx}
+                  y={by}
+                  width={bw}
+                  height={bh}
+                  fill={colors.fill}
+                  stroke={colors.stroke}
+                  strokeWidth="1.5"
+                  opacity="0.8"
+                />
+
+                {/* Conveyor connections (arrows to next buildings) */}
+                {i < buildings.length - 1 && (
+                  <line
+                    x1={bx + bw}
+                    y1={by + bh / 2}
+                    x2={buildings[i + 1].x * cellSize}
+                    y2={buildings[i + 1].y * cellSize + (buildings[i + 1].height * cellSize) / 2}
+                    stroke="#4b5563"
+                    strokeWidth="1"
+                    strokeDasharray="3,3"
+                    opacity="0.4"
+                    markerEnd="url(#arrowhead)"
+                  />
+                )}
+              </g>
+            );
+          })}
+
+          {/* Arrow marker for conveyor lines */}
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 10 3, 0 6" fill="#4b5563" opacity="0.4" />
+            </marker>
+          </defs>
+
+          {/* Grid dimension label */}
+          <text
+            x={svgWidth / 2}
+            y={svgHeight - 5}
+            textAnchor="middle"
+            fill="#9ca3af"
+            fontSize="10"
+            fontFamily="monospace"
+          >
+            {gridSize}
+          </text>
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 flex flex-wrap gap-4 justify-center text-xs">
+        {Object.entries(buildingColors).map(([type, colors]) => (
+          <div key={type} className="flex items-center gap-2">
+            <div
+              className="w-4 h-4 border"
+              style={{
+                backgroundColor: colors.fill,
+                borderColor: colors.stroke,
+              }}
+            />
+            <span className="text-[var(--color-text-secondary)]">{colors.label}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-[#10b981] border border-[#34d399]" />
+          <span className="text-[var(--color-text-secondary)]">I/O Ports</span>
+        </div>
+      </div>
+
+      {/* Info Note */}
+      <div className="mt-4 text-xs text-[var(--color-text-muted)] text-center italic">
+        Schematic representation based on blueprint metadata. Actual layout may vary.
+      </div>
+    </div>
+  );
+}
 
 export default function BlueprintDetail() {
   const params = useParams();
@@ -400,6 +763,22 @@ export default function BlueprintDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Factory Grid Preview */}
+          {blueprint.gridSize && blueprint.buildingCount && (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
+              <h2 className="text-2xl font-bold text-white font-tactical mb-4 flex items-center gap-3">
+                <span className="diamond diamond-sm" />
+                FACTORY LAYOUT
+              </h2>
+              <FactoryGridPreview
+                gridSize={blueprint.gridSize}
+                buildingCount={blueprint.buildingCount}
+                category={blueprint.category}
+                outputsPerMin={blueprint.outputsPerMin}
+              />
+            </div>
+          )}
+
           {/* Description Section */}
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
             <h2 className="text-2xl font-bold text-white font-tactical mb-4 flex items-center gap-3">
