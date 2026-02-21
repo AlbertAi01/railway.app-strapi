@@ -150,7 +150,9 @@ function generateAllTiles(): TileDef[] {
     }
   };
 
-  // map02_lv001 (Jingyu Valley) — 33 valid tiles out of 54, startX=1800, startY=6000
+  // map02_lv001 (Jingyu Valley) — 33 valid tiles out of 54, startX=1800, startY=10800
+  // Row 1 at Y=10800 (bottom of zone), row 9 at Y=6000 (top of zone)
+  // Covers POIs Y≈[6000, 10800] matching competitor grid absRow -8 to -16
   const lv001Tiles: Array<[number, number]> = [
     [1, 9],
     [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 9],
@@ -159,9 +161,11 @@ function generateAllTiles(): TileDef[] {
     [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9],
     [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9],
   ];
-  addTiles('map02_lv001', 'map02lv001', 1800, 6000, lv001Tiles);
+  addTiles('map02_lv001', 'map02lv001', 1800, 10800, lv001Tiles);
 
-  // map02_lv002 (Wuling City) — 78 valid tiles out of 90, startX=600, startY=600
+  // map02_lv002 (Wuling City) — 78 valid tiles out of 90, startX=600, startY=6000
+  // Row 1 at Y=6000 (bottom of zone), row 10 at Y=600 (top of zone)
+  // Covers POIs Y≈[600, 6000] matching competitor grid absRow -8 to 1
   const lv002Tiles: Array<[number, number]> = [
     [1, 2], [1, 4], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10],
     [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 9], [2, 10],
@@ -173,7 +177,7 @@ function generateAllTiles(): TileDef[] {
     [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [8, 7], [8, 8], [8, 9], [8, 10],
     [9, 1], [9, 2], [9, 3], [9, 4], [9, 5], [9, 6], [9, 7], [9, 8], [9, 9], [9, 10],
   ];
-  addTiles('map02_lv002', 'map02lv002', 600, 600, lv002Tiles);
+  addTiles('map02_lv002', 'map02lv002', 600, 6000, lv002Tiles);
 
   return tiles;
 }

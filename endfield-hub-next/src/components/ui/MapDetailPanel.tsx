@@ -77,65 +77,6 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
 }
 
-// ──── Demo comments ────
-
-function getDemoComments(poiId: string): Comment[] {
-  const seed = poiId.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const hasComments = seed % 3 !== 0; // 2/3 of POIs have comments
-  if (!hasComments) return [];
-
-  const comments: Comment[] = [];
-  const authors = ['Amiya', 'Doctor_07', 'shizu', 'maks', 'kal_tsit', 'W_demolitions', 'blaze_fan', 'chen_sword'];
-  const texts = [
-    'Found this behind the large rock formation. Easy to miss if you\'re not looking carefully.',
-    'You need to defeat the elite enemy nearby before this becomes accessible.',
-    'This chest respawns daily. Don\'t forget to collect it during your farming runs.',
-    'Coordinates are slightly off - it\'s actually about 20 units north of the marked position.',
-    'Best approached from the east side. The western path has high-level enemies.',
-    'Tip: Use a campfire nearby to fast travel here quickly.',
-    'The puzzle to unlock this requires activating 3 terminals in the zone first.',
-    'Great farming spot for Originium Ore. Respawns every 48 hours.',
-  ];
-
-  const count = (seed % 3) + 1;
-  for (let i = 0; i < count; i++) {
-    const authorIdx = (seed + i * 7) % authors.length;
-    const textIdx = (seed + i * 13) % texts.length;
-    const hasScreenshot = (seed + i) % 4 === 0;
-    const hasReplies = (seed + i) % 3 === 0;
-
-    comments.push({
-      id: `${poiId}-c${i}`,
-      author: authors[authorIdx],
-      text: texts[textIdx],
-      createdAt: Date.now() - (86400000 * ((seed + i * 3) % 14) + 3600000 * ((seed + i) % 24)),
-      upvotes: (seed * (i + 1)) % 24,
-      downvotes: (seed * (i + 1)) % 5,
-      userVote: null,
-      screenshots: hasScreenshot
-        ? [`https://endfieldtools.dev/assets/images/endfield/levelmap/levelmapgrids/map01_lv00${(i % 4) + 1}/0_0.png`]
-        : [],
-      replies: hasReplies
-        ? [{
-            id: `${poiId}-c${i}-r0`,
-            author: authors[(authorIdx + 2) % authors.length],
-            text: 'Thanks for the tip! This really helped.',
-            createdAt: Date.now() - (86400000 * ((seed + i) % 7) + 1800000),
-            upvotes: (seed + i * 2) % 8,
-            userVote: null,
-          }]
-        : [],
-      isPinned: i === 0 && seed % 5 === 0,
-    });
-  }
-
-  return comments.sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return b.upvotes - a.upvotes;
-  });
-}
-
 // ──── Storage ────
 
 const COMMENT_STORAGE_KEY = 'zerosanity-map-comments';
@@ -181,12 +122,7 @@ export default function MapDetailPanel({
   // ── Load comments on POI change ──
   useEffect(() => {
     const local = loadLocalComments();
-    const localForPoi = local[poi.id] || [];
-    const demo = getDemoComments(poi.id);
-    // merge: local comments first, then demo (avoid duplicates by id)
-    const localIds = new Set(localForPoi.map(c => c.id));
-    const merged = [...localForPoi, ...demo.filter(d => !localIds.has(d.id))];
-    setComments(merged);
+    setComments(local[poi.id] || []);
     setCommentText('');
     setReplyingTo(null);
     setReplyText('');
