@@ -1,1 +1,3797 @@
-{"buildings": {"planter_1": {"id": "planter_1", "name": "Planting Unit", "power": 20}, "tools_assebling_mc_1": {"id": "tools_assebling_mc_1", "name": "Packaging Unit", "power": 20}, "mix_pool_1": {"id": "mix_pool_1", "name": "Reactor Crucible", "power": 50}, "component_mc_1": {"id": "component_mc_1", "name": "Fitting Unit", "power": 20}, "xiranite_oven_1": {"id": "xiranite_oven_1", "name": "Forge of the Sky", "power": 50}, "dismantler_1": {"id": "dismantler_1", "name": "Separating Unit", "power": 20}, "winder_1": {"id": "winder_1", "name": "Gearing Unit", "power": 10}, "seedcollector_1": {"id": "seedcollector_1", "name": "Seed-Picking Unit", "power": 10}, "filling_powder_mc_1": {"id": "filling_powder_mc_1", "name": "Filling Unit", "power": 20}, "shaper_1": {"id": "shaper_1", "name": "Moulding Unit", "power": 10}, "furnance_1": {"id": "furnance_1", "name": "Refining Unit", "power": 5}, "thickener_1": {"id": "thickener_1", "name": "Grinding Unit", "power": 50}, "grinder_1": {"id": "grinder_1", "name": "Shredding Unit", "power": 5}}, "items": {"item_plant_grass_seed_1": "Jincao Seed", "item_liquid_water": "Water", "item_plant_grass_1": "Jincao", "item_glass_cmpt": "Amethyst Part", "item_plant_bbflower_powder_1": "Buckflower Powder", "item_proc_bomb_1": "Industrial Explosive", "item_plant_grass_powder_1": "Jincao Powder", "item_liquid_plant_grass_1": "Jincao Solution", "item_iron_nugget": "Ferrium", "item_iron_cmpt": "Ferrium Part", "item_carbon_enr": "Stabilized Carbon", "item_xiranite_powder": "Xiranite", "item_fbottle_glass_water": "Water Bottle", "item_glass_bottle": "Amethyst Bottle", "item_plant_moss_seed_1": "Aketine Seed", "item_plant_moss_1": "Aketine", "item_crystal_shell": "Cryston Fiber", "item_quartz_glass": "Amethyst Fiber", "item_equip_script_1": "Equipment Blueprint [T1]", "item_iron_bottle": "Ferrium Bottle", "item_iron_ore": "Iron Ore", "item_plant_moss_powder_2": "Sandleaf Powder", "item_bottled_food_1": "Jincao Drink", "item_iron_powder": "Ferrium Powder", "item_plant_moss_powder_3": "Citrome Powder", "item_iron_enr_powder": "Dense Ferrium Powder", "item_plant_moss_seed_2": "Sandleaf Seed", "item_plant_moss_2": "Sandleaf", "item_bottled_food_2": "Yazhen Syringe [C]", "item_equip_script_2": "Equipment Blueprint [T2]", "item_plant_grass_powder_2": "Yazhen Powder", "item_liquid_plant_grass_2": "Yazhen Solution", "item_originium_powder": "Originium Powder", "item_proc_battery_1": "SC Valley Battery", "item_plant_grass_seed_2": "Yazhen Seed", "item_plant_grass_2": "Yazhen", "item_quartz_powder": "Amethyst Powder", "item_quartz_enr_powder": "Dense Amethyst Powder", "item_originium_enr_powder": "Dense Originium Powder", "item_muck_feces_1": "Fertilizer", "item_liquid_xiranite": "Liquid Xiranite", "item_muck_xiranite_1": "Xiranite Fertilizer", "item_iron_enr": "Dense Ferrium", "item_iron_enr_cmpt": "Ferrium Component", "item_iron_enr_bottle": "Dense Ferrium Bottle", "item_plant_moss_enr_powder_2": "Packed Origocrust", "item_bottled_food_3": "Bumper-Rich", "item_crystal_enr": "Dense Cryston Fiber", "item_quartz_enr": "Dense Amethyst Fiber", "item_equip_script_3": "Equipment Blueprint [T3]", "item_proc_battery_2": "LC Valley Battery", "item_quartz_sand": "Quartz Sand", "item_plant_moss_seed_3": "Citrome Seed", "item_plant_moss_3": "Citrome", "item_fbottle_glass_grass_1": "Jincao Bottle", "item_plant_bbflower_1": "Buckflower", "item_plant_bbflower_seed_1": "Buckflower Seed", "item_proc_battery_3": "LC Wuling Battery", "item_carbon_powder": "Carbon Powder", "item_carbon_enr_powder": "Dense Carbon Powder", "item_equip_script_4": "Equipment Blueprint [T4]", "item_originium_ore": "Origocrust", "item_glass_enr_bottle": "Dense Amethyst Bottle", "item_glass_enr_cmpt": "Amethyst Component", "item_carbon_mtl": "Carbon", "item_fbottle_glass_grass_2": "Yazhen Bottle", "item_crystal_powder": "Cryston Powder", "item_crystal_enr_powder": "Dense Cryston Powder", "item_fbottle_iron_grass_2": "Ferrium Yazhen Bottle", "item_bottled_rec_hp_4": "Buck Capsule [A]", "item_fbottle_glass_xiranite": "Xiranite Bottle", "item_plant_moss_powder_1": "Aketine Powder", "item_plant_moss_enr_powder_1": "Ground Citrome Powder", "item_fbottle_iron_grass_1": "Ferrium Jincao Bottle", "item_bottled_food_4": "Bottled Food 4", "item_plant_sp_1": "Plant Sp 1", "item_plant_sp_seed_1": "Plant Sp Seed 1", "item_bottled_rec_hp_1": "Bottled Rec Hp 1", "item_bottled_rec_hp_2": "Bottled Rec Hp 2", "item_plant_sp_2": "Plant Sp 2", "item_plant_sp_seed_2": "Plant Sp Seed 2", "item_plant_sp_3": "Amber Rice", "item_plant_sp_seed_3": "Amber Rice Seed", "item_proc_battery_4": "HC Valley Battery", "item_bottled_rec_hp_3": "Bottled Rec Hp 3", "item_plant_sp_4": "Redjade Ginseng", "item_plant_sp_seed_4": "Redjade Ginseng Seed", "item_fbottle_glassenr_water": "Dense Water Bottle", "item_fbottle_glassenr_grass_1": "Dense Jincao Bottle", "item_fbottle_glassenr_grass_2": "Dense Yazhen Bottle", "item_plant_tundra_wood": "Plant Tundra Wood", "item_fbottle_glassenr_xiranite": "Dense Xiranite Bottle", "item_fbottle_iron_water": "Ferrium Water Bottle", "item_fbottle_iron_xiranite": "Ferrium Xiranite Bottle", "item_fbottle_ironenr_water": "Dense Ferrium Water Bottle", "item_fbottle_ironenr_grass_1": "Dense Ferrium Jincao Bottle", "item_fbottle_ironenr_grass_2": "Dense Ferrium Yazhen Bottle", "item_fbottle_ironenr_xiranite": "Dense Ferrium Xiranite Bottle"}, "recipes": [{"id": "planter_plant_grass_1_1", "name": "Jincao", "machine": "planter_1", "machineName": "Planting Unit", "inputs": [{"id": "item_plant_grass_seed_1", "name": "Jincao Seed", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_plant_grass_1", "name": "Jincao", "count": 2}], "craftTime": 12.0, "power": 20}, {"id": "tools_proc_bomb_1_1", "name": "Industrial Explosive", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_glass_cmpt", "name": "Amethyst Part", "count": 5}, {"id": "item_plant_bbflower_powder_1", "name": "Buckflower Powder", "count": 1}], "outputs": [{"id": "item_proc_bomb_1", "name": "Industrial Explosive", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "pool_liquid_plant_grass_1_1", "name": "Jincao Solution", "machine": "mix_pool_1", "machineName": "Reactor Crucible", "inputs": [{"id": "item_plant_grass_powder_1", "name": "Jincao Powder", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "component_iron_cmpt_1", "name": "Ferrium Part", "machine": "component_mc_1", "machineName": "Fitting Unit", "inputs": [{"id": "item_iron_nugget", "name": "Ferrium", "count": 1}], "outputs": [{"id": "item_iron_cmpt", "name": "Ferrium Part", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "xiranite_oven_xiranite_powder_1", "name": "Xiranite", "machine": "xiranite_oven_1", "machineName": "Forge of the Sky", "inputs": [{"id": "item_carbon_enr", "name": "Stabilized Carbon", "count": 2}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_xiranite_powder", "name": "Xiranite", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "dismantler_glass_water_1", "name": "Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glass_water", "name": "Water Bottle", "count": 1}], "outputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "planter_plant_moss_1_1", "name": "Aketine", "machine": "planter_1", "machineName": "Planting Unit", "inputs": [{"id": "item_plant_moss_seed_1", "name": "Aketine Seed", "count": 1}], "outputs": [{"id": "item_plant_moss_1", "name": "Aketine", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "winder_equip_script_1", "name": "Equipment Blueprint [T1]", "machine": "winder_1", "machineName": "Gearing Unit", "inputs": [{"id": "item_crystal_shell", "name": "Cryston Fiber", "count": 5}, {"id": "item_quartz_glass", "name": "Amethyst Fiber", "count": 5}], "outputs": [{"id": "item_equip_script_1", "name": "Equipment Blueprint [T1]", "count": 1}], "craftTime": 60.0, "power": 10}, {"id": "seedcollector_plant_moss_1_1", "name": "Aketine Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_moss_1", "name": "Aketine", "count": 1}], "outputs": [{"id": "item_plant_moss_seed_1", "name": "Aketine Seed", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "filling_bottled_glass_water", "name": "Water Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_fbottle_glass_water", "name": "Water Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "shaper_iron_bottle_1", "name": "Ferrium Bottle", "machine": "shaper_1", "machineName": "Moulding Unit", "inputs": [{"id": "item_iron_nugget", "name": "Ferrium", "count": 2}], "outputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}], "craftTime": 12.0, "power": 10}, {"id": "furnance_iron_nugget_1", "name": "Ferrium", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_iron_ore", "name": "Iron Ore", "count": 1}], "outputs": [{"id": "item_iron_nugget", "name": "Ferrium", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_food_1_1", "name": "Jincao Drink", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 5}, {"id": "item_plant_moss_powder_2", "name": "Sandleaf Powder", "count": 5}], "outputs": [{"id": "item_bottled_food_1", "name": "Jincao Drink", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "thickener_iron_enr_powder_1", "name": "Dense Ferrium Powder", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_iron_powder", "name": "Ferrium Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_iron_enr_powder", "name": "Dense Ferrium Powder", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "grinder_iron_powder_1", "name": "Ferrium Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_iron_nugget", "name": "Ferrium", "count": 1}], "outputs": [{"id": "item_iron_powder", "name": "Ferrium Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "shaper_glass_bottle_1", "name": "Amethyst Bottle", "machine": "shaper_1", "machineName": "Moulding Unit", "inputs": [{"id": "item_quartz_glass", "name": "Amethyst Fiber", "count": 2}], "outputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}], "craftTime": 12.0, "power": 10}, {"id": "planter_plant_moss_2_1", "name": "Sandleaf", "machine": "planter_1", "machineName": "Planting Unit", "inputs": [{"id": "item_plant_moss_seed_2", "name": "Sandleaf Seed", "count": 1}], "outputs": [{"id": "item_plant_moss_2", "name": "Sandleaf", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_food_2_1", "name": "Yazhen Syringe [C]", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 10}, {"id": "item_plant_moss_powder_2", "name": "Sandleaf Powder", "count": 10}], "outputs": [{"id": "item_bottled_food_2", "name": "Yazhen Syringe [C]", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "seedcollector_plant_moss_2_1", "name": "Sandleaf Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_moss_2", "name": "Sandleaf", "count": 1}], "outputs": [{"id": "item_plant_moss_seed_2", "name": "Sandleaf Seed", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "winder_equip_script_2", "name": "Equipment Blueprint [T2]", "machine": "winder_1", "machineName": "Gearing Unit", "inputs": [{"id": "item_crystal_shell", "name": "Cryston Fiber", "count": 10}, {"id": "item_iron_nugget", "name": "Ferrium", "count": 10}], "outputs": [{"id": "item_equip_script_2", "name": "Equipment Blueprint [T2]", "count": 1}], "craftTime": 60.0, "power": 10}, {"id": "pool_liquid_plant_grass_2_1", "name": "Yazhen Solution", "machine": "mix_pool_1", "machineName": "Reactor Crucible", "inputs": [{"id": "item_plant_grass_powder_2", "name": "Yazhen Powder", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "tools_proc_battery_1_1", "name": "SC Valley Battery", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_glass_cmpt", "name": "Amethyst Part", "count": 5}, {"id": "item_originium_powder", "name": "Originium Powder", "count": 10}], "outputs": [{"id": "item_proc_battery_1", "name": "SC Valley Battery", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "planter_plant_grass_2_1", "name": "Yazhen", "machine": "planter_1", "machineName": "Planting Unit", "inputs": [{"id": "item_plant_grass_seed_2", "name": "Yazhen Seed", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_plant_grass_2", "name": "Yazhen", "count": 2}], "craftTime": 12.0, "power": 20}, {"id": "thickener_quartz_enr_powder_1", "name": "Dense Amethyst Powder", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_quartz_powder", "name": "Amethyst Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_quartz_enr_powder", "name": "Dense Amethyst Powder", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "furnance_iron_nugget_2", "name": "Ferrium", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_iron_powder", "name": "Ferrium Powder", "count": 1}], "outputs": [{"id": "item_iron_nugget", "name": "Ferrium", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "component_glass_cmpt_1", "name": "Amethyst Part", "machine": "component_mc_1", "machineName": "Fitting Unit", "inputs": [{"id": "item_quartz_glass", "name": "Amethyst Fiber", "count": 1}], "outputs": [{"id": "item_glass_cmpt", "name": "Amethyst Part", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "thickener_originium_enr_powder_1", "name": "Dense Originium Powder", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_originium_powder", "name": "Originium Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_originium_enr_powder", "name": "Dense Originium Powder", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "xiranite_oven_muck_xiranite_1", "name": "Xiranite Fertilizer", "machine": "xiranite_oven_1", "machineName": "Forge of the Sky", "inputs": [{"id": "item_muck_feces_1", "name": "Fertilizer", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "outputs": [{"id": "item_muck_xiranite_1", "name": "Xiranite Fertilizer", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "pool_liquid_liquid_xiranite_1", "name": "Liquid Xiranite", "machine": "mix_pool_1", "machineName": "Reactor Crucible", "inputs": [{"id": "item_xiranite_powder", "name": "Xiranite", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "component_iron_enr_cmpt_1", "name": "Ferrium Component", "machine": "component_mc_1", "machineName": "Fitting Unit", "inputs": [{"id": "item_iron_enr", "name": "Dense Ferrium", "count": 1}], "outputs": [{"id": "item_iron_enr_cmpt", "name": "Ferrium Component", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "grinder_quartz_powder_1", "name": "Amethyst Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_quartz_glass", "name": "Amethyst Fiber", "count": 1}], "outputs": [{"id": "item_quartz_powder", "name": "Amethyst Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_food_3_1", "name": "Bumper-Rich", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 10}, {"id": "item_plant_moss_enr_powder_2", "name": "Packed Origocrust", "count": 10}], "outputs": [{"id": "item_bottled_food_3", "name": "Bumper-Rich", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "winder_equip_script_3", "name": "Equipment Blueprint [T3]", "machine": "winder_1", "machineName": "Gearing Unit", "inputs": [{"id": "item_crystal_enr", "name": "Dense Cryston Fiber", "count": 10}, {"id": "item_quartz_enr", "name": "Dense Amethyst Fiber", "count": 10}], "outputs": [{"id": "item_equip_script_3", "name": "Equipment Blueprint [T3]", "count": 1}], "craftTime": 60.0, "power": 10}, {"id": "tools_proc_battery_2_1", "name": "LC Valley Battery", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_iron_cmpt", "name": "Ferrium Part", "count": 10}, {"id": "item_originium_powder", "name": "Originium Powder", "count": 15}], "outputs": [{"id": "item_proc_battery_2", "name": "LC Valley Battery", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "furnance_quartz_glass_1", "name": "Amethyst Fiber", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_quartz_sand", "name": "Quartz Sand", "count": 1}], "outputs": [{"id": "item_quartz_glass", "name": "Amethyst Fiber", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "shaper_iron_enr_bottle_1", "name": "Dense Ferrium Bottle", "machine": "shaper_1", "machineName": "Moulding Unit", "inputs": [{"id": "item_iron_enr", "name": "Dense Ferrium", "count": 2}], "outputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}], "craftTime": 12.0, "power": 10}, {"id": "planter_plant_moss_3_1", "name": "Citrome", "machine": "planter_1", "machineName": "Planting Unit", "inputs": [{"id": "item_plant_moss_seed_3", "name": "Citrome Seed", "count": 1}], "outputs": [{"id": "item_plant_moss_3", "name": "Citrome", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "seedcollector_plant_moss_3_1", "name": "Citrome Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_moss_3", "name": "Citrome", "count": 1}], "outputs": [{"id": "item_plant_moss_seed_3", "name": "Citrome Seed", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "dismantler_glass_grass_1_1", "name": "Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glass_grass_1", "name": "Jincao Bottle", "count": 1}], "outputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "seedcollector_plant_bbflower_1", "name": "Buckflower Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_bbflower_1", "name": "Buckflower", "count": 1}], "outputs": [{"id": "item_plant_bbflower_seed_1", "name": "Buckflower Seed", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "filling_bottled_glass_grass_1", "name": "Jincao Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "outputs": [{"id": "item_fbottle_glass_grass_1", "name": "Jincao Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "planter_plant_bbflower_1", "name": "Buckflower", "machine": "planter_1", "machineName": "Planting Unit", "inputs": [{"id": "item_plant_bbflower_seed_1", "name": "Buckflower Seed", "count": 1}], "outputs": [{"id": "item_plant_bbflower_1", "name": "Buckflower", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "tools_proc_battery_3_1", "name": "LC Wuling Battery", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_iron_enr_cmpt", "name": "Ferrium Component", "count": 10}, {"id": "item_originium_enr_powder", "name": "Dense Originium Powder", "count": 15}], "outputs": [{"id": "item_proc_battery_3", "name": "LC Wuling Battery", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "thickener_carbon_enr_powder_1", "name": "Dense Carbon Powder", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_carbon_enr_powder", "name": "Dense Carbon Powder", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "winder_equip_script_4", "name": "Equipment Blueprint [T4]", "machine": "winder_1", "machineName": "Gearing Unit", "inputs": [{"id": "item_crystal_enr", "name": "Dense Cryston Fiber", "count": 10}, {"id": "item_xiranite_powder", "name": "Xiranite", "count": 10}], "outputs": [{"id": "item_equip_script_4", "name": "Equipment Blueprint [T4]", "count": 1}], "craftTime": 60.0, "power": 10}, {"id": "furnance_quartz_glass_2", "name": "Amethyst Fiber", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_quartz_powder", "name": "Amethyst Powder", "count": 1}], "outputs": [{"id": "item_quartz_glass", "name": "Amethyst Fiber", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "grinder_originium_powder_1", "name": "Originium Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_originium_ore", "name": "Origocrust", "count": 1}], "outputs": [{"id": "item_originium_powder", "name": "Originium Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "shaper_glass_enr_bottle_1", "name": "Dense Amethyst Bottle", "machine": "shaper_1", "machineName": "Moulding Unit", "inputs": [{"id": "item_quartz_enr", "name": "Dense Amethyst Fiber", "count": 2}], "outputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}], "craftTime": 12.0, "power": 10}, {"id": "component_glass_enr_cmpt_1", "name": "Amethyst Component", "machine": "component_mc_1", "machineName": "Fitting Unit", "inputs": [{"id": "item_quartz_enr", "name": "Dense Amethyst Fiber", "count": 1}], "outputs": [{"id": "item_glass_enr_cmpt", "name": "Amethyst Component", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "seedcollector_plant_grass_1_1", "name": "Jincao Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_grass_1", "name": "Jincao", "count": 1}], "outputs": [{"id": "item_plant_grass_seed_1", "name": "Jincao Seed", "count": 1}], "craftTime": 12.0, "power": 10}, {"id": "grinder_carbon_powder_1", "name": "Carbon Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 1}], "outputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_glass_grass_2", "name": "Yazhen Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "outputs": [{"id": "item_fbottle_glass_grass_2", "name": "Yazhen Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "thickener_crystal_enr_powder_1", "name": "Dense Cryston Powder", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_crystal_powder", "name": "Cryston Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_crystal_enr_powder", "name": "Dense Cryston Powder", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "dismantler_glass_grass_2_1", "name": "Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glass_grass_2", "name": "Yazhen Bottle", "count": 1}], "outputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "tools_proc_rec_hp_4_1", "name": "Buck Capsule [A]", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_iron_cmpt", "name": "Ferrium Part", "count": 10}, {"id": "item_fbottle_iron_grass_2", "name": "Ferrium Yazhen Bottle", "count": 5}], "outputs": [{"id": "item_bottled_rec_hp_4", "name": "Buck Capsule [A]", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "furnance_crystal_shell_1", "name": "Cryston Fiber", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_originium_ore", "name": "Origocrust", "count": 1}], "outputs": [{"id": "item_crystal_shell", "name": "Cryston Fiber", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "grinder_crystal_powder_1", "name": "Cryston Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_crystal_shell", "name": "Cryston Fiber", "count": 1}], "outputs": [{"id": "item_crystal_powder", "name": "Cryston Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "seedcollector_plant_grass_2_1", "name": "Yazhen Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_grass_2", "name": "Yazhen", "count": 1}], "outputs": [{"id": "item_plant_grass_seed_2", "name": "Yazhen Seed", "count": 1}], "craftTime": 12.0, "power": 10}, {"id": "furnance_crystal_shell_2", "name": "Cryston Fiber", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_crystal_powder", "name": "Cryston Powder", "count": 1}], "outputs": [{"id": "item_crystal_shell", "name": "Cryston Fiber", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "dismantler_glass_xiranite_1", "name": "Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glass_xiranite", "name": "Xiranite Bottle", "count": 1}], "outputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_glass_xiranite", "name": "Xiranite Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "outputs": [{"id": "item_fbottle_glass_xiranite", "name": "Xiranite Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "thickener_plant_moss_enr_powder_1_1", "name": "Ground Citrome Powder", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_plant_moss_powder_1", "name": "Aketine Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_plant_moss_enr_powder_1", "name": "Ground Citrome Powder", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "tools_proc_food_4_1", "name": "Bottled Food 4", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_iron_cmpt", "name": "Ferrium Part", "count": 10}, {"id": "item_fbottle_iron_grass_1", "name": "Ferrium Jincao Bottle", "count": 5}], "outputs": [{"id": "item_bottled_food_4", "name": "Bottled Food 4", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "seedcollector_plant_sp_1", "name": "Plant Sp Seed 1", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_sp_1", "name": "Plant Sp 1", "count": 1}], "outputs": [{"id": "item_plant_sp_seed_1", "name": "Plant Sp Seed 1", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "thickener_plant_moss_enr_powder_2_1", "name": "Packed Origocrust", "machine": "thickener_1", "machineName": "Grinding Unit", "inputs": [{"id": "item_plant_moss_powder_2", "name": "Sandleaf Powder", "count": 2}, {"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 1}], "outputs": [{"id": "item_plant_moss_enr_powder_2", "name": "Packed Origocrust", "count": 1}], "craftTime": 12.0, "power": 50}, {"id": "filling_bottled_rec_hp_1_1", "name": "Bottled Rec Hp 1", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_bottle", "name": "Amethyst Bottle", "count": 5}, {"id": "item_plant_moss_powder_1", "name": "Aketine Powder", "count": 5}], "outputs": [{"id": "item_bottled_rec_hp_1", "name": "Bottled Rec Hp 1", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "grinder_plant_moss_powder_1_1", "name": "Aketine Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_plant_moss_1", "name": "Aketine", "count": 1}], "outputs": [{"id": "item_plant_moss_powder_1", "name": "Aketine Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "furnance_crystal_enr_1", "name": "Dense Cryston Fiber", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_crystal_enr_powder", "name": "Dense Cryston Powder", "count": 1}], "outputs": [{"id": "item_crystal_enr", "name": "Dense Cryston Fiber", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "grinder_plant_moss_powder_2_1", "name": "Sandleaf Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_plant_moss_2", "name": "Sandleaf", "count": 1}], "outputs": [{"id": "item_plant_moss_powder_2", "name": "Sandleaf Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_rec_hp_2_1", "name": "Bottled Rec Hp 2", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 10}, {"id": "item_plant_moss_powder_1", "name": "Aketine Powder", "count": 10}], "outputs": [{"id": "item_bottled_rec_hp_2", "name": "Bottled Rec Hp 2", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "furnance_iron_enr_1", "name": "Dense Ferrium", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_iron_enr_powder", "name": "Dense Ferrium Powder", "count": 1}], "outputs": [{"id": "item_iron_enr", "name": "Dense Ferrium", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "seedcollector_plant_sp_2", "name": "Plant Sp Seed 2", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_sp_2", "name": "Plant Sp 2", "count": 1}], "outputs": [{"id": "item_plant_sp_seed_2", "name": "Plant Sp Seed 2", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "seedcollector_plant_sp_3", "name": "Amber Rice Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_sp_3", "name": "Amber Rice", "count": 1}], "outputs": [{"id": "item_plant_sp_seed_3", "name": "Amber Rice Seed", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "tools_proc_battery_4_1", "name": "HC Valley Battery", "machine": "tools_assebling_mc_1", "machineName": "Packaging Unit", "inputs": [{"id": "item_xiranite_powder", "name": "Xiranite", "count": 5}, {"id": "item_originium_enr_powder", "name": "Dense Originium Powder", "count": 15}], "outputs": [{"id": "item_proc_battery_4", "name": "HC Valley Battery", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "grinder_plant_moss_powder_3_1", "name": "Citrome Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_plant_moss_3", "name": "Citrome", "count": 1}], "outputs": [{"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 3}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_rec_hp_3_1", "name": "Bottled Rec Hp 3", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 10}, {"id": "item_plant_moss_enr_powder_1", "name": "Ground Citrome Powder", "count": 10}], "outputs": [{"id": "item_bottled_rec_hp_3", "name": "Bottled Rec Hp 3", "count": 1}], "craftTime": 60.0, "power": 20}, {"id": "furnance_quartz_enr_1", "name": "Dense Amethyst Fiber", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_quartz_enr_powder", "name": "Dense Amethyst Powder", "count": 1}], "outputs": [{"id": "item_quartz_enr", "name": "Dense Amethyst Fiber", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "seedcollector_plant_sp_4", "name": "Redjade Ginseng Seed", "machine": "seedcollector_1", "machineName": "Seed-Picking Unit", "inputs": [{"id": "item_plant_sp_4", "name": "Redjade Ginseng", "count": 1}], "outputs": [{"id": "item_plant_sp_seed_4", "name": "Redjade Ginseng Seed", "count": 2}], "craftTime": 12.0, "power": 10}, {"id": "furnance_carbon_enr_1", "name": "Stabilized Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_carbon_enr_powder", "name": "Dense Carbon Powder", "count": 1}], "outputs": [{"id": "item_carbon_enr", "name": "Stabilized Carbon", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "grinder_plant_bbflower_powder_1_1", "name": "Buckflower Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_plant_bbflower_1", "name": "Buckflower", "count": 1}], "outputs": [{"id": "item_plant_bbflower_powder_1", "name": "Buckflower Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "furnance_crystal_enr_powder_1", "name": "Dense Cryston Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_originium_enr_powder", "name": "Dense Originium Powder", "count": 1}], "outputs": [{"id": "item_crystal_enr_powder", "name": "Dense Cryston Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "grinder_plant_grass_powder_1_1", "name": "Jincao Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_plant_grass_1", "name": "Jincao", "count": 1}], "outputs": [{"id": "item_plant_grass_powder_1", "name": "Jincao Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "dismantler_glassenr_water_1", "name": "Dense Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glassenr_water", "name": "Dense Water Bottle", "count": 1}], "outputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_glassenr_water", "name": "Dense Water Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_fbottle_glassenr_water", "name": "Dense Water Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "grinder_plant_grass_powder_2_1", "name": "Yazhen Powder", "machine": "grinder_1", "machineName": "Shredding Unit", "inputs": [{"id": "item_plant_grass_2", "name": "Yazhen", "count": 1}], "outputs": [{"id": "item_plant_grass_powder_2", "name": "Yazhen Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "furnance_crystal_powder_1", "name": "Cryston Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_originium_powder", "name": "Originium Powder", "count": 1}], "outputs": [{"id": "item_crystal_powder", "name": "Cryston Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_material_1", "name": "Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_1", "name": "Aketine", "count": 1}], "outputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_material_2", "name": "Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_2", "name": "Sandleaf", "count": 1}], "outputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_glassenr_grass_1", "name": "Dense Jincao Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "outputs": [{"id": "item_fbottle_glassenr_grass_1", "name": "Dense Jincao Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "furnance_carbon_material_3", "name": "Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_3", "name": "Citrome", "count": 1}], "outputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "dismantler_glassenr_grass_1_1", "name": "Dense Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glassenr_grass_1", "name": "Dense Jincao Bottle", "count": 1}], "outputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_glassenr_grass_2", "name": "Dense Yazhen Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "outputs": [{"id": "item_fbottle_glassenr_grass_2", "name": "Dense Yazhen Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_glassenr_grass_2_1", "name": "Dense Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glassenr_grass_2", "name": "Dense Yazhen Bottle", "count": 1}], "outputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "furnance_carbon_material_4", "name": "Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_tundra_wood", "name": "Plant Tundra Wood", "count": 1}], "outputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "dismantler_glassenr_xiranite_1", "name": "Dense Amethyst Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_glassenr_xiranite", "name": "Dense Xiranite Bottle", "count": 1}], "outputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "furnance_carbon_material_5", "name": "Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_grass_1", "name": "Jincao", "count": 1}], "outputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_glassenr_xiranite", "name": "Dense Xiranite Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_glass_enr_bottle", "name": "Dense Amethyst Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "outputs": [{"id": "item_fbottle_glassenr_xiranite", "name": "Dense Xiranite Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "furnance_carbon_material_6", "name": "Carbon", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_grass_2", "name": "Yazhen", "count": 1}], "outputs": [{"id": "item_carbon_mtl", "name": "Carbon", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_powder_1", "name": "Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_powder_1", "name": "Aketine Powder", "count": 1}], "outputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_powder_2", "name": "Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_powder_2", "name": "Sandleaf Powder", "count": 1}], "outputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_powder_3", "name": "Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_powder_3", "name": "Citrome Powder", "count": 3}], "outputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_powder_4", "name": "Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_grass_powder_1", "name": "Jincao Powder", "count": 1}], "outputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_powder_5", "name": "Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_grass_powder_2", "name": "Yazhen Powder", "count": 1}], "outputs": [{"id": "item_carbon_powder", "name": "Carbon Powder", "count": 2}], "craftTime": 12.0, "power": 5}, {"id": "dismantler_iron_water_1", "name": "Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_iron_water", "name": "Ferrium Water Bottle", "count": 1}], "outputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_iron_water", "name": "Ferrium Water Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_fbottle_iron_water", "name": "Ferrium Water Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "furnance_carbon_enr_powder_1", "name": "Dense Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_enr_powder_1", "name": "Ground Citrome Powder", "count": 1}], "outputs": [{"id": "item_carbon_enr_powder", "name": "Dense Carbon Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "furnance_carbon_enr_powder_2", "name": "Dense Carbon Powder", "machine": "furnance_1", "machineName": "Refining Unit", "inputs": [{"id": "item_plant_moss_enr_powder_2", "name": "Packed Origocrust", "count": 1}], "outputs": [{"id": "item_carbon_enr_powder", "name": "Dense Carbon Powder", "count": 1}], "craftTime": 12.0, "power": 5}, {"id": "filling_bottled_iron_grass_1", "name": "Ferrium Jincao Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "outputs": [{"id": "item_fbottle_iron_grass_1", "name": "Ferrium Jincao Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_iron_grass_1_1", "name": "Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_iron_grass_1", "name": "Ferrium Jincao Bottle", "count": 1}], "outputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_iron_grass_2_1", "name": "Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_iron_grass_2", "name": "Ferrium Yazhen Bottle", "count": 1}], "outputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_iron_grass_2", "name": "Ferrium Yazhen Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "outputs": [{"id": "item_fbottle_iron_grass_2", "name": "Ferrium Yazhen Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_iron_xiranite", "name": "Ferrium Xiranite Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "outputs": [{"id": "item_fbottle_iron_xiranite", "name": "Ferrium Xiranite Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_iron_xiranite_1", "name": "Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_iron_xiranite", "name": "Ferrium Xiranite Bottle", "count": 1}], "outputs": [{"id": "item_iron_bottle", "name": "Ferrium Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_ironenr_water", "name": "Dense Ferrium Water Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "outputs": [{"id": "item_fbottle_ironenr_water", "name": "Dense Ferrium Water Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_ironenr_water_1", "name": "Dense Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_ironenr_water", "name": "Dense Ferrium Water Bottle", "count": 1}], "outputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_water", "name": "Water", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_ironenr_grass_1_1", "name": "Dense Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_ironenr_grass_1", "name": "Dense Ferrium Jincao Bottle", "count": 1}], "outputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_ironenr_grass_1", "name": "Dense Ferrium Jincao Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_1", "name": "Jincao Solution", "count": 1}], "outputs": [{"id": "item_fbottle_ironenr_grass_1", "name": "Dense Ferrium Jincao Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_ironenr_grass_2", "name": "Dense Ferrium Yazhen Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "outputs": [{"id": "item_fbottle_ironenr_grass_2", "name": "Dense Ferrium Yazhen Bottle", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_ironenr_grass_2_1", "name": "Dense Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_ironenr_grass_2", "name": "Dense Ferrium Yazhen Bottle", "count": 1}], "outputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_plant_grass_2", "name": "Yazhen Solution", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "dismantler_ironenr_xiranite_1", "name": "Dense Ferrium Bottle", "machine": "dismantler_1", "machineName": "Separating Unit", "inputs": [{"id": "item_fbottle_ironenr_xiranite", "name": "Dense Ferrium Xiranite Bottle", "count": 1}], "outputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "craftTime": 12.0, "power": 20}, {"id": "filling_bottled_ironenr_xiranite", "name": "Dense Ferrium Xiranite Bottle", "machine": "filling_powder_mc_1", "machineName": "Filling Unit", "inputs": [{"id": "item_iron_enr_bottle", "name": "Dense Ferrium Bottle", "count": 1}, {"id": "item_liquid_xiranite", "name": "Liquid Xiranite", "count": 1}], "outputs": [{"id": "item_fbottle_ironenr_xiranite", "name": "Dense Ferrium Xiranite Bottle", "count": 1}], "craftTime": 12.0, "power": 20}]}
+{
+  "buildings": {
+    "item_port_cmpt_mc_1": {
+      "id": "item_port_cmpt_mc_1",
+      "name": "Fitting Unit",
+      "power": 20,
+      "width": 3,
+      "height": 3,
+      "category": "production_i"
+    },
+    "item_port_dismantler_1": {
+      "id": "item_port_dismantler_1",
+      "name": "Separating Unit",
+      "power": 20,
+      "width": 6,
+      "height": 4,
+      "category": "production_ii"
+    },
+    "item_port_dumper_1": {
+      "id": "item_port_dumper_1",
+      "name": "Fluid Supply Unit",
+      "power": 10,
+      "width": 3,
+      "height": 3,
+      "category": "misc"
+    },
+    "item_port_filling_pd_mc_1": {
+      "id": "item_port_filling_pd_mc_1",
+      "name": "Filling Unit",
+      "power": 20,
+      "width": 6,
+      "height": 4,
+      "category": "production_ii"
+    },
+    "item_port_furnance_1": {
+      "id": "item_port_furnance_1",
+      "name": "Refining Unit",
+      "power": 5,
+      "width": 3,
+      "height": 3,
+      "category": "production_i"
+    },
+    "item_port_grinder_1": {
+      "id": "item_port_grinder_1",
+      "name": "Shredding Unit",
+      "power": 5,
+      "width": 3,
+      "height": 3,
+      "category": "production_i"
+    },
+    "item_port_liquid_storager_1": {
+      "id": "item_port_liquid_storager_1",
+      "name": "Fluid Tank",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "depot_access"
+    },
+    "item_port_loader_1": {
+      "id": "item_port_loader_1",
+      "name": "Depot Loader",
+      "power": 0,
+      "width": 3,
+      "height": 1,
+      "category": "depot_access"
+    },
+    "item_port_log_hongs_bus": {
+      "id": "item_port_log_hongs_bus",
+      "name": "Depot Bus Section",
+      "power": 0,
+      "width": 8,
+      "height": 4,
+      "category": "depot_access"
+    },
+    "item_port_log_hongs_bus_source": {
+      "id": "item_port_log_hongs_bus_source",
+      "name": "Depot Bus Port",
+      "power": 0,
+      "width": 4,
+      "height": 4,
+      "category": "depot_access"
+    },
+    "item_port_mix_pool_1": {
+      "id": "item_port_mix_pool_1",
+      "name": "Reactor Crucible",
+      "power": 50,
+      "width": 5,
+      "height": 5,
+      "category": "production_ii"
+    },
+    "item_port_planter_1": {
+      "id": "item_port_planter_1",
+      "name": "Planting Unit",
+      "power": 20,
+      "width": 5,
+      "height": 5,
+      "category": "production_i"
+    },
+    "item_port_power_port_1": {
+      "id": "item_port_power_port_1",
+      "name": "Electric Nexus",
+      "power": 0,
+      "width": 1,
+      "height": 1,
+      "category": "misc"
+    },
+    "item_port_power_sta_1": {
+      "id": "item_port_power_sta_1",
+      "name": "Thermal Bank",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "power"
+    },
+    "item_port_seedcol_1": {
+      "id": "item_port_seedcol_1",
+      "name": "Seed-Picking Unit",
+      "power": 10,
+      "width": 5,
+      "height": 5,
+      "category": "production_i"
+    },
+    "item_port_shaper_1": {
+      "id": "item_port_shaper_1",
+      "name": "Moulding Unit",
+      "power": 10,
+      "width": 3,
+      "height": 3,
+      "category": "production_i"
+    },
+    "item_port_soil_bbflower_1": {
+      "id": "item_port_soil_bbflower_1",
+      "name": "Aketine Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_grass_1": {
+      "id": "item_port_soil_grass_1",
+      "name": "Jincao Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_grass_2": {
+      "id": "item_port_soil_grass_2",
+      "name": "Yazhen Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_moss_1": {
+      "id": "item_port_soil_moss_1",
+      "name": "Buckflower Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_moss_2": {
+      "id": "item_port_soil_moss_2",
+      "name": "Citrome Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_moss_3": {
+      "id": "item_port_soil_moss_3",
+      "name": "Sandleaf Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_sp_1": {
+      "id": "item_port_soil_sp_1",
+      "name": "Reed Rye Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_sp_2": {
+      "id": "item_port_soil_sp_2",
+      "name": "Tartpepper Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_sp_3": {
+      "id": "item_port_soil_sp_3",
+      "name": "Redjade Ginseng Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_soil_sp_4": {
+      "id": "item_port_soil_sp_4",
+      "name": "Amber Rice Plot",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "farming"
+    },
+    "item_port_sp_hub_1": {
+      "id": "item_port_sp_hub_1",
+      "name": "Protocol Automation-Core (PAC)",
+      "power": 0,
+      "width": 9,
+      "height": 9,
+      "category": "special"
+    },
+    "item_port_sp_sub_hub_1": {
+      "id": "item_port_sp_sub_hub_1",
+      "name": "Sub-PAC",
+      "power": 0,
+      "width": 9,
+      "height": 9,
+      "category": "special"
+    },
+    "item_port_squirter_1": {
+      "id": "item_port_squirter_1",
+      "name": "Sprinkler",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "misc"
+    },
+    "item_port_storager_1": {
+      "id": "item_port_storager_1",
+      "name": "Protocol Stash",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "depot_access"
+    },
+    "item_port_thickener_1": {
+      "id": "item_port_thickener_1",
+      "name": "Grinding Unit",
+      "power": 50,
+      "width": 6,
+      "height": 4,
+      "category": "production_ii"
+    },
+    "item_port_tools_asm_mc_1": {
+      "id": "item_port_tools_asm_mc_1",
+      "name": "Packaging Unit",
+      "power": 20,
+      "width": 6,
+      "height": 4,
+      "category": "production_ii"
+    },
+    "item_port_unloader_1": {
+      "id": "item_port_unloader_1",
+      "name": "Depot Unloader",
+      "power": 0,
+      "width": 3,
+      "height": 1,
+      "category": "depot_access"
+    },
+    "item_port_winder_1": {
+      "id": "item_port_winder_1",
+      "name": "Gearing Unit",
+      "power": 10,
+      "width": 6,
+      "height": 4,
+      "category": "production_ii"
+    },
+    "item_port_xiranite_oven_1": {
+      "id": "item_port_xiranite_oven_1",
+      "name": "Forge of the Sky",
+      "power": 50,
+      "width": 5,
+      "height": 5,
+      "category": "production_ii"
+    },
+    "item_port_battle_cannon_1": {
+      "id": "item_port_battle_cannon_1",
+      "name": "Grenade Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_cannon_2": {
+      "id": "item_port_battle_cannon_2",
+      "name": "HE Grenade Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_fog_1": {
+      "id": "item_port_battle_fog_1",
+      "name": "Marsh Gas Mk I",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_frost_1": {
+      "id": "item_port_battle_frost_1",
+      "name": "LN Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_laser_1": {
+      "id": "item_port_battle_laser_1",
+      "name": "Beam Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_lightning_1": {
+      "id": "item_port_battle_lightning_1",
+      "name": "Surge Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_medic_1": {
+      "id": "item_port_battle_medic_1",
+      "name": "Medical Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_shockwave_1": {
+      "id": "item_port_battle_shockwave_1",
+      "name": "Omnidirectional Sonic Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_sniper_1": {
+      "id": "item_port_battle_sniper_1",
+      "name": "Sentry Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_turret_1": {
+      "id": "item_port_battle_turret_1",
+      "name": "Gun Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_battle_turret_2": {
+      "id": "item_port_battle_turret_2",
+      "name": "Heavy Gun Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "combat"
+    },
+    "item_port_carrier_1": {
+      "id": "item_port_carrier_1",
+      "name": "Easy Stash",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "misc"
+    },
+    "item_port_marker_1": {
+      "id": "item_port_marker_1",
+      "name": "Memo Beacon",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "misc"
+    },
+    "item_port_miner_1": {
+      "id": "item_port_miner_1",
+      "name": "Portable Originium Rig",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "resourcing"
+    },
+    "item_port_miner_2": {
+      "id": "item_port_miner_2",
+      "name": "Electric Mining Rig",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "resourcing"
+    },
+    "item_port_miner_3": {
+      "id": "item_port_miner_3",
+      "name": "Electric Mining Rig Mk II",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "resourcing"
+    },
+    "item_port_power_diffuser_1": {
+      "id": "item_port_power_diffuser_1",
+      "name": "Electric Pylon",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "power"
+    },
+    "item_port_power_diffuser_2": {
+      "id": "item_port_power_diffuser_2",
+      "name": "Xiranite Pylon",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "power"
+    },
+    "item_port_power_pole_2": {
+      "id": "item_port_power_pole_2",
+      "name": "Relay Tower",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "power"
+    },
+    "item_port_power_pole_3": {
+      "id": "item_port_power_pole_3",
+      "name": "Xiranite Relay",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "power"
+    },
+    "item_port_power_terminal_1": {
+      "id": "item_port_power_terminal_1",
+      "name": "Electric Nexus",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "misc"
+    },
+    "item_port_pump_1": {
+      "id": "item_port_pump_1",
+      "name": "Fluid Pump",
+      "power": 0,
+      "width": 3,
+      "height": 3,
+      "category": "resourcing"
+    },
+    "item_port_travel_pole_1": {
+      "id": "item_port_travel_pole_1",
+      "name": "Zipline Pylon",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "misc"
+    },
+    "item_port_travel_pole_2": {
+      "id": "item_port_travel_pole_2",
+      "name": "Zipline Tower",
+      "power": 0,
+      "width": 2,
+      "height": 2,
+      "category": "misc"
+    }
+  },
+  "items": {
+    "item_bottled_food_1": "Canned Citrome [C]",
+    "item_bottled_food_2": "Canned Citrome [B]",
+    "item_bottled_food_3": "Canned Citrome [A]",
+    "item_bottled_food_4": "Jincao Drink",
+    "item_bottled_rec_hp_1": "Buck Capsule [C]",
+    "item_bottled_rec_hp_2": "Buck Capsule [B]",
+    "item_bottled_rec_hp_3": "Buck Capsule [A]",
+    "item_bottled_rec_hp_4": "Yazhen Syringe [C]",
+    "item_carbon_enr": "Stabilized Carbon",
+    "item_carbon_enr_powder": "Dense Carbon Powder",
+    "item_carbon_mtl": "Carbon",
+    "item_carbon_powder": "Carbon Powder",
+    "item_crystal_enr": "Packed Origocrust",
+    "item_crystal_enr_powder": "Dense Origocrust Powder",
+    "item_crystal_powder": "Origocrust Powder",
+    "item_crystal_shell": "Origocrust",
+    "item_equip_script_1": "Amethyst Component",
+    "item_equip_script_2": "Ferrium Component",
+    "item_equip_script_3": "Cryston Component",
+    "item_equip_script_4": "Xiranite Component",
+    "item_glass_bottle": "Amethyst Bottle",
+    "item_glass_cmpt": "Amethyst Part",
+    "item_glass_enr_bottle": "Cryston Bottle",
+    "item_glass_enr_cmpt": "Cryston Part",
+    "item_iron_bottle": "Ferrium Bottle",
+    "item_iron_cmpt": "Ferrium Part",
+    "item_iron_enr": "Steel",
+    "item_iron_enr_bottle": "Steel Bottle",
+    "item_iron_enr_cmpt": "Steel Part",
+    "item_iron_enr_powder": "Dense Ferrium Powder",
+    "item_iron_nugget": "Ferrium",
+    "item_iron_ore": "Ferrium Ore",
+    "item_iron_powder": "Ferrium Powder",
+    "item_liquid_plant_grass_1": "Jincao Solution",
+    "item_liquid_plant_grass_2": "Yazhen Solution",
+    "item_liquid_water": "Clean Water",
+    "item_liquid_xiranite": "Liquid Xiranite",
+    "item_log_belt_01": "Transport Belt",
+    "item_log_conditioner": "Item Control Port",
+    "item_log_connector": "Belt Bridge",
+    "item_log_converger": "Converger",
+    "item_log_pipe_01": "Pipe",
+    "item_log_pipe_conditioner": "Pipe Control Port",
+    "item_log_pipe_connector": "Pipe Bridge",
+    "item_log_pipe_converger": "Pipe Converger",
+    "item_log_pipe_splitter": "Pipe Splitter",
+    "item_log_splitter": "Splitter",
+    "item_muck_feces_1": "Burdo-Muck",
+    "item_muck_xiranite_1": "Bumper-Rich",
+    "item_originium_enr_powder": "Dense Originium Powder",
+    "item_originium_ore": "Originium Ore",
+    "item_originium_powder": "Originium Powder",
+    "item_plant_bbflower_1": "Aketine",
+    "item_plant_bbflower_powder_1": "Aketine Powder",
+    "item_plant_bbflower_seed_1": "Aketine Seed",
+    "item_plant_grass_1": "Jincao",
+    "item_plant_grass_2": "Yazhen",
+    "item_plant_grass_powder_1": "Jincao Powder",
+    "item_plant_grass_powder_2": "Yazhen Powder",
+    "item_plant_grass_seed_1": "Jincao Seed",
+    "item_plant_grass_seed_2": "Yazhen Seed",
+    "item_plant_moss_1": "Buckflower",
+    "item_plant_moss_2": "Citrome",
+    "item_plant_moss_3": "Sandleaf",
+    "item_plant_moss_enr_powder_1": "Ground Buckflower Powder",
+    "item_plant_moss_enr_powder_2": "Ground Citrome Powder",
+    "item_plant_moss_powder_1": "Buckflower Powder",
+    "item_plant_moss_powder_2": "Citrome Powder",
+    "item_plant_moss_powder_3": "Sandleaf Powder",
+    "item_plant_moss_seed_1": "Buckflower Seed",
+    "item_plant_moss_seed_2": "Citrome Seed",
+    "item_plant_moss_seed_3": "Sandleaf Seed",
+    "item_plant_sp_1": "Reed Rye",
+    "item_plant_sp_2": "Tartpepper",
+    "item_plant_sp_3": "Redjade Ginseng",
+    "item_plant_sp_4": "Amber Rice",
+    "item_plant_sp_seed_1": "Reed Rye Seed",
+    "item_plant_sp_seed_2": "Tartpepper Seed",
+    "item_plant_sp_seed_3": "Redjade Ginseng Seed",
+    "item_plant_sp_seed_4": "Amber Rice Seed",
+    "item_plant_tundra_wood": "Wood",
+    "item_proc_battery_1": "LC Valley Battery",
+    "item_proc_battery_2": "SC Valley Battery",
+    "item_proc_battery_3": "HC Valley Battery",
+    "item_proc_battery_4": "LC Wuling Battery",
+    "item_proc_bomb_1": "Industrial Explosive",
+    "item_quartz_enr": "Cryston Fiber",
+    "item_quartz_enr_powder": "Cryston Powder",
+    "item_quartz_glass": "Amethyst Fiber",
+    "item_quartz_powder": "Amethyst Powder",
+    "item_quartz_sand": "Amethyst Ore",
+    "item_xiranite_powder": "Xiranite",
+    "item_drop_agdisk_1": "Conductive Effigy Stone",
+    "item_drop_agfly_1": "Hollow Aggagrit",
+    "item_drop_agmelee_1": "Hard Aggagrit",
+    "item_drop_agrange_1": "Energized Aggagrit",
+    "item_drop_agshield_1": "Natural Chrysopolis Ingot",
+    "item_drop_dog_1": "Fillet",
+    "item_drop_erhound_1": "Pungent Jerky",
+    "item_drop_firebat_1": "Chromatic Lipids",
+    "item_drop_hscrane_1": "Grovenymph Pupa",
+    "item_drop_hsfly_1": "Waterlamp Glowbulb",
+    "item_drop_hshog_1": "Quillbeast Liver",
+    "item_drop_hsmino_1": "Qingbo Bamboo Chimes",
+    "item_drop_hsmob_1": "Young Bamboo Sprout",
+    "item_drop_hstiger_1": "Rakerbeast Longfur",
+    "item_drop_hvybow_1": "Haze-Soaked Ballista",
+    "item_drop_lbmob_1": "Powdered Grass Seed",
+    "item_drop_lbroshan_1": "Siegebreaker Gauntlets",
+    "item_drop_lbshamman_1": "Cartilage Bit",
+    "item_drop_lbshield_1": "Bitter Flour",
+    "item_drop_lbtough_1": "Shattered Axe Blade",
+    "item_drop_mimicw_1": "Nidwyrm Whiskers",
+    "item_drop_sandb_1": "Axehorn",
+    "item_drop_slimeml_1": "Slug Meat",
+    "item_drop_wgabyss_1": "Instant Vintage",
+    "item_drop_wgshoal_1": "Black Treacle",
+    "item_drop_wgslime_1": "Resilient Water",
+    "item_drop_wgthorns_1": "Natural Sparkling Water",
+    "item_galss_enr_bottle_liquid": "Cryston Bottle (Liquid)",
+    "item_glass_bottle_liquid": "Amethyst Bottle (Liquid)",
+    "item_iron_bottle_liquid": "Ferrium Bottle (Liquid)",
+    "item_iron_enr_bottle_liquid": "Steel Bottle (Liquid)",
+    "item_plant_crylplant_1_1": "Kalkodendra",
+    "item_plant_crylplant_1_2": "Chrysodendra",
+    "item_plant_crylplant_1_3": "Vitrodendra",
+    "item_plant_crylplant_2_1": "Blighted Jadeleaf",
+    "item_plant_crylplant_2_2": "False Aggela",
+    "item_plant_grass_spc_1": "Fluffed Jincao",
+    "item_plant_grass_spc_2": "Thorny Yazhen",
+    "item_plant_moss_spc_1": "Firebuckle",
+    "item_plant_moss_spc_2": "Umbraline",
+    "item_plant_mushroom_1_1": "Pink Bolete",
+    "item_plant_mushroom_1_2": "Red Bolete",
+    "item_plant_mushroom_1_3": "Ruby Bolete",
+    "item_plant_mushroom_2_1": "Bloodcap",
+    "item_plant_mushroom_2_2": "Cosmagaric",
+    "item_plant_spcstone_1_1": "Kalkonyx",
+    "item_plant_spcstone_1_2": "Auronyx",
+    "item_plant_spcstone_1_3": "Umbronyx",
+    "item_plant_spcstone_2_1": "Igneosite",
+    "item_plant_spcstone_2_2": "Wulingstone",
+    "item_plant_tundra_impts": "Plant Matter",
+    "item_plant_tundra_insect_1": "Glowbug",
+    "item_plant_tundra_insect_2": "Scorchbug",
+    "item_plant_tundra_insect_powder_1": "Glowbug Powder",
+    "item_plant_tundra_insect_powder_2": "Scorchbug Powder",
+    "item_port_cmpt_mc_1": "Fitting Unit",
+    "item_port_dismantler_1": "Separating Unit",
+    "item_port_dumper_1": "Fluid Supply Unit",
+    "item_port_filling_pd_mc_1": "Filling Unit",
+    "item_port_furnance_1": "Refining Unit",
+    "item_port_grinder_1": "Shredding Unit",
+    "item_port_liquid_storager_1": "Fluid Tank",
+    "item_port_loader_1": "Depot Loader",
+    "item_port_log_hongs_bus": "Depot Bus Section",
+    "item_port_log_hongs_bus_source": "Depot Bus Port",
+    "item_port_mix_pool_1": "Reactor Crucible",
+    "item_port_planter_1": "Planting Unit",
+    "item_port_power_port_1": "Electric Nexus",
+    "item_port_power_sta_1": "Thermal Bank",
+    "item_port_seedcol_1": "Seed-Picking Unit",
+    "item_port_shaper_1": "Moulding Unit",
+    "item_port_soil_bbflower_1": "Aketine Plot",
+    "item_port_soil_grass_1": "Jincao Plot",
+    "item_port_soil_grass_2": "Yazhen Plot",
+    "item_port_soil_moss_1": "Buckflower Plot",
+    "item_port_soil_moss_2": "Citrome Plot",
+    "item_port_soil_moss_3": "Sandleaf Plot",
+    "item_port_soil_sp_1": "Reed Rye Plot",
+    "item_port_soil_sp_2": "Tartpepper Plot",
+    "item_port_soil_sp_3": "Redjade Ginseng Plot",
+    "item_port_soil_sp_4": "Amber Rice Plot",
+    "item_port_sp_hub_1": "Protocol Automation-Core (PAC)",
+    "item_port_sp_sub_hub_1": "Sub-PAC",
+    "item_port_squirter_1": "Sprinkler",
+    "item_port_storager_1": "Protocol Stash",
+    "item_port_thickener_1": "Grinding Unit",
+    "item_port_tools_asm_mc_1": "Packaging Unit",
+    "item_port_unloader_1": "Depot Unloader",
+    "item_port_winder_1": "Gearing Unit",
+    "item_port_xiranite_oven_1": "Forge of the Sky",
+    "item_port_battle_cannon_1": "Grenade Tower",
+    "item_port_battle_cannon_2": "HE Grenade Tower",
+    "item_port_battle_fog_1": "Marsh Gas Mk I",
+    "item_port_battle_frost_1": "LN Tower",
+    "item_port_battle_laser_1": "Beam Tower",
+    "item_port_battle_lightning_1": "Surge Tower",
+    "item_port_battle_medic_1": "Medical Tower",
+    "item_port_battle_shockwave_1": "Omnidirectional Sonic Tower",
+    "item_port_battle_sniper_1": "Sentry Tower",
+    "item_port_battle_turret_1": "Gun Tower",
+    "item_port_battle_turret_2": "Heavy Gun Tower",
+    "item_port_carrier_1": "Easy Stash",
+    "item_port_marker_1": "Memo Beacon",
+    "item_port_miner_1": "Portable Originium Rig",
+    "item_port_miner_2": "Electric Mining Rig",
+    "item_port_miner_3": "Electric Mining Rig Mk II",
+    "item_port_power_diffuser_1": "Electric Pylon",
+    "item_port_power_diffuser_2": "Xiranite Pylon",
+    "item_port_power_pole_2": "Relay Tower",
+    "item_port_power_pole_3": "Xiranite Relay",
+    "item_port_power_terminal_1": "Electric Nexus",
+    "item_port_pump_1": "Fluid Pump",
+    "item_port_travel_pole_1": "Zipline Pylon",
+    "item_port_travel_pole_2": "Zipline Tower",
+    "item_quest_e1m5_inhibit": "Oripathy Suppressant",
+    "item_spaceship_cmpt_1": "Aerospace Material I",
+    "item_spaceship_cmpt_2": "Aerospace Material II",
+    "item_bottled_flower1spc_1": "Buckpill [S]",
+    "item_bottled_flower1spc_2": "Buckpill [L]",
+    "item_bottled_flower1spc_3": "Buckpill [Rf.]",
+    "item_bottled_flower2spc_1": "Citromix [S]",
+    "item_bottled_flower2spc_2": "Citromix [L]",
+    "item_bottled_flower2spc_3": "Citromix [Rf.]",
+    "item_bottled_grass1spc_1": "Jincao Tisane",
+    "item_bottled_grass1spc_2": "Jincao Infusion",
+    "item_bottled_grass2spc_1": "Yazhen Spray [S]",
+    "item_bottled_grass2spc_2": "Yazhen Spray [L]",
+    "item_bottled_insec1_1": "Arts Vial",
+    "item_bottled_insec1_2": "Arts Tube",
+    "item_bottled_moss_2_animal_1": "Bizarro Chill",
+    "item_corp1_animal_1": "Valley Pie",
+    "item_corp2_animal_1": "Meat Stir-Fry",
+    "item_corp4_grass2_1": "Garden Fried Rice",
+    "item_plant_grass_spc_powder_1": "Fluffed Jincao Powder",
+    "item_plant_grass_spc_powder_2": "Thorny Yazhen Powder",
+    "item_plant_moss_spc_powder_1": "Firebuckle Powder",
+    "item_plant_moss_spc_powder_2": "Citromix",
+    "item_agfly_1_agmelee_1_moss_2_1": "Cosmo-Melto Jelly",
+    "item_agmelee_1_moss_1_lbmob_1_1": "Meaty Buckflower Stew",
+    "item_agmelee_1_sp_2_slimeml_1_1": "Superhot Slug Gratin",
+    "item_agrange_1_erhound_1_sp_1_1": "Jakub's Legacy",
+    "item_agrange_1_lbshamman_bottled_1": "Simple Pain Relief Salve",
+    "item_agrange_1_moss_2_lbmob_1_1": "Handmade Weirdrop",
+    "item_bottled_insec2_1": "Kunst Vial",
+    "item_bottled_insec2_2": "Kunst Tube",
+    "item_bottled_moss_1_2_1": "Perplexing Medication",
+    "item_corp3_animal_1": "Ginseng Meat Stew",
+    "item_corp3_grass1_1": "Fortifying Infusion",
+    "item_corp4_animal_1": "Wuling Fried Rice",
+    "item_dog_1_slimeml_1_1": "Stew Meeting",
+    "item_erhound_1_agmelee_1_moss_1_1": "Hazefyre Blossom",
+    "item_firebat_1_agrange_1_1": "Edible Denstack",
+    "item_hsfly_1_slimeml_1_hsmob_1_1": "Simmered Xiranite Ball",
+    "item_hshog_1_hsmob_1_slimeml_1_1": "Wuling Flame-Boyance",
+    "item_lbmob_1_dog_1_moss_1_1": "Seš'qa Style Fillet",
+    "item_lbmob_1_lbshamman_1_sp_1_1": "Cartilage Tack",
+    "item_lbmob_1_moss_2_bottled_1": "Secret Stimulating Tisane",
+    "item_lbshamman_1_agmelee_1_1": "Instant Bone Soup",
+    "item_lbshield_1_slimeml_1_dog_1_1": "Old Man John's Burger",
+    "item_mimicw_1_moss_1_moss_2_1": "Sod-Turning Meat Soup",
+    "item_slimeml_1_agrange_1_moss_2_1": "Mini Honey Slugpudding",
+    "item_slimeml_1_erhound_1_agfly_1_1": "Pulled Slug Meat",
+    "item_sp_1_moss_1_agmelee_1_1": "Hub Emergency Ration",
+    "item_sp_2_moss_2_agrange_1_1": "Superhot Fruit Preserves",
+    "item_wgshoal_1_grass_1_grass_2_1": "Mini Sugar Painting",
+    "item_wgslime_1_hsmob_1_grass_2_1": "Chubby Lung Jellied Greens",
+    "item_wgslime_1_wgthorns_1_1": "Mystery Soda",
+    "item_wgthorns_1_hshog_1_hsmob_1_1": "Pan-Fried Double Crisp"
+  },
+  "recipes": [
+    {
+      "id": "component_glass_cmpt_1",
+      "name": "Amethyst Part",
+      "machine": "item_port_cmpt_mc_1",
+      "machineName": "Fitting Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_glass",
+          "name": "Amethyst Fiber",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_cmpt",
+          "name": "Amethyst Part",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "component_glass_enr_cmpt_1",
+      "name": "Cryston Part",
+      "machine": "item_port_cmpt_mc_1",
+      "machineName": "Fitting Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_enr",
+          "name": "Cryston Fiber",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_cmpt",
+          "name": "Cryston Part",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "component_iron_cmpt_1",
+      "name": "Ferrium Part",
+      "machine": "item_port_cmpt_mc_1",
+      "machineName": "Fitting Unit",
+      "inputs": [
+        {
+          "id": "item_iron_nugget",
+          "name": "Ferrium",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_cmpt",
+          "name": "Ferrium Part",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "component_iron_enr_cmpt_1",
+      "name": "Steel Part",
+      "machine": "item_port_cmpt_mc_1",
+      "machineName": "Fitting Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr",
+          "name": "Steel",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_cmpt",
+          "name": "Steel Part",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glass_grass_1_1",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glass_grass_2_1",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glass_water_1",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glass_xiranite_1",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glassenr_grass_1_1",
+      "name": "Cryston Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glassenr_grass_2_1",
+      "name": "Cryston Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glassenr_water_1",
+      "name": "Cryston Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_glassenr_xiranite_1",
+      "name": "Cryston Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_iron_grass_1_1",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_iron_grass_2_1",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_iron_water_1",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_iron_xiranite_1",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_ironenr_grass_1_1",
+      "name": "Steel Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_ironenr_grass_2_1",
+      "name": "Steel Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_ironenr_water_1",
+      "name": "Steel Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "dismantler_ironenr_xiranite_1",
+      "name": "Steel Bottle",
+      "machine": "item_port_dismantler_1",
+      "machineName": "Separating Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_food_1_1",
+      "name": "Canned Citrome [C]",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 5
+        },
+        {
+          "id": "item_plant_moss_powder_2",
+          "name": "Citrome Powder",
+          "count": 5
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_food_1",
+          "name": "Canned Citrome [C]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_food_2_1",
+      "name": "Canned Citrome [B]",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 10
+        },
+        {
+          "id": "item_plant_moss_powder_2",
+          "name": "Citrome Powder",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_food_2",
+          "name": "Canned Citrome [B]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_food_3_1",
+      "name": "Canned Citrome [A]",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 10
+        },
+        {
+          "id": "item_plant_moss_enr_powder_2",
+          "name": "Ground Citrome Powder",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_food_3",
+          "name": "Canned Citrome [A]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glass_grass_1",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glass_grass_2",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glass_water",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glass_xiranite",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glassenr_grass_1",
+      "name": "Cryston Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glassenr_grass_2",
+      "name": "Cryston Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glassenr_water",
+      "name": "Cryston Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_glassenr_xiranite",
+      "name": "Cryston Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_iron_grass_1",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_iron_grass_2",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_iron_water",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_iron_xiranite",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_ironenr_grass_1",
+      "name": "Steel Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_ironenr_grass_2",
+      "name": "Steel Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_ironenr_water",
+      "name": "Steel Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_ironenr_xiranite",
+      "name": "Steel Bottle",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_rec_hp_1_1",
+      "name": "Buck Capsule [C]",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 5
+        },
+        {
+          "id": "item_plant_moss_powder_1",
+          "name": "Buckflower Powder",
+          "count": 5
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_rec_hp_1",
+          "name": "Buck Capsule [C]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_rec_hp_2_1",
+      "name": "Buck Capsule [B]",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 10
+        },
+        {
+          "id": "item_plant_moss_powder_1",
+          "name": "Buckflower Powder",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_rec_hp_2",
+          "name": "Buck Capsule [B]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "filling_bottled_rec_hp_3_1",
+      "name": "Buck Capsule [A]",
+      "machine": "item_port_filling_pd_mc_1",
+      "machineName": "Filling Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 10
+        },
+        {
+          "id": "item_plant_moss_enr_powder_1",
+          "name": "Ground Buckflower Powder",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_rec_hp_3",
+          "name": "Buck Capsule [A]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "furnance_carbon_enr_1",
+      "name": "Stabilized Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_carbon_enr",
+          "name": "Stabilized Carbon",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_enr",
+          "name": "Stabilized Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_enr_powder_1",
+      "name": "Stabilized Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_enr_powder_1",
+          "name": "Ground Buckflower Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_enr",
+          "name": "Stabilized Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_enr_powder_2",
+      "name": "Stabilized Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_enr_powder_2",
+          "name": "Ground Citrome Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_enr",
+          "name": "Stabilized Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_material_1",
+      "name": "Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_1",
+          "name": "Buckflower",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_material_2",
+      "name": "Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_2",
+          "name": "Citrome",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_material_3",
+      "name": "Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_3",
+          "name": "Sandleaf",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_material_4",
+      "name": "Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_tundra_wood",
+          "name": "Wood",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_material_5",
+      "name": "Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_1",
+          "name": "Jincao",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_material_6",
+      "name": "Carbon",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_2",
+          "name": "Yazhen",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_powder_1",
+      "name": "Carbon Powder",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_powder_1",
+          "name": "Buckflower Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_powder_2",
+      "name": "Carbon Powder",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_powder_2",
+          "name": "Citrome Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_powder_3",
+      "name": "Carbon Powder",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 3
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_powder_4",
+      "name": "Carbon Powder",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_powder_1",
+          "name": "Jincao Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_carbon_powder_5",
+      "name": "Carbon Powder",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_powder_2",
+          "name": "Yazhen Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_crystal_enr_1",
+      "name": "Packed Origocrust",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_enr",
+          "name": "Packed Origocrust",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_enr",
+          "name": "Packed Origocrust",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_crystal_enr_powder_1",
+      "name": "Packed Origocrust",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_originium_enr_powder",
+          "name": "Dense Originium Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_enr",
+          "name": "Packed Origocrust",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_crystal_powder_1",
+      "name": "Origocrust Powder",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_originium_powder",
+          "name": "Originium Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_powder",
+          "name": "Origocrust Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_crystal_shell_1",
+      "name": "Origocrust",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_originium_ore",
+          "name": "Originium Ore",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_shell",
+          "name": "Origocrust",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_crystal_shell_2",
+      "name": "Origocrust",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_powder",
+          "name": "Origocrust Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_shell",
+          "name": "Origocrust",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_iron_enr_1",
+      "name": "Steel",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_powder",
+          "name": "Dense Ferrium Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr",
+          "name": "Steel",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_iron_nugget_1",
+      "name": "Ferrium",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_iron_ore",
+          "name": "Ferrium Ore",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_nugget",
+          "name": "Ferrium",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_iron_nugget_2",
+      "name": "Ferrium",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_iron_powder",
+          "name": "Ferrium Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_nugget",
+          "name": "Ferrium",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_quartz_enr_1",
+      "name": "Cryston Fiber",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_enr_powder",
+          "name": "Cryston Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_quartz_enr",
+          "name": "Cryston Fiber",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_quartz_glass_1",
+      "name": "Amethyst Fiber",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_sand",
+          "name": "Amethyst Ore",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_quartz_glass",
+          "name": "Amethyst Fiber",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "furnance_quartz_glass_2",
+      "name": "Amethyst Fiber",
+      "machine": "item_port_furnance_1",
+      "machineName": "Refining Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_powder",
+          "name": "Amethyst Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_quartz_glass",
+          "name": "Amethyst Fiber",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_carbon_powder_1",
+      "name": "Carbon Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_carbon_mtl",
+          "name": "Carbon",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_crystal_powder_1",
+      "name": "Origocrust Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_shell",
+          "name": "Origocrust",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_powder",
+          "name": "Origocrust Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_iron_powder_1",
+      "name": "Ferrium Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_iron_nugget",
+          "name": "Ferrium",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_powder",
+          "name": "Ferrium Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_originium_powder_1",
+      "name": "Originium Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_originium_ore",
+          "name": "Originium Ore",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_originium_powder",
+          "name": "Originium Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_plant_bbflower_powder_1_1",
+      "name": "Aketine Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_bbflower_1",
+          "name": "Aketine",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_bbflower_powder_1",
+          "name": "Aketine Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_plant_grass_powder_1_1",
+      "name": "Jincao Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_1",
+          "name": "Jincao",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_grass_powder_1",
+          "name": "Jincao Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_plant_grass_powder_2_1",
+      "name": "Yazhen Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_2",
+          "name": "Yazhen",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_grass_powder_2",
+          "name": "Yazhen Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_plant_moss_powder_1_1",
+      "name": "Buckflower Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_1",
+          "name": "Buckflower",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_powder_1",
+          "name": "Buckflower Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_plant_moss_powder_2_1",
+      "name": "Citrome Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_2",
+          "name": "Citrome",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_powder_2",
+          "name": "Citrome Powder",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_plant_moss_powder_3_1",
+      "name": "Sandleaf Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_3",
+          "name": "Sandleaf",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 3
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "grinder_quartz_powder_1",
+      "name": "Amethyst Powder",
+      "machine": "item_port_grinder_1",
+      "machineName": "Shredding Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_glass",
+          "name": "Amethyst Fiber",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_quartz_powder",
+          "name": "Amethyst Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 5
+    },
+    {
+      "id": "planter_plant_bbflower_1",
+      "name": "Aketine",
+      "machine": "item_port_planter_1",
+      "machineName": "Planting Unit",
+      "inputs": [
+        {
+          "id": "item_plant_bbflower_seed_1",
+          "name": "Aketine Seed",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_bbflower_1",
+          "name": "Aketine",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "planter_plant_grass_1_1",
+      "name": "Jincao",
+      "machine": "item_port_planter_1",
+      "machineName": "Planting Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_seed_1",
+          "name": "Jincao Seed",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_grass_1",
+          "name": "Jincao",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "planter_plant_grass_2_1",
+      "name": "Yazhen",
+      "machine": "item_port_planter_1",
+      "machineName": "Planting Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_seed_2",
+          "name": "Yazhen Seed",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_grass_2",
+          "name": "Yazhen",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "planter_plant_moss_1_1",
+      "name": "Buckflower",
+      "machine": "item_port_planter_1",
+      "machineName": "Planting Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_seed_1",
+          "name": "Buckflower Seed",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_1",
+          "name": "Buckflower",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "planter_plant_moss_2_1",
+      "name": "Citrome",
+      "machine": "item_port_planter_1",
+      "machineName": "Planting Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_seed_2",
+          "name": "Citrome Seed",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_2",
+          "name": "Citrome",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "planter_plant_moss_3_1",
+      "name": "Sandleaf",
+      "machine": "item_port_planter_1",
+      "machineName": "Planting Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_seed_3",
+          "name": "Sandleaf Seed",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_3",
+          "name": "Sandleaf",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 20
+    },
+    {
+      "id": "pool_liquid_liquid_xiranite_1",
+      "name": "Liquid Xiranite",
+      "machine": "item_port_mix_pool_1",
+      "machineName": "Reactor Crucible",
+      "inputs": [
+        {
+          "id": "item_xiranite_powder",
+          "name": "Xiranite",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "pool_liquid_plant_grass_1_1",
+      "name": "Jincao Solution",
+      "machine": "item_port_mix_pool_1",
+      "machineName": "Reactor Crucible",
+      "inputs": [
+        {
+          "id": "item_plant_grass_powder_1",
+          "name": "Jincao Powder",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_liquid_plant_grass_1",
+          "name": "Jincao Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "pool_liquid_plant_grass_2_1",
+      "name": "Yazhen Solution",
+      "machine": "item_port_mix_pool_1",
+      "machineName": "Reactor Crucible",
+      "inputs": [
+        {
+          "id": "item_plant_grass_powder_2",
+          "name": "Yazhen Powder",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_liquid_plant_grass_2",
+          "name": "Yazhen Solution",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "seedcollector_plant_bbflower_1",
+      "name": "Aketine Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_bbflower_1",
+          "name": "Aketine",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_bbflower_seed_1",
+          "name": "Aketine Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_grass_1_1",
+      "name": "Jincao Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_1",
+          "name": "Jincao",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_grass_seed_1",
+          "name": "Jincao Seed",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_grass_2_1",
+      "name": "Yazhen Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_grass_2",
+          "name": "Yazhen",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_grass_seed_2",
+          "name": "Yazhen Seed",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_moss_1_1",
+      "name": "Buckflower Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_1",
+          "name": "Buckflower",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_seed_1",
+          "name": "Buckflower Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_moss_2_1",
+      "name": "Citrome Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_2",
+          "name": "Citrome",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_seed_2",
+          "name": "Citrome Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_moss_3_1",
+      "name": "Sandleaf Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_3",
+          "name": "Sandleaf",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_seed_3",
+          "name": "Sandleaf Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_sp_1",
+      "name": "Reed Rye Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_sp_1",
+          "name": "Reed Rye",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_sp_seed_1",
+          "name": "Reed Rye Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_sp_2",
+      "name": "Tartpepper Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_sp_2",
+          "name": "Tartpepper",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_sp_seed_2",
+          "name": "Tartpepper Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_sp_3",
+      "name": "Redjade Ginseng Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_sp_3",
+          "name": "Redjade Ginseng",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_sp_seed_3",
+          "name": "Redjade Ginseng Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "seedcollector_plant_sp_4",
+      "name": "Amber Rice Seed",
+      "machine": "item_port_seedcol_1",
+      "machineName": "Seed-Picking Unit",
+      "inputs": [
+        {
+          "id": "item_plant_sp_4",
+          "name": "Amber Rice",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_sp_seed_4",
+          "name": "Amber Rice Seed",
+          "count": 2
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "shaper_glass_bottle_1",
+      "name": "Amethyst Bottle",
+      "machine": "item_port_shaper_1",
+      "machineName": "Moulding Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_glass",
+          "name": "Amethyst Fiber",
+          "count": 2
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_bottle",
+          "name": "Amethyst Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "shaper_glass_enr_bottle_1",
+      "name": "Cryston Bottle",
+      "machine": "item_port_shaper_1",
+      "machineName": "Moulding Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_enr",
+          "name": "Cryston Fiber",
+          "count": 2
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_glass_enr_bottle",
+          "name": "Cryston Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "shaper_iron_bottle_1",
+      "name": "Ferrium Bottle",
+      "machine": "item_port_shaper_1",
+      "machineName": "Moulding Unit",
+      "inputs": [
+        {
+          "id": "item_iron_nugget",
+          "name": "Ferrium",
+          "count": 2
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "shaper_iron_enr_bottle_1",
+      "name": "Steel Bottle",
+      "machine": "item_port_shaper_1",
+      "machineName": "Moulding Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr",
+          "name": "Steel",
+          "count": 2
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_bottle",
+          "name": "Steel Bottle",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 10
+    },
+    {
+      "id": "thickener_carbon_enr_powder_1",
+      "name": "Dense Carbon Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_carbon_powder",
+          "name": "Carbon Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_carbon_enr_powder",
+          "name": "Dense Carbon Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "thickener_crystal_enr_powder_1",
+      "name": "Dense Origocrust Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_powder",
+          "name": "Origocrust Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_crystal_enr_powder",
+          "name": "Dense Origocrust Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "thickener_iron_enr_powder_1",
+      "name": "Dense Ferrium Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_iron_powder",
+          "name": "Ferrium Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_iron_enr_powder",
+          "name": "Dense Ferrium Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "thickener_originium_enr_powder_1",
+      "name": "Dense Originium Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_originium_powder",
+          "name": "Originium Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_originium_enr_powder",
+          "name": "Dense Originium Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "thickener_plant_moss_enr_powder_1_1",
+      "name": "Ground Buckflower Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_powder_1",
+          "name": "Buckflower Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_enr_powder_1",
+          "name": "Ground Buckflower Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "thickener_plant_moss_enr_powder_2_1",
+      "name": "Ground Citrome Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_plant_moss_powder_2",
+          "name": "Citrome Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_plant_moss_enr_powder_2",
+          "name": "Ground Citrome Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "thickener_quartz_enr_powder_1",
+      "name": "Cryston Powder",
+      "machine": "item_port_thickener_1",
+      "machineName": "Grinding Unit",
+      "inputs": [
+        {
+          "id": "item_quartz_powder",
+          "name": "Amethyst Powder",
+          "count": 2
+        },
+        {
+          "id": "item_plant_moss_powder_3",
+          "name": "Sandleaf Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_quartz_enr_powder",
+          "name": "Cryston Powder",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "tools_proc_battery_1_1",
+      "name": "LC Valley Battery",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_glass_cmpt",
+          "name": "Amethyst Part",
+          "count": 5
+        },
+        {
+          "id": "item_originium_powder",
+          "name": "Originium Powder",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_proc_battery_1",
+          "name": "LC Valley Battery",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "tools_proc_battery_2_1",
+      "name": "SC Valley Battery",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_iron_cmpt",
+          "name": "Ferrium Part",
+          "count": 10
+        },
+        {
+          "id": "item_originium_powder",
+          "name": "Originium Powder",
+          "count": 15
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_proc_battery_2",
+          "name": "SC Valley Battery",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "tools_proc_battery_3_1",
+      "name": "HC Valley Battery",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_iron_enr_cmpt",
+          "name": "Steel Part",
+          "count": 10
+        },
+        {
+          "id": "item_originium_enr_powder",
+          "name": "Dense Originium Powder",
+          "count": 15
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_proc_battery_3",
+          "name": "HC Valley Battery",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "tools_proc_battery_4_1",
+      "name": "LC Wuling Battery",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_xiranite_powder",
+          "name": "Xiranite",
+          "count": 5
+        },
+        {
+          "id": "item_originium_enr_powder",
+          "name": "Dense Originium Powder",
+          "count": 15
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_proc_battery_4",
+          "name": "LC Wuling Battery",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "tools_proc_bomb_1_1",
+      "name": "Industrial Explosive",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_glass_cmpt",
+          "name": "Amethyst Part",
+          "count": 5
+        },
+        {
+          "id": "item_plant_bbflower_powder_1",
+          "name": "Aketine Powder",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_proc_bomb_1",
+          "name": "Industrial Explosive",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "tools_proc_food_4_1",
+      "name": "Jincao Drink",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_iron_cmpt",
+          "name": "Ferrium Part",
+          "count": 10
+        },
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 5
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_food_4",
+          "name": "Jincao Drink",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "tools_proc_rec_hp_4_1",
+      "name": "Yazhen Syringe [C]",
+      "machine": "item_port_tools_asm_mc_1",
+      "machineName": "Packaging Unit",
+      "inputs": [
+        {
+          "id": "item_iron_cmpt",
+          "name": "Ferrium Part",
+          "count": 10
+        },
+        {
+          "id": "item_iron_bottle",
+          "name": "Ferrium Bottle",
+          "count": 5
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_bottled_rec_hp_4",
+          "name": "Yazhen Syringe [C]",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 20
+    },
+    {
+      "id": "winder_equip_script_1",
+      "name": "Amethyst Component",
+      "machine": "item_port_winder_1",
+      "machineName": "Gearing Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_shell",
+          "name": "Origocrust",
+          "count": 5
+        },
+        {
+          "id": "item_quartz_glass",
+          "name": "Amethyst Fiber",
+          "count": 5
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_equip_script_1",
+          "name": "Amethyst Component",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 10
+    },
+    {
+      "id": "winder_equip_script_2",
+      "name": "Ferrium Component",
+      "machine": "item_port_winder_1",
+      "machineName": "Gearing Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_shell",
+          "name": "Origocrust",
+          "count": 10
+        },
+        {
+          "id": "item_iron_nugget",
+          "name": "Ferrium",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_equip_script_2",
+          "name": "Ferrium Component",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 10
+    },
+    {
+      "id": "winder_equip_script_3",
+      "name": "Cryston Component",
+      "machine": "item_port_winder_1",
+      "machineName": "Gearing Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_enr",
+          "name": "Packed Origocrust",
+          "count": 10
+        },
+        {
+          "id": "item_quartz_enr",
+          "name": "Cryston Fiber",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_equip_script_3",
+          "name": "Cryston Component",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 10
+    },
+    {
+      "id": "winder_equip_script_4",
+      "name": "Xiranite Component",
+      "machine": "item_port_winder_1",
+      "machineName": "Gearing Unit",
+      "inputs": [
+        {
+          "id": "item_crystal_enr",
+          "name": "Packed Origocrust",
+          "count": 10
+        },
+        {
+          "id": "item_xiranite_powder",
+          "name": "Xiranite",
+          "count": 10
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_equip_script_4",
+          "name": "Xiranite Component",
+          "count": 1
+        }
+      ],
+      "craftTime": 10,
+      "power": 10
+    },
+    {
+      "id": "xiranite_oven_muck_xiranite_1",
+      "name": "Bumper-Rich",
+      "machine": "item_port_xiranite_oven_1",
+      "machineName": "Forge of the Sky",
+      "inputs": [
+        {
+          "id": "item_muck_feces_1",
+          "name": "Burdo-Muck",
+          "count": 1
+        },
+        {
+          "id": "item_liquid_xiranite",
+          "name": "Liquid Xiranite",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_muck_xiranite_1",
+          "name": "Bumper-Rich",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "xiranite_oven_xiranite_powder_1",
+      "name": "Xiranite",
+      "machine": "item_port_xiranite_oven_1",
+      "machineName": "Forge of the Sky",
+      "inputs": [
+        {
+          "id": "item_carbon_enr",
+          "name": "Stabilized Carbon",
+          "count": 2
+        },
+        {
+          "id": "item_liquid_water",
+          "name": "Clean Water",
+          "count": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_xiranite_powder",
+          "name": "Xiranite",
+          "count": 1
+        }
+      ],
+      "craftTime": 2,
+      "power": 50
+    },
+    {
+      "id": "power_sta_originium_ore",
+      "name": "power_sta_originium_ore",
+      "machine": "item_port_power_sta_1",
+      "machineName": "Thermal Bank",
+      "inputs": [
+        {
+          "id": "item_originium_ore",
+          "name": "Originium Ore",
+          "count": 1
+        }
+      ],
+      "outputs": [],
+      "craftTime": 8,
+      "power": -50
+    },
+    {
+      "id": "power_sta_proc_battery_1",
+      "name": "power_sta_proc_battery_1",
+      "machine": "item_port_power_sta_1",
+      "machineName": "Thermal Bank",
+      "inputs": [
+        {
+          "id": "item_proc_battery_1",
+          "name": "LC Valley Battery",
+          "count": 1
+        }
+      ],
+      "outputs": [],
+      "craftTime": 40,
+      "power": -220
+    },
+    {
+      "id": "power_sta_proc_battery_2",
+      "name": "power_sta_proc_battery_2",
+      "machine": "item_port_power_sta_1",
+      "machineName": "Thermal Bank",
+      "inputs": [
+        {
+          "id": "item_proc_battery_2",
+          "name": "SC Valley Battery",
+          "count": 1
+        }
+      ],
+      "outputs": [],
+      "craftTime": 40,
+      "power": -420
+    },
+    {
+      "id": "power_sta_proc_battery_3",
+      "name": "power_sta_proc_battery_3",
+      "machine": "item_port_power_sta_1",
+      "machineName": "Thermal Bank",
+      "inputs": [
+        {
+          "id": "item_proc_battery_3",
+          "name": "HC Valley Battery",
+          "count": 1
+        }
+      ],
+      "outputs": [],
+      "craftTime": 40,
+      "power": -1100
+    },
+    {
+      "id": "power_sta_proc_battery_4",
+      "name": "power_sta_proc_battery_4",
+      "machine": "item_port_power_sta_1",
+      "machineName": "Thermal Bank",
+      "inputs": [
+        {
+          "id": "item_proc_battery_4",
+          "name": "LC Wuling Battery",
+          "count": 1
+        }
+      ],
+      "outputs": [],
+      "craftTime": 40,
+      "power": -1600
+    }
+  ]
+}
