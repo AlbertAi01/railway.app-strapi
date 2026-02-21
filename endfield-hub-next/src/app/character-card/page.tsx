@@ -201,7 +201,8 @@ function computeStats(
   breakthrough?: number,
   weaponData?: WeaponData | null,
   weaponLevel?: number,
-  equippedPieces?: ({ piece: GearPiece; setName: string } | null)[]
+  equippedPieces?: ({ piece: GearPiece; setName: string } | null)[],
+  affinity?: number
 ) {
   // 1. Get real operator stats at level from progression data
   const bt = breakthrough ?? Math.min(Math.floor(level / 20), 4);
@@ -238,7 +239,27 @@ function computeStats(
     }
   }
 
-  // 3. Add weapon ATK
+  // 3. Add affinity attribute bonus
+  // Each affinity level grants a cumulative flat bonus to the main attribute (+5 per level)
+  // and at levels 3+, also to the secondary attribute (+5 per level above 2)
+  if (affinity && affinity > 0) {
+    const opData = OPERATOR_STATS[char.Name];
+    const mainAttr = opData?.mainAttribute;
+    const secAttr = opData?.secondaryAttribute;
+    const mainBonus = affinity * 5;
+    const secBonus = affinity >= 3 ? (affinity - 2) * 5 : 0;
+    const applyBonus = (attr: string | undefined, bonus: number) => {
+      if (!attr || bonus <= 0) return;
+      if (attr === 'str') str += bonus;
+      else if (attr === 'agi') agi += bonus;
+      else if (attr === 'int') int += bonus;
+      else if (attr === 'wil') wil += bonus;
+    };
+    applyBonus(mainAttr, mainBonus);
+    applyBonus(secAttr, secBonus);
+  }
+
+  // 4 (was 3). Add weapon ATK
   let weaponAtk = 0;
   if (weaponData && weaponLevel) {
     weaponAtk = getAtkAtLevel(weaponData.BaseAtk, weaponData.MaxAtk, weaponLevel);
@@ -711,7 +732,7 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
     return piece ? { piece, setName: slot.setName, artifice: slot.artifice } : null;
   });
 
-  const stats = computeStats(char, state.level, state.potential, state.charBreakthrough, weaponData, state.weaponLevel, equippedPieces);
+  const stats = computeStats(char, state.level, state.potential, state.charBreakthrough, weaponData, state.weaponLevel, equippedPieces, state.affinity);
 
   const setCount: Record<string, number> = {};
   equippedPieces.forEach(ep => { if (ep && ep.setName) setCount[ep.setName] = (setCount[ep.setName] || 0) + 1; });
@@ -1310,13 +1331,21 @@ function CardCanvas({ state, theme, char, weapon, colorScheme }: {
             <div style={{ width: 5, height: 5, background: ac, transform: 'rotate(45deg)', opacity: 0.7 }} />
             <span style={{ fontSize: 8, color: '#aaa', letterSpacing: 1.5, fontWeight: 700 }}>RIOS-CARD-001</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {charIcon && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={charIcon} alt={char.Name} style={{ width: 16, height: 16, objectFit: 'contain', opacity: 0.8 }} />
-            )}
-            <span style={{ fontSize: 8, color: '#ccc', fontWeight: 700, letterSpacing: 1 }}>{char.Element} · {char.Role}</span>
-          </div>
+          {state.username ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 8, color: '#ccc', fontWeight: 700, letterSpacing: 0.8 }}>{state.username}</span>
+              {state.userCode && <span style={{ fontSize: 8, color: '#999', letterSpacing: 0.5 }}>#{state.userCode}</span>}
+              {state.server && <span style={{ fontSize: 7, color: '#777', padding: '0 3px', border: '1px solid #333' }}>{state.server}</span>}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {charIcon && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={charIcon} alt={char.Name} style={{ width: 16, height: 16, objectFit: 'contain', opacity: 0.8 }} />
+              )}
+              <span style={{ fontSize: 8, color: '#ccc', fontWeight: 700, letterSpacing: 1 }}>{char.Element} · {char.Role}</span>
+            </div>
+          )}
           <span style={{ fontSize: 8, color: '#aaa', letterSpacing: 1.5, fontFamily: FM }}>{operatorID}</span>
         </div>
       </div>

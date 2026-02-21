@@ -252,6 +252,19 @@ function BlueprintsContent() {
         lastUpdated="2026-02-20"
       />
 
+      {/* ──── My Submissions Auth Gate ──── */}
+      {showMySubmissions && !isAuthenticated && (
+        <div className="rios-card clip-corner-tl p-8 text-center space-y-4 mb-8">
+          <span className="diamond diamond-md diamond-accent mx-auto block" />
+          <h3 className="text-xl font-bold text-white font-tactical uppercase">Access Restricted</h3>
+          <p className="text-[var(--color-text-secondary)]">Create an account to submit and track your blueprints.</p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/signup?returnTo=%2Fblueprints%3Fview%3Dmy" className="px-6 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-yellow-300 transition-colors">Sign Up</Link>
+            <Link href="/login?returnTo=%2Fblueprints%3Fview%3Dmy" className="px-6 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors">Log In</Link>
+          </div>
+        </div>
+      )}
+
       {/* ──── My Submissions Panel ──── */}
       {showMySubmissions && userSubmissions.length > 0 && (
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 mb-8 space-y-3">

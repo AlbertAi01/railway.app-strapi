@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, BookOpen, Filter } from 'lucide-react';
+import { Search, BookOpen, Filter, Clock, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { usePersistStore } from '@/store/persistStore';
 
 interface RecipeItem {
   id: string;
@@ -54,6 +55,9 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [buildingFilter, setBuildingFilter] = useState('all');
+
+  // Recent recipes and bookmarks from persist store
+  const { recentRecipes, recipeBookmarks } = usePersistStore();
 
   useEffect(() => {
     fetch('/data/factory-recipes.json')
@@ -175,6 +179,78 @@ export default function RecipesPage() {
             </button>
           ))}
         </div>
+
+        {/* Recent Recipes Section */}
+        {recentRecipes.length > 0 && (
+          <div className="mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-br p-5">
+            <h2 className="text-sm font-tactical uppercase text-[var(--color-accent)] mb-4 flex items-center gap-2">
+              <Clock size={16} />
+              Recently Viewed
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {recentRecipes.slice(0, 6).map((recent) => (
+                <Link
+                  key={recent.recipeId}
+                  href={`/factory-planner/recipes/${itemIdToSlug(recent.recipeId)}`}
+                  className="flex-shrink-0 bg-[var(--color-bg)] border border-[var(--color-border)] clip-corner-tl p-3 hover:border-[var(--color-accent)] transition-colors min-w-[140px]"
+                  title={recent.recipeName}
+                >
+                  <div className="w-12 h-12 mx-auto mb-2 relative bg-[#0a0a0a] border border-[var(--color-border)] flex items-center justify-center overflow-hidden">
+                    <Image
+                      src={`${ITEM_ICON_URL}/${recent.recipeId}.png`}
+                      alt={recent.recipeName}
+                      width={48}
+                      height={48}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="text-xs text-white font-bold truncate text-center">
+                    {recent.recipeName}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bookmarked Recipes Section */}
+        {recipeBookmarks.length > 0 && (
+          <div className="mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-br p-5">
+            <h2 className="text-sm font-tactical uppercase text-[var(--color-accent)] mb-4 flex items-center gap-2">
+              <Star size={16} className="fill-current" />
+              Bookmarked Recipes
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {recipeBookmarks.slice(0, 6).map((recipeId) => (
+                <Link
+                  key={recipeId}
+                  href={`/factory-planner/recipes/${itemIdToSlug(recipeId)}`}
+                  className="flex-shrink-0 bg-[var(--color-bg)] border border-[var(--color-border)] clip-corner-tl p-3 hover:border-[var(--color-accent)] transition-colors min-w-[140px]"
+                >
+                  <div className="w-12 h-12 mx-auto mb-2 relative bg-[#0a0a0a] border border-[var(--color-border)] flex items-center justify-center overflow-hidden">
+                    <Image
+                      src={`${ITEM_ICON_URL}/${recipeId}.png`}
+                      alt={factoryData?.items[recipeId] || recipeId}
+                      width={48}
+                      height={48}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="text-xs text-white font-bold truncate text-center">
+                    {factoryData?.items[recipeId] || recipeId}
+                  </p>
+                </Link>
+              ))}
+            </div>
+            {recipeBookmarks.length > 6 && (
+              <Link href="/saves" className="text-xs text-[var(--color-accent)] hover:underline mt-3 inline-block">
+                View all {recipeBookmarks.length} bookmarks →
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Item Count */}
         <p className="text-base text-[var(--color-text-muted)] mb-6">{filteredItems.length} Items</p>

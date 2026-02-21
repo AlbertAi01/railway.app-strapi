@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Calendar, Clock, Copy, Check, ExternalLink, Gift } from 'lucide-react';
+import { Calendar, Clock, Copy, Check, Gift } from 'lucide-react';
 
 /* ──────────────────────────────── Types ──────────────────────────────── */
 
@@ -151,11 +151,8 @@ function EventTimeline({ events }: { events: GameEvent[] }) {
                 style={{ left: `${nowPct}%` }}
               />
               {/* Bar */}
-              <a
-                href={event.url || undefined}
-                target={event.url?.startsWith('http') ? '_blank' : undefined}
-                rel={event.url?.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="absolute top-0.5 bottom-0.5 flex items-center overflow-hidden transition-all cursor-pointer hover:brightness-125"
+              <div
+                className="absolute top-0.5 bottom-0.5 flex items-center overflow-hidden"
                 style={{
                   left: `${leftPct}%`,
                   width: `${widthPct}%`,
@@ -187,7 +184,7 @@ function EventTimeline({ events }: { events: GameEvent[] }) {
                         : 'Ended'}
                   </span>
                 </div>
-              </a>
+              </div>
               {/* Tooltip on hover */}
               <div className="absolute left-1/2 -translate-x-1/2 -top-14 hidden group-hover:flex z-30 pointer-events-none">
                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-1.5 shadow-lg whitespace-nowrap">

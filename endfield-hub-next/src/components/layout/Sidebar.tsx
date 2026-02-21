@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
   Home, Users, Sword, Shield, BookOpen, Factory, Map,
   Trophy, Target, Dice6, LayoutGrid, Star,
@@ -16,7 +16,7 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ReactNode;
-  children?: { label: string; path: string; icon: React.ReactNode }[];
+  children?: { label: string; path: string; icon: React.ReactNode; requiresAuth?: boolean }[];
   isNew?: boolean;
   section?: string;
 }
@@ -46,7 +46,7 @@ const navigation: NavItem[] = [
     label: 'Builds', path: '/builds', icon: <Hammer size={18} />,
     children: [
       { label: 'Browse Builds', path: '/builds', icon: <Hammer size={16} /> },
-      { label: 'My Builds', path: '/builds?view=my-builds', icon: <Bookmark size={16} /> },
+      { label: 'My Builds', path: '/builds?view=my-builds', icon: <Bookmark size={16} />, requiresAuth: true },
       { label: 'Create Build', path: '/builds?view=create', icon: <Plus size={16} /> },
       { label: 'Team Builder', path: '/team-builder', icon: <Puzzle size={16} /> },
       { label: 'Tier List', path: '/tier-list', icon: <LayoutGrid size={16} /> },
@@ -58,7 +58,7 @@ const navigation: NavItem[] = [
     label: 'Factory Planner', path: '/factory-planner', icon: <Factory size={18} />,
     children: [
       { label: 'Browse Blueprints', path: '/blueprints', icon: <LayoutGrid size={16} /> },
-      { label: 'My Blueprints', path: '/blueprints?view=my', icon: <Bookmark size={16} /> },
+      { label: 'My Blueprints', path: '/blueprints?view=my', icon: <Bookmark size={16} />, requiresAuth: true },
       { label: 'Create Factory', path: '/factory-planner/planner', icon: <Factory size={16} /> },
       { label: 'Recipes', path: '/recipes', icon: <BookOpen size={16} /> },
     ],
@@ -83,8 +83,16 @@ const navigation: NavItem[] = [
 function SidebarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuthStore();
+
+  const handleAuthRequired = (e: React.MouseEvent, path: string) => {
+    if (!user) {
+      e.preventDefault();
+      router.push(`/signup?returnTo=${encodeURIComponent(path)}`);
+    }
+  };
 
   // Build full URL path for matching nav items with query params
   const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
@@ -181,7 +189,10 @@ function SidebarContent() {
                         <Link
                           key={child.path}
                           href={child.path}
-                          onClick={() => setMobileOpen(false)}
+                          onClick={(e) => {
+                            if (child.requiresAuth) handleAuthRequired(e, child.path);
+                            setMobileOpen(false);
+                          }}
                           className={`flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] font-medium transition-all rounded-sm ${
                             isActive(child.path)
                               ? 'text-[var(--color-accent)] bg-[var(--color-accent)]/8'

@@ -2,7 +2,9 @@
 
 import React, { useRef, useEffect, useState, useReducer, useCallback, useMemo, startTransition } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { usePersistStore } from '@/store/persistStore';
 import { syncToCloud, loadFromCloud } from '@/lib/userSync';
+import { SCRAPED_BLUEPRINTS, type BlueprintEntry } from '@/data/blueprints';
 import {
   FileText,
   Database,
@@ -309,6 +311,9 @@ interface State {
   movingBuildingData: PlacedBuilding | null; // The building data being moved
   // Rotation for placement/moving
   placementRotation: number; // 0, 90, 180, 270
+  // Blueprint simulation banner
+  simulatedBlueprint: BlueprintEntry | null;
+  showBlueprintBanner: boolean;
 }
 
 type Action =
@@ -342,7 +347,9 @@ type Action =
   | { type: 'DROP_MOVING_BUILDING' }
   | { type: 'CANCEL_MOVE' }
   | { type: 'SET_PLACEMENT_ROTATION'; rotation: number }
-  | { type: 'ROTATE_PLACEMENT' };
+  | { type: 'ROTATE_PLACEMENT' }
+  | { type: 'LOAD_BLUEPRINT_SIMULATION'; buildings: PlacedBuilding[]; outpostConfig?: string; blueprint: BlueprintEntry }
+  | { type: 'DISMISS_BLUEPRINT_BANNER' };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -485,6 +492,22 @@ function reducer(state: State, action: Action): State {
       return { ...state, showProductionStats: !state.showProductionStats };
     case 'CLOSE_ALL_MENUS':
       return { ...state, showFileMenu: false, showDataMenu: false, showEditMenu: false, showOutpostMenu: false };
+    case 'LOAD_BLUEPRINT_SIMULATION': {
+      const newHistory = [[...action.buildings]];
+      return {
+        ...state,
+        grid: {
+          buildings: action.buildings,
+          history: newHistory,
+          historyIndex: 0,
+        },
+        outpostConfig: action.outpostConfig || state.outpostConfig,
+        simulatedBlueprint: action.blueprint,
+        showBlueprintBanner: true,
+      };
+    }
+    case 'DISMISS_BLUEPRINT_BANNER':
+      return { ...state, showBlueprintBanner: false };
     default:
       return state;
   }
@@ -514,6 +537,8 @@ const initialState: State = {
   movingBuildingIndex: null,
   movingBuildingData: null,
   placementRotation: 0,
+  simulatedBlueprint: null,
+  showBlueprintBanner: false,
 };
 
 // ──── Toolbar Button Components ────
@@ -912,6 +937,180 @@ function ProductionStatsPanel({ buildings, onClose }: ProductionStatsProps) {
   );
 }
 
+// ──── Blueprint Parsing ────
+
+/**
+ * Parses blueprint metadata and converts it into PlacedBuilding[] for the planner.
+ * Uses the blueprint's outputsPerMin, buildingCount, and category to intelligently
+ * place buildings in a grid pattern.
+ */
+async function parseBlueprintToPlacement(
+  blueprint: BlueprintEntry,
+  recipeData?: FactoryRecipeData
+): Promise<{ buildings: PlacedBuilding[]; outpostConfig: string }> {
+  const buildings: PlacedBuilding[] = [];
+
+  // Determine outpost size based on gridSize
+  let outpostConfig = 'pac-base'; // default
+  if (blueprint.gridSize) {
+    const [width, height] = blueprint.gridSize.split('x').map(n => parseInt(n, 10));
+    const maxDim = Math.max(width || 0, height || 0);
+
+    if (maxDim > 48) {
+      outpostConfig = 'pac-expansion-2'; // 56x56
+    } else if (maxDim > 44) {
+      outpostConfig = 'sub-pac-expansion-2'; // 48x48
+    } else if (maxDim > 38) {
+      outpostConfig = 'pac-expansion-1'; // 44x44
+    } else if (maxDim > 32) {
+      outpostConfig = 'sub-pac-expansion-1'; // 38x38
+    } else if (maxDim > 28) {
+      outpostConfig = 'pac-base'; // 32x32
+    } else {
+      outpostConfig = 'sub-pac-base'; // 28x28
+    }
+  } else if (blueprint.buildingCount) {
+    // Estimate grid size from building count
+    if (blueprint.buildingCount > 60) {
+      outpostConfig = 'pac-expansion-2';
+    } else if (blueprint.buildingCount > 40) {
+      outpostConfig = 'pac-expansion-1';
+    } else if (blueprint.buildingCount > 25) {
+      outpostConfig = 'pac-base';
+    } else {
+      outpostConfig = 'sub-pac-base';
+    }
+  }
+
+  // Map product names to building types based on outputs
+  const buildingTypeMap: Record<string, string> = {
+    // Capsules / Medical
+    'Buck Capsule [A]': 'filling-unit',
+    'Buck Capsule [B]': 'filling-unit',
+    'Buck Capsule [C]': 'filling-unit',
+    'Yazhen Syringe [C]': 'filling-unit',
+
+    // Batteries / Power
+    'LC Valley Battery': 'packaging-unit',
+    'HC Valley Battery': 'packaging-unit',
+    'SC Valley Battery': 'packaging-unit',
+    'LC Wuling Battery': 'packaging-unit',
+
+    // Components
+    'Ferrium Component': 'fitting-unit',
+    'Cryston Component': 'fitting-unit',
+    'Xiranite Component': 'fitting-unit',
+    'Amethyst Part': 'moulding-unit',
+
+    // Bottles
+    'Ferrium Bottle': 'filling-unit',
+    'Amethyst Bottle': 'filling-unit',
+    'Steel Bottle': 'filling-unit',
+
+    // Materials
+    'Origocrust': 'refining-unit',
+    'Industrial Explosive': 'packaging-unit',
+
+    // Plants
+    'Buckflower': 'planting-unit',
+    'Citrome': 'planting-unit',
+    'Sandleaf': 'planting-unit',
+    'Aketine': 'planting-unit',
+  };
+
+  // Determine primary building types from outputs
+  const primaryBuildings: string[] = [];
+  blueprint.outputsPerMin.forEach(output => {
+    const buildingType = buildingTypeMap[output.name];
+    if (buildingType && !primaryBuildings.includes(buildingType)) {
+      primaryBuildings.push(buildingType);
+    }
+  });
+
+  // If no matches, use generic processing buildings
+  if (primaryBuildings.length === 0) {
+    primaryBuildings.push('refining-unit', 'filling-unit', 'packaging-unit');
+  }
+
+  // Add supporting buildings based on category
+  const supportBuildings: string[] = [];
+
+  if (blueprint.category === 'Production' || blueprint.category === 'Complete Chain') {
+    supportBuildings.push('planting-unit', 'seed-picking-unit');
+  }
+
+  if (blueprint.category === 'Processing' || blueprint.category === 'Complete Chain') {
+    supportBuildings.push('shredding-unit', 'grinding-unit', 'moulding-unit');
+  }
+
+  if (blueprint.category === 'Power') {
+    supportBuildings.push('thermal-bank', 'electric-pylon');
+  }
+
+  // Calculate building counts
+  const targetBuildingCount = blueprint.buildingCount || 20;
+  const primaryCount = Math.ceil(targetBuildingCount * 0.4); // 40% primary
+  const supportCount = Math.ceil(targetBuildingCount * 0.35); // 35% support
+  const utilityCount = Math.floor(targetBuildingCount * 0.15); // 15% utility
+  const storageCount = Math.floor(targetBuildingCount * 0.1); // 10% storage
+
+  // Grid layout parameters
+  let startX = 2;
+  let startY = 2;
+  let currentX = startX;
+  let currentY = startY;
+  const spacing = 1; // cells between buildings
+  const maxWidth = 8; // buildings per row before wrapping
+
+  // Helper to place a building with auto-layout
+  const placeBuilding = (buildingId: string) => {
+    const building = BUILDINGS.find(b => b.id === buildingId);
+    if (!building) return;
+
+    buildings.push({
+      buildingId,
+      x: currentX,
+      y: currentY,
+      rotation: 0,
+    });
+
+    // Move to next position
+    currentX += building.size.width + spacing;
+    if (currentX > startX + maxWidth * 4) {
+      currentX = startX;
+      currentY += 5; // Move to next row
+    }
+  };
+
+  // Place primary production buildings
+  const primaryPerType = Math.ceil(primaryCount / primaryBuildings.length);
+  primaryBuildings.forEach(buildingType => {
+    for (let i = 0; i < primaryPerType; i++) {
+      placeBuilding(buildingType);
+    }
+  });
+
+  // Place support buildings
+  const supportPerType = Math.ceil(supportCount / Math.max(1, supportBuildings.length));
+  supportBuildings.forEach(buildingType => {
+    for (let i = 0; i < supportPerType; i++) {
+      placeBuilding(buildingType);
+    }
+  });
+
+  // Place utility buildings (power)
+  for (let i = 0; i < utilityCount; i++) {
+    placeBuilding(i % 2 === 0 ? 'thermal-bank' : 'electric-pylon');
+  }
+
+  // Place storage buildings
+  for (let i = 0; i < storageCount; i++) {
+    placeBuilding(i % 2 === 0 ? 'depot-loader' : 'depot-unloader');
+  }
+
+  return { buildings, outpostConfig };
+}
+
 // ──── Main Component ────
 
 export default function FactoryPlannerPage() {
@@ -928,6 +1127,15 @@ export default function FactoryPlannerPage() {
   // Auth for cloud sync
   const { token } = useAuthStore();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Persist store for multiple layouts
+  const {
+    saveFactoryLayout,
+    updateFactoryLayout,
+    deleteFactoryLayout,
+    factoryLayouts,
+    getFactoryLayout,
+  } = usePersistStore();
 
   const CELL_SIZE = 40;
   const activeConfig = OUTPOST_CONFIGS.find(c => c.id === state.outpostConfig) || OUTPOST_CONFIGS[0];
@@ -1535,6 +1743,52 @@ export default function FactoryPlannerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── New: Named Layout Management ──
+
+  const saveNamedLayout = useCallback(() => {
+    const existingCount = factoryLayouts.length;
+    const defaultName = `Layout ${existingCount + 1}`;
+    const name = prompt('Enter a name for this layout:', defaultName);
+
+    if (name && name.trim()) {
+      const layoutId = saveFactoryLayout({
+        name: name.trim(),
+        buildings: state.grid.buildings,
+        outpostConfig: state.outpostConfig,
+        gridWidth: GRID_WIDTH,
+        gridHeight: GRID_HEIGHT,
+      });
+      alert(`Layout "${name.trim()}" saved successfully!`);
+      return layoutId;
+    }
+    return null;
+  }, [factoryLayouts.length, saveFactoryLayout, state.grid.buildings, state.outpostConfig, GRID_WIDTH, GRID_HEIGHT]);
+
+  const loadNamedLayout = useCallback((layoutId: string) => {
+    const layout = getFactoryLayout(layoutId);
+    if (layout) {
+      dispatch({ type: 'CLEAR_GRID' });
+      layout.buildings.forEach((b) => {
+        dispatch({ type: 'PLACE_BUILDING', building: b });
+      });
+      if (layout.outpostConfig) {
+        dispatch({ type: 'SET_OUTPOST_CONFIG', config: layout.outpostConfig });
+      }
+    }
+  }, [getFactoryLayout]);
+
+  // Handle loadLayout query parameter from My Saves page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const loadLayoutId = params.get('loadLayout');
+    if (loadLayoutId) {
+      loadNamedLayout(loadLayoutId);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Export/Import/Share ──
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1650,6 +1904,31 @@ export default function FactoryPlannerPage() {
   // Load blueprint from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Handle ?simulate={slug} - load community blueprint
+    const simulateSlug = params.get('simulate');
+    if (simulateSlug) {
+      const blueprint = SCRAPED_BLUEPRINTS.find(bp => bp.slug === simulateSlug);
+      if (blueprint) {
+        parseBlueprintToPlacement(blueprint).then(({ buildings, outpostConfig }) => {
+          dispatch({
+            type: 'LOAD_BLUEPRINT_SIMULATION',
+            buildings,
+            outpostConfig,
+            blueprint,
+          });
+        }).catch(err => {
+          console.error('Failed to load blueprint simulation:', err);
+          alert(`Failed to load blueprint: ${blueprint.Title}`);
+        });
+      } else {
+        console.warn('Blueprint not found:', simulateSlug);
+        alert(`Blueprint not found: ${simulateSlug}`);
+      }
+      return;
+    }
+
+    // Handle ?bp={base64} - load shared blueprint
     const bp = params.get('bp');
     if (bp) {
       try {
@@ -1679,6 +1958,32 @@ export default function FactoryPlannerPage() {
           const VALID_CONFIGS = ['pac-base', 'pac-expansion-1', 'pac-expansion-2', 'sub-pac-base', 'sub-pac-expansion-1', 'sub-pac-expansion-2'];
           if (typeof data.outpostConfig === 'string' && VALID_CONFIGS.includes(data.outpostConfig)) {
             dispatch({ type: 'SET_OUTPOST_CONFIG', config: data.outpostConfig });
+          }
+
+          // Show banner if blueprint has a name
+          if (typeof data.name === 'string' && data.name.length > 0) {
+            const customBlueprint: BlueprintEntry = {
+              id: 0,
+              Title: data.name,
+              Description: 'Shared blueprint',
+              ImportString: '',
+              Upvotes: 0,
+              Region: 'Custom',
+              Author: 'Shared',
+              Tags: [],
+              slug: 'custom',
+              detailDescription: '',
+              outputsPerMin: [],
+              importCodes: [],
+              complexity: 'Intermediate',
+              category: 'Production',
+            };
+            dispatch({
+              type: 'LOAD_BLUEPRINT_SIMULATION',
+              buildings: validBuildings,
+              outpostConfig: data.outpostConfig,
+              blueprint: customBlueprint,
+            });
           }
         }
       } catch { /* ignore invalid bp param */ }
@@ -2020,6 +2325,37 @@ export default function FactoryPlannerPage() {
         </div>
       </div>
 
+      {/* ─── Blueprint Simulation Banner ─── */}
+      {state.showBlueprintBanner && state.simulatedBlueprint && (
+        <div className="bg-gradient-to-r from-[#0a2a3a] to-[#0d1117] border-b border-[#00b0ff50] px-4 py-2.5 flex items-center gap-3 flex-shrink-0 shadow-lg">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse" />
+            <span className="text-xs text-gray-400 font-medium">SIMULATING:</span>
+            <span className="text-sm text-white font-semibold">{state.simulatedBlueprint.Title}</span>
+            {state.simulatedBlueprint.Author && (
+              <span className="text-xs text-gray-500">by {state.simulatedBlueprint.Author}</span>
+            )}
+            {state.simulatedBlueprint.buildingCount && (
+              <span className="text-xs text-[var(--color-accent)] ml-2">
+                {state.simulatedBlueprint.buildingCount} buildings
+              </span>
+            )}
+            {state.simulatedBlueprint.netPower !== undefined && (
+              <span className={`text-xs ml-2 font-medium ${state.simulatedBlueprint.netPower > 0 ? 'text-green-400' : state.simulatedBlueprint.netPower < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {state.simulatedBlueprint.netPower > 0 ? '+' : ''}{state.simulatedBlueprint.netPower} kW
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'DISMISS_BLUEPRINT_BANNER' })}
+            className="p-1 hover:bg-[#1a1a1a] rounded transition-colors"
+            title="Dismiss banner"
+          >
+            <X size={14} className="text-gray-400 hover:text-white" />
+          </button>
+        </div>
+      )}
+
       {/* ─── Toolbar Row: ALL tools in one row ─── */}
       <div className="bg-[#111318] border-b border-[var(--color-border)] px-2 py-1 flex items-center gap-1 flex-shrink-0 overflow-visible">
         {/* File menu */}
@@ -2030,10 +2366,35 @@ export default function FactoryPlannerPage() {
             <ChevronDown size={11} className="opacity-50" />
           </ToolbarButton>
           {state.showFileMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[180px] z-[100]">
+            <div className="absolute top-full mt-1 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl py-1 min-w-[200px] max-h-[400px] overflow-y-auto z-[100]">
               <button onClick={() => { dispatch({ type: 'CLEAR_GRID' }); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><FileText size={12} />New Grid <span className="text-gray-500 text-[10px] ml-auto">Ctrl+N</span></button>
-              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Upload size={12} />Load <span className="text-gray-500 text-[10px] ml-auto">Ctrl+O</span></button>
-              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Download size={12} />Save <span className="text-gray-500 text-[10px] ml-auto">Ctrl+S</span></button>
+              <button onClick={() => { loadFromLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Upload size={12} />Load Auto-Save <span className="text-gray-500 text-[10px] ml-auto">Ctrl+O</span></button>
+              <button onClick={() => { saveToLocalStorage(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Download size={12} />Quick Save <span className="text-gray-500 text-[10px] ml-auto">Ctrl+S</span></button>
+              <div className="border-t border-[var(--color-border)] my-1" />
+              <button onClick={() => { saveNamedLayout(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Star size={12} className="text-[var(--color-accent)]" />Save as Named Layout</button>
+              {factoryLayouts.length > 0 && (
+                <>
+                  <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-gray-500 font-semibold border-t border-[var(--color-border)] mt-1 pt-2">My Layouts</div>
+                  {factoryLayouts.slice().sort((a, b) => new Date(b.lastModifiedAt).getTime() - new Date(a.lastModifiedAt).getTime()).slice(0, 5).map((layout) => (
+                    <button
+                      key={layout.id}
+                      onClick={() => { loadNamedLayout(layout.id); dispatch({ type: 'TOGGLE_FILE_MENU' }); }}
+                      className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"
+                      title={`Load "${layout.name}" (${layout.buildings.length} buildings)`}
+                    >
+                      <Building2 size={12} className="text-[var(--color-accent)]" />
+                      <span className="truncate flex-1">{layout.name}</span>
+                      <span className="text-gray-500 text-[10px]">{layout.buildings.length}</span>
+                    </button>
+                  ))}
+                  {factoryLayouts.length > 5 && (
+                    <a href="/saves" className="w-full px-3 py-1.5 text-left text-xs text-[var(--color-accent)] hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2">
+                      <Star size={12} />
+                      View All ({factoryLayouts.length} layouts)
+                    </a>
+                  )}
+                </>
+              )}
               <div className="border-t border-[var(--color-border)] my-1" />
               <button onClick={() => { shareBlueprint(); dispatch({ type: 'TOGGLE_FILE_MENU' }); }} className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2"><Share2 size={12} />Share Blueprint</button>
             </div>

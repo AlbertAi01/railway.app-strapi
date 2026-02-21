@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, ThumbsUp, Copy, Check, Zap, Grid3X3, Package, TrendingUp, Download } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, Copy, Check, Zap, Grid3X3, Package, TrendingUp, Download, Share2, MessageSquare, Play, Heart } from 'lucide-react';
 import { SCRAPED_BLUEPRINTS, getUserBlueprints, isBlueprintUpvoted, toggleUpvoteBlueprint, getBlueprintUpvoteCount, type BlueprintEntry, type OutputRate, type Category } from '@/data/blueprints';
 import { fetchBlueprintBySlug } from '@/lib/api';
 import RIOSHeader from '@/components/ui/RIOSHeader';
+import { useAuthStore } from '@/store/authStore';
 
 // Building type for factory grid visualization
 interface Building {
@@ -17,6 +18,16 @@ interface Building {
   height: number;
   type: 'production' | 'processing' | 'power' | 'storage' | 'logistics';
   label: string;
+}
+
+// Comment type for blueprint comments
+interface Comment {
+  id: string;
+  author: string;
+  text: string;
+  timestamp: number;
+  likes: number;
+  likedBy: string[];
 }
 
 // Factory Grid Preview Component
@@ -381,6 +392,10 @@ export default function BlueprintDetail() {
   const [upvoteCount, setUpvoteCount] = useState(0);
   const [strapiBp, setStrapiBp] = useState<BlueprintEntry | null>(null);
   const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
+  const user = useAuthStore((state) => state.user);
 
   // First check static data
   const staticBlueprint = useMemo(() => {
@@ -464,6 +479,27 @@ export default function BlueprintDetail() {
     setUpvoteCount(getBlueprintUpvoteCount(blueprint.id));
   }, [blueprint]);
 
+  // Load comments from localStorage
+  useEffect(() => {
+    if (!slug) return;
+    const commentsKey = `endfield-bp-comments-${slug}`;
+    try {
+      const stored = localStorage.getItem(commentsKey);
+      if (stored) {
+        setComments(JSON.parse(stored));
+      }
+    } catch {
+      setComments([]);
+    }
+  }, [slug]);
+
+  // Save comments to localStorage
+  const saveComments = (updatedComments: Comment[]) => {
+    const commentsKey = `endfield-bp-comments-${slug}`;
+    localStorage.setItem(commentsKey, JSON.stringify(updatedComments));
+    setComments(updatedComments);
+  };
+
   const handleUpvote = () => {
     if (!blueprint) return;
     const result = toggleUpvoteBlueprint(blueprint.id);
@@ -503,6 +539,66 @@ export default function BlueprintDetail() {
     navigator.clipboard.writeText(code);
     setCopiedCode(region);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleShareUrl = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    setShareMessage('URL copied to clipboard!');
+    setTimeout(() => setShareMessage(''), 2000);
+  };
+
+  const handleSubmitComment = () => {
+    if (!user || !newComment.trim()) return;
+
+    const comment: Comment = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      author: user.username,
+      text: newComment.trim(),
+      timestamp: Date.now(),
+      likes: 0,
+      likedBy: [],
+    };
+
+    const updatedComments = [comment, ...comments];
+    saveComments(updatedComments);
+    setNewComment('');
+  };
+
+  const handleLikeComment = (commentId: string) => {
+    if (!user) return;
+
+    const updatedComments = comments.map(comment => {
+      if (comment.id === commentId) {
+        const hasLiked = comment.likedBy.includes(user.username);
+        return {
+          ...comment,
+          likes: hasLiked ? comment.likes - 1 : comment.likes + 1,
+          likedBy: hasLiked
+            ? comment.likedBy.filter(u => u !== user.username)
+            : [...comment.likedBy, user.username],
+        };
+      }
+      return comment;
+    });
+
+    saveComments(updatedComments);
+  };
+
+  const handleSimulateInPlanner = () => {
+    if (!blueprint) return;
+
+    // Encode blueprint data for factory planner
+    const blueprintData = {
+      title: blueprint.Title,
+      importCode: blueprint.ImportString,
+      buildingCount: blueprint.buildingCount,
+      gridSize: blueprint.gridSize,
+      outputs: blueprint.outputsPerMin,
+    };
+
+    const encodedData = btoa(JSON.stringify(blueprintData));
+    window.location.href = `/factory-planner/planner?bp=${encodedData}`;
   };
 
   if (!blueprint) {
@@ -630,33 +726,17 @@ export default function BlueprintDetail() {
 
             {/* Overlay Info */}
             <div className="absolute bottom-6 left-6 right-6">
-              <div className="flex items-end justify-between">
-                <div className="flex-1">
-                  <h1 className="text-4xl font-bold text-white font-tactical mb-2">{blueprint.Title}</h1>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-[var(--color-text-secondary)]">by {blueprint.Author}</span>
-                    <span className="text-[var(--color-border)]">|</span>
-                    <span className="text-[var(--color-text-secondary)]">{blueprint.Region}</span>
-                    <span className="text-[var(--color-border)]">|</span>
-                    <span className={`px-2 py-0.5 text-xs font-mono border ${complexityColors[blueprint.complexity]}`}>
-                      {blueprint.complexity}
-                    </span>
-                  </div>
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold text-white font-tactical mb-2">{blueprint.Title}</h1>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-[var(--color-text-secondary)]">by {blueprint.Author}</span>
+                  <span className="text-[var(--color-border)]">|</span>
+                  <span className="text-[var(--color-text-secondary)]">{blueprint.Region}</span>
+                  <span className="text-[var(--color-border)]">|</span>
+                  <span className={`px-2 py-0.5 text-xs font-mono border ${complexityColors[blueprint.complexity]}`}>
+                    {blueprint.complexity}
+                  </span>
                 </div>
-
-                {/* Upvote Button */}
-                <button
-                  onClick={handleUpvote}
-                  className={`flex items-center gap-2 bg-[var(--color-surface)]/80 backdrop-blur-sm border px-4 py-3 clip-corner-tl transition-colors ${
-                    upvoted
-                      ? 'border-[#FFE500] bg-[#FFE500]/10'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
-                  }`}
-                  title={upvoted ? 'Remove upvote' : 'Upvote this blueprint'}
-                >
-                  <ThumbsUp size={20} className={upvoted ? 'text-[#FFE500] fill-current' : 'text-[#FFE500]'} />
-                  <span className="text-white font-semibold text-lg">{upvoteCount}</span>
-                </button>
               </div>
             </div>
           </div>
@@ -831,6 +911,46 @@ export default function BlueprintDetail() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Voting & Actions Card */}
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 shadow-[var(--shadow-card)]">
+            <h3 className="text-sm text-[var(--color-text-muted)] mb-3 uppercase tracking-wider">Actions</h3>
+
+            {/* Upvote Button - Prominent */}
+            <button
+              onClick={handleUpvote}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 clip-corner-tl text-base font-bold transition-all mb-3 ${
+                upvoted
+                  ? 'bg-[#FFE500] text-black border-2 border-[#FFE500]'
+                  : 'bg-[var(--color-surface)] text-white border-2 border-[var(--color-border)] hover:border-[#FFE500]'
+              }`}
+              title={upvoted ? 'Remove upvote' : 'Upvote this blueprint'}
+            >
+              <ThumbsUp size={24} className={upvoted ? 'fill-current' : ''} />
+              <div className="flex flex-col items-start">
+                <span className="text-xs opacity-75">Upvotes</span>
+                <span className="text-2xl font-bold">{upvoteCount}</span>
+              </div>
+            </button>
+
+            {/* Share Button */}
+            <button
+              onClick={handleShareUrl}
+              className="w-full flex items-center justify-center gap-2 bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] px-4 py-3 clip-corner-tl hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors mb-2"
+            >
+              {shareMessage ? (
+                <>
+                  <Check size={18} />
+                  <span className="text-sm font-medium">{shareMessage}</span>
+                </>
+              ) : (
+                <>
+                  <Share2 size={18} />
+                  <span className="text-sm font-medium">Share Blueprint</span>
+                </>
+              )}
+            </button>
+          </div>
+
           {/* Category & Tags */}
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-5 shadow-[var(--shadow-card)]">
             <h3 className="text-sm text-[var(--color-text-muted)] mb-3 uppercase tracking-wider">Category</h3>
@@ -848,6 +968,17 @@ export default function BlueprintDetail() {
               ))}
             </div>
           </div>
+
+          {/* Simulate in Factory Planner */}
+          {blueprint.ImportString && (
+            <button
+              onClick={handleSimulateInPlanner}
+              className="w-full flex items-center justify-center gap-2 bg-[var(--color-accent)] text-black px-6 py-4 clip-corner-tl text-base font-bold hover:bg-[var(--color-accent)]/90 transition-colors shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]"
+            >
+              <Play size={20} />
+              Simulate in Factory Planner
+            </button>
+          )}
 
           {/* Quick Copy Button */}
           {blueprint.ImportString && blueprint.ImportString.startsWith('EFO') && (
@@ -868,6 +999,107 @@ export default function BlueprintDetail() {
               )}
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="mt-12">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] clip-corner-tl p-6 shadow-[var(--shadow-card)]">
+          <h2 className="text-2xl font-bold text-white font-tactical mb-6 flex items-center gap-3">
+            <MessageSquare size={24} className="text-[var(--color-accent)]" />
+            COMMUNITY DISCUSSION
+          </h2>
+
+          {/* Comment Input */}
+          {user ? (
+            <div className="mb-8">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts, tips, or modifications..."
+                className="w-full min-h-[100px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-white p-4 font-mono text-sm focus:outline-none focus:border-[var(--color-accent)] transition-colors resize-y"
+                maxLength={500}
+              />
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {newComment.length}/500 characters
+                </span>
+                <button
+                  onClick={handleSubmitComment}
+                  disabled={!newComment.trim()}
+                  className="flex items-center gap-2 bg-[var(--color-accent)] text-black px-6 py-2.5 clip-corner-tl font-semibold hover:bg-[var(--color-accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <MessageSquare size={16} />
+                  Post Comment
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8 bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-6 text-center">
+              <p className="text-[var(--color-text-secondary)] mb-3">
+                Join the conversation! Log in to share your thoughts.
+              </p>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 bg-[var(--color-accent)] text-black px-6 py-3 clip-corner-tl font-semibold hover:bg-[var(--color-accent)]/90 transition-colors"
+              >
+                Log in to comment
+              </Link>
+            </div>
+          )}
+
+          {/* Comments List */}
+          <div className="space-y-4">
+            {comments.length === 0 ? (
+              <div className="text-center py-8 text-[var(--color-text-muted)] border border-[var(--color-border)] border-dashed clip-corner-tl">
+                <MessageSquare size={32} className="mx-auto mb-3 opacity-50" />
+                <p>No comments yet. Be the first to share your thoughts!</p>
+              </div>
+            ) : (
+              comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="bg-[var(--color-surface-2)] border border-[var(--color-border)] clip-corner-tl p-5"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <span className="text-[var(--color-accent)] font-semibold">
+                        {comment.author}
+                      </span>
+                      <span className="text-[var(--color-text-muted)] text-xs ml-3">
+                        {new Date(comment.timestamp).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    {user && (
+                      <button
+                        onClick={() => handleLikeComment(comment.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 clip-corner-tl border transition-colors ${
+                          comment.likedBy.includes(user.username)
+                            ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                            : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-red-500/50'
+                        }`}
+                      >
+                        <Heart
+                          size={14}
+                          className={comment.likedBy.includes(user.username) ? 'fill-current' : ''}
+                        />
+                        <span className="text-xs font-semibold">{comment.likes}</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-wrap">
+                    {comment.text}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

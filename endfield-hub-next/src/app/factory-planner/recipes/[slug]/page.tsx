@@ -7,7 +7,11 @@ import Image from 'next/image';
 import {
   ArrowLeft, Clock, Zap, ArrowRight,
   Package, Settings, ChevronRight, Layers,
+  Calculator, ExternalLink, TrendingUp, Users, Star,
 } from 'lucide-react';
+import RIOSHeader from '@/components/ui/RIOSHeader';
+import { SCRAPED_BLUEPRINTS, type BlueprintEntry } from '@/data/blueprints';
+import { usePersistStore } from '@/store/persistStore';
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface RecipeItem { id: string; name: string; count: number }
@@ -48,6 +52,7 @@ const BUILDING_LABELS: Record<string, string> = {
 };
 
 function slugToItemId(slug: string): string { return `item_${slug}`; }
+function itemIdToSlug(itemId: string): string { return itemId.replace(/^item_/, ''); }
 
 function pickBestRecipe(itemId: string, recipesForItem: Map<string, Recipe[]>): Recipe | null {
   const candidates = recipesForItem.get(itemId);
@@ -157,18 +162,23 @@ const CARD_H_MACHINE = 40;
 const PAD = 40;
 
 // ─── ItemCard Component ─────────────────────────────────────────────
-function ItemCard({ itemId, name, count, isRaw, isOutput, isClickable, onClick }: {
+function ItemCard({ itemId, name, count, isRaw, isOutput, isClickable, onClick, recipesForItem }: {
   itemId: string; name: string; count: number;
   isRaw?: boolean; isOutput?: boolean;
   isClickable?: boolean; onClick?: () => void;
+  recipesForItem?: Map<string, Recipe[]>;
 }) {
   const borderColor = isRaw ? '#8B5CF6' : isOutput ? '#22d3ee' : '#2A2A2A';
   const glowColor = isRaw ? 'rgba(139,92,246,0.15)' : isOutput ? 'rgba(34,211,238,0.12)' : 'transparent';
   const bgColor = isRaw ? 'rgba(139,92,246,0.06)' : isOutput ? 'rgba(34,211,238,0.06)' : '#0d1117';
 
+  // Check if this item has recipes (is craftable)
+  const hasRecipes = recipesForItem?.has(itemId);
+  const canClick = isClickable && hasRecipes;
+
   const content = (
     <div
-      className={`relative flex flex-col items-center justify-center gap-1 border-2 transition-all ${isClickable ? 'cursor-pointer hover:scale-105 hover:border-[var(--color-accent)]' : ''}`}
+      className={`relative flex flex-col items-center justify-center gap-1 border-2 transition-all ${canClick ? 'cursor-pointer hover:scale-105 hover:border-[var(--color-accent)]' : ''}`}
       style={{
         width: CARD_W, height: CARD_H_ITEM, borderColor, backgroundColor: bgColor,
         boxShadow: `0 0 20px ${glowColor}, inset 0 0 20px ${glowColor}`,
@@ -220,7 +230,7 @@ function ItemCard({ itemId, name, count, isRaw, isOutput, isClickable, onClick }
     </div>
   );
 
-  if (isClickable && onClick) {
+  if (canClick && onClick) {
     return <button onClick={onClick} className="focus:outline-none">{content}</button>;
   }
   return content;
@@ -252,9 +262,10 @@ function MachineLabel({ machineId, machineName, craftTime }: {
 
 // ─── FlowchartView Component ────────────────────────────────────────
 function FlowchartView({
-  rootNode, recipesForItem,
+  rootNode, recipesForItem, onItemClick,
 }: {
   rootNode: ChainNode; recipesForItem: Map<string, Recipe[]>;
+  onItemClick?: (itemId: string) => void;
 }) {
   const { nodes, edges, totalRows, totalCols } = useMemo(
     () => layoutFlowchart(rootNode, recipesForItem),
@@ -384,6 +395,9 @@ function FlowchartView({
                   count={node.itemCount || 0}
                   isRaw={node.isRaw}
                   isOutput={node.isOutput}
+                  isClickable={true}
+                  recipesForItem={recipesForItem}
+                  onClick={() => onItemClick?.(node.itemId || '')}
                 />
               </div>
             );
@@ -391,6 +405,174 @@ function FlowchartView({
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Production Rate Calculator Component ──────────────────────────
+function ProductionRateCalculator({ recipe }: { recipe: Recipe }) {
+  const [desiredRate, setDesiredRate] = useState<string>('60');
+
+  const calculations = useMemo(() => {
+    const rate = parseFloat(desiredRate) || 0;
+    if (rate <= 0) return null;
+
+    const outputItem = recipe.outputs[0];
+    const cycleTime = recipe.craftTime; // seconds
+    const outputPerCycle = outputItem.count;
+    const outputPerMinute = (outputPerCycle / cycleTime) * 60;
+
+    const machinesNeeded = Math.ceil(rate / outputPerMinute);
+    const actualOutput = machinesNeeded * outputPerMinute;
+    const totalPower = machinesNeeded * recipe.power;
+
+    const inputsPerMin = recipe.inputs.map(inp => ({
+      ...inp,
+      ratePerMin: (inp.count / cycleTime) * 60 * machinesNeeded,
+    }));
+
+    return {
+      machinesNeeded,
+      actualOutput: actualOutput.toFixed(2),
+      totalPower,
+      inputsPerMin,
+    };
+  }, [desiredRate, recipe]);
+
+  return (
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+      <div className="px-5 py-3 border-b border-[var(--color-border)] flex items-center gap-2">
+        <Calculator size={14} className="text-[var(--color-accent)]" />
+        <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Production Rate Calculator</span>
+      </div>
+
+      <div className="p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <label className="text-sm text-white/80">Desired Output Rate:</label>
+          <input
+            type="number"
+            value={desiredRate}
+            onChange={(e) => setDesiredRate(e.target.value)}
+            className="px-3 py-2 bg-[#0c1018] border border-[var(--color-border)] text-white text-sm font-mono focus:border-[var(--color-accent)] outline-none transition-colors"
+            min="0"
+            step="1"
+          />
+          <span className="text-sm text-white/60 font-mono">items/min</span>
+        </div>
+
+        {calculations && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left column - Summary */}
+            <div className="space-y-3">
+              <div className="bg-[#0c1018] border border-[var(--color-border)] p-4">
+                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Machines Required</div>
+                <div className="text-2xl font-bold text-[var(--color-accent)] font-mono">{calculations.machinesNeeded}</div>
+              </div>
+
+              <div className="bg-[#0c1018] border border-[var(--color-border)] p-4">
+                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Actual Output</div>
+                <div className="text-2xl font-bold text-[#22d3ee] font-mono">{calculations.actualOutput} <span className="text-sm text-white/40">/min</span></div>
+              </div>
+
+              <div className="bg-[#0c1018] border border-[var(--color-border)] p-4">
+                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Zap size={10} /> Total Power Consumption
+                </div>
+                <div className="text-2xl font-bold text-[#F39C12] font-mono">{calculations.totalPower} <span className="text-sm text-white/40">W</span></div>
+              </div>
+            </div>
+
+            {/* Right column - Input materials */}
+            <div className="bg-[#0c1018] border border-[var(--color-border)] p-4">
+              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-3">Input Materials Required</div>
+              <div className="space-y-2">
+                {calculations.inputsPerMin.map((inp, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 relative">
+                        <Image src={`${ITEM_ICON_URL}/${inp.id}.png`} alt={inp.name}
+                          width={24} height={24} className="object-contain" unoptimized />
+                      </div>
+                      <span className="text-xs text-white/80">{inp.name}</span>
+                    </div>
+                    <span className="text-sm font-mono font-bold text-[var(--color-accent)]">
+                      {inp.ratePerMin.toFixed(1)} <span className="text-[10px] text-white/40">/min</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Blueprint Card Component ───────────────────────────────────────
+function BlueprintCard({ blueprint }: { blueprint: BlueprintEntry }) {
+  return (
+    <Link href={`/blueprints/${blueprint.slug}`}
+      className="block bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden transition-all hover:border-[var(--color-accent)] hover:shadow-lg group">
+      {/* Preview image */}
+      {blueprint.previewImage && (
+        <div className="relative w-full h-40 bg-[#0c1018] overflow-hidden">
+          <Image
+            src={blueprint.previewImage}
+            alt={blueprint.Title}
+            fill
+            className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-surface)] to-transparent" />
+        </div>
+      )}
+
+      <div className="p-4">
+        {/* Title */}
+        <h3 className="text-sm font-bold text-white mb-2 line-clamp-2 group-hover:text-[var(--color-accent)] transition-colors">
+          {blueprint.Title}
+        </h3>
+
+        {/* Author & Stats */}
+        <div className="flex items-center gap-3 text-[10px] text-white/40 mb-3">
+          <span className="flex items-center gap-1">
+            <Users size={10} /> {blueprint.Author}
+          </span>
+          {blueprint.netPower !== undefined && (
+            <span className="flex items-center gap-1">
+              <Zap size={10} /> {blueprint.netPower > 0 ? '+' : ''}{blueprint.netPower}W
+            </span>
+          )}
+        </div>
+
+        {/* Outputs */}
+        <div className="space-y-1">
+          {blueprint.outputsPerMin.slice(0, 3).map((output, i) => (
+            <div key={i} className="flex items-center justify-between text-xs">
+              <span className="text-white/60">{output.name}</span>
+              <span className="font-mono font-bold text-[var(--color-accent)]">{output.rate}/min</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Tags */}
+        {blueprint.Tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-3">
+            {blueprint.Tags.slice(0, 2).map((tag, i) => (
+              <span key={i} className="text-[8px] px-1.5 py-0.5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] uppercase tracking-wider">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* View link */}
+        <div className="flex items-center gap-1 text-[10px] text-[var(--color-accent)] mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span>View Blueprint</span>
+          <ExternalLink size={10} />
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -465,6 +647,15 @@ export default function RecipeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeRecipeIdx, setActiveRecipeIdx] = useState(0);
 
+  // Persist store for bookmarks and recent recipes
+  const { toggleRecipeBookmark, isRecipeBookmarked, addRecentRecipe } = usePersistStore();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  // Handle item click in flowchart - navigate to item's recipe page
+  const handleItemClick = useCallback((clickedItemId: string) => {
+    window.location.href = `/factory-planner/recipes/${itemIdToSlug(clickedItemId)}`;
+  }, []);
+
   useEffect(() => {
     fetch('/data/factory-recipes.json')
       .then(r => r.json())
@@ -481,6 +672,20 @@ export default function RecipeDetailPage() {
     if (!factoryData) return slug;
     return factoryData.items[itemId] || slug;
   }, [factoryData, itemId, slug]);
+
+  // Track this recipe view and check bookmark status
+  useEffect(() => {
+    if (itemName && itemName !== slug) {
+      addRecentRecipe(itemId, itemName);
+    }
+    setIsBookmarked(isRecipeBookmarked(itemId));
+  }, [itemId, itemName, slug, addRecentRecipe, isRecipeBookmarked]);
+
+  // Handle bookmark toggle
+  const handleBookmarkToggle = useCallback(() => {
+    const newState = toggleRecipeBookmark(itemId);
+    setIsBookmarked(newState);
+  }, [itemId, toggleRecipeBookmark]);
 
   const recipesForItem = useMemo(() => {
     if (!factoryData) return new Map<string, Recipe[]>();
@@ -526,6 +731,33 @@ export default function RecipeDetailPage() {
     },
     [recipesForItem]
   );
+
+  // Find blueprints that produce this item
+  const relatedBlueprints = useMemo(() => {
+    return SCRAPED_BLUEPRINTS.filter(bp =>
+      bp.outputsPerMin.some(output =>
+        output.name.toLowerCase() === itemName.toLowerCase()
+      )
+    );
+  }, [itemName]);
+
+  // Find recipes that use this item as input (Used In)
+  const usedInRecipes = useMemo(() => {
+    if (!factoryData) return [];
+    const using = new Map<string, { recipe: Recipe; outputItem: RecipeItem }>();
+
+    for (const recipe of factoryData.recipes) {
+      // Check if this recipe uses our item as input
+      const usesItem = recipe.inputs.some(inp => inp.id === itemId);
+      if (usesItem) {
+        // Get the main output of this recipe
+        const mainOutput = recipe.outputs[0];
+        using.set(mainOutput.id, { recipe, outputItem: mainOutput });
+      }
+    }
+
+    return Array.from(using.values());
+  }, [factoryData, itemId]);
 
   if (loading) {
     return (
@@ -573,6 +805,14 @@ export default function RecipeDetailPage() {
           <span className="text-white">{itemName}</span>
         </div>
 
+        {/* RIOS Header */}
+        <RIOSHeader
+          title={itemName}
+          subtitle="Crafting Protocol"
+          category="LOGISTICS"
+          code="RIOS-REC-001"
+        />
+
         {/* Item Hero Section */}
         <div className="relative mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
           {/* Background gradient accent */}
@@ -598,10 +838,23 @@ export default function RecipeDetailPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-white tracking-wide uppercase"
-                  style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                  {itemName}
-                </h1>
+                <div className="flex items-start justify-between gap-4">
+                  <h1 className="text-3xl font-bold text-white tracking-wide uppercase flex-1"
+                    style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                    {itemName}
+                  </h1>
+                  <button
+                    onClick={handleBookmarkToggle}
+                    className={`p-3 transition-all ${
+                      isBookmarked
+                        ? 'bg-[var(--color-accent)] text-black hover:opacity-80'
+                        : 'bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
+                    }`}
+                    title={isBookmarked ? 'Remove bookmark' : 'Bookmark this recipe'}
+                  >
+                    <Star size={20} className={isBookmarked ? 'fill-current' : ''} />
+                  </button>
+                </div>
 
                 <div className="flex items-center gap-5 mt-3 flex-wrap">
                   <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-tertiary)]">
@@ -673,6 +926,101 @@ export default function RecipeDetailPage() {
           </div>
         )}
 
+        {/* Simulate in Factory Planner Button */}
+        <div className="mb-8">
+          <Link
+            href={`/factory-planner/planner?simulate=${slug}`}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-accent)] text-black font-bold text-sm uppercase tracking-wider transition-all hover:scale-105 hover:shadow-lg"
+          >
+            <TrendingUp size={16} />
+            Simulate in Factory Planner
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        {/* Related Items - Navigation Links */}
+        {(activeChain && (activeChain.recipe.inputs.length > 0 || usedInRecipes.length > 0)) && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1.5 h-1.5 bg-[var(--color-accent)] rotate-45" />
+              <h2 className="text-xs font-bold text-white/70 uppercase tracking-wider">Related Items</h2>
+              <div className="flex-1 h-px bg-gradient-to-r from-[var(--color-accent)]/20 to-transparent ml-2" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Input Items */}
+              {activeChain.recipe.inputs.length > 0 && (
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
+                  <h3 className="text-[10px] text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <ArrowRight size={12} className="text-[var(--color-accent)]" />
+                    Required Inputs
+                  </h3>
+                  <div className="space-y-2">
+                    {activeChain.recipe.inputs.map((inp, i) => (
+                      <Link
+                        key={i}
+                        href={`/factory-planner/recipes/${itemIdToSlug(inp.id)}`}
+                        className="flex items-center gap-3 p-2 bg-[#0c1018] border border-[var(--color-border)] transition-all hover:border-[var(--color-accent)] group"
+                      >
+                        <div className="w-8 h-8 relative">
+                          <Image src={`${ITEM_ICON_URL}/${inp.id}.png`} alt={inp.name}
+                            width={32} height={32} className="object-contain" unoptimized />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white/80 group-hover:text-[var(--color-accent)] transition-colors">{inp.name}</p>
+                          <p className="text-[10px] text-white/40">x{inp.count} per cycle</p>
+                        </div>
+                        <ChevronRight size={14} className="text-white/30 group-hover:text-[var(--color-accent)] transition-colors" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Used In */}
+              {usedInRecipes.length > 0 && (
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
+                  <h3 className="text-[10px] text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <ArrowLeft size={12} className="text-[#22d3ee]" />
+                    Used In
+                  </h3>
+                  <div className="space-y-2">
+                    {usedInRecipes.slice(0, 5).map(({ recipe, outputItem }, i) => (
+                      <Link
+                        key={i}
+                        href={`/factory-planner/recipes/${itemIdToSlug(outputItem.id)}`}
+                        className="flex items-center gap-3 p-2 bg-[#0c1018] border border-[var(--color-border)] transition-all hover:border-[#22d3ee] group"
+                      >
+                        <div className="w-8 h-8 relative">
+                          <Image src={`${ITEM_ICON_URL}/${outputItem.id}.png`} alt={outputItem.name}
+                            width={32} height={32} className="object-contain" unoptimized />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white/80 group-hover:text-[#22d3ee] transition-colors">{outputItem.name}</p>
+                          <p className="text-[10px] text-white/40">{recipe.machineName}</p>
+                        </div>
+                        <ChevronRight size={14} className="text-white/30 group-hover:text-[#22d3ee] transition-colors" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Production Rate Calculator */}
+        {activeChain && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1.5 h-1.5 bg-[var(--color-accent)] rotate-45" />
+              <h2 className="text-xs font-bold text-white/70 uppercase tracking-wider">Production Planning</h2>
+              <div className="flex-1 h-px bg-gradient-to-r from-[var(--color-accent)]/20 to-transparent ml-2" />
+            </div>
+            <ProductionRateCalculator recipe={activeChain.recipe} />
+          </div>
+        )}
+
         {/* Raw Materials Section */}
         {rawMats.length > 0 && (
           <div className="mb-6">
@@ -721,10 +1069,35 @@ export default function RecipeDetailPage() {
               <FlowchartView
                 rootNode={activeChain.rootNode}
                 recipesForItem={recipesForItem}
+                onItemClick={handleItemClick}
               />
             </div>
           )}
         </div>
+
+        {/* Community Blueprints Section */}
+        {relatedBlueprints.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1.5 h-1.5 bg-[#8B5CF6] rotate-45" />
+              <h2 className="text-xs font-bold text-white/70 uppercase tracking-wider">Community Blueprints</h2>
+              <div className="flex-1 h-px bg-gradient-to-r from-[#8B5CF6]/20 to-transparent ml-2" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {relatedBlueprints.map(bp => (
+                <BlueprintCard key={bp.id} blueprint={bp} />
+              ))}
+            </div>
+
+            {relatedBlueprints.length === 0 && (
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-8 text-center">
+                <p className="text-sm text-white/40">No community blueprints found for this item yet.</p>
+                <p className="text-xs text-white/30 mt-2">Be the first to share a blueprint!</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

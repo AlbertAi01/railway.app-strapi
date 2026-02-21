@@ -608,7 +608,18 @@ function BuildsPageContent() {
         )}
 
         {/* ===== MY BUILDS VIEW ===== */}
-        {viewMode === 'my-builds' && (
+        {viewMode === 'my-builds' && !user && (
+          <div className="rios-card clip-corner-tl p-8 text-center space-y-4">
+            <span className="diamond diamond-md diamond-accent mx-auto block" />
+            <h3 className="text-xl font-bold text-white font-tactical uppercase">Access Restricted</h3>
+            <p className="text-[var(--color-text-secondary)]">Create an account to save and manage your builds.</p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/signup?returnTo=%2Fbuilds%3Fview%3Dmy-builds" className="px-6 py-2 bg-[var(--color-accent)] text-black font-bold clip-corner-tl hover:bg-yellow-300 transition-colors">Sign Up</Link>
+              <Link href="/login?returnTo=%2Fbuilds%3Fview%3Dmy-builds" className="px-6 py-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] clip-corner-tl hover:border-[var(--color-accent)] transition-colors">Log In</Link>
+            </div>
+          </div>
+        )}
+        {viewMode === 'my-builds' && !!user && (
           <div>
             {/* CTA Cards Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
