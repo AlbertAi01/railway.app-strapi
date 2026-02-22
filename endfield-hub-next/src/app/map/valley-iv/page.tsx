@@ -516,21 +516,12 @@ export default function ValleyIVMapPage() {
     });
   }, [mapData, activeCategories, disabledSubTypes, hideCompleted, completed, searchQuery]);
 
-  // All POIs in active categories (ignoring sub-type filters and hide-completed)
-  // Used as a stable base for clustering so toggling sub-types doesn't shift clusters
-  const categoryPois = useMemo(() => {
-    if (!mapData) return [];
-    return mapData.pois.filter(p => activeCategories.has(p.cat));
-  }, [mapData, activeCategories]);
-
-  // Build stable clusters from ALL category POIs, then filter to visible ones
+  // Cluster POIs — only same-type POIs cluster together
+  // This prevents toggling one sub-type from affecting cluster counts of other sub-types
   const clusters = useMemo(() => {
     const clusterRadius = 30 / zoom;
-    const sorted = [...categoryPois].sort((a, b) => a.id.localeCompare(b.id));
-    const visibleSet = new Set(visiblePois.map(p => p.id));
-
-    // Cluster using ALL POIs in active categories for stable positions
-    const allClusters: { x: number; y: number; allPois: POI[]; key: string }[] = [];
+    const sorted = [...visiblePois].sort((a, b) => a.id.localeCompare(b.id));
+    const result: { x: number; y: number; pois: POI[]; key: string }[] = [];
     const used = new Set<number>();
 
     for (let i = 0; i < sorted.length; i++) {
@@ -542,6 +533,7 @@ export default function ValleyIVMapPage() {
       for (let j = i + 1; j < sorted.length; j++) {
         if (used.has(j)) continue;
         const q = sorted[j];
+        if (p.type !== q.type) continue; // Only cluster same-type POIs
         const dx = p.px - q.px;
         const dy = p.py - q.py;
         if (dx * dx + dy * dy < clusterRadius * clusterRadius) {
@@ -550,19 +542,10 @@ export default function ValleyIVMapPage() {
         }
       }
 
-      allClusters.push({ x: p.px, y: p.py, allPois: cluster, key: p.id });
+      result.push({ x: p.px, y: p.py, pois: cluster, key: p.id });
     }
-
-    // Filter each cluster to only visible POIs, drop empty clusters
-    return allClusters
-      .map(c => ({
-        x: c.x,
-        y: c.y,
-        pois: c.allPois.filter(p => visibleSet.has(p.id)),
-        key: c.key,
-      }))
-      .filter(c => c.pois.length > 0);
-  }, [categoryPois, visiblePois, zoom]);
+    return result;
+  }, [visiblePois, zoom]);
 
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
