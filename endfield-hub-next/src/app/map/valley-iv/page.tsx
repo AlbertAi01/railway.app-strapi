@@ -280,7 +280,7 @@ function generateAllTiles(): TileDef[] {
     [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],
     [2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
   ];
-  addTiles('map01_lv001', 'map01lv001', 1800, 7800, lv001Tiles);
+  addTiles('map01_lv001', 'map01lv001', 1200, 6600, lv001Tiles);
 
   // map01_lv002 (Valley Pass) - 4x4 grid, 15 tiles
   const lv002Tiles: Array<[number, number]> = [
@@ -289,7 +289,7 @@ function generateAllTiles(): TileDef[] {
     [1,3],[2,3],[3,3],[4,3],
     [1,4],[2,4],[3,4],[4,4],
   ];
-  addTiles('map01_lv002', 'map01lv002', 1200, 5400, lv002Tiles);
+  addTiles('map01_lv002', 'map01lv002', 600, 4200, lv002Tiles);
 
   // map01_lv003 (Aburrey Quarry) - 3x4 grid, 12 tiles (full)
   const lv003Tiles: Array<[number, number]> = [
@@ -298,7 +298,7 @@ function generateAllTiles(): TileDef[] {
     [1,3],[2,3],[3,3],
     [1,4],[2,4],[3,4],
   ];
-  addTiles('map01_lv003', 'map01lv003', 6000, 9000, lv003Tiles);
+  addTiles('map01_lv003', 'map01lv003', 5400, 7800, lv003Tiles);
 
   // map01_lv005 (Originium Science Park) - 5x4 grid, 20 tiles (full)
   const lv005Tiles: Array<[number, number]> = [
@@ -307,7 +307,7 @@ function generateAllTiles(): TileDef[] {
     [1,3],[2,3],[3,3],[4,3],[5,3],
     [1,4],[2,4],[3,4],[4,4],[5,4],
   ];
-  addTiles('map01_lv005', 'map01lv005', 6600, 7200, lv005Tiles);
+  addTiles('map01_lv005', 'map01lv005', 6000, 6000, lv005Tiles);
 
   // map01_lv006 (Origin Lodespring) - 6x6 grid, 27 tiles (sparse)
   const lv006Tiles: Array<[number, number]> = [
@@ -318,7 +318,7 @@ function generateAllTiles(): TileDef[] {
     [1,5],[2,5],[3,5],[4,5],[5,5],
     [1,6],[2,6],[3,6],[4,6],
   ];
-  addTiles('map01_lv006', 'map01lv006', 6000, 4800, lv006Tiles);
+  addTiles('map01_lv006', 'map01lv006', 5400, 3600, lv006Tiles);
 
   // map01_lv007 (Power Plateau) - 6x5 grid, 24 tiles (sparse)
   const lv007Tiles: Array<[number, number]> = [
@@ -328,7 +328,7 @@ function generateAllTiles(): TileDef[] {
     [1,4],[2,4],[3,4],[4,4],[5,4],
     [1,5],[2,5],[3,5],[4,5],[5,5],
   ];
-  addTiles('map01_lv007', 'map01lv007', 3000, 4800, lv007Tiles);
+  addTiles('map01_lv007', 'map01lv007', 2400, 3600, lv007Tiles);
 
   return tiles;
 }
@@ -527,9 +527,8 @@ export default function ValleyIVMapPage() {
         }
       }
 
-      const cx = cluster.reduce((s, c) => s + c.px, 0) / cluster.length;
-      const cy = cluster.reduce((s, c) => s + c.py, 0) / cluster.length;
-      result.push({ x: cx, y: cy, pois: cluster, key: cluster[0].id });
+      // Use first POI position instead of centroid to prevent marker displacement when toggling categories
+      result.push({ x: p.px, y: p.py, pois: cluster, key: cluster[0].id });
     }
     return result;
   }, [visiblePois, zoom]);

@@ -262,7 +262,7 @@ function generateAllTiles(): TileDef[] {
     [2,8],[3,8],[4,8],[5,8],
     [3,9],[4,9],[5,9],[6,9],
   ];
-  addTiles('map02_lv001', 'map02lv001', 2400, 12000, lv001Tiles);
+  addTiles('map02_lv001', 'map02lv001', 1800, 10800, lv001Tiles);
 
   // map02_lv002 (Wuling City) — 9×10 grid, 84 tiles (sparse)
   const lv002Tiles: Array<[number, number]> = [
@@ -277,7 +277,7 @@ function generateAllTiles(): TileDef[] {
     [1,9],[2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],
     [2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],
   ];
-  addTiles('map02_lv002', 'map02lv002', 1200, 7200, lv002Tiles);
+  addTiles('map02_lv002', 'map02lv002', 600, 6000, lv002Tiles);
 
   return tiles;
 }
@@ -476,9 +476,8 @@ export default function WulingMapPage() {
         }
       }
 
-      const cx = cluster.reduce((s, c) => s + c.px, 0) / cluster.length;
-      const cy = cluster.reduce((s, c) => s + c.py, 0) / cluster.length;
-      result.push({ x: cx, y: cy, pois: cluster, key: cluster[0].id });
+      // Use first POI position instead of centroid to prevent marker displacement when toggling categories
+      result.push({ x: p.px, y: p.py, pois: cluster, key: cluster[0].id });
     }
     return result;
   }, [visiblePois, zoom]);
