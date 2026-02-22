@@ -231,15 +231,17 @@ function getEntityIconUrl(type: string): string {
   return `${ICON_BASE}/item_diamond.png`;
 }
 
-// Generate all tiles with EXACT coordinates — full grids for each zone
-// Tile positions extracted from endfieldtools.dev DOM — row 1 = top, Y increases per row
+// Generate all tiles with coordinates aligned to POI coordinate space
+// POI coordinates use a Y-down system where py=0 is top of map
+// Tiles use startY as the position of row 1 (top row), with rows going downward
+// Row 1 has the LARGEST y value, subsequent rows decrease (matching inverted Y from 3D→2D projection)
 function generateAllTiles(): TileDef[] {
   const tiles: TileDef[] = [];
 
   const addTiles = (id: string, folder: string, startX: number, startY: number, tileList: Array<[number, number]>) => {
     for (const [col, row] of tileList) {
       const x = startX + (col - 1) * TILE_SIZE;
-      const y = startY + (row - 1) * TILE_SIZE;
+      const y = startY - (row - 1) * TILE_SIZE;
       const fname = `${id}_${col}_${row}.png`;
       tiles.push({
         src: `${TILE_BASE}/${folder}/${fname}`,
@@ -262,7 +264,7 @@ function generateAllTiles(): TileDef[] {
     [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],
     [8,9],
   ];
-  addTiles('map02_lv001', 'map02lv001', 1200, 10200, lv001Tiles);
+  addTiles('map02_lv001', 'map02lv001', 1200, 10800, lv001Tiles);
 
   // map02_lv002 (Wuling City) — 9×11 grid, 99 tiles (full)
   const lv002Tiles: Array<[number, number]> = [
@@ -278,7 +280,7 @@ function generateAllTiles(): TileDef[] {
     [1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],
     [1,11],[2,11],[3,11],[4,11],[5,11],[6,11],[7,11],[8,11],[9,11],
   ];
-  addTiles('map02_lv002', 'map02lv002', 0, 5400, lv002Tiles);
+  addTiles('map02_lv002', 'map02lv002', 0, 6000, lv002Tiles);
 
   return tiles;
 }
