@@ -456,21 +456,23 @@ export default function WulingMapPage() {
     });
   }, [mapData, activeCategories, disabledSubTypes, hideCompleted, completed, searchQuery]);
 
-  // Cluster POIs
+  // Cluster POIs — sort by ID first so the anchor POI (smallest ID) is stable
+  // across filter changes, preventing markers from teleporting when toggling sub-types
   const clusters = useMemo(() => {
     const clusterRadius = 30 / zoom;
+    const sorted = [...visiblePois].sort((a, b) => a.id.localeCompare(b.id));
     const result: { x: number; y: number; pois: POI[]; key: string }[] = [];
     const used = new Set<number>();
 
-    for (let i = 0; i < visiblePois.length; i++) {
+    for (let i = 0; i < sorted.length; i++) {
       if (used.has(i)) continue;
-      const p = visiblePois[i];
+      const p = sorted[i];
       const cluster: POI[] = [p];
       used.add(i);
 
-      for (let j = i + 1; j < visiblePois.length; j++) {
+      for (let j = i + 1; j < sorted.length; j++) {
         if (used.has(j)) continue;
-        const q = visiblePois[j];
+        const q = sorted[j];
         const dx = p.px - q.px;
         const dy = p.py - q.py;
         if (dx * dx + dy * dy < clusterRadius * clusterRadius) {
@@ -479,8 +481,7 @@ export default function WulingMapPage() {
         }
       }
 
-      // Use first POI position instead of centroid to prevent marker displacement when toggling categories
-      result.push({ x: p.px, y: p.py, pois: cluster, key: cluster[0].id });
+      result.push({ x: p.px, y: p.py, pois: cluster, key: p.id });
     }
     return result;
   }, [visiblePois, zoom]);
