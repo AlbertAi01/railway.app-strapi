@@ -232,14 +232,14 @@ function getEntityIconUrl(type: string): string {
 }
 
 // Generate all tiles with EXACT coordinates — full grids for each zone
-// Y DECREASES per row (row 1 at startY, subsequent rows above), matching Valley IV
+// Tile positions extracted from endfieldtools.dev DOM — row 1 = top, Y increases per row
 function generateAllTiles(): TileDef[] {
   const tiles: TileDef[] = [];
 
   const addTiles = (id: string, folder: string, startX: number, startY: number, tileList: Array<[number, number]>) => {
     for (const [col, row] of tileList) {
       const x = startX + (col - 1) * TILE_SIZE;
-      const y = startY - (row - 1) * TILE_SIZE; // Y DECREASES per row
+      const y = startY + (row - 1) * TILE_SIZE;
       const fname = `${id}_${col}_${row}.png`;
       tiles.push({
         src: `${TILE_BASE}/${folder}/${fname}`,
@@ -250,34 +250,35 @@ function generateAllTiles(): TileDef[] {
     }
   };
 
-  // map02_lv001 (Jingyu Valley) — 6×9 grid, 37 tiles (sparse)
+  // map02_lv001 (Jingyu Valley) — 8×9 grid, 65 tiles
   const lv001Tiles: Array<[number, number]> = [
-    [1,1],[2,1],[3,1],
-    [1,2],[2,2],[3,2],[4,2],
-    [1,3],[2,3],[3,3],[4,3],
-    [1,4],[2,4],[3,4],[4,4],[5,4],
-    [1,5],[2,5],[3,5],[4,5],[5,5],
-    [2,6],[3,6],[4,6],[5,6],
-    [2,7],[3,7],[4,7],[5,7],
-    [2,8],[3,8],[4,8],[5,8],
-    [3,9],[4,9],[5,9],[6,9],
-  ];
-  addTiles('map02_lv001', 'map02lv001', 1800, 10800, lv001Tiles);
-
-  // map02_lv002 (Wuling City) — 9×10 grid, 84 tiles (sparse)
-  const lv002Tiles: Array<[number, number]> = [
-    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],
-    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],
-    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],
+    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
     [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],
     [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],
     [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
     [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
+    [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],
+    [8,9],
+  ];
+  addTiles('map02_lv001', 'map02lv001', 1200, 10200, lv001Tiles);
+
+  // map02_lv002 (Wuling City) — 9×11 grid, 99 tiles (full)
+  const lv002Tiles: Array<[number, number]> = [
+    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[9,5],
+    [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[9,6],
+    [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],
     [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],
     [1,9],[2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],
-    [2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],
+    [1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],
+    [1,11],[2,11],[3,11],[4,11],[5,11],[6,11],[7,11],[8,11],[9,11],
   ];
-  addTiles('map02_lv002', 'map02lv002', 600, 6000, lv002Tiles);
+  addTiles('map02_lv002', 'map02lv002', 0, 5400, lv002Tiles);
 
   return tiles;
 }

@@ -255,15 +255,14 @@ function getEntityIconUrl(type: string): string {
   return `${ICON_BASE}/item_diamond.png`;
 }
 
-// Generate all tiles with EXACT coordinates from endfieldtools.dev
+// Tile positions extracted from endfieldtools.dev DOM — row 1 = top, Y increases per row
 function generateAllTiles(): TileDef[] {
   const tiles: TileDef[] = [];
 
-  // Helper: row 1 = bottom (largest screenY), Y decreases per row
   const addTiles = (id: string, folder: string, startX: number, startY: number, tileList: Array<[number, number]>) => {
     for (const [col, row] of tileList) {
       const x = startX + (col - 1) * 600;
-      const y = startY - (row - 1) * 600;
+      const y = startY + (row - 1) * 600;
       tiles.push({
         src: `${TILE_BASE}/${folder}/${id}_${col}_${row}.png`,
         x, y, key: `${id}_${col}_${row}`
@@ -271,64 +270,72 @@ function generateAllTiles(): TileDef[] {
     }
   };
 
-  // map01_lv001 (The Hub) - 8x6 grid, 43 tiles
+  // map01_lv001 (The Hub) — 8×5 grid, 33 tiles
   const lv001Tiles: Array<[number, number]> = [
-    [2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
-    [2,2],[3,2],[4,2],[5,2],[6,2],[7,2],
-    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
+    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
     [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],
-    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],
-    [2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
+    [5,5],[6,5],[7,5],[8,5],
   ];
-  addTiles('map01_lv001', 'map01lv001', 1200, 6600, lv001Tiles);
+  addTiles('map01_lv001', 'map01lv001', 600, 6000, lv001Tiles);
 
-  // map01_lv002 (Valley Pass) - 4x4 grid, 15 tiles
+  // map01_lv002 (Valley Pass) — 5×5 grid, 17 tiles
   const lv002Tiles: Array<[number, number]> = [
-    [1,1],[2,1],[3,1],
-    [1,2],[2,2],[3,2],[4,2],
-    [1,3],[2,3],[3,3],[4,3],
-    [1,4],[2,4],[3,4],[4,4],
-  ];
-  addTiles('map01_lv002', 'map01lv002', 600, 4200, lv002Tiles);
-
-  // map01_lv003 (Aburrey Quarry) - 3x4 grid, 12 tiles (full)
-  const lv003Tiles: Array<[number, number]> = [
-    [1,1],[2,1],[3,1],
+    [1,1],[2,1],[3,1],[4,1],[5,1],
     [1,2],[2,2],[3,2],
     [1,3],[2,3],[3,3],
     [1,4],[2,4],[3,4],
+    [1,5],[2,5],[3,5],
   ];
-  addTiles('map01_lv003', 'map01lv003', 5400, 7800, lv003Tiles);
+  addTiles('map01_lv002', 'map01lv002', 0, 3600, lv002Tiles);
 
-  // map01_lv005 (Originium Science Park) - 5x4 grid, 20 tiles (full)
-  const lv005Tiles: Array<[number, number]> = [
+  // map01_lv003 (Aburrey Quarry) — 5×5 grid, 17 tiles
+  const lv003Tiles: Array<[number, number]> = [
     [1,1],[2,1],[3,1],[4,1],[5,1],
     [1,2],[2,2],[3,2],[4,2],[5,2],
     [1,3],[2,3],[3,3],[4,3],[5,3],
-    [1,4],[2,4],[3,4],[4,4],[5,4],
+    [1,4],
+    [1,5],
   ];
-  addTiles('map01_lv005', 'map01lv005', 6000, 6000, lv005Tiles);
+  addTiles('map01_lv003', 'map01lv003', 4800, 7200, lv003Tiles);
 
-  // map01_lv006 (Origin Lodespring) - 6x6 grid, 27 tiles (sparse)
+  // map01_lv005 (Originium Science Park) — 7×6 grid, 30 tiles
+  const lv005Tiles: Array<[number, number]> = [
+    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],
+    [7,5],
+    [7,6],
+  ];
+  addTiles('map01_lv005', 'map01lv005', 5400, 5400, lv005Tiles);
+
+  // map01_lv006 (Origin Lodespring) — 8×8 grid, 37 tiles (starts at col 4)
   const lv006Tiles: Array<[number, number]> = [
-    [2,1],[3,1],[4,1],[5,1],
-    [2,2],[3,2],[4,2],[5,2],[6,2],
-    [2,3],[3,3],[4,3],[5,3],[6,3],
-    [2,4],[3,4],[4,4],[5,4],
-    [1,5],[2,5],[3,5],[4,5],[5,5],
-    [1,6],[2,6],[3,6],[4,6],
+    [4,1],[5,1],[6,1],[7,1],
+    [4,2],[5,2],[6,2],[7,2],
+    [4,3],[5,3],[6,3],[7,3],
+    [4,4],[5,4],[6,4],[7,4],[8,4],
+    [4,5],[5,5],[6,5],[7,5],[8,5],
+    [4,6],[5,6],[6,6],[7,6],[8,6],
+    [4,7],[5,7],[6,7],[7,7],[8,7],
+    [4,8],[5,8],[6,8],[7,8],[8,8],
   ];
-  addTiles('map01_lv006', 'map01lv006', 5400, 3600, lv006Tiles);
+  addTiles('map01_lv006', 'map01lv006', 4800, 3000, lv006Tiles);
 
-  // map01_lv007 (Power Plateau) - 6x5 grid, 24 tiles (sparse)
+  // map01_lv007 (Power Plateau) — 8×8 grid, 64 tiles (full)
   const lv007Tiles: Array<[number, number]> = [
-    [3,1],[4,1],[5,1],[6,1],
-    [3,2],[4,2],[5,2],[6,2],
-    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
-    [1,4],[2,4],[3,4],[4,4],[5,4],
-    [1,5],[2,5],[3,5],[4,5],[5,5],
+    [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],
+    [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
+    [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
+    [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],
   ];
-  addTiles('map01_lv007', 'map01lv007', 2400, 3600, lv007Tiles);
+  addTiles('map01_lv007', 'map01lv007', 1800, 3000, lv007Tiles);
 
   return tiles;
 }
