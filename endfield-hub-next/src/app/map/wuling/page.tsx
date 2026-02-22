@@ -55,22 +55,22 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
     subTypes: [
       { label: 'Iron', icon: 'item_iron_ore', types: ['int_doodad_core_mine_iron'] },
       { label: 'Originium', icon: 'item_originium_ore', types: ['int_doodad_core_mine_originium'] },
-    ],
-  },
-  spcstone: {
-    label: 'Rare Minerals', color: '#FF1493', icon: 'item_plant_spcstone_1_3', defaultOn: false,
-    subTypes: [
+      { label: 'Igneosite', icon: 'item_plant_spcstone_2_2', types: ['int_doodad_spcstone_2_2'] },
       { label: 'Umbronyx', icon: 'item_plant_spcstone_1_3', types: ['int_doodad_spcstone_1_3'] },
       { label: 'Wulingstone', icon: 'item_plant_spcstone_2_1', types: ['int_doodad_spcstone_2_1'] },
-      { label: 'Igneosite', icon: 'item_plant_spcstone_2_2', types: ['int_doodad_spcstone_2_2'] },
     ],
   },
-  plant: {
-    label: 'Plant Materials', color: '#32CD32', icon: 'item_plant_grass_1', defaultOn: false,
+  mushroom: {
+    label: 'Mushrooms', color: '#FF6347', icon: 'item_plant_mushroom_1_3', defaultOn: false,
     subTypes: [
       { label: 'Ruby Bolete', icon: 'item_plant_mushroom_1_3', types: ['int_doodad_mushroom_1_3'] },
       { label: 'Bloodcap', icon: 'item_plant_mushroom_2_1', types: ['int_doodad_mushroom_2_1'] },
       { label: 'Cosmagaric', icon: 'item_plant_mushroom_2_2', types: ['int_doodad_mushroom_2_2'] },
+    ],
+  },
+  plant: {
+    label: 'Herbs & Plants', color: '#32CD32', icon: 'item_plant_grass_1', defaultOn: false,
+    subTypes: [
       { label: 'Jincao', icon: 'item_plant_grass_1', types: ['int_doodad_grass_1', 'int_doodad_grass_spc_1', 'int_doodad_grass_spc_once_1'] },
       { label: 'Yazhen', icon: 'item_plant_grass_2', types: ['int_doodad_grass_2', 'int_doodad_grass_spc_2', 'int_doodad_grass_spc_once_2'] },
       { label: 'Sandleaf', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
@@ -79,7 +79,7 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
       { label: 'Scorchbug', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
       { label: 'Vitrodendra', icon: 'item_plant_crylplant_1_3', types: ['int_doodad_crylplant_1_3'] },
       { label: 'Blighted Jadeleaf', icon: 'item_plant_crylplant_2_1', types: ['int_doodad_crylplant_2_1'] },
-      { label: 'False Aggela', icon: 'item_plant_crylplant_2_2', types: ['int_doodad_crylplant_2_2'] },
+      { label: 'False Agapee', icon: 'item_plant_crylplant_2_2', types: ['int_doodad_crylplant_2_2'] },
       { label: 'Redjade Ginseng', icon: 'item_plant_sp_3', types: ['int_doodad_corp_3'] },
       { label: 'Amber Rice', icon: 'item_plant_sp_4', types: ['int_doodad_corp_4'] },
     ],
@@ -104,7 +104,7 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
       { label: "Seed-Expert's Shop", icon: `${MARK_ICON_BASE}/icon_map_general_shop.png`, types: ['shop_common'] },
       { label: 'Warning Terminal', icon: `${TIPS_ICON_BASE}/icon_tips_tower.png`, types: ['int_warning_terminal'] },
       { label: 'Settlement Defense', icon: `${MARK_ICON_BASE}/icon_map_campfire.png`, types: ['mark_settlement_defense_terminal'] },
-      { label: 'Stock Redistribution', icon: `${MARK_ICON_BASE}/icon_map_depot_pick_up.png`, types: ['mark_p_domain_shop'] },
+      { label: 'Stock Redistribution Terminal', icon: `${MARK_ICON_BASE}/icon_map_depot_pick_up.png`, types: ['mark_p_domain_shop'] },
       { label: 'Depot Node', icon: `${MARK_ICON_BASE}/icon_map_depot_receiving.png`, types: ['mark_p_domain_depot'] },
       { label: 'Recycling Station', icon: `${MARK_ICON_BASE}/icon_map_recycle.png`, types: ['mark_p_recycler', 'int_doodad_core_recycle'] },
     ],
@@ -116,11 +116,19 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
       { label: 'Buyable Files', icon: 'prts_read_expensivebook', types: ['int_narrative_shop_buyable_nar_paper_map02_67_1__item_read_note'] },
     ],
   },
+  terminal: {
+    label: 'Terminals', color: '#4682B4', icon: `${TIPS_ICON_BASE}/icon_tips_tower.png`, defaultOn: false,
+    subTypes: [
+      { label: 'Early Warning Terminal', icon: `${TIPS_ICON_BASE}/icon_tips_tower.png`, types: ['int_warning_terminal'] },
+    ],
+  },
   dungeon: {
     label: 'Dungeons', color: '#8B008B', icon: 'item_adventureexp', defaultOn: false,
     subTypes: [
-      { label: 'Protocol Space', icon: 'item_char_break_stage_3_4', types: ['dung_group_ss03', 'dung_group_ss04', 'dung_group_ss05'] },
-      { label: 'Exploration Level', icon: 'item_adventureexp', types: ['indie_group_levelcheck03', 'indie_group_levelcheck04'] },
+      { label: 'Protocol Space: Advanced Progression III', icon: 'item_char_break_stage_3_4', types: ['dung_group_ss03'] },
+      { label: 'Protocol Space: Advanced Progression IV', icon: 'item_char_break_stage_3_4', types: ['dung_group_ss04'] },
+      { label: 'Protocol Space: Advanced Progression V', icon: 'item_char_break_stage_3_4', types: ['dung_group_ss05'] },
+      { label: 'Protocol Space: Exploration Level', icon: 'item_adventureexp', types: ['indie_group_levelcheck03', 'indie_group_levelcheck04'] },
     ],
   },
   battle: {
