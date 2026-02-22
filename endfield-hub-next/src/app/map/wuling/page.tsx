@@ -39,7 +39,7 @@ interface CategoryDef {
 
 const CATEGORY_CONFIG: Record<string, CategoryDef> = {
   chest: {
-    label: 'Treasure Chests', color: '#FFA500', icon: 'item_materialchest_01', defaultOn: true,
+    label: 'Treasure Chests', color: '#FFA500', icon: 'item_materialchest_01', defaultOn: false,
     subTypes: [
       { label: 'Gorgeous Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_gorgeous'] },
       { label: 'Locked Chest', icon: 'item_materialchest_01', types: ['int_trchest_lock'] },
@@ -84,12 +84,13 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
       { label: 'Amber Rice', icon: 'item_plant_sp_4', types: ['int_doodad_corp_4'] },
     ],
   },
-  travel: { label: 'Fast Travel Points', color: '#00CED1', icon: `${MARK_ICON_BASE}/icon_map_campfire.png`, defaultOn: true },
+  travel: { label: 'Teleport Points', color: '#00CED1', icon: `${MARK_ICON_BASE}/icon_map_campfire.png`, defaultOn: false },
   collectible: {
     label: 'Events & Collectibles', color: '#FFA500', icon: FRAGMENT_ICON, defaultOn: false,
     subTypes: [
       { label: 'White Fragment', icon: FRAGMENT_ICON, types: ['int_collection_common'] },
       { label: 'Aurylene', icon: 'item_collection_ether', types: ['int_collection_coin_hongshan_dynamic', 'int_collection_coin_hongshan_static'] },
+      { label: 'Challenge Entrance', icon: 'item_adventureexp', types: ['int_challenge_start_point_once'] },
       { label: 'Delta Bot', icon: `${MARK_ICON_BASE}/icon_map_fixablerobot.png`, types: ['mark_p_fixablerobot'] },
       { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_scene_empty', 'int_narrative_common', 'int_narrative_common_book', 'int_narrative_common_pad', 'int_narrative_common_audiotape', 'int_narrative_scene', 'int_narrative_scene_signage', 'int_narrative_common_empty', 'int_narrative_scene_screen', 'int_narrative_scene_bag', 'int_narrative_common_news', 'int_narrative_scene_notebook'] },
       { label: 'Buyable File', icon: 'prts_read_expensivebook', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_expensivebook', 'int_trigger_dnarrative_appliance', 'int_trigger_dnarrative_letter', 'int_trigger_dnarrative_document'] },
@@ -100,9 +101,8 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
   buildings: {
     label: 'Buildings', color: '#00CED1', icon: `${MARK_ICON_BASE}/icon_map_campfire.png`, defaultOn: false,
     subTypes: [
-      { label: 'TP Point', icon: `${MARK_ICON_BASE}/icon_map_campfire.png`, types: ['int_campfire_v2'] },
       { label: "Seed-Expert's Shop", icon: `${MARK_ICON_BASE}/icon_map_general_shop.png`, types: ['shop_common'] },
-      { label: 'Early Warning Terminal', icon: `${TIPS_ICON_BASE}/icon_tips_tower.png`, types: ['int_warning_terminal'] },
+      { label: 'Warning Terminal', icon: `${TIPS_ICON_BASE}/icon_tips_tower.png`, types: ['int_warning_terminal'] },
       { label: 'Settlement Defense', icon: `${MARK_ICON_BASE}/icon_map_campfire.png`, types: ['mark_settlement_defense_terminal'] },
       { label: 'Stock Redistribution', icon: `${MARK_ICON_BASE}/icon_map_depot_pick_up.png`, types: ['mark_p_domain_shop'] },
       { label: 'Depot Node', icon: `${MARK_ICON_BASE}/icon_map_depot_receiving.png`, types: ['mark_p_domain_depot'] },
@@ -112,12 +112,10 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
   narrative: {
     label: 'Story Fragments', color: '#9370DB', icon: 'item_read_note', defaultOn: false,
     subTypes: [
-      { label: 'Findings', icon: 'item_read_note', types: ['int_narrative_common_empty', 'int_narrative_scene_appliance', 'int_narrative_scene_bag'] },
-      { label: 'Nexus Files', icon: 'item_read_notebook', types: ['int_narrative_common_pad'] },
+      { label: 'Collectibles', icon: 'item_read_note', types: ['int_narrative_common_empty', 'int_narrative_scene_appliance', 'int_narrative_scene_bag', 'int_narrative_common_pad'] },
       { label: 'Buyable Files', icon: 'prts_read_expensivebook', types: ['int_narrative_shop_buyable_nar_paper_map02_67_1__item_read_note'] },
     ],
   },
-  system: { label: 'Daily Instances', color: '#FFD700', icon: 'item_adventureexp', defaultOn: false },
   dungeon: {
     label: 'Dungeons', color: '#8B008B', icon: 'item_adventureexp', defaultOn: false,
     subTypes: [
@@ -455,12 +453,21 @@ export default function WulingMapPage() {
     });
   }, [mapData, activeCategories, disabledSubTypes, hideCompleted, completed, searchQuery]);
 
-  // Cluster POIs — sort by ID first so the anchor POI (smallest ID) is stable
-  // across filter changes, preventing markers from teleporting when toggling sub-types
+  // All POIs in active categories (ignoring sub-type filters and hide-completed)
+  // Used as a stable base for clustering so toggling sub-types doesn't shift clusters
+  const categoryPois = useMemo(() => {
+    if (!mapData) return [];
+    return mapData.pois.filter(p => activeCategories.has(p.cat));
+  }, [mapData, activeCategories]);
+
+  // Build stable clusters from ALL category POIs, then filter to visible ones
   const clusters = useMemo(() => {
     const clusterRadius = 30 / zoom;
-    const sorted = [...visiblePois].sort((a, b) => a.id.localeCompare(b.id));
-    const result: { x: number; y: number; pois: POI[]; key: string }[] = [];
+    const sorted = [...categoryPois].sort((a, b) => a.id.localeCompare(b.id));
+    const visibleSet = new Set(visiblePois.map(p => p.id));
+
+    // Cluster using ALL POIs in active categories for stable positions
+    const allClusters: { x: number; y: number; allPois: POI[]; key: string }[] = [];
     const used = new Set<number>();
 
     for (let i = 0; i < sorted.length; i++) {
@@ -480,10 +487,19 @@ export default function WulingMapPage() {
         }
       }
 
-      result.push({ x: p.px, y: p.py, pois: cluster, key: p.id });
+      allClusters.push({ x: p.px, y: p.py, allPois: cluster, key: p.id });
     }
-    return result;
-  }, [visiblePois, zoom]);
+
+    // Filter each cluster to only visible POIs, drop empty clusters
+    return allClusters
+      .map(c => ({
+        x: c.x,
+        y: c.y,
+        pois: c.allPois.filter(p => visibleSet.has(p.id)),
+        key: c.key,
+      }))
+      .filter(c => c.pois.length > 0);
+  }, [categoryPois, visiblePois, zoom]);
 
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
