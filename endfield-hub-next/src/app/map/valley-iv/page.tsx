@@ -516,36 +516,53 @@ export default function ValleyIVMapPage() {
     });
   }, [mapData, activeCategories, disabledSubTypes, hideCompleted, completed, searchQuery]);
 
-  // Cluster POIs — only same-type POIs cluster together
-  // This prevents toggling one sub-type from affecting cluster counts of other sub-types
+  // Stable clusters: built from ALL same-type POIs in the dataset, then filtered to visible.
+  // This ensures cluster anchors and positions never change when toggling sub-type filters.
   const clusters = useMemo(() => {
+    if (!mapData) return [];
     const clusterRadius = 30 / zoom;
-    const sorted = [...visiblePois].sort((a, b) => a.id.localeCompare(b.id));
+    const visibleSet = new Set(visiblePois.map(p => p.id));
+
+    // Group ALL POIs by type for same-type-only clustering
+    const byType = new Map<string, POI[]>();
+    for (const p of mapData.pois) {
+      const arr = byType.get(p.type);
+      if (arr) arr.push(p);
+      else byType.set(p.type, [p]);
+    }
+
     const result: { x: number; y: number; pois: POI[]; key: string }[] = [];
-    const used = new Set<number>();
 
-    for (let i = 0; i < sorted.length; i++) {
-      if (used.has(i)) continue;
-      const p = sorted[i];
-      const cluster: POI[] = [p];
-      used.add(i);
+    for (const [, pois] of byType) {
+      const sorted = pois.sort((a, b) => a.id.localeCompare(b.id));
+      const used = new Set<number>();
 
-      for (let j = i + 1; j < sorted.length; j++) {
-        if (used.has(j)) continue;
-        const q = sorted[j];
-        if (p.type !== q.type) continue; // Only cluster same-type POIs
-        const dx = p.px - q.px;
-        const dy = p.py - q.py;
-        if (dx * dx + dy * dy < clusterRadius * clusterRadius) {
-          cluster.push(q);
-          used.add(j);
+      for (let i = 0; i < sorted.length; i++) {
+        if (used.has(i)) continue;
+        const p = sorted[i];
+        const cluster: POI[] = [p];
+        used.add(i);
+
+        for (let j = i + 1; j < sorted.length; j++) {
+          if (used.has(j)) continue;
+          const q = sorted[j];
+          const dx = p.px - q.px;
+          const dy = p.py - q.py;
+          if (dx * dx + dy * dy < clusterRadius * clusterRadius) {
+            cluster.push(q);
+            used.add(j);
+          }
+        }
+
+        // Filter to only visible POIs, skip empty clusters
+        const visible = cluster.filter(poi => visibleSet.has(poi.id));
+        if (visible.length > 0) {
+          result.push({ x: p.px, y: p.py, pois: visible, key: p.id });
         }
       }
-
-      result.push({ x: p.px, y: p.py, pois: cluster, key: p.id });
     }
     return result;
-  }, [visiblePois, zoom]);
+  }, [mapData, visiblePois, zoom]);
 
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
