@@ -284,7 +284,7 @@ function generateAllTiles(): TileDef[] {
     [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],
     [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],[10,8],
   ];
-  addTiles('map01_lv001', 'map01lv001', 1200, 6600, lv001Tiles);
+  addTiles('map01_lv001', 'map01lv001', 600, 6000, lv001Tiles);
 
   // map01_lv002 (Valley Pass) — 5×5 grid, 17 tiles
   const lv002Tiles: Array<[number, number]> = [
@@ -294,7 +294,7 @@ function generateAllTiles(): TileDef[] {
     [1,4],[2,4],[3,4],
     [1,5],[2,5],[3,5],
   ];
-  addTiles('map01_lv002', 'map01lv002', 0, 4200, lv002Tiles);
+  addTiles('map01_lv002', 'map01lv002', 0, 3600, lv002Tiles);
 
   // map01_lv003 (Aburrey Quarry) — 5×5 grid, 17 tiles
   const lv003Tiles: Array<[number, number]> = [
@@ -304,7 +304,7 @@ function generateAllTiles(): TileDef[] {
     [1,4],
     [1,5],
   ];
-  addTiles('map01_lv003', 'map01lv003', 5400, 7800, lv003Tiles);
+  addTiles('map01_lv003', 'map01lv003', 4800, 7200, lv003Tiles);
 
   // map01_lv005 (Originium Science Park) — 7×6 grid, 30 tiles
   const lv005Tiles: Array<[number, number]> = [
@@ -315,7 +315,7 @@ function generateAllTiles(): TileDef[] {
     [7,5],
     [7,6],
   ];
-  addTiles('map01_lv005', 'map01lv005', 6000, 6000, lv005Tiles);
+  addTiles('map01_lv005', 'map01lv005', 5400, 5400, lv005Tiles);
 
   // map01_lv006 (Origin Lodespring) — 8×8 grid, 37 tiles (starts at col 4)
   const lv006Tiles: Array<[number, number]> = [
@@ -328,7 +328,7 @@ function generateAllTiles(): TileDef[] {
     [4,7],[5,7],[6,7],[7,7],[8,7],
     [4,8],[5,8],[6,8],[7,8],[8,8],
   ];
-  addTiles('map01_lv006', 'map01lv006', 5400, 3600, lv006Tiles);
+  addTiles('map01_lv006', 'map01lv006', 4800, 3000, lv006Tiles);
 
   // map01_lv007 (Power Plateau) — 8×8 grid, 64 tiles (full)
   const lv007Tiles: Array<[number, number]> = [
@@ -341,7 +341,7 @@ function generateAllTiles(): TileDef[] {
     [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
     [1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],
   ];
-  addTiles('map01_lv007', 'map01lv007', 2400, 3600, lv007Tiles);
+  addTiles('map01_lv007', 'map01lv007', 1800, 3000, lv007Tiles);
 
   return tiles;
 }
