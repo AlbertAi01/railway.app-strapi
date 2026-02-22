@@ -36,18 +36,94 @@ interface CategoryDef {
 
 const CATEGORY_CONFIG: Record<string, CategoryDef> = {
   chest: {
-    label: 'Treasure Chests', color: '#FF8C00', icon: 'item_materialchest_01', defaultOn: true,
+    label: 'Treasure Chests', color: '#FFA500', icon: 'item_materialchest_01', defaultOn: true,
     subTypes: [
-      { label: 'Basic Chest', icon: 'item_materialchest_01', types: ['int_trchest_common'] },
-      { label: 'Normal Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_normal'] },
-      { label: 'Exquisite Chest', icon: 'item_materialchest_02', types: ['int_trchest_common_high'] },
       { label: 'Gorgeous Chest', icon: 'item_materialchest_03', types: ['int_trchest_common_gorgeous'] },
       { label: 'Locked Chest', icon: 'item_materialchest_02', types: ['int_trchest_lock'] },
+      { label: 'High-Tier Chest', icon: 'item_materialchest_02', types: ['int_trchest_common_high'] },
+      { label: 'Normal Chest', icon: 'item_materialchest_01', types: ['int_trchest_common_normal'] },
+      { label: 'Basic Chest', icon: 'item_materialchest_01', types: ['int_trchest_common'] },
     ],
   },
-  travel: { label: 'Campfires', color: '#FF6B35', icon: 'item_add_endurance', defaultOn: true },
+  mineral: {
+    label: 'Mining Points', color: '#8B4513', icon: 'item_iron_ore', defaultOn: false,
+    subTypes: [
+      { label: 'Iron', icon: 'item_iron_ore', types: ['int_doodad_core_mine_iron'] },
+      { label: 'Originium', icon: 'item_originium_ore', types: ['int_doodad_core_mine_originium'] },
+      { label: 'Quartz', icon: 'item_quartz_sand', types: ['int_doodad_core_mine_quartz'] },
+    ],
+  },
+  spcstone: {
+    label: 'Rare Minerals', color: '#FF1493', icon: 'item_plant_spcstone_1_1', defaultOn: false,
+    subTypes: [
+      { label: 'Auronyx', icon: 'item_plant_spcstone_1_1', types: ['int_doodad_spcstone_1_1'] },
+      { label: 'Igneosite', icon: 'item_plant_spcstone_1_2', types: ['int_doodad_spcstone_1_2'] },
+    ],
+  },
+  plant: {
+    label: 'Plant Materials', color: '#32CD32', icon: 'item_plant_moss_1', defaultOn: false,
+    subTypes: [
+      { label: 'Bloodcap', icon: 'item_plant_mushroom_1_1', types: ['int_doodad_mushroom_1_1'] },
+      { label: 'Cosmagaric', icon: 'item_plant_mushroom_1_2', types: ['int_doodad_mushroom_1_2'] },
+      { label: 'Ruby Bolete', icon: 'item_plant_mushroom_2_1', types: ['int_doodad_mushroom_spc_2_1'] },
+      { label: 'Aketine', icon: 'item_plant_moss_1', types: ['int_doodad_flower_1', 'int_doodad_flower_once_1', 'int_doodad_flower_spc_1', 'int_doodad_flower_spc_once_1', 'int_doodad_flower_story_1'] },
+      { label: 'Buckflower', icon: 'item_plant_moss_2', types: ['int_doodad_flower_2', 'int_doodad_flower_once_2', 'int_doodad_flower_spc_2', 'int_doodad_flower_spc_once_2'] },
+      { label: 'Sandleaf', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
+      { label: 'Blazebloom', icon: 'item_plant_bbflower_1', types: ['int_doodad_bbflower_1'] },
+      { label: 'Glowbug', icon: 'item_plant_tundra_insect_1', types: ['int_doodad_insect_1'] },
+      { label: 'Scorchbug', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
+      { label: 'Vitrodendra', icon: 'item_plant_crylplant_1_1', types: ['int_doodad_crylplant_1_1'] },
+      { label: 'Blighted Jadeleaf', icon: 'item_plant_crylplant_1_2', types: ['int_doodad_crylplant_1_2'] },
+      { label: 'Redjade Ginseng', icon: 'item_plant_sp_1', types: ['int_doodad_corp_1'] },
+      { label: 'Amber Rice', icon: 'item_plant_sp_2', types: ['int_doodad_corp_2'] },
+    ],
+  },
+  travel: { label: 'Fast Travel Points', color: '#00CED1', icon: 'icon_map_campfire', defaultOn: true },
+  collectible: {
+    label: 'Events & Collectibles', color: '#FFA500', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'White Fragment', icon: 'item_diamond', types: ['int_collection_common', 'int_collection_piece_in_door'] },
+      { label: 'Aurylene', icon: 'item_diamond', types: ['int_collection_coin', 'int_collection_coin_puzzle'] },
+      { label: 'Delta Bot', icon: 'item_diamond', types: ['mark_p_fixablerobot'] },
+      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_scene_empty', 'int_narrative_common', 'int_narrative_common_pad', 'int_narrative_common_audiotape', 'int_narrative_common_book', 'int_narrative_scene', 'int_narrative_common_empty', 'int_narrative_scene_pad', 'int_narrative_scene_notebook', 'int_narrative_empty', 'int_narrative_common_empty_withoutVfx', 'int_narrative_scene_expensiveBook', 'int_narrative_scene_chip', 'int_narrative_scene_document', 'int_narrative_scene_letter', 'int_narrative_scene_book'] },
+      { label: 'Buyable File', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_document', 'int_trigger_dnarrative_letter'] },
+      { label: 'Protocol Datalogger', icon: 'item_diamond', types: ['mark_dg_blackbox'] },
+      { label: 'Repair Logic', icon: 'item_diamond', types: ['mark_p_pazzle'] },
+    ],
+  },
+  buildings: {
+    label: 'Buildings', color: '#00CED1', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'TP Point', icon: 'item_diamond', types: ['int_campfire_v2'] },
+      { label: 'Shop', icon: 'item_diamond', types: ['shop_common'] },
+      { label: 'Stock Redistribution', icon: 'item_diamond', types: ['mark_p_domain_shop'] },
+      { label: 'Depot Node', icon: 'item_diamond', types: ['mark_p_domain_depot'] },
+      { label: 'Early Warning Terminal', icon: 'item_diamond', types: ['int_warning_terminal'] },
+      { label: 'Settlement Defense', icon: 'item_diamond', types: ['mark_settlement_defense_terminal'] },
+      { label: 'Recycling Station', icon: 'item_diamond', types: ['mark_p_recycler', 'int_doodad_core_recycle'] },
+    ],
+  },
+  narrative: {
+    label: 'Story Fragments', color: '#9370DB', icon: 'item_read_note', defaultOn: false,
+    subTypes: [
+      { label: 'Recordings', icon: 'item_read_note', types: ['int_narrative_common_audiotape'] },
+      { label: 'Nexus Files', icon: 'item_read_note', types: ['int_narrative_common_pad', 'int_narrative_scene_pad', 'int_narrative_scene_notebook', 'int_narrative_scene_document', 'int_narrative_scene_expensiveBook', 'int_narrative_scene_chip', 'int_narrative_common_book'] },
+      { label: 'Findings', icon: 'item_read_note', types: ['int_narrative_common', 'int_narrative_scene_empty', 'int_narrative_common_empty', 'int_narrative_common_empty_withoutVfx', 'int_narrative_common_FisrtAid', 'int_narrative_empty', 'int_narrative_scene', 'int_narrative_scene_newspapaer', 'int_narrative_common_news', 'int_trigger_button', 'int_trigger_volume_monster'] },
+      { label: 'Buyable Files', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_document', 'int_trigger_dnarrative_letter', 'int_trigger_dnarrative_expensivebook', 'int_trigger_dnarrative_appliance', 'int_narrative_shop_buyable_nar_paper_map01_112_1__item_read_note', 'int_narrative_shop_buyable_nar_paper_map01_112_2__item_read_note', 'int_narrative_shop_buyable_nar_paper_map01_115_1__item_read_news', 'int_narrative_shop_buyable_nar_paper_map01_116_1__prts_read_expensivebook', 'int_narrative_shop_buyable_nar_paper_map01_113_1__item_read_news', 'int_narrative_shop_buyable_nar_paper_map01_114_1__prts_read_expensivebook'] },
+    ],
+  },
+  system: { label: 'Daily Instances', color: '#FFD700', icon: 'item_diamond', defaultOn: false },
+  terminal: {
+    label: 'Terminals', color: '#4169E1', icon: 'item_diamond', defaultOn: false,
+    subTypes: [
+      { label: 'Reading Terminal', icon: 'item_diamond', types: ['int_terminal_reading'] },
+      { label: 'Switch Terminal', icon: 'item_diamond', types: ['int_switch_terminal_v2'] },
+      { label: 'Gantry Terminal', icon: 'item_diamond', types: ['gantry_terminal1', 'gantry_terminal2', 'gantry_terminal3', 'int_gantry_terminal', 'int_gantry_terminal3', 'int_gantry_terminal4'] },
+      { label: 'Communication Terminal', icon: 'item_diamond', types: ['int_001_comm_terminal'] },
+    ],
+  },
   dungeon: {
-    label: 'Dungeons', color: '#F39C12', icon: 'item_adventureexp', defaultOn: true,
+    label: 'Dungeons', color: '#8B008B', icon: 'item_adventureexp', defaultOn: false,
     subTypes: [
       { label: 'Boss Rush', icon: 'item_adventureexp', types: ['dung01_group_bossrush01', 'dung01_group_bossrush02', 'dung01_group_bossrush03'] },
       { label: 'Resource Farm', icon: 'item_gold', types: ['dung01_group_exp01', 'dung01_group_gold01', 'dung01_group_skill01', 'dung01_group_wpexp01'] },
@@ -57,47 +133,8 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
       { label: 'High Difficulty', icon: 'item_adventureexp', types: ['mark_high_difficulty_enter'] },
     ],
   },
-  collectible: {
-    label: 'Collectibles', color: '#FFD700', icon: 'item_diamond', defaultOn: false,
-    subTypes: [
-      { label: 'White Fragment', icon: 'item_diamond', types: ['int_collection_common', 'int_collection_piece_in_door'] },
-      { label: 'Aurylene', icon: 'item_diamond', types: ['int_collection_coin', 'int_collection_coin_puzzle'] },
-      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_scene_empty', 'int_narrative_common', 'int_narrative_common_pad', 'int_narrative_common_audiotape', 'int_narrative_common_book', 'int_narrative_scene', 'int_narrative_common_empty', 'int_narrative_scene_pad', 'int_narrative_scene_notebook', 'int_narrative_empty', 'int_narrative_common_empty_withoutVfx', 'int_narrative_scene_expensiveBook', 'int_narrative_scene_chip', 'int_narrative_scene_document', 'int_narrative_scene_letter', 'int_narrative_scene_book'] },
-      { label: 'Buyable File', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_document', 'int_trigger_dnarrative_letter'] },
-      { label: 'Protocol Datalogger', icon: 'item_diamond', types: ['mark_dg_blackbox'] },
-      { label: 'Repair Logic', icon: 'item_diamond', types: ['mark_p_pazzle'] },
-    ],
-  },
-  mineral: {
-    label: 'Mining Points', color: '#3498DB', icon: 'item_iron_ore', defaultOn: false,
-    subTypes: [
-      { label: 'Iron', icon: 'item_iron_ore', types: ['int_doodad_core_mine_iron'] },
-      { label: 'Originium', icon: 'item_originium_ore', types: ['int_doodad_core_mine_originium'] },
-      { label: 'Quartz', icon: 'item_quartz_sand', types: ['int_doodad_core_mine_quartz'] },
-      { label: 'Auronyx', icon: 'item_plant_spcstone_1_1', types: ['int_doodad_spcstone_1_1'] },
-      { label: 'Igneosite', icon: 'item_plant_spcstone_1_2', types: ['int_doodad_spcstone_1_2'] },
-    ],
-  },
-  plant: {
-    label: 'Plant Materials', color: '#27AE60', icon: 'item_plant_moss_1', defaultOn: false,
-    subTypes: [
-      { label: 'Aketine', icon: 'item_plant_moss_1', types: ['int_doodad_flower_1', 'int_doodad_flower_once_1', 'int_doodad_flower_spc_1', 'int_doodad_flower_spc_once_1', 'int_doodad_flower_story_1'] },
-      { label: 'Buckflower', icon: 'item_plant_moss_2', types: ['int_doodad_flower_2', 'int_doodad_flower_once_2', 'int_doodad_flower_spc_2', 'int_doodad_flower_spc_once_2'] },
-      { label: 'Sandleaf', icon: 'item_plant_moss_3', types: ['int_doodad_flower_3'] },
-      { label: 'Blazebloom', icon: 'item_plant_bbflower_1', types: ['int_doodad_bbflower_1'] },
-      { label: 'Bloodcap', icon: 'item_plant_mushroom_1_1', types: ['int_doodad_mushroom_1_1'] },
-      { label: 'Cosmagaric', icon: 'item_plant_mushroom_1_2', types: ['int_doodad_mushroom_1_2'] },
-      { label: 'Ruby Bolete', icon: 'item_plant_mushroom_2_1', types: ['int_doodad_mushroom_spc_2_1'] },
-      { label: 'Glowbug', icon: 'item_plant_tundra_insect_1', types: ['int_doodad_insect_1'] },
-      { label: 'Scorchbug', icon: 'item_plant_tundra_insect_2', types: ['int_doodad_insect_2'] },
-      { label: 'Vitrodendra', icon: 'item_plant_crylplant_1_1', types: ['int_doodad_crylplant_1_1'] },
-      { label: 'Blighted Jadeleaf', icon: 'item_plant_crylplant_1_2', types: ['int_doodad_crylplant_1_2'] },
-      { label: 'Redjade Ginseng', icon: 'item_plant_sp_1', types: ['int_doodad_corp_1'] },
-      { label: 'Amber Rice', icon: 'item_plant_sp_2', types: ['int_doodad_corp_2'] },
-    ],
-  },
   battle: {
-    label: 'Battle Encounters', color: '#E74C3C', icon: 'item_diamond', defaultOn: false,
+    label: 'Battle Encounters', color: '#DC143C', icon: 'item_diamond', defaultOn: false,
     subTypes: [
       { label: 'Liverbeast', icon: 'item_diamond', types: ['eny_0029_lbmob', 'eny_0065_lbmob2', 'eny_0060_lbmad'] },
       { label: 'Liverbeast Hunter', icon: 'item_diamond', types: ['eny_0033_lbhunt', 'eny_0066_lbhunt2'] },
@@ -110,43 +147,6 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
       { label: 'Other Enemies', icon: 'item_diamond', types: ['eny_0007_mimicw', 'eny_0049_rogue', 'eny_0046_lbshamman', 'eny_0047_firebat', 'eny_0074_lbshield', 'eny_0075_lbroshan', 'int_system_world_energy_point', 'mark_p_enemyspawner'] },
     ],
   },
-  events: {
-    label: 'Events', color: '#9B59B6', icon: 'item_diamond', defaultOn: false,
-    subTypes: [
-      { label: 'Delta Bot', icon: 'item_diamond', types: ['mark_p_fixablerobot'] },
-    ],
-  },
-  buildings: {
-    label: 'Buildings', color: '#1ABC9C', icon: 'item_diamond', defaultOn: false,
-    subTypes: [
-      { label: 'Shop', icon: 'item_diamond', types: ['shop_common'] },
-      { label: 'Stock Redistribution', icon: 'item_diamond', types: ['mark_p_domain_shop'] },
-      { label: 'Depot Node', icon: 'item_diamond', types: ['mark_p_domain_depot'] },
-      { label: 'Early Warning Terminal', icon: 'item_diamond', types: ['int_warning_terminal'] },
-      { label: 'Settlement Defense', icon: 'item_diamond', types: ['mark_settlement_defense_terminal'] },
-      { label: 'Recycling Station', icon: 'item_diamond', types: ['mark_p_recycler'] },
-    ],
-  },
-  system: { label: 'Challenge Entrance', color: '#E67E22', icon: 'item_diamond', defaultOn: false },
-  ether: { label: 'Recycling Stations', color: '#00BFFF', icon: 'item_diamond', defaultOn: false },
-  narrative: {
-    label: 'Story Items', color: '#C0392B', icon: 'item_read_note', defaultOn: false,
-    subTypes: [
-      { label: 'Collectible', icon: 'item_read_note', types: ['int_narrative_common', 'int_narrative_scene_empty', 'int_narrative_common_empty', 'int_narrative_common_pad', 'int_narrative_scene', 'int_narrative_common_audiotape', 'int_narrative_scene_pad', 'int_narrative_common_news', 'int_narrative_scene_notebook', 'int_narrative_scene_expensiveBook', 'int_narrative_scene_document', 'int_narrative_common_empty_withoutVfx', 'int_narrative_common_FisrtAid', 'int_narrative_empty', 'int_narrative_scene_newspapaer', 'int_narrative_common_book'] },
-      { label: 'Buyable File', icon: 'item_read_note', types: ['int_trigger_dnarrative_notebook', 'int_trigger_dnarrative_document', 'int_trigger_dnarrative_letter', 'int_trigger_dnarrative_expensivebook', 'int_trigger_dnarrative_appliance'] },
-      { label: 'Shop Buyable', icon: 'item_read_note', types: ['int_narrative_shop_buyable_nar_paper_map01_112_1__item_read_note', 'int_narrative_shop_buyable_nar_paper_map01_112_2__item_read_note', 'int_narrative_shop_buyable_nar_paper_map01_115_1__item_read_news', 'int_narrative_shop_buyable_nar_paper_map01_116_1__prts_read_expensivebook', 'int_narrative_shop_buyable_nar_paper_map01_113_1__item_read_news', 'int_narrative_shop_buyable_nar_paper_map01_114_1__prts_read_expensivebook'] },
-      { label: 'Switch / Trigger', icon: 'item_read_note', types: ['int_trigger_button', 'int_trigger_volume_monster'] },
-    ],
-  },
-  terminal: {
-    label: 'Terminals', color: '#9B59B6', icon: 'item_diamond', defaultOn: false,
-    subTypes: [
-      { label: 'Reading Terminal', icon: 'item_diamond', types: ['int_terminal_reading'] },
-      { label: 'Switch Terminal', icon: 'item_diamond', types: ['int_switch_terminal_v2'] },
-      { label: 'Gantry Terminal', icon: 'item_diamond', types: ['gantry_terminal1', 'gantry_terminal2', 'gantry_terminal3', 'int_gantry_terminal', 'int_gantry_terminal3', 'int_gantry_terminal4'] },
-      { label: 'Communication Terminal', icon: 'item_diamond', types: ['int_001_comm_terminal'] },
-    ],
-  },
 };
 
 // Icon resolution — matches competitor's logic for entity type → icon filename
@@ -154,7 +154,7 @@ const CATEGORY_CONFIG: Record<string, CategoryDef> = {
 function resolveIcon(type: string): { name: string; isMarkIcon: boolean } {
   const t = type.toLowerCase();
 
-  // Campfire
+  // Fast Travel / TP Point
   if (t.includes('campfire')) return { name: 'icon_map_campfire', isMarkIcon: true };
 
   // Chests
