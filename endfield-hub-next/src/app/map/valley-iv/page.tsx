@@ -867,7 +867,16 @@ export default function ValleyIVMapPage() {
                       </button>
 
                       <button
-                        onClick={() => hasSubTypes ? toggleExpanded(cat) : toggleCategory(cat)}
+                        onClick={() => {
+                          if (hasSubTypes) {
+                            if (!isActive) {
+                              toggleCategory(cat);
+                            }
+                            toggleExpanded(cat);
+                          } else {
+                            toggleCategory(cat);
+                          }
+                        }}
                         className={`flex-1 flex items-center gap-2 py-2.5 pr-3 text-left transition-colors ${
                           isActive ? '' : 'opacity-40'
                         }`}
